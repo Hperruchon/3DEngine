@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: ['0084', '0093', '0098']
-amended-by: ['0100', '0117', '0131']
+amended-by: ['0100', '0117', '0131', '0172']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Rows.cs
   - 3DEngine.App/Ui/DesktopUi.Command.cs
@@ -68,7 +68,8 @@ The owner chose the slice and its merge after green CI; the recommendations answ
 
 1. **The place (amends ADR-0084 item 1, ADR-0093 item 4 and ADR-0098 item 4).** On a landscape display, while a body is
    selected and no sketch is active, the rows are at the upper left, 16 pixels inside the safe area and 8 pixels under the
-   top bar, 360 pixels wide. The panel does not show. ADR-0084 item 6 holds: the window of the live sketches does not show
+   top bar, at most 360 pixels wide; ADR-0172 item 1 gives the rule of the width and of the bottom beside the ring. The
+   panel does not show. ADR-0084 item 6 holds: the window of the live sketches does not show
    either.
 2. **The name (Q1 A).** A tap on the first row opens a name field in its place, with the name of the body selected. Enter
    renames the body with one command. Escape, or a tap that takes the keys from the field, closes it with no command. A
@@ -103,3 +104,5 @@ display. The row "Made from" waits.
 - 2026-11-10 · TASK-0342 · ADR-0117 item 2 answers Q2 and amends item 3: the row "Made from" with the sketch of the body,
   whose tap opens that sketch.
 - 2026-11-14 · TASK-0360 · ADR-0131 amends items 1 and 7: the rows show on a portrait display too, under the part.
+- 2026-11-18 · TASK-0418 · ADR-0172 item 1 amends item 1: the rows are at most 360 pixels wide, end left of a tool of the
+  ring beside the first row, and end above a tool of the ring in their column.

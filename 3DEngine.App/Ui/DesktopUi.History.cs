@@ -49,7 +49,7 @@ internal sealed unsafe partial class DesktopUi
     {
         _historyNodes = [];
         HistoryAlphaOfFrame = ImGui.GetStyle().Alpha;
-        if (body is null || steps is not { Count: > 0 } || _ring is not { } ring || _sketchActive || _pad is not null || displaySize.X < displaySize.Y)
+        if (body is null || steps is not { Count: > 0 } || _ring is not { } ring || _sketchActive || _pad is not null || Portrait(displaySize))
             return;
 
         // The nodes are on the band of the ring, between its two guide circles, from the lower left down to the bottom, as in
@@ -75,7 +75,9 @@ internal sealed unsafe partial class DesktopUi
             var width = ImGui.CalcTextSize(HistoryText(steps[i])).X;
             var text = new Vector4(centre.X - (HistoryNode / 2f) - HistoryTextGap - width, centre.Y - (lineHeight / 2f), centre.X - (HistoryNode / 2f) - HistoryTextGap, centre.Y + (lineHeight / 2f));
             var onRows = _rowsArea is { } rows && text.X < rows.Z && rows.X < text.Z && text.Y < rows.W && rows.Y < text.W;
-            if (text.X < left || onRows)
+            // ADR-0172 item 3 (TASK-0418): a text on a fixed control, as the anchors on a low display, is at the right of the
+            // node too. Until TASK-0418 the text of the lower node was under Undo at 640 by 360.
+            if (text.X < left || onRows || OnFixed(text))
                 text = new Vector4(centre.X + (HistoryNode / 2f) + HistoryTextGap, text.Y, centre.X + (HistoryNode / 2f) + HistoryTextGap + width, text.W);
             _historyNodes.Add((steps[i], centre, text));
         }
@@ -159,9 +161,22 @@ internal sealed unsafe partial class DesktopUi
         var end = At(lower);
         // The caption is at the left of the lower end of the arc, under the text of its node, as in the render.
         var place = new Vector2(end.X - (HistoryNode / 2f) - HistoryTextGap - size.X, end.Y + (HistoryNode / 2f) + 6f);
+        // ADR-0172 item 3 (TASK-0418): when the caption has no room under the lower end, inside the display and off the fixed
+        // controls, it is over the upper end of the arc. Until TASK-0418 it went under the bottom edge of a landscape display
+        // of 720 pixels or less, and on Undo and Views.
+        var below = new Vector4(place.X, place.Y, place.X + size.X, place.Y + size.Y);
+        if (below.W > displaySize.Y - _inset.W || below.X < left || OnFixed(below))
+        {
+            var start = At(upper);
+            place = new Vector2(start.X - (size.X / 2f), start.Y - (HistoryNode / 2f) - 6f - size.Y);
+        }
         list.AddText(place, quiet, caption);
         _items[HistoryCaptionItem] = new Vector4(place.X, place.Y, place.X + size.X, place.Y + size.Y);
     }
+
+    // ADR-0172 item 3 (TASK-0418): true when a rectangle overlaps a fixed control of this frame.
+    private bool OnFixed(Vector4 box)
+        => _fixed.Any(fixedBox => box.X < fixedBox.Z && fixedBox.X < box.Z && box.Y < fixedBox.W && fixedBox.Y < box.W);
 
     // ADR-0130 item 2: the item of the pending node, and its text from the first named value of the shown proposal: "C1 to
     // 75 ?", or "distance to 30 ?"; null with no proposal or with no named value.

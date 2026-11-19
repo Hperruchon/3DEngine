@@ -43,9 +43,12 @@ internal sealed unsafe partial class DesktopUi : IDisposable
 
     // ADR-0163 item 2 (TASK-0404): the smallest size of the window of the desktop, in the units of the window. The width is
     // the smallest width of ADR-0113 item 1. A probe of TASK-0404 found faults of the layout below a height of 570 when the
-    // width is less than 750, so the height keeps a margin of 30 pixels. The test of the layout reads both numbers.
+    // width is less than 750, so the height kept a margin of 30 pixels. The test of the layout reads both numbers.
+    // ADR-0163 item 2 as TASK-0418 amends it: the height is 560, the edge that the owner chose on 2026-11-18 (Q2 A). The fixes of
+    // TASK-0418 hold the rule of ADR-0113 item 1 in each state at each size of the resize from 360 by 560. A compact layout
+    // for a smaller window is a later proposal. Until TASK-0418 the height was 600.
     public const int MinimumWindowWidth = 360;
-    public const int MinimumWindowHeight = 600;
+    public const int MinimumWindowHeight = 560;
 
     public const string PanelName = "Document";
     public const string FilterLabel = "Filter";
@@ -150,8 +153,6 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     public const string AcceptLabel = "Accept";
     public const string RejectLabel = "Reject";
     public const string PlaceLineLabel = "Place on";
-    private const float ImagesWidth = 280f;
-    private const float ImagesHeight = 300f;
 
     // The key of the rectangle of a control of the window of the sketch, for ItemRectangle.
     public static string SketchItem(string label) => $"{SketchName} {label}";
@@ -338,6 +339,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
     // ADR-0100 item 5 (phase R17a, TASK-0314): true when the display of this frame is portrait, so the path line is under
     // the top bar and the panel under the path line.
     private bool _portrait;
+
+
+    internal static bool Portrait(Vector2 display) => display.X < display.Y;
 
     // ADR-0075 item 3 (phase R12a, TASK-0236): the selected face for this frame, or null.
     private FaceLine? _face;
@@ -589,7 +593,7 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         ArgumentNullException.ThrowIfNull(bodies);
         _size = size;
         _inset = safeInsets;
-        _portrait = displaySize.X < displaySize.Y;
+        _portrait = Portrait(displaySize);
         _face = face;
         _files = document is { Files: true };
         _sketchActive = sketchPanel?.Active is not null;
@@ -669,8 +673,12 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             // ADR-0099 item 1 (the redesign, slice p, TASK-0313): the rows of a selected body take its place too.
             var selectedBody = bodies.FirstOrDefault(body => body.Id == selection);
             // ADR-0168 item 1 (TASK-0408): on a portrait display the sheet page takes the place of the panel too.
-            if (sketchPanel?.Active is null && !RowsShow(displaySize, selectedBody) && !(page && _portrait))
+            // TASK-0418: an open pad, and open images, take the place of the panel and of the rows.
+            _imagesAvailable = imagePanel is not null;
+            _imagesShown = _imagesAvailable && _imagesOpen && sketchPanel?.Active is null && _pad is null && !(page && _portrait);
+            if (sketchPanel?.Active is null && !RowsShow(displaySize, selectedBody) && !(page && _portrait) && _pad is null && !_imagesShown)
                 Panel(bodies, selection, displaySize, document);
+            PlacePad(displaySize);
             FixedControls(displaySize, bodies, document, selectedBody);
             // ADR-0098 (TASK-0312): the command line.
             CommandLine(displaySize, bodies, selection);
@@ -716,6 +724,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
                 SketchWindow(shown, displaySize);
             if (imagePanel is not null)
                 ImageWindow(imagePanel, displaySize);
+            else
+                _imagesBox = null;
             // ADR-0124 item 3 (phase R20b2, TASK-0351): the list of the hidden bodies, over the ring, the rows and the windows.
             HiddenList(displaySize, bodies);
         }
