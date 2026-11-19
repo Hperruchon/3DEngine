@@ -1,7 +1,7 @@
 ---
 id: 0417
 title: A run of the pipeline is red only for a fault of the code, not for a lost macOS runner or a slow Windows runner
-status: Done
+status: Active
 phase: P0.168
 opened: 2026-11-18
 depends-on: []
@@ -100,7 +100,7 @@ the default branch).
 
 ## Outcome
 
-Status: Done · commit (the merge of the branch p0168-red-runs-work) · v0.400
+Status: Active · commit (the merge of the branch p0168-red-runs-work) · v0.401
 
 ## Method
 
@@ -120,3 +120,6 @@ Weakest:    the workflow and the calls of the API run first after the merge, fro
 - 2026-11-19: run 44425406463 passed on the branch on each job. No run of the new workflow came before the close, because a
   workflow with `workflow_run` runs only from `main`; the evidence that replaces it is `LostRunnerTests` with the saved run
   44337062610, as the entry v0.400 says. Closed at v0.400; the merge waits for the owner.
+- 2026-11-20: the owner ordered "Merge it". TASK-0418 took v0.400 on `main` first (`e4d7b55`), so the branch merged
+  `main`: the ledger, the roadmap and the ADR index keep both rows, and this task moves to v0.401. Active until the
+  close.

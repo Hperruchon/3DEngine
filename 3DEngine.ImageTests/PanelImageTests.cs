@@ -94,7 +94,8 @@ public class PanelImageTests
     }
 
     // ADR-0032 items 5 and 11 (TASK-0094): the pad is a second window of dark pixels with bright
-    // glyphs, beside the panel, in a picture as large as the window of the desktop.
+    // glyphs, beside the panel, in a picture as large as the window of the desktop. ADR-0172 item 2 (TASK-0418): the pad takes
+    // the place of the panel, so it is the last window of the frame; until TASK-0418 it was the second.
     [VulkanImageFact]
     public void The_Pad_Draws_Its_Fields_And_Buttons_Over_The_Scene()
     {
@@ -138,7 +139,7 @@ public class PanelImageTests
             for (var frame = 0; frame < 3; frame++)
                 data = ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies);
             Assert.NotNull(ui.Pad);
-            pad = ui.PanelRectangles[1];
+            pad = ui.PanelRectangles[^1];
 
             pixels = target.Render((commandBuffer, framebuffer, extent) =>
                 renderer.Record(commandBuffer, framebuffer, extent, scene, camera,

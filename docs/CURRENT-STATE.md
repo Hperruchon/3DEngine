@@ -12009,9 +12009,54 @@ New tests: 9. The test list holds 2893 (1704 in `Engine.Tests`, 390 in `3DEngine
 in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.397, 0 product milestones
 and 2 entries followed it.
 
-## v0.400 — A run of CI whose only failures are jobs that GitHub gave no runner gets one automatic re-run, and no time limit decides the test of a report that blocks (P0.168, TASK-0417)
+## v0.400 — Each control stays free in ten states, the pad and the images are fixed parts of the layout, and the desktop window goes down to 360 by 560 (P0.169, TASK-0418)
 
-The owner asked on 2026-11-18 why many runs failed, answered "Yes, open a task", and ordered "then start TASK-0417". Of the 44
+The review of the responsive layout of 2026-11-18, in a side session. The owner asked for a review at each size with
+pictures, a fix of the small windows that are almost square, and a responsive window of the images. The review gave the
+owner its pictures and four questions. The owner answered "Q1 A, Q2 A". Before that, the owner chose a new left panel for
+a later task, and that choice gives A for Q3 and Q4 (ADR-0172, context). The same session recorded two more choices of the
+owner for that later task: the left panel becomes the tools of the part on the ring and a structure view, and its lists
+have rows of 30 pixels for a mouse or a pen. That task has no roadmap row and no register entry yet.
+
+**The change.**
+- The rows of a body end left of a tool of the ring beside the first row, and a later row ends above a tool of the ring in
+  their column. "Save as..." and "Import STL..." go to a new line when they do not fit. ADR-0172 item 1.
+- The pad is a fixed part of the layout in the place of the panel and of the rows, with keys that fill its width. A pad
+  with no room is compact (its fields on one line, and on a landscape display its keys on three lines under the command
+  line), and a compact pad that still has no room hides the anchors while it is open. The text of a wide key gets
+  smaller, to 0.7 of the font at least. ADR-0172 item 2.
+- The rows of a sketch end left of the command line and of the ring, and above a portrait ring. The ring of a sketch stays
+  inside the display, with its first tool under the command line. The caption "HISTORY" and a text of the history arc
+  stay off the anchors and inside the display. The home screen scrolls. ADR-0172 item 3.
+- The images are a fixed part of the layout: the button "Images..." in the panel and the command "Images" open them in the
+  place of the panel or of the rows, with "Close". ADR-0172 item 4.
+- The desktop window is at least 360 by 560 (until v0.400, 360 by 600). The layout test has ten states, and a third theory
+  holds each field and key of a pad inside the pad. ADR-0172 item 5, which amends ADR-0097, ADR-0099, ADR-0104, ADR-0113
+  and ADR-0163.
+
+**Proof.** A probe of the six new states found 367 faults at 17 sizes before the change and none after it. Three rounds
+of injections (35 in all), each restored from its saved text: each injection of code that stays failed a named test. Two
+injections first gave a compile error; their second form failed a test. Seven injections passed. One of them (the lines of
+keys of a landscape pad) then got its own test. The code of the other six had no case at a size of the window or of a
+phone, and it left the task: a rule for the path line on a narrow landscape display, two limits of the images, a limit of
+the rows, the fixed width of the window of "Cut with", and a gap of 8 pixels between keys. The real window at 360 by 560 showed a pad of three fields with its keys
+out of view, a fault that the test did not see; the test of the pad then failed on that code, and the compact pad fixed
+it. Pictures of the real window at 360 by 560, 900 by 560 and 1280 by 720 showed the pad and the images, a resize to 300 by
+300 stopped at 360 by 560, and the log had no message of the validation layer. The scale of the text of a key has no
+injection: the test reads the width of each key and of its text at the least scale, not the drawn text. A clean build
+gives 0 warnings, the phone project builds, `dotnet test` passes 2902 tests, and the write-set check and `eng/repo-gates`
+pass. The run on the branch is in the progress of TASK-0418. The failed runs since the entry v0.399, from the API: none on
+`main`. The first attempt of run 44416434810 on the branch `p0168-red-runs` failed in the job "Start the APK on the
+emulator", and its second attempt passed; that branch is not on `main`.
+
+New tests: 9. The test list holds 2902 (1704 in `Engine.Tests`, 390 in `3DEngine.Tests`, 805 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.397, 0 product milestones
+and 3 entries followed it.
+
+## v0.401 — A run of CI whose only failures are jobs that GitHub gave no runner gets one automatic re-run, and no time limit decides the test of a report that blocks (P0.168, TASK-0417)
+
+The owner asked on 2026-11-18 why many runs failed, answered "Yes, open a task", and ordered "then start TASK-0417" and
+"Merge it". TASK-0418 took v0.400 on `main` first, so the branch merged `main` and this entry is v0.401. Of the 44
 runs that started on 2026-11-18, 4 failed and none for a fault of the code: three for a macOS runner that GitHub did not give,
 and one for a time limit of 5 seconds on a slow Windows runner.
 
@@ -12037,8 +12082,10 @@ with `System.TimeoutException`, as in run 44409491212. A clean build gives 0 war
 write-set check and `eng/repo-gates` pass. The workflow runs only from `main`, so its first real run comes after the merge. The
 run on the branch is in the progress of TASK-0417. The failed runs since the entry v0.399, from the API: the first attempt of
 run 44416434810 on `74b45b8`, the opening of TASK-0417, failed in the step "Install the emulator and a system image of Android
-14"; the re-run of the owner passed. The re-run of run 44409491212 on `main`, which the entry v0.399 names, passed.
+14"; the re-run of the owner passed. The re-run of run 44409491212 on `main`, which the entry v0.399 names, passed. The first attempt of run 44425726090 on
+the branch `responsive-small-windows` (TASK-0418) failed on Windows, where `HttpConcurrencyTests` passed its time limit;
+the owner started a second attempt, and it passed. A lost runner was not the cause, so the new workflow keeps such a run red.
 
-New tests: 5. The test list holds 2898 (1709 in `Engine.Tests`, 390 in `3DEngine.Tests`, 796 in `3DEngine.ImageTests`, 3 in
+New tests: 5. The test list holds 2907 (1709 in `Engine.Tests`, 390 in `3DEngine.Tests`, 805 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.397, 0 product milestones and
-3 entries followed it.
+4 entries followed it.

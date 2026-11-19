@@ -47,7 +47,7 @@ internal sealed unsafe partial class DesktopUi
     // portrait display gives the program and the unit here, and the path line under them (item 5).
     private void TopBar(Vector2 displaySize, DocumentLine? document, LiveBody? body)
     {
-        var portrait = displaySize.X < displaySize.Y;
+        var portrait = Portrait(displaySize);
         var (left, top) = (16f + _inset.X, 16f + _inset.Y);
         var pad = PathPad;
         ImGui.SetNextWindowPos(new Vector2(left, portrait ? top : top - pad), ImGuiCond.Always);
@@ -324,6 +324,9 @@ internal sealed unsafe partial class DesktopUi
     private void FixedControls(Vector2 displaySize, IReadOnlyList<LiveBody> bodies, DocumentLine? document, LiveBody? body)
     {
         TopBar(displaySize, document, body);
+        // ADR-0172 item 2 (TASK-0418): a low pad takes the row of the anchors and of the status line while it is open.
+        if (_padLow)
+            return;
 
         // Undo and Redo at the bottom left (ADR-0031 item 11, amended by ADR-0080). Finding V118 of the codebase review of
         // 2026-11-06 (e) (TASK-0252): inside the safe area of the display, so that the navigation bar of the phone does not
@@ -343,7 +346,7 @@ internal sealed unsafe partial class DesktopUi
             // frames, so the row holds Undo, Redo and the step of Undo, as the render.
             // ADR-0108 item 2 (phase R18a, TASK-0332): a button as high as this window has its outline on the edge of the
             // window, where the clip of the window cuts it; so the outline is drawn 1 pixel inside the button.
-            if (displaySize.X < displaySize.Y)
+            if (Portrait(displaySize))
             {
                 ImGui.PushStyleVar(ImGuiStyleVar.FrameBorderSize, 0f);
                 ViewButtons();

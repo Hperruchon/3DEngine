@@ -477,8 +477,10 @@ Therefore each approved objective must have a track here.
   the centre lines of a flat view, a new sheet that names each view that does not fit, the commands of a sheet off the
   frame thread, the box of the drawn bodies, no gizmo on the paper, and the names of the skipped bodies. v0.399, TASK-0410,
   ADR-0165, ADR-0166, ADR-0167.
+- P0.169 — Each control stays free in ten states, the pad and the images are fixed parts of the layout, and the
+  desktop window goes down to 360 by 560. v0.400, TASK-0418, ADR-0172.
 - P0.168 — A run of CI whose only failures are jobs that GitHub gave no runner gets one automatic re-run, and the test of
-  a report that blocks has no time limit that decides its result. v0.400, TASK-0417, ADR-0173.
+  a report that blocks has no time limit that decides its result. v0.401, TASK-0417, ADR-0173.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -667,6 +669,7 @@ This track removes each condition that blocks other work.
 | P0.166 | The high finding of the codebase review of 2026-11-18 (b) (V202: a view that leaves the sheet during a drag of the sheet page stops the window), before the next product phase, R30e. TASK-0415. | 1 |
 | P0.167 | The medium and low findings of the codebase review of 2026-11-18 (b) (E221 to E225, V203 to V209: a cut point that gives infinite numbers, the time of a section of many facets, the axis of a cone, the size of a text, a move with no change, the Escape of a pad on the page, a section after its view goes, the row of the formats and a section together, two changes before a read, the paper of the phone, "Section" on a view that the engine refuses, and the name of an export on the phone), after the next product phase, R30e. TASK-0416. | 1–2 |
 | P0.168 | A run of the pipeline is red only for a fault of the code: one automatic re-run of a job whose macOS runner GitHub did not give, and no time limit that decides the test of a report that blocks (the question of the owner of 2026-11-18 on the failed runs). It can come at any place in the order. TASK-0417. | 1 |
+| P0.169 | The layout of small windows and of each state (the review of the responsive layout of 2026-11-18 and the answers of the owner, Q1 to Q4 A): the rows beside the ring, the pad and the images as fixed parts of the layout, the rows and the ring of a sketch, the history arc and the home screen inside the display, ten states in the layout test, and the desktop window down to 360 by 560 (ADR-0172). TASK-0418. | 1–2 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
 | P0.86 | The window keeps no input between sessions, the hook has the cases of one axis, and the next forms of four gates fail (V88 to V90, T141 to T144 of the codebase review of 2026-11-06; after the next product phase). TASK-0198. | 1–2 |
 

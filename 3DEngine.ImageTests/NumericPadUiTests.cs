@@ -322,7 +322,8 @@ public sealed class NumericPadUiTests
     }
 
     // V33: while the pad is open, the text fields of the panel are disabled. A press on the file
-    // name field made it active, so it kept the keys after the pad closed.
+    // name field made it active, so it kept the keys after the pad closed. ADR-0172 item 2 (TASK-0418): the pad takes the
+    // place of the panel, so no field of the panel shows while it is open; until TASK-0418 the test pressed the filter.
     [Fact]
     public void The_Text_Fields_Are_Disabled_While_The_Pad_Is_Open()
     {
@@ -345,11 +346,7 @@ public sealed class NumericPadUiTests
         }
         Assert.NotNull(ui.Pad);
 
-        // ADR-0102 item 1 (TASK-0316): the panel has no file name field, so the test uses the filter of the bodies.
-        var field = Centre(ui, DesktopUi.FilterLabel);
-        Draw(new PointerSample(DeviceKind.Mouse, 1, 0, field.X, field.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Down, 0));
-        Draw(new PointerSample(DeviceKind.Mouse, 1, 0, field.X, field.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Up, 0));
-        Draw();
+        Assert.Null(ui.ItemRectangle(DesktopUi.FilterLabel));
         Draw(new KeySample(InputKey.Escape, true, KeyModifiers.None, 0));
         Draw();
         Assert.Null(ui.Pad);
@@ -425,9 +422,11 @@ public sealed class NumericPadUiTests
     {
         using var ui = WithNewBoxPad();
 
+        // ADR-0172 item 2 (TASK-0418): the pad takes the place of the panel, so the list "New" does not show while the pad is
+        // open; New_Cylinder_Opens_A_Pad_Of_Two_Values_And_An_Apply_Gives_Them checks its height. Until TASK-0418 this test read
+        // the list "New" under the open pad too.
         var items = DesktopUi.PadRows.SelectMany(row => row).Select(DesktopUi.PadItem)
-            .Concat(new[] { "x", "y", "z" }.Select(DesktopUi.PadItem))
-            .Append(DesktopUi.NewLabel);
+            .Concat(new[] { "x", "y", "z" }.Select(DesktopUi.PadItem));
         foreach (var item in items)
         {
             var rectangle = ui.ItemRectangle(item) ?? throw new InvalidOperationException($"The pad has no control {item}.");
