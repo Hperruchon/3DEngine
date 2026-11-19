@@ -374,13 +374,15 @@ public sealed class ProjectPathTests : IDisposable
     }
 
     // Finding V154 of the codebase review of 2026-11-09 (TASK-0324): at 1440 x 900 the folded window "Images" starts under the
-    // top bar, so the folder of the top bar does not run under it.
+    // top bar, so the folder of the top bar does not run under it. ADR-0172 item 4 (TASK-0418): the open images start under
+    // the top bar, in the place of the panel.
     [Fact]
     public void The_Folder_Of_The_Top_Bar_Is_Not_Under_The_Window_Of_The_Images()
     {
         using var ui = new DesktopUi(string.Empty, Document.Millimetre);
         var folder = Path.Combine("C:", "Users", "owner", "Documents", "3DProjects", "EntryHallShelf");
         var line = new DocumentLine("EntryHallShelf.3de", null, Files: true, Folder: folder);
+        ui.OpenImages();
         for (var frame = 0; frame < 2; frame++)
         {
             ui.Route([]);
@@ -388,7 +390,7 @@ public sealed class ProjectPathTests : IDisposable
         }
 
         var shown = ui.ItemRectangle(DesktopUi.TitleFolderItem) ?? throw new InvalidOperationException("No folder in the top bar.");
-        var images = ui.PanelRectangles.Single(window => Math.Abs(window.X - 492f) < 1f);
+        var images = ui.ImagesRectangle ?? throw new InvalidOperationException("The images did not open.");
         var apart = shown.Z <= images.X || shown.X >= images.Z || shown.W <= images.Y || shown.Y >= images.W;
         Assert.True(apart, $"The folder at {shown} is under the window of the images at {images}.");
     }

@@ -531,9 +531,11 @@ public sealed class ToolRingTests
 
     // Finding V135 of the codebase review of 2026-11-07 (c) (TASK-0281): a tap on a segment of the ring that lies over a window
     // is the tap of the window only. While an item of the window is active, the window counted as not hovered, so until
-    // TASK-0281 the ring took the release too, and one tap gave two actions.
+    // TASK-0281 the ring took the release too, and one tap gave two actions. ADR-0172 item 3 (TASK-0418): on a portrait
+    // display the rows of a sketch end 8 pixels above the ring, so no segment is under them now, and the rule of V135 has no
+    // case at 390 by 844. Until TASK-0418 this test tapped each segment under the window.
     [Fact]
-    public void A_Tap_On_A_Segment_Over_A_Window_Is_The_Tap_Of_The_Window_Only()
+    public void No_Segment_Of_A_Portrait_Sketch_Ring_Is_Under_The_Window_Of_The_Sketch()
     {
         var display = new Vector2(390, 844);
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
@@ -556,16 +558,8 @@ public sealed class ToolRingTests
             .Select(tool => (tool.Label, Rectangle: ui.ItemRectangle(DesktopUi.RingItem(tool.Label))))
             .Where(item => item.Rectangle is { } r && (r.X + r.Z) / 2 >= window.X && (r.X + r.Z) / 2 < window.Z && (r.Y + r.W) / 2 >= window.Y && (r.Y + r.W) / 2 < window.W)
             .ToList();
-        Assert.NotEmpty(covered);
-        foreach (var (label, rectangle) in covered)
-        {
-            var at = new Vector2((rectangle!.Value.X + rectangle.Value.Z) / 2, (rectangle.Value.Y + rectangle.Value.W) / 2);
-            Frame(new PointerSample(DeviceKind.Touch, 1, 3, at.X, at.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Down, 0));
-            Frame(new PointerSample(DeviceKind.Touch, 1, 3, at.X, at.Y, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Up, 0));
-            Frame();
-            var actions = ui.TakeActions();
-            Assert.False(actions.Any(action => action is SketchToolAction or FinishSketchAction), $"A tap on {label} at {at}, over the window, gave {string.Join(", ", actions)}.");
-        }
+        Assert.Contains(DesktopUi.SketchRingTools, tool => ui.ItemRectangle(DesktopUi.RingItem(tool.Label)) is not null);
+        Assert.Empty(covered);
     }
 
     // Finding V136 of the codebase review of 2026-11-07 (c) (TASK-0281): on a portrait display of 390 by 844, no segment of the
@@ -651,12 +645,12 @@ public sealed class ToolRingTests
         Assert.All(layout.Segments(labels), segment => Assert.True(layout.Middle(segment).X > 496f, $"The segment {segment.Label} is under the rows."));
     }
 
-    // The review of Codex of v0.265 (TASK-0284): the Images window comes after the ring in the frame. While it is open over a
-    // segment, the window of the sketch keeps the button of that segment. Until TASK-0284 the check did not see the Images
-    // window, and Line had no place for a tap. ADR-0097 (TASK-0308): the ring is on the right of the sketch, so the sketch is at
-    // x 600 for Line to be under the Images window.
+    // The review of Codex of v0.265 (TASK-0284): the Images window comes after the ring in the frame. While it was open over a
+    // segment, the window of the sketch kept the button of that segment. ADR-0172 item 4 (TASK-0418): the images do not show
+    // while a sketch is active, so no segment is under them, and they show again after the sketch. Until TASK-0418 this test
+    // opened the window over Line with a tap on the arrow of its title bar.
     [Fact]
-    public void A_Segment_Under_The_Images_Window_Keeps_Its_Button_In_The_Window_Of_The_Sketch()
+    public void The_Images_Do_Not_Show_While_A_Sketch_Is_Active()
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         var (start, end, line) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
@@ -670,23 +664,18 @@ public sealed class ToolRingTests
             ui.Frame(1f / 60f, Display, Vector2.One, [], null, null, sketchPanel: panel, imagePanel: images, ringCentre: new Vector2(600, 360), ringBody: 60f);
         }
 
+        ui.OpenImages();
         for (var frame = 0; frame < 3; frame++)
             Frame();
 
-        // The Images window starts folded at (492, 16); a tap on the arrow of its title bar opens it.
-        var folded = ui.PanelRectangles.Single(window => Math.Abs(window.X - 492f) < 1f);
-        var arrow = new Vector2(folded.X + 24f, (folded.Y + folded.W) / 2f);
-        Frame(new PointerSample(DeviceKind.Mouse, 1, 0, arrow.X, arrow.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Down, 0));
-        Frame(new PointerSample(DeviceKind.Mouse, 1, 0, arrow.X, arrow.Y, 1, PointerButtons.Left, KeyModifiers.None, PointerPhase.Up, 0));
-        Frame(new PointerSample(DeviceKind.Mouse, 1, 0, 1200, 700, 1, PointerButtons.None, KeyModifiers.None, PointerPhase.Move, 0));
-        Frame();
-        Frame();
+        Assert.Null(ui.ImagesRectangle);
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.LineToolLabel)));
+        for (var frame = 0; frame < 3; frame++)
+        {
+            ui.Route([]);
+            ui.Frame(1f / 60f, Display, Vector2.One, [], null, null, imagePanel: images);
+        }
 
-        var open = ui.PanelRectangles.Single(window => Math.Abs(window.X - 492f) < 1f);
-        Assert.True(open.W - open.Y > 100f, $"The Images window at {open} did not open.");
-        var segment = ui.ItemRectangle(DesktopUi.RingItem(DesktopUi.LineToolLabel)) ?? throw new InvalidOperationException("No segment Line.");
-        var middle = new Vector2((segment.X + segment.Z) / 2, (segment.Y + segment.W) / 2);
-        Assert.True(middle.X >= open.X && middle.X < open.Z && middle.Y >= open.Y && middle.Y < open.W, $"Line at {middle} is not under the Images window at {open}.");
-        Assert.NotNull(ui.ItemRectangle(DesktopUi.SketchItem(DesktopUi.LineToolLabel)));
+        Assert.NotNull(ui.ImagesRectangle);
     }
 }

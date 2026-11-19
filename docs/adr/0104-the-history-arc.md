@@ -7,7 +7,7 @@ date: 2026-11-09
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0116', '0119', '0123', '0130']
+amended-by: ['0116', '0119', '0123', '0130', '0172']
 affects:
   - 3DEngine.App/Ui/DesktopUi.History.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -76,7 +76,9 @@ The owner chose the slice and its merge after green CI; the recommendations answ
    that is not consumed, the selection of that body. The nodes are a part of the panels for a tap.
 3. **The place (Q3 A).** The arc has the centre of the ring of the selected body and the radius of the middle of its band,
    from the lower left (135°) down to the bottom, where the tools of a body are not; the newest node is at the upper end. The
-   caption "HISTORY" is at the left of the lower end. The arc does not show while a pad is open.
+   caption "HISTORY" is at the left of the lower end, or over the upper end when it has no room there inside the display
+   and off the fixed controls; a text of a node on a fixed control is at the right of its node (ADR-0172 item 3). The arc
+   does not show while a pad is open.
 4. **No contract change.** Nothing enters the log; the arc is a view of the query.
 
 ## Consequences
@@ -96,3 +98,5 @@ The owner chose the slice and its merge after green CI; the recommendations answ
   first input, and gives it after the six newest steps when it is not one of them (finding V168).
 - 2026-11-14 · TASK-0358 · ADR-0130 item 2: while a proposal with a named value shows, a pending node "C1 to 75 ?" one step
   above the newest node.
+- 2026-11-18 · TASK-0418 · ADR-0172 item 3 amends item 3: the caption goes over the upper end when it has no room under
+  the lower end, and a text on a fixed control goes to the right of its node.

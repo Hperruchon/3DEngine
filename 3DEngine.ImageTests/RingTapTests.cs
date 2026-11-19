@@ -180,46 +180,32 @@ public sealed class RingTapTests
     }
 
     // Finding V169 of the codebase review of 2026-11-12 (TASK-0350): with the body at the upper left of a small display, the
-    // target of a segment of the ring is under the row "Made from". A tap there opens the sketch one time, and no pad opens.
-    // Until TASK-0350 the tap opened the pad of Move, or gave two actions.
+    // target of a segment of the ring was under the row "Made from". A tap there opened the pad of Move, or gave two actions,
+    // until TASK-0350 gave each tap on a row to the rows only. ADR-0172 item 1 (TASK-0418): on a landscape display the column of
+    // the rows ends left of a tool beside the first row, and a later row does not show where a tool is, so no row is over a
+    // target now. Until TASK-0418 this test tapped a target under "Made from"; the rule of TASK-0350 stays in the code.
     [Theory]
     [InlineData(640, 360)]
     [InlineData(1024, 576)]
-    public void A_Tap_On_Made_From_Over_A_Segment_Gives_One_Action(int width, int height)
+    public void No_Row_Is_Over_A_Target_Of_The_Ring(int width, int height)
     {
         var display = new Vector2(width, height);
         var sketch = Guid.Parse("65000000-0000-0000-0000-000000000001");
         IReadOnlyList<HistoryStep> history =
             [new(Body, "Extrude", "Fond", "correct", null, HistoryTap.None), new(sketch, "CreateSketch", "Plate on XY", "correct", null, HistoryTap.EditSketch, MadeFrom: true)];
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
-        void Frame(params InputSample[] samples)
-        {
-            ui.Route(samples);
+        for (var frame = 0; frame < 3; frame++)
             ui.Frame(1f / 60f, display, Vector2.One, [Extrude], Body, null, ringCentre: Vector2.Zero, ringBody: 40f, history: history);
-        }
 
-        Frame();
-        Frame();
-        var row = ui.ItemRectangle(DesktopUi.MadeFromItem) ?? throw new InvalidOperationException("No row Made from.");
-        var ring = ui.RingLayoutOfFrame ?? throw new InvalidOperationException("No ring.");
-        Vector2? over = null;
-        for (var y = row.Y + 1; y < row.W - 1 && over is null; y += 2)
+        var rows = new[] { DesktopUi.RowsTitleItem, DesktopUi.MadeFromItem }.Select(ui.ItemRectangle).OfType<Vector4>().ToList();
+        Assert.NotEmpty(rows);
+        Assert.NotEmpty(ui.RingLabels);
+        foreach (var label in ui.RingLabels)
         {
-            for (var x = row.X + 1; x < row.Z - 1 && over is null; x += 2)
-            {
-                if (ring.At(ui.RingLabels, new Vector2(x, y)) is { } label && ui.RingTarget(label) is { } target && Inside(target, new Vector2(x, y)))
-                    over = new Vector2(x, y);
-            }
+            var box = ui.RingTarget(label) ?? throw new InvalidOperationException($"No target of {label}.");
+            foreach (var row in rows)
+                Assert.False(box.X < row.Z && row.X < box.Z && box.Y < row.W && row.Y < box.W, $"{width}x{height}: {label} {box} is under the row {row}.");
         }
-
-        var at = over ?? throw new InvalidOperationException($"{width}x{height}: no target of the ring is under the row Made from.");
-        ui.TakeActions();
-        Frame(Pointer(DeviceKind.Mouse, at, PointerPhase.Move, 0));
-        Frame(Pointer(DeviceKind.Mouse, at, PointerPhase.Down, 10));
-        Frame(Pointer(DeviceKind.Mouse, at, PointerPhase.Up, 20));
-        Frame();
-        Assert.Equal([new EditSketchAction(sketch)], ui.TakeActions());
-        Assert.Null(ui.Pad);
     }
 
     // Finding V170 of the codebase review of 2026-11-12 (TASK-0350): the red state of a failed step of the arc and the plate of

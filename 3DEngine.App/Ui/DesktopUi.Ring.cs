@@ -92,7 +92,7 @@ internal sealed unsafe partial class DesktopUi
     internal static RingLayout Layout(Vector2 display, Vector2 centre, int count, float body = 0f, Vector4 inset = default, float anchorsTop = float.MaxValue)
     {
         var span = (count * RingSegment) + ((count - 1) * RingGap);
-        if (display.X < display.Y)
+        if (Portrait(display))
         {
             var segment = Math.Min(RingSegment, ((MathF.PI / 2f) - ((count - 1) * RingGap)) / Math.Max(count, 1));
             // ADR-0086 item 3 (TASK-0275): the inner radius grows when a narrow segment would be less than 46 pixels at it
@@ -126,7 +126,11 @@ internal sealed unsafe partial class DesktopUi
     // the right side, as the ring of a body and the render. The centre moves left only as far as the band needs to stay 16
     // pixels inside the display, and never left of the right edge of the rows, so no segment is under them. Until TASK-0308
     // the window of the sketch was at the right and the segments went down on the left side.
-    internal static RingLayout SketchLayout(Vector2 display, Vector2 centre, int count, float sketch, float rowsRight)
+    // ADR-0172 item 3 (TASK-0418): the ring stays inside the display when the rows of the sketch leave it no room at their
+    // right, and the rows then end left of it (ActiveSketchRows). Its first tool starts under a line "above", the bottom of
+    // the command line on a landscape display. Until TASK-0418 the ring went past the right edge at 600 by 560, and its
+    // first tool was under the command line at 640 by 360.
+    internal static RingLayout SketchLayout(Vector2 display, Vector2 centre, int count, float sketch, float rowsRight, float above = 0f)
     {
         var span = (count * RingSegment) + ((count - 1) * RingGap);
         // ADR-0120 item 2 (phase R18f, TASK-0347): the rule of the span of a body ring (ADR-0119 item 2), so the tools of a sketch
@@ -135,11 +139,15 @@ internal sealed unsafe partial class DesktopUi
         var target = (RingSpan - ((count - 1) * RingGap)) / Math.Max(count, 1);
         var inner = Math.Min(Math.Max(Math.Max(100f, sketch + 24f), target < RingSegment ? (ValueSize + 2f) / target : 0f), Math.Max(100f, (display.Y / 2f) - 16f - RingBand));
         var reach = inner + RingBand + 16f;
-        var x = Math.Max(Math.Min(centre.X, display.X - reach), rowsRight);
+        var x = Math.Max(Math.Min(centre.X, display.X - reach), Math.Min(rowsRight, display.X - reach));
         var y = Math.Clamp(centre.Y, reach, Math.Max(reach, display.Y - reach));
         var segment = Math.Min(RingSegment, Math.Max(target, (ValueSize + 2f) / inner));
         var narrowed = (count * segment) + ((count - 1) * RingGap);
-        return new RingLayout(new Vector2(x, y), inner, -narrowed / 2f, 1f, segment);
+        var start = -narrowed / 2f;
+        var outer = inner + RingBand;
+        if (above > 0f && y - outer < above)
+            start = Math.Max(start, -MathF.Asin(Math.Clamp((y - above) / outer, -1f, 1f)));
+        return new RingLayout(new Vector2(x, y), inner, start, 1f, segment);
     }
 
     // Finding V135 of the codebase review of 2026-11-07 (c) (TASK-0281): a release over a window belongs to the window. While an
@@ -197,6 +205,10 @@ internal sealed unsafe partial class DesktopUi
     // Finding V186 (TASK-0373): the tools of this frame that hide under an end of the arc of a proposal.
     private HashSet<string> _hiddenTools = [];
 
+    // ADR-0172 item 1 (TASK-0418): the target of each tool of a body ring of the last frame, also of a tool that a proposal
+    // hides, so the column of the rows does not change when a tool hides.
+    private List<Vector4> _ringBoxes = [];
+
     internal IReadOnlySet<string> HiddenTools => _hiddenTools;
 
     internal Vector4? RingTarget(string label) => _ringTargets is { } targets && targets.TryGetValue(label, out var target) ? target : null;
@@ -237,7 +249,7 @@ internal sealed unsafe partial class DesktopUi
     {
         var size = ImGui.GetFontSize();
         var text = ImGui.CalcTextSize(RingText(segment.Label));
-        if (displaySize.X >= displaySize.Y || text.X <= 0f)
+        if (!Portrait(displaySize) || text.X <= 0f)
             return (text, size);
         var segments = ring.Segments(labels);
         var at = segments.ToList().FindIndex(other => other.Label == segment.Label);
@@ -375,7 +387,7 @@ internal sealed unsafe partial class DesktopUi
             // ADR-0119 item 1: "Rename" after them on a landscape display, where it opens the name field of the rows. ADR-0131
             // item 1 (phase R18k, TASK-0360): a portrait display has no "Rename" on the thumb ring; a tap on the first row of the
             // rows under the part opens the name field. Until TASK-0360 the panel kept the name field on a portrait display.
-            if (displaySize.X >= displaySize.Y)
+            if (!Portrait(displaySize))
                 labels.Add(RenameLabel);
             if (_face is { CanSketch: true })
                 labels.Add(SketchOnFaceButtonLabel);
@@ -383,12 +395,12 @@ internal sealed unsafe partial class DesktopUi
 
         // ADR-0097 item 4 (the redesign, slice n, TASK-0308): on a landscape display the ring of a sketch is on the right of the
         // sketch, and right of the rows of the sketch of the last frame, which are at the left in the place of the panel.
-        var sketchRing = _sketchActive && displaySize.X >= displaySize.Y;
+        var sketchRing = _sketchActive && !Portrait(displaySize);
 
         // ADR-0119 item 2: on a landscape body ring that has no room for each tool in RingSpan, "Rename" and then "Edit sketch" leave
         // the ring; the first row of the rows renames the body, and the row "Made from" opens its sketch.
         // ADR-0122 item 1 (phase R20b, TASK-0348): then "Dimensions" leaves; the command line and the panel keep its toggle.
-        if (!_sketchActive && body is not null && displaySize.X >= displaySize.Y)
+        if (!_sketchActive && body is not null && !Portrait(displaySize))
         {
             foreach (var spare in new[] { RenameLabel, EditSketchLabel, DimensionsLabel })
             {
@@ -399,7 +411,7 @@ internal sealed unsafe partial class DesktopUi
             }
         }
         var ring = sketchRing
-            ? SketchLayout(displaySize, at, labels.Count, size, _sketchWindow?.Z ?? 0f)
+            ? SketchLayout(displaySize, at, labels.Count, size, _sketchWindow?.Z ?? 0f, Portrait(displaySize) ? 0f : 16f + _inset.Y + MinimumControlHeight + 8f)
             : Layout(displaySize, at, labels.Count, size, _inset, _anchorsTop);
         _ring = ring;
         _ringLabels = labels;
@@ -418,6 +430,8 @@ internal sealed unsafe partial class DesktopUi
         // end of the arc of the last frame, or on its word, does not show and takes no tap; it shows again after the accept or
         // the reject. The arc takes the tap there first (finding V160), so the tool took no tap before either, and its picture
         // said that it did.
+        // ADR-0172 item 1 (TASK-0418): the targets before the tools under a proposal leave, which the rows of the next frame read.
+        _ringBoxes = _ringTargets is { } all ? [.. all.Values] : [];
         _hiddenTools = [];
         if (_ringTargets is { } reachable && _proposals.Count > 0)
         {
@@ -467,7 +481,7 @@ internal sealed unsafe partial class DesktopUi
         var list = ImGui.GetBackgroundDrawList();
         var colours = ImGui.GetStyle().Colors;
         // ADR-0095 item 1 (TASK-0306): the guide of a landscape ring, under its segments.
-        var landscape = displaySize.X >= displaySize.Y;
+        var landscape = !Portrait(displaySize);
         if (landscape)
             RingGuide(list, ring);
         foreach (var (segment, face) in faces)
