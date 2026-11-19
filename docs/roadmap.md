@@ -477,6 +477,8 @@ Therefore each approved objective must have a track here.
   the centre lines of a flat view, a new sheet that names each view that does not fit, the commands of a sheet off the
   frame thread, the box of the drawn bodies, no gizmo on the paper, and the names of the skipped bodies. v0.399, TASK-0410,
   ADR-0165, ADR-0166, ADR-0167.
+- P0.168 — A run of CI whose only failures are jobs that GitHub gave no runner gets one automatic re-run, and the test of
+  a report that blocks has no time limit that decides its result. v0.400, TASK-0417, ADR-0173.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.

@@ -105,31 +105,46 @@ public class EngineHostSubscriptionTests
     }
 
     // E67: a report that blocked held the serial section for its whole wait.
+    // TASK-0417 (ADR-0173): the report blocks until the test releases it, after the Apply and the Read ended, so a report in the
+    // commit can never let them end, and the speed of the runner does not decide the result. Hang only stops a test that waits
+    // for ever. Until TASK-0417 the report blocked for 30 seconds and the test gave the first Apply of a new host 5 seconds; a
+    // slow runner on Windows passed that limit in run 42927620137 and in run 44409491212.
     [Fact]
     public async Task A_Report_That_Blocks_Does_Not_Hold_The_Session()
     {
         using var host = new EngineHost(new InProcessMeshBackend());
         using var release = new ManualResetEventSlim();
-        host.Broadcaster.Report = _ => release.Wait(Limit);
+        var reported = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var returned = 0;
+        host.Broadcaster.Report = _ =>
+        {
+            reported.TrySetResult();
+            release.Wait();
+            Interlocked.Exchange(ref returned, 1);
+        };
         using var failing = host.Subscribe(_ => throw new InvalidOperationException("a defect of the host"));
 
         try
         {
             // On the thread pool: a commit with no real wait runs to its end before
             // Apply returns its task, so a report that blocked the commit would also
-            // block this line and pass the limit below.
+            // block this line until the test releases the report.
             var apply = Task.Run(() => host.Session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 }));
-            var read = await apply.WaitAsync(TimeSpan.FromSeconds(5))
-                .ContinueWith(_ => host.Session.Read((document, _) => document.Version)).Unwrap()
-                .WaitAsync(TimeSpan.FromSeconds(5));
+            await apply.WaitAsync(Hang);
+            var read = await host.Session.Read((document, _) => document.Version).WaitAsync(Hang);
+            await reported.Task.WaitAsync(Hang);
 
             Assert.Equal(1, read);
+            Assert.Equal(0, Volatile.Read(ref returned));
         }
         finally
         {
             release.Set();
         }
     }
+
+    // TASK-0417: the limit of a wait that only stops a test that waits for ever. It decides no result of a test that passes.
+    private static readonly TimeSpan Hang = TimeSpan.FromSeconds(60);
 
     // Finding E63 (TASK-0074): an action cannot change the payload that the ring of
     // /events keeps.

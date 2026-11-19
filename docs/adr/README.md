@@ -177,6 +177,7 @@ names. Do not read all of them.
 | [0169](0169-the-section-view-of-a-sheet.md) | A section of a sheet is a view with a cut plane, a parent and a letter, and the read gives its hatch, its cut line and its label | Amended | Contracts, drawing | 0153, 0155, 0159, 0160, 0161, 0165 | 0171 |
 | [0170](0170-export-a-sheet-from-the-window.md) | The sheet page and the command line export a sheet as PDF, SVG or DXF through the save dialog of the system, off the frame thread | Accepted | Drawing, window, export | 0168 | — |
 | [0171](0171-the-section-action-of-the-sheet-page.md) | On the sheet page a person cuts a view with "Section", a look and two taps, and the page draws the section as the files do | Accepted | Drawing, window | 0155, 0168, 0169 | — |
+| [0173](0173-a-lost-runner-gets-one-automatic-re-run.md) | A run of CI whose only failures are jobs that GitHub gave no runner gets one automatic re-run, and no time limit decides a test that passes | Accepted | Pipeline | — | — |
 
 ## Topics
 

@@ -1,0 +1,407 @@
+{
+  "run": {
+    "id": 44416434810,
+    "name": "CI",
+    "conclusion": "failure",
+    "run_attempt": 1
+  },
+  "jobs": [
+    {
+      "id": 135197853633,
+      "name": "Build the APK of the phone",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install the workload of .NET for Android",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install the Android dependencies of the program",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build the APK",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check the platforms of the projects of the phone",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check the native libraries of the APK",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the APK",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 135197853861,
+      "name": "Gate on ubuntu-latest",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Report the runner",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install lavapipe and the validation layers",
+          "conclusion": "success"
+        },
+        {
+          "name": "Test",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the determinism hash",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the picture of the image test",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Count the tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Smoke test the command-line host with NoOp",
+          "conclusion": "success"
+        },
+        {
+          "name": "Smoke test the geometry path with CreateBox",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 135197854003,
+      "name": "Gate on windows-latest",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Report the runner",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install lavapipe and the validation layers",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Test",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the determinism hash",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the picture of the image test",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Count the tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Smoke test the command-line host with NoOp",
+          "conclusion": "success"
+        },
+        {
+          "name": "Smoke test the geometry path with CreateBox",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 135197854034,
+      "name": "Write set of the governing task",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build the judge from main",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check each commit against the write set of its task",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run the repository gates",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 135197854088,
+      "name": "Gate on macos-latest",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Report the runner",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install lavapipe and the validation layers",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Test",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the determinism hash",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the picture of the image test",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Count the tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Smoke test the command-line host with NoOp",
+          "conclusion": "success"
+        },
+        {
+          "name": "Smoke test the geometry path with CreateBox",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 135198991353,
+      "name": "Start the APK on the emulator",
+      "conclusion": "failure",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Take the APK",
+          "conclusion": "success"
+        },
+        {
+          "name": "Permit the emulator to use KVM",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install the emulator and a system image of Android 14",
+          "conclusion": "failure"
+        },
+        {
+          "name": "Start the emulator",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Run the smoke test",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Keep the determinism hash of the phone",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Keep the log of Android",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 135203220947,
+      "name": "Compare the determinism hashes",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Take the hash of each runner",
+          "conclusion": "success"
+        },
+        {
+          "name": "Compare the hashes",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ],
+  "annotations": {
+    "135198991353": [
+      {
+        "annotation_level": "warning",
+        "message": "Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/download-artifact@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/"
+      },
+      {
+        "annotation_level": "failure",
+        "message": "Process completed with exit code 1."
+      },
+      {
+        "annotation_level": "notice",
+        "message": "\"The ubuntu-latest label will migrate to Ubuntu 26 beginning October 19, 2026. For more information, see https://github.com/actions/runner-images/issues/14748\""
+      }
+    ]
+  }
+}

@@ -1,0 +1,382 @@
+{
+  "run": {
+    "id": 44409491212,
+    "name": "CI",
+    "conclusion": "failure",
+    "run_attempt": 1
+  },
+  "jobs": [
+    {
+      "id": 135173496063,
+      "name": "Gate on windows-latest",
+      "conclusion": "failure",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Report the runner",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install lavapipe and the validation layers",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Test",
+          "conclusion": "failure"
+        },
+        {
+          "name": "Keep the determinism hash",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Keep the picture of the image test",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Count the tests",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Smoke test the command-line host with NoOp",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Smoke test the geometry path with CreateBox",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Set up .NET",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 135173496556,
+      "name": "Gate on macos-latest",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Report the runner",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install lavapipe and the validation layers",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Test",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the determinism hash",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the picture of the image test",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Count the tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Smoke test the command-line host with NoOp",
+          "conclusion": "success"
+        },
+        {
+          "name": "Smoke test the geometry path with CreateBox",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 135173496603,
+      "name": "Build the APK of the phone",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install the workload of .NET for Android",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install the Android dependencies of the program",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build the APK",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check the platforms of the projects of the phone",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check the native libraries of the APK",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the APK",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 135173496610,
+      "name": "Gate on ubuntu-latest",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Report the runner",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install lavapipe and the validation layers",
+          "conclusion": "success"
+        },
+        {
+          "name": "Test",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the determinism hash",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the picture of the image test",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Count the tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Smoke test the command-line host with NoOp",
+          "conclusion": "success"
+        },
+        {
+          "name": "Smoke test the geometry path with CreateBox",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 135173496825,
+      "name": "Write set of the governing task",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build the judge from main",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check each commit against the write set of its task",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run the repository gates",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 135174701814,
+      "name": "Start the APK on the emulator",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Take the APK",
+          "conclusion": "success"
+        },
+        {
+          "name": "Permit the emulator to use KVM",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install the emulator and a system image of Android 14",
+          "conclusion": "success"
+        },
+        {
+          "name": "Start the emulator",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run the smoke test",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the determinism hash of the phone",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the log of Android",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 135176553909,
+      "name": "Compare the determinism hashes",
+      "conclusion": "skipped",
+      "steps": []
+    }
+  ],
+  "annotations": {
+    "135173496063": [
+      {
+        "annotation_level": "warning",
+        "message": "Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/setup-dotnet@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/"
+      },
+      {
+        "annotation_level": "failure",
+        "message": "Process completed with exit code 1."
+      },
+      {
+        "annotation_level": "failure",
+        "message": "System.TimeoutException : The operation has timed out.\nat Engine.Tests.Http.EngineHostSubscriptionTests.A_Report_That_Blocks_Does_Not_Hold_The_Session() in D:\\a\\3DEngine\\3DEngine\\Engine.Tests\\Http\\EngineHostSubscriptionTests.cs:line 122\n--- End of stack trace from previous location ---"
+      }
+    ]
+  }
+}
