@@ -1,21 +1,28 @@
 ---
 id: 0417
 title: A run of the pipeline is red only for a fault of the code, not for a lost macOS runner or a slow Windows runner
-status: Ready
+status: Active
 phase: P0.168
 opened: 2026-11-18
 depends-on: []
-governed-by: []
+governed-by: [0173]
 writes:
   create:
     - tasks/TASK-0417-a-run-is-red-only-for-a-fault-of-the-code.md
     - .github/workflows/rerun-lost-runner.yml
+    - eng/lost-runner.js
+    - Engine.Tests/Pipeline/LostRunnerTests.cs
+    - Engine.Tests/Pipeline/LostRunner/lost-macos-runner.json
+    - Engine.Tests/Pipeline/LostRunner/failed-test.json
+    - Engine.Tests/Pipeline/LostRunner/failed-emulator-install.json
+    - docs/adr/0173-a-lost-runner-gets-one-automatic-re-run.md
   modify:
     - Engine.Tests/Http/EngineHostSubscriptionTests.cs
     - docs/templates.md
     - docs/adr/README.md
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
+    - eng/test-floor.txt
   forbid:
     - Engine.Contracts/**
     - Engine.Kernel/**
@@ -55,8 +62,8 @@ A lost macOS runner gets one automatic re-run, and the test of a report that blo
    acquired by Runner" and no other failure, it asks GitHub for one re-run of the failed jobs
    (`POST /repos/{owner}/{repo}/actions/runs/{run_id}/rerun-failed-jobs`). It does no re-run of a second attempt, and no
    re-run for a failed test or step.
-2. The token of the new workflow has `actions: write` only, and the workflow checks out no code of the branch of the run. A
-   new ADR (the next free
+2. The token of the new workflow has `actions: write`, `checks: read` and `contents: read` only, and the workflow checks out
+   no code of the branch of the run. A new ADR (the next free
    number at the start) records the reason: a run with `workflow_run` runs the file of the default branch with a token that
    can write, so the workflow must run no file of the branch of the run.
 3. The log of the new workflow names the run that it re-ran, so a session can list a failed first attempt for the ledger
@@ -74,8 +81,8 @@ A lost macOS runner gets one automatic re-run, and the test of a report that blo
 
 ## Acceptance criteria
 
-- [ ] A first injection gives the new workflow a run whose failed job has a failed step, and the workflow starts no re-run.
-- [ ] The test of a report that blocks fails when the report holds the serial section (an injection that calls the report
+- [x] A first injection gives the new workflow a run whose failed job has a failed step, and the workflow starts no re-run.
+- [x] The test of a report that blocks fails when the report holds the serial section (an injection that calls the report
       inside the commit), and passes with a delay of 10 seconds before the first Apply.
 - [ ] A run of the new workflow on `main` re-runs a run with a lost macOS runner, or the ledger says that no such run came
       before the close, and names the evidence that replaces it.
@@ -90,3 +97,19 @@ of run 44337062610 (lost runner) and run 44409491212 (failed test), saved from t
 (`docs/templates.md`, section 2): the write set names it exactly. The first commit adds the path of the new ADR to the write
 set, and the path of a script if the choice goes into one (for example `eng/lost-runner.js`, which the workflow reads from
 the default branch).
+
+## Method
+
+Mechanical: the choice with three saved runs and five changed copies; eleven injections (`inject0417.js` of the session).
+Judgement:  a job that did not pass counts as lost only with the annotation of the level "failure" and no failed step; the
+            emulator install is a failed step, so it stays red. The report of the test blocks with no limit, and the
+            test releases it; 60 seconds only stops a hang.
+Weakest:    the workflow and the calls of the API run first after the merge, from `main`; the tests check the choice and
+            the text of the workflow, not a real re-run.
+
+## Progress
+
+- 2026-11-19: opened under the order of the owner "then start TASK-0417", branch p0168-red-runs-work from `main` at `2f9fc00`.
+  The write set adds the script, the test, three saved runs, ADR-0173 and the test floor. Scope item 2 named `actions: write`
+  only; the annotations need `checks: read` and the checkout needs `contents: read`, so the item now names the three. ADR-0172
+  is on the branch responsive-small-windows (TASK-0418), so this task takes ADR-0173. Ledger entry v0.400.
