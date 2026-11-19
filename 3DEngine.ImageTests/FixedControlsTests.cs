@@ -163,7 +163,8 @@ public sealed class FixedControlsTests
 
     // Finding V142 of the codebase review of 2026-11-08 (b) (TASK-0302): on a narrow display the panel ends inside the display,
     // with the safe area of a phone too; on a wide display it keeps its width of 460. Until TASK-0302 it ended at 476 on a
-    // display of 390.
+    // display of 390. ADR-0174 item 3 (TASK-0419): the structure view is at most as wide as the rows, 360; until TASK-0419 the
+    // panel was 460 wide.
     [Theory]
     [InlineData(390, 844, 0, 0)]
     [InlineData(390, 844, 24, 0)]
@@ -181,7 +182,7 @@ public sealed class FixedControlsTests
         var panel = ui.PanelRectangles[0];
         Assert.True(panel.Z <= display.X - right, $"The panel ends at {panel.Z}, outside the display {display}.");
         if (width >= 500)
-            Assert.Equal(460f, panel.Z - panel.X);
+            Assert.Equal(DesktopUi.RowsWidth, panel.Z - panel.X);
     }
 
     // Finding V123 of the codebase review of 2026-11-07 (TASK-0264): a double click on the title bar collapsed the panel, and

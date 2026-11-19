@@ -12052,3 +12052,42 @@ emulator", and its second attempt passed; that branch is not on `main`.
 New tests: 9. The test list holds 2902 (1704 in `Engine.Tests`, 390 in `3DEngine.Tests`, 805 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.397, 0 product milestones
 and 3 entries followed it.
+
+## v0.401 — With no selection the ring gives the tools of the part, the file name opens the file actions, and a structure view folded to one row takes the place of the panel (R31a, TASK-0419)
+
+On 2026-11-18 the owner said that the panel at the left takes too much space: 29 % of a display of 1280 by 720 and 64 % of a
+phone. The owner chose "B plus C" from the study of the left panel, and rows of 30 pixels for a mouse or a pen. On
+2026-11-19 the owner gave the order "start the left panel task, add the roadmap row". The roadmap has R31a (this entry) and
+R31b (the rows of 30 pixels, with its own record).
+
+**The change.**
+- With no selected body, the ring holds the tools of the part: "New", "Sketch", "Bodies" and "Images". "New" opens Box,
+  Cylinder, Cone, Sphere, Torus and Back; "Sketch" opens XY, XZ, YZ, Face and Back. The host gives the centre of the box of
+  the visible bodies on the screen. The ring of the part does not show on the paper of a flat view or under the open net
+  of the views. ADR-0174 items 1 and 2.
+- A structure view takes the place of the panel on each display. Folded, it is the first row of the document. Open, it
+  holds the row of each body, the filter from eight bodies, and "Show all" while a body is hidden. It has the ground of a
+  window and is at most 360 pixels wide. ADR-0174 item 3.
+- With no selection, the file name of the path line opens a menu with "Open project...", "Save as...", "Export STL..." and
+  "Import STL...". The menu has an opaque ground. ADR-0174 item 4.
+- "Dimensions" and "Hidden too" are switches in the net of the views, on the row of "Lines". ADR-0174 item 5.
+- ADR-0174 amends ADR-0056, ADR-0076, ADR-0081, ADR-0093, ADR-0100, ADR-0102 and ADR-0172.
+
+**Proof.** `PartRingTests` holds items 1 to 5, and the layout test of ADR-0172 has three more states (the open structure
+view, the open file menu and the open net of the views); it passes at each size and at each step of the resize. 29
+injections, each restored from its saved text, each failed a named test. Pictures of the real window at 1280 by 720, 412
+by 915 and 360 by 640 showed two faults that no test held: the file menu had no ground, and on a portrait display the open
+net of the views covered the structure view (also before R31a). Both are fixed, with a picture test and a state of the
+layout test. A clean build gives 0 warnings, the phone project builds, `dotnet test` passes 2916 tests, and the write-set
+check and `eng/repo-gates` pass. The run on the branch is in the progress of TASK-0419. The failed runs since the entry
+v0.400, from the API: the first attempt of run 44425726090 on the branch `responsive-small-windows` failed in the job "Gate
+on windows-latest", in `HttpConcurrencyTests.The_First_Live_Seq_After_A_Reset_Is_The_Snapshot_Seq_Plus_One` (a time-out);
+the owner ran it again, and its second attempt passed.
+
+Corrections: the test of the dashes of a hidden line (`FlatViewLinesTests`) took the darkest pixel of a block of 3 by 3,
+which shortened each gap by 2 pixels; with the larger frame of the plate it counted too little paper. It now looks across
+the line only.
+
+New tests: 14. The test list holds 2916 (1704 in `Engine.Tests`, 390 in `3DEngine.Tests`, 819 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.397, 1 product milestone
+and 4 entries followed it.

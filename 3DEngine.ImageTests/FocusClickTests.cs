@@ -98,6 +98,10 @@ public class FocusClickTests
         return (before, ui.PanelRectangles[0], intents, presses);
     }
 
+    // A place of the scene with no control. ADR-0174 item 1 (TASK-0419): the ring of the part has "Bodies" at (900, 500), the place
+    // of the scene of these tests until TASK-0419.
+    private static readonly (float X, float Y) Viewport = (1050, 600);
+
     private static (float X, float Y) TitleOf(Vector4 panel) => ((panel.X + panel.Z) / 2, panel.Y + 6);
 
     // ADR-0093 item 2 (TASK-0304): the panel has no title bar and does not move, so the press at the stale place over its top
@@ -109,7 +113,7 @@ public class FocusClickTests
         using (var ui = Opened())
             panel = ui.PanelRectangles[0];
         var title = TitleOf(panel);
-        (float X, float Y) viewport = (900, 500);
+        (float X, float Y) viewport = Viewport;
         Assert.False(panel.X <= viewport.X && viewport.X < panel.Z && panel.Y <= viewport.Y && viewport.Y < panel.W);
 
         var stale = Click(title, viewport, warped: false);
@@ -128,8 +132,10 @@ public class FocusClickTests
         Vector4 panel;
         using (var ui = Opened())
             panel = ui.PanelRectangles[0];
-        (float X, float Y) inside = ((panel.X + panel.Z) / 2, (panel.Y + panel.W) / 2);
-        (float X, float Y) viewport = (900, 500);
+        // ADR-0174 item 3 (TASK-0419): the middle of the folded structure view is its first row, which opens it, so the press is on
+        // the margin at the top of the panel, which holds no control.
+        var inside = TitleOf(panel);
+        (float X, float Y) viewport = Viewport;
 
         var stale = Click(viewport, inside, warped: false);
         Assert.Contains(stale.Intents, intent => intent is OrbitIntent);
