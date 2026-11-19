@@ -1018,7 +1018,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                 ringSize = Vector2.Distance(low, high) / 2f;
             }
         }
-        else if (Selection is { } ringBody && _renderer.BoxOf(ringBody) is { } ringBox)
+        // ADR-0174 item 1 (phase R31a, TASK-0419): with no selection, the box of the visible live bodies, for the ring of the part.
+        else if ((Selection is { } ringBody ? _renderer.BoxOf(ringBody) : _renderer.Union(hiddenToo: false)) is { } ringBox)
         {
             var middle = ((ringBox.Min.X + ringBox.Max.X) / 2, (ringBox.Min.Y + ringBox.Max.Y) / 2, (ringBox.Min.Z + ringBox.Max.Z) / 2);
             ringCentre = SketchOverlay.Segment(Camera, window.width, window.height, middle, middle)?.A;

@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: ['0030', '0083']
-amended-by: ['0100', '0106']
+amended-by: ['0100', '0106', '0174']
 affects:
   - 3DEngine.App/ProjectFiles.cs
   - 3DEngine.App/ISessionHost.cs
@@ -65,7 +65,7 @@ The owner answered the four questions of the task on 2026-11-08:
    "3DEngine project" and `3de`, in each folder; the path goes through the check of ADR-0030 item 5 and the next session
    of R14b. "Import STL..." keeps the behaviour of P9c. The panel has no name field: its file controls are "Open
    project...", "Save as...", "Export STL..." and "Import STL...". Each label ends with three dots, because it opens a
-   dialog.
+   dialog. ADR-0174 item 4 (TASK-0419) moves the four file controls to the file menu on the file name of the path line.
 2. **The purpose of a dialog.** Each dialog of the system keeps the purpose that the window gives it (import, open of a
    project, save, export), and its result gives that purpose back. A late result of one purpose goes to that purpose only.
 3. **Save as (Q1 A, amends ADR-0030 item 3).** "Save as..." opens the save dialog of the system with the filter `3de`, at
@@ -110,3 +110,4 @@ the dialogs of the system need a person: the tests give their results as samples
   document only.
 - 2026-11-09 · TASK-0328 · ADR-0106 amends item 1: the dialog of "Open project..." shows "Project or STL" first, and an STL
   file chosen there goes to the import.
+- 2026-11-19 · TASK-0419 · ADR-0174 item 4 amends item 1: the four file controls are in the file menu on the file name.
