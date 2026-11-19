@@ -1,7 +1,7 @@
 ---
 id: 0417
 title: A run of the pipeline is red only for a fault of the code, not for a lost macOS runner or a slow Windows runner
-status: Active
+status: Done
 phase: P0.168
 opened: 2026-11-18
 depends-on: []
@@ -84,9 +84,9 @@ A lost macOS runner gets one automatic re-run, and the test of a report that blo
 - [x] A first injection gives the new workflow a run whose failed job has a failed step, and the workflow starts no re-run.
 - [x] The test of a report that blocks fails when the report holds the serial section (an injection that calls the report
       inside the commit), and passes with a delay of 10 seconds before the first Apply.
-- [ ] A run of the new workflow on `main` re-runs a run with a lost macOS runner, or the ledger says that no such run came
+- [x] A run of the new workflow on `main` re-runs a run with a lost macOS runner, or the ledger says that no such run came
       before the close, and names the evidence that replaces it.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Notes for the implementer
@@ -97,6 +97,10 @@ of run 44337062610 (lost runner) and run 44409491212 (failed test), saved from t
 (`docs/templates.md`, section 2): the write set names it exactly. The first commit adds the path of the new ADR to the write
 set, and the path of a script if the choice goes into one (for example `eng/lost-runner.js`, which the workflow reads from
 the default branch).
+
+## Outcome
+
+Status: Done · commit (the merge of the branch p0168-red-runs-work) · v0.400
 
 ## Method
 
@@ -113,3 +117,6 @@ Weakest:    the workflow and the calls of the API run first after the merge, fro
   The write set adds the script, the test, three saved runs, ADR-0173 and the test floor. Scope item 2 named `actions: write`
   only; the annotations need `checks: read` and the checkout needs `contents: read`, so the item now names the three. ADR-0172
   is on the branch responsive-small-windows (TASK-0418), so this task takes ADR-0173. Ledger entry v0.400.
+- 2026-11-19: run 44425406463 passed on the branch on each job. No run of the new workflow came before the close, because a
+  workflow with `workflow_run` runs only from `main`; the evidence that replaces it is `LostRunnerTests` with the saved run
+  44337062610, as the entry v0.400 says. Closed at v0.400; the merge waits for the owner.
