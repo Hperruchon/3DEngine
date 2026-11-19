@@ -1,7 +1,7 @@
 ---
 id: 0417
 title: A run of the pipeline is red only for a fault of the code, not for a lost macOS runner or a slow Windows runner
-status: Active
+status: Done
 phase: P0.168
 opened: 2026-11-18
 depends-on: []
@@ -100,7 +100,7 @@ the default branch).
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0168-red-runs-work) · v0.401
+Status: Done · commit (the merge of the branch p0168-red-runs-work) · v0.401
 
 ## Method
 
@@ -123,3 +123,5 @@ Weakest:    the workflow and the calls of the API run first after the merge, fro
 - 2026-11-20: the owner ordered "Merge it". TASK-0418 took v0.400 on `main` first (`e4d7b55`), so the branch merged
   `main`: the ledger, the roadmap and the ADR index keep both rows, and this task moves to v0.401. Active until the
   close.
+- 2026-11-20: merge `5b5ba9a`: a clean build gives 0 warnings, `dotnet test` passes 2907 tests, and the strict write-set
+  check and `eng/repo-gates` pass. Closed again at v0.401.
