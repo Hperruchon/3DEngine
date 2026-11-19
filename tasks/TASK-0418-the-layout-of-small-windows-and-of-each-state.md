@@ -1,7 +1,7 @@
 ---
 id: 0418
 title: The layout of small windows and of each state, down to 360 by 560
-status: Active
+status: Done
 phase: P0.169
 opened: 2026-11-18
 depends-on: [0404]
@@ -119,3 +119,4 @@ Weakest:    the test reads the width of each key and of its text at the least sc
   the phone project built, and `dotnet test` passed 2902 tests. Closed at v0.400; the merge waits for the owner.
 - 2026-11-19: the owner said "Yes, merge". `main` had the merge of TASK-0417 (`2f9fc00`), whose roadmap row P0.168 met the row
   P0.169 of this task. This merge of `main` into the branch keeps both rows, P0.168 then P0.169, and sets the task Active.
+- 2026-11-19: closed again at v0.400 after the merge of `main` (`fc91599`).
