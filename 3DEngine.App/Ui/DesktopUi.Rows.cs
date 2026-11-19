@@ -14,6 +14,10 @@ internal sealed unsafe partial class DesktopUi
 {
     // The width of the column of the rows, and the height of one row: the 44 pixels of a target of ADR-0027 item 6.
     public const float RowsWidth = 360f;
+
+    // ADR-0172 item 1 (TASK-0418): the width of the column of the rows in this frame, and its least width.
+    private float _rowsWidth = RowsWidth;
+    internal const float RowsLeast = 200f;
     public const float RowHeight = ValueSize;
 
     // The item of the first row: the name and the state of the body.
@@ -63,8 +67,9 @@ internal sealed unsafe partial class DesktopUi
 
     // ADR-0099 item 1: true when the rows of this body show, so that the panel does not. ADR-0131 item 1 (phase R18k,
     // TASK-0360): on a portrait display too, under the part.
+    // ADR-0172 items 2 and 4 (TASK-0418): an open pad and open images take the place of the rows.
     private bool RowsShow(Vector2 displaySize, LiveBody? body)
-        => body is not null && !_sketchActive;
+        => body is not null && !_sketchActive && _pad is null && !_imagesShown;
 
     // ADR-0131 item 1: true when the rows of this frame are under the part, on a portrait display.
     private bool _rowsUnder;
@@ -98,14 +103,20 @@ internal sealed unsafe partial class DesktopUi
         }
 
         var left = 16f + _inset.X;
-        var right = left + RowsWidth;
         var top = PanelTop;
+        // ADR-0172 item 1 (TASK-0418): on a landscape display the column ends 12 pixels left of a tool of the ring of the last
+        // frame beside the first row, and it is at least RowsLeast wide. Until TASK-0418 it was 360 pixels wide at each size, so
+        // it went under Move in a window less than about 600 pixels wide.
+        _rowsWidth = RowsWidth;
+        if (!Portrait(displaySize) && RingLeftBeside(left, top, top + RowHeight + ImGui.GetTextLineHeight()) is { } ringLeft)
+            _rowsWidth = MathF.Floor(Math.Clamp(ringLeft - 12f - left, RowsLeast, _rowsWidth));
+        var right = left + _rowsWidth;
         var bottom = displaySize.Y - 32f - _inset.W - AnchorSize;
 
         // ADR-0131 item 1 (phase R18k, TASK-0360): on a portrait display the rows are under the part, at the full width, with
         // their last row 8 pixels above the ring of the last frame (or above the anchors), as the render at 768 by 1024. They
         // take the room from the middle of the display down, so the part, which the camera frames at the middle, stays free.
-        _rowsUnder = displaySize.X < displaySize.Y;
+        _rowsUnder = Portrait(displaySize);
         if (_rowsUnder)
         {
             right = displaySize.X - 16f - _inset.Z;
@@ -117,6 +128,11 @@ internal sealed unsafe partial class DesktopUi
         // ADR-0117 item 1: the first row is one row when the state fits after the name, else the name and a line of the state.
         _titleHeight = RowTitle(body).OneLine ? RowHeight : RowHeight + ImGui.GetTextLineHeight();
         var y = top + _titleHeight;
+        // ADR-0172 item 1 (TASK-0418): on a landscape display the rows end 8 pixels above the highest tool of the ring of the last
+        // frame that is in their column and under the first row, so each later row has room there or does not show, as a value
+        // row with no room. Until TASK-0418 the rows went on under Move in a window less than about 600 pixels wide.
+        if (!_rowsUnder && RingTopInColumn(left, right, y) is { } ringTop)
+            bottom = Math.Min(bottom, ringTop - 8f);
         // The review of Codex of v0.252 (TASK-0271): the rows end 16 pixels above the anchors, as the panel does; a value
         // that has no room keeps its chip only. Until TASK-0271 a long list went past the bottom of the display.
 
@@ -196,6 +212,34 @@ internal sealed unsafe partial class DesktopUi
             Shift(Math.Max(bottom - y, floor - top));
         if (_renaming != body.Id)
             _renaming = null;
+    }
+
+    // ADR-0172 item 1 (TASK-0418): the left side of the leftmost target of a tool of the ring of the last frame that meets a
+    // band of the display from one height to another, or null.
+    private float? RingLeftBeside(float left, float from, float to)
+    {
+        float? found = null;
+        foreach (var target in _ringBoxes)
+        {
+            if (target.Y < to && target.W > from && target.Z > left)
+                found = Math.Min(found ?? float.MaxValue, target.X);
+        }
+        return found;
+    }
+
+    // ADR-0172 item 1 (TASK-0418): the top of the highest target of a tool of the ring of the last frame, or of an end of the arc
+    // of a proposal and its word, that starts left of the right edge of a column and ends under a height, or null.
+    private float? RingTopInColumn(float left, float right, float under)
+    {
+        float? top = null;
+        var half = ProposalButton / 2f;
+        var ends = _lastProposalTargets.SelectMany(end => new[] { new Vector4(end.Centre.X - half, end.Centre.Y - half, end.Centre.X + half, end.Centre.Y + half), end.Word });
+        foreach (var target in _ringBoxes.Concat(ends))
+        {
+            if (target.X < right + 8f && target.Z > left && target.W > under)
+                top = Math.Min(top ?? float.MaxValue, target.Y);
+        }
+        return top;
     }
 
     // ADR-0099 item 2: a tap on the first row, or the command Rename, opens the name field with the name of the body.
@@ -329,7 +373,7 @@ internal sealed unsafe partial class DesktopUi
             if (!ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow) && Inside(madeFrom.Rectangle, io.MousePos))
                 list.AddRectFilled(min, max, ImGui.GetColorU32(colours[(int)ImGuiCol.ButtonHovered]), 6f);
             list.AddText(new Vector2(min.X, min.Y + middle), quiet, MadeFromLabel);
-            var sketch = Fit(madeFrom.Step.Text, RowsWidth - ImGui.CalcTextSize(MadeFromLabel).X - TitleGap);
+            var sketch = Fit(madeFrom.Step.Text, _rowsWidth - ImGui.CalcTextSize(MadeFromLabel).X - TitleGap);
             list.AddText(new Vector2(max.X - ImGui.CalcTextSize(sketch).X, min.Y + middle), Theme.Accent, sketch);
             list.AddLine(new Vector2(min.X, max.Y), max, line, 1f);
             _items[MadeFromItem] = madeFrom.Rectangle;
@@ -399,7 +443,7 @@ internal sealed unsafe partial class DesktopUi
         // ADR-0099 item 3: the lines under the values, in the quiet colour, with no tap.
         foreach (var (item, shown, rectangle) in _rowLines)
         {
-            list.AddText(new Vector2(rectangle.X, rectangle.Y + 6f), quiet, Fit(shown, RowsWidth));
+            list.AddText(new Vector2(rectangle.X, rectangle.Y + 6f), quiet, Fit(shown, _rowsWidth));
             _items[item] = rectangle;
         }
     }
@@ -453,7 +497,7 @@ internal sealed unsafe partial class DesktopUi
     internal (string Name, IReadOnlyList<(string Text, bool Red)> State, bool OneLine) RowTitle(LiveBody body)
     {
         var (name, state) = TitleParts(body);
-        return (name, state, TitleWidth(name) + TitleGap + ImGui.CalcTextSize(string.Concat(state.Select(part => part.Text))).X <= RowsWidth);
+        return (name, state, TitleWidth(name) + TitleGap + ImGui.CalcTextSize(string.Concat(state.Select(part => part.Text))).X <= _rowsWidth);
     }
 
     // The width of a text in the font of a title.
@@ -464,7 +508,7 @@ internal sealed unsafe partial class DesktopUi
 
     private (string Name, IReadOnlyList<(string Text, bool Red)> State) TitleParts(LiveBody body)
     {
-        var name = FitTitle(body.Name ?? body.Kind, RowsWidth);
+        var name = FitTitle(body.Name ?? body.Kind, _rowsWidth);
         var state = body.Fault is { } fault ? ($"failed {fault.Code}", true) : ("correct", false);
         List<(string Text, bool Red)>[] forms =
         [
@@ -474,11 +518,11 @@ internal sealed unsafe partial class DesktopUi
         ];
         foreach (var form in forms)
         {
-            if (ImGui.CalcTextSize(string.Concat(form.Select(part => part.Text))).X <= RowsWidth)
+            if (ImGui.CalcTextSize(string.Concat(form.Select(part => part.Text))).X <= _rowsWidth)
                 return (name, form);
         }
 
-        return (name, [(Fit(state.Item1, RowsWidth), state.Item2)]);
+        return (name, [(Fit(state.Item1, _rowsWidth), state.Item2)]);
     }
 
     // ADR-0117 item 1: the text, or its start and "...", in the width, in the font of a title.

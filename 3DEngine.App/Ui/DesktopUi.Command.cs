@@ -124,6 +124,9 @@ internal sealed unsafe partial class DesktopUi
             }
 
             commands.Add((ImportStlLabel, () => _actions.Add(new ImportStlAction())));
+            // ADR-0172 item 4 (TASK-0418): the command that opens the images, also while the rows of a body hide the panel.
+            if (_imagesAvailable)
+                commands.Add((ImagesName, () => _imagesOpen = true));
             foreach (var (label, datum) in NewSketchButtons)
                 commands.Add((label, () => _actions.Add(new NewSketchAction(datum))));
             // ADR-0099 item 4 (the redesign, slice p, TASK-0313): the controls of the panel that the rows of a selected body
@@ -239,7 +242,7 @@ internal sealed unsafe partial class DesktopUi
         // Finding V157 of the codebase review of 2026-11-09 (TASK-0324): a field that does not show takes no request of the
         // focus, so Control and K on a portrait display does not give the field the keys later. Until TASK-0324 the request
         // stayed, and the field took the keys after a turn of the display.
-        if (displaySize.X < displaySize.Y)
+        if (Portrait(displaySize))
         {
             _focusCommand = false;
             return;
