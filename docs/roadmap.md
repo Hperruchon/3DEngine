@@ -498,6 +498,8 @@ Therefore each approved objective must have a track here.
 - Review — The codebase review of 2026-11-20. v0.408, TASK-0425.
 - R20d — No plate of a dimension lies on the stroke of the history arc, and each text of the arc has the ground of the
   scene, so no dimension line goes across it. v0.409, TASK-0423, ADR-0125.
+- P0.171 — The sixteen medium and low findings of the codebase review of 2026-11-20 each have a correction and a test, or a
+  corrected ADR, and the owner's answers Q1, Q2, Q3 and Q8 are in ADR-0178, ADR-0177 and ADR-0173. v0.410, TASK-0426.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.

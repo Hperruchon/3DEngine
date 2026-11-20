@@ -333,6 +333,9 @@ internal sealed unsafe partial class DesktopUi
         _ring = null;
         _ringLabels = [];
         _ringTargets = null;
+        // Finding V214 of the codebase review of 2026-11-20 (TASK-0426): a frame with no ring leaves no boxes, so the rows of the
+        // next frame do not keep away from a ring that is gone. Until TASK-0426 the boxes of the last ring stayed.
+        _ringBoxes = [];
         _ringReachable = false;
         _ringInUse.Clear();
         RingAlphaOfFrame = ImGui.GetStyle().Alpha;

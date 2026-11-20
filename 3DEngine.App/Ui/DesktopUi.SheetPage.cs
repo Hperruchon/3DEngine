@@ -489,8 +489,12 @@ internal sealed unsafe partial class DesktopUi
         if (_pageDrag is { } lost && sheet.Views.All(view => view.ViewId != lost.View))
             (_pageDrag, _pageDragLost) = (null, true);
         // ADR-0171 item 4 (TASK-0413): no drag while a section is open.
+        // Finding V215 of the codebase review of 2026-11-20 (TASK-0426): a new press starts with no mark of a lost drag, so its
+        // release acts. A frame with no paper ("Reading the sheet") ends the active item of a drag with no release, and a later
+        // read without the dragged view then marked the drag as lost; until TASK-0426 the mark stayed until a release on the
+        // paper, so the release of the next tap gave nothing.
         if (ImGui.IsItemActivated() && taps)
-            _pageDrag = _pageSection is null && SheetPage.Hit(sheet, paper.Millimetres(mouse)) is { } hit ? (hit, mouse, false) : null;
+            (_pageDrag, _pageDragLost) = (_pageSection is null && SheetPage.Hit(sheet, paper.Millimetres(mouse)) is { } hit ? (hit, mouse, false) : null, false);
         (double X, double Y, bool Aligned)? moving = null;
         if (_pageDrag is { } drag && ImGui.IsItemActive())
         {
@@ -502,7 +506,12 @@ internal sealed unsafe partial class DesktopUi
             }
         }
 
-        if (ImGui.IsItemDeactivated() && _pageSection is { } open && sheet.Views.FirstOrDefault(view => view.ViewId == open.View) is { } cutView)
+        // Finding V221 of the codebase review of 2026-11-20 (TASK-0426): a tap whose press or release is on Reject or Accept of the
+        // arc of the last frame is the tap of the arc only. Until TASK-0426 a tap on Accept over the paper also selected a view,
+        // set the place of a tap, or placed a section.
+        if (ImGui.IsItemDeactivated() && (OverLastProposal(mouse) || OverLastProposal(ImGui.GetIO().MouseClickedPos[0])))
+            (_pageDrag, _pageDragLost) = (null, false);
+        else if (ImGui.IsItemDeactivated() && _pageSection is { } open && sheet.Views.FirstOrDefault(view => view.ViewId == open.View) is { } cutView)
         {
             // ADR-0171 items 3 and 4: a tap on the view sets the cut; with a cut, a tap on the free paper places the section.
             var at = paper.Millimetres(mouse);

@@ -1,5 +1,6 @@
 using System.Numerics;
 using ImGuiNET;
+using ThreeDEngine.Core.Input;
 
 namespace ThreeDEngine.Desktop.Ui;
 
@@ -33,6 +34,9 @@ internal sealed unsafe partial class DesktopUi
     // ADR-0174 item 4: true while the file menu is open.
     private bool _fileMenuOpen;
 
+    // Finding V211 (TASK-0426): true when the last frame drew the file menu.
+    private bool _fileMenuShown;
+
     internal bool FileMenuOpen => _fileMenuOpen;
 
     // ADR-0174 item 4: true in the frame in which a release outside the open file menu closed it, so the ring of that frame
@@ -41,6 +45,32 @@ internal sealed unsafe partial class DesktopUi
 
     // ADR-0174 item 4: open the file menu, as a tap on the file name does; for a test.
     internal void OpenFileMenu() => _fileMenuOpen = true;
+
+    // Finding V213 of the codebase review of 2026-11-20 (TASK-0426): ADR-0174 item 4, a tap outside the open menu and the file
+    // name closes the menu and gives no other action. True from such a press to its release.
+    private bool _menuPress;
+
+    // Finding V213: true when the press or the release of a pointer belongs to a tap outside the open menu and the file name of
+    // the last frame. Route does not give such a press or release to the library, so no control takes it, also a control that
+    // draws before the menu; the release closes the menu. Until TASK-0426 only the ring skipped that release, and Undo, the
+    // structure view and "Views" took it.
+    private bool FileMenuTakes(PointerSample pointer)
+    {
+        if (pointer.Phase == PointerPhase.Down && _fileMenuOpen && !OnFileMenu(pointer.X, pointer.Y))
+            _menuPress = true;
+        if (!_menuPress || pointer.Phase is not (PointerPhase.Down or PointerPhase.Up or PointerPhase.Cancel))
+            return false;
+        if (pointer.Phase is PointerPhase.Up or PointerPhase.Cancel)
+            (_menuPress, _fileMenuOpen) = (false, false);
+        return pointer.Phase != PointerPhase.Cancel;
+    }
+
+    // Finding V213: true when the point is on the open menu or on the file name of the last frame.
+    private bool OnFileMenu(double x, double y)
+    {
+        bool On(string item) => _items.TryGetValue(item, out var box) && x >= box.X && x < box.Z && y >= box.Y && y < box.W;
+        return On(FileMenuItem) || On(PathSegmentItem(PathLevel.Document));
+    }
 
     // ADR-0174 item 2: the kinds of the second level of "New", in the order of the list "New" before R31a.
     internal static readonly IReadOnlyList<string> PartNewTools = [NewBoxLabel, NewCylinderLabel, NewConeLabel, NewSphereLabel, NewTorusLabel];
@@ -125,14 +155,26 @@ internal sealed unsafe partial class DesktopUi
     private void FileMenu(DocumentLine? document, LiveBody? body)
     {
         if (!_fileMenuOpen)
+        {
+            _fileMenuShown = false;
             return;
+        }
+
         if (body is not null || _pad is not null || document is not { Files: true } || !_items.TryGetValue(PathSegmentItem(PathLevel.Document), out var file))
         {
-            _fileMenuOpen = false;
+            (_fileMenuOpen, _fileMenuShown) = (false, false);
             return;
         }
 
         ImGui.SetNextWindowPos(new Vector2(file.X, file.W + 4f), ImGuiCond.Always);
+        // Finding V211 of the codebase review of 2026-11-20 (TASK-0426): the menu takes the focus in its first frame, so it is the
+        // front window. Dear ImGui keeps the order of a window that shows again, and a tap brings a window to the front, so after
+        // a tap on the structure view the menu opened behind it, and the view took the tap on "Open project...". The focus is
+        // for the first frame only: a focus in each frame ends the press of each other window, also of the file name, which
+        // then did not close the menu.
+        if (!_fileMenuShown)
+            ImGui.SetNextWindowFocus();
+        _fileMenuShown = true;
         // The ground of a window of the theme lets the text under it show; the ground of the menu is opaque.
         ImGui.PushStyleColor(ImGuiCol.WindowBg, ImGui.GetStyle().Colors[(int)ImGuiCol.WindowBg] with { W = 1f });
         var shown = ImGui.Begin($"###{FileMenuItem}", FileMenuFlags);

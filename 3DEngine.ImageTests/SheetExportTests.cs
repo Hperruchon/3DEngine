@@ -114,9 +114,27 @@ public sealed class SheetExportTests : IDisposable
 
         Assert.StartsWith("Exported Sheet 1 as PDF to plate.pdf, ", text, StringComparison.Ordinal);
         Assert.Equal("plate.pdf", SheetExports.FileName(uri));
-        Assert.Equal("42", SheetExports.FileName("content://com.android.providers.downloads.documents/document/42"));
         Assert.Equal("my plate.dxf", SheetExports.FileName("content://x/document/primary%3AMy%20Folder%2Fmy%20plate.dxf"));
         Assert.Equal("plate.svg", SheetExports.FileName(Path.Combine(_folder, "plate.svg")));
+    }
+
+    // Finding V216 of the codebase review of 2026-11-20 (TASK-0426): the folder Downloads of Android gives a content URI that
+    // ends in a number, as "msf%3A1000018". An identifier with no "/" and no extension names no file, so the text names no file.
+    // Until TASK-0426 the text was "Exported Sheet 1 as PDF to 1000018".
+    [Fact]
+    public async Task The_Text_Of_An_Export_Names_No_File_For_A_Number()
+    {
+        var (host, sheet) = await Setup();
+        using var _ = host;
+        const string uri = "content://com.android.providers.downloads.documents/document/msf%3A1000018";
+
+        var text = SheetExports.Write(host.Session, sheet.Id, SheetFormat.Pdf, uri, (_, _) => null);
+
+        Assert.StartsWith("Exported Sheet 1 as PDF, ", text, StringComparison.Ordinal);
+        Assert.EndsWith(" bytes.", text, StringComparison.Ordinal);
+        Assert.Null(SheetExports.FileName(uri));
+        Assert.Null(SheetExports.FileName("content://com.android.providers.downloads.documents/document/42"));
+        Assert.Equal("plate.pdf", SheetExports.FileName("content://x/document/primary%3Aplate.pdf"));
     }
 
     // Item 3: a sheet that is not live gives the code of the engine and writes nothing; a write that fails gives
