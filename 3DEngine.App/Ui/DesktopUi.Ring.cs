@@ -327,8 +327,8 @@ internal sealed unsafe partial class DesktopUi
     private Vector4? _sketchWindow;
     private bool _ringReachable;
 
-    // The ring of the selected body, or of the active sketch (ADR-0086), or none while a pad is open or with no centre.
-    private void Ring(Vector2 displaySize, LiveBody? body, Vector2? centre, float size)
+    // The ring of the selected body, or of the active sketch (ADR-0086), or of the part (ADR-0174), or none while a pad is open.
+    private void Ring(Vector2 displaySize, IReadOnlyList<LiveBody> bodies, LiveBody? body, Vector2? centre, float size)
     {
         _ring = null;
         _ringLabels = [];
@@ -336,7 +336,13 @@ internal sealed unsafe partial class DesktopUi
         _ringReachable = false;
         _ringInUse.Clear();
         RingAlphaOfFrame = ImGui.GetStyle().Alpha;
-        if (centre is not { } at || _pad is not null || (body is null && !_sketchActive))
+        // ADR-0174 item 1 (phase R31a, TASK-0419): with no selected body the ring holds the tools of the part, around the box of
+        // the visible bodies on the screen that the host gives, else around the middle of the scene less the fixed controls.
+        // Until TASK-0419 the ring showed only for a selected body or an active sketch.
+        _partRing = PartRingShows(body);
+        if (_partRing)
+            centre ??= PartCentre(displaySize);
+        if (centre is not { } at || _pad is not null || (body is null && !_sketchActive && !_partRing))
             return;
 
         var labels = new List<string>();
@@ -367,6 +373,10 @@ internal sealed unsafe partial class DesktopUi
                 labels.Add(ExtrudeLabel);
                 labels.Add(FinishLabel);
             }
+        }
+        else if (_partRing)
+        {
+            labels.AddRange(PartRingLabels(bodies));
         }
         else if (body is not null)
         {
@@ -468,12 +478,15 @@ internal sealed unsafe partial class DesktopUi
         // from", a value, the cut and the lines) is the tap of the rows only. Until TASK-0350 the ring skipped a value row only, so
         // one tap on "Made from" over a segment gave the tool of the ring, or two actions.
         var io = ImGui.GetIO();
-        if (ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !OverWindowAtRelease() && ChipAt(io.MousePos) is null && !OverRows(io.MousePos.X, io.MousePos.Y)
+        // ADR-0174 item 4 (TASK-0419): a release that closed the open file menu is the tap of the menu only.
+        if (ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !_menuTookRelease && !OverWindowAtRelease() && ChipAt(io.MousePos) is null && !OverRows(io.MousePos.X, io.MousePos.Y)
             && !OverLastProposal(io.MousePos) && !OverLastProposal(io.MouseClickedPos[0])
             && RingTapAt(io.MousePos) is { } released && RingTapAt(io.MouseClickedPos[0]) == released)
         {
             if (_sketchActive)
                 UseSketchTool(released);
+            else if (_partRing)
+                UsePart(released);
             else if (body is not null)
                 Use(released, body);
         }
@@ -539,6 +552,9 @@ internal sealed unsafe partial class DesktopUi
         // too, with the name of the sketch, as the render ("TOOLS FOR PLATE ON XY").
         if (landscape && !_sketchActive && body is not null)
             RingCaption(list, ring, body.Name ?? body.Kind, displaySize);
+        // ADR-0174 item 1: "TOOLS FOR THE PART".
+        else if (landscape && _partRing)
+            RingCaption(list, ring, PartCaption, displaySize);
         else if (sketchRing && _sketchPanel?.Active is { } shown)
             RingCaption(list, ring, SketchTitle(shown), displaySize);
     }

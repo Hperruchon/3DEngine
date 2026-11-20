@@ -7,7 +7,7 @@ date: 2026-11-09
 supersedes: []
 superseded-by: []
 amends: ['0075', '0077', '0093', '0099', '0102']
-amended-by: ['0101', '0138']
+amended-by: ['0101', '0138', '0174']
 affects:
   - 3DEngine.App/BodyActions.cs
   - 3DEngine.App/NativeThreeDEngine.cs
@@ -114,3 +114,5 @@ line in this window yet.
   and with a focus Escape ends the focus before it clears the body.
 - 2026-11-14 · TASK-0370 · ADR-0138 item 2 amends item 1: on a portrait display the path line ends 12 pixels left of the
   button "Views" at the upper right.
+- 2026-11-19 · TASK-0419 · ADR-0174 items 3 and 4 amend items 4 and 5: the rows of the document are the structure view
+  on each display, folded to the first row; with no selection the file name opens the file menu.

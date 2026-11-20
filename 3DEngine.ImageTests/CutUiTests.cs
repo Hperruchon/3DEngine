@@ -27,8 +27,11 @@ public sealed class CutUiTests
     private static void Step(DesktopUi ui, Guid? selection, LiveBody[] bodies, params InputSample[] frame)
     {
         ui.Route(frame);
-        ui.Frame(1f / 60f, Display, Vector2.One, bodies, selection);
+        ui.Frame(1f / 60f, Display, Vector2.One, bodies, selection, File);
     }
+
+    // ADR-0174 item 4 (TASK-0419): a document with a file, so the file name opens the file menu.
+    private static readonly DocumentLine File = new("plate.3de", null);
 
     private static void Tap(DesktopUi ui, string item, Guid? selection, LiveBody[] bodies)
     {
@@ -43,6 +46,7 @@ public sealed class CutUiTests
     private static DesktopUi Opened(Guid? selection, LiveBody[] bodies)
     {
         var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        Step(ui, selection, bodies);
         Step(ui, selection, bodies);
         Step(ui, selection, bodies);
         return ui;
@@ -109,18 +113,19 @@ public sealed class CutUiTests
     // Finding V116 of the codebase review of 2026-11-06 (e) (TASK-0252): while the list "Cut with" or the list "New" is open,
     // a tap on the scene, by touch and by mouse, closes the list, gives no sample to the scene and no action. Until TASK-0252
     // the scene took the tap, and the list stayed open. ADR-0131 item 1 (phase R18k, TASK-0360): the list "New" is in the panel,
-    // which shows with no selected body only, so its cases have no selection.
+    // which shows with no selected body only, so its cases have no selection. ADR-0174 item 4 (TASK-0419): the open file menu is
+    // the list of the cases with no selection; the list "New" left the panel.
     [Theory]
     [InlineData("Cut", DeviceKind.Touch)]
     [InlineData("Cut", DeviceKind.Mouse)]
-    [InlineData("New", DeviceKind.Touch)]
-    [InlineData("New", DeviceKind.Mouse)]
+    [InlineData("File", DeviceKind.Touch)]
+    [InlineData("File", DeviceKind.Mouse)]
     public void A_Tap_On_The_Scene_Closes_An_Open_List_And_Does_Not_Reach_The_Scene(string list, DeviceKind kind)
     {
         LiveBody[] bodies = [Plate, Tool];
         Guid? selection = list == "Cut" ? Plate.Id : null;
         using var ui = Opened(selection, bodies);
-        var (box, entry) = list == "Cut" ? (DesktopUi.CutLabel, DesktopUi.CutItem(Tool.Id)) : (DesktopUi.NewLabel, DesktopUi.NewBoxLabel);
+        var (box, entry) = list == "Cut" ? (DesktopUi.CutLabel, DesktopUi.CutItem(Tool.Id)) : (DesktopUi.PathSegmentItem(PathLevel.Document), DesktopUi.SaveAsLabel);
         Tap(ui, box, selection, bodies);
         Assert.NotNull(ui.ItemRectangle(entry));
 
@@ -129,7 +134,7 @@ public sealed class CutUiTests
         foreach (var phase in new[] { PointerPhase.Down, PointerPhase.Up })
         {
             scene.AddRange(ui.Route([new PointerSample(kind, 1, pointer, 900, 400, 1, buttons, KeyModifiers.None, phase, 0)]));
-            ui.Frame(1f / 60f, Display, Vector2.One, bodies, selection);
+            ui.Frame(1f / 60f, Display, Vector2.One, bodies, selection, File);
         }
         Step(ui, selection, bodies);
         Step(ui, selection, bodies);

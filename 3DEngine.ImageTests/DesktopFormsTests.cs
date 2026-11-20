@@ -144,6 +144,7 @@ public sealed class DesktopFormsTests
     // panel, so the test uses the display of 768 × 1024. ADR-0131 item 1 (phase R18k, TASK-0360): the rows of the selected
     // body show on this display too, and their first row gives the code of the fault on one line under the name, with the
     // reason in its tooltip. Until TASK-0360 the panel gave a line "Fault". Show all is in the panel with no selection.
+    // ADR-0174 item 3 (TASK-0419): "Show all" is in the open structure view while a body is hidden.
     [Fact]
     public void The_Fault_Takes_One_Line_And_Show_All_Stays_In_The_Panel()
     {
@@ -161,10 +162,12 @@ public sealed class DesktopFormsTests
         Assert.True(line.W - line.Y < 2 * ui.ControlHeight, $"The name and the fault take {line.W - line.Y} pixels.");
         Assert.Contains(ui.RowTitle(bodies[0]).State, part => part.Red && part.Text.StartsWith("failed W-SKETCH", StringComparison.Ordinal));
 
+        ui.OpenStructure();
+        LiveBody[] hidden = [bodies[0], bodies[1] with { Visible = false }];
         for (var frame = 0; frame < 3; frame++)
         {
             ui.Route([]);
-            ui.Frame(1f / 60f, small, Vector2.One, bodies, null);
+            ui.Frame(1f / 60f, small, Vector2.One, hidden, null);
         }
 
         var showAll = ui.ItemRectangle(DesktopUi.ShowAllLabel)!.Value;

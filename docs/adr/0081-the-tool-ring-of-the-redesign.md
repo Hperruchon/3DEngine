@@ -7,7 +7,7 @@ date: 2026-11-06
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0084', '0086', '0095', '0101', '0108', '0113', '0116', '0119', '0132']
+amended-by: ['0084', '0086', '0095', '0101', '0108', '0113', '0116', '0119', '0132', '0174']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Ring.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -100,3 +100,4 @@ are not on the ring yet.
   take a tap, the rest of the band is the scene, and the ring fades while the view turns, pans or zooms.
 - 2026-11-14 · TASK-0363 · ADR-0132 item 1: on the corner ring a label is drawn smaller, down to half of the size of the
   font, until it lies on no other label and fits inside the display.
+- 2026-11-19 · TASK-0419 · ADR-0174 item 1 amends item 1: with no selected body, the ring holds the tools of the part.

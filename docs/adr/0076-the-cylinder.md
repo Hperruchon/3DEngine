@@ -1,13 +1,13 @@
 ---
 id: 0076
 title: The cylinder is a primitive of plane facets
-status: Accepted
+status: Amended
 topic: Geometry, kernel
 date: 2026-11-06
 supersedes: []
 superseded-by: []
 amends: ['0032']
-amended-by: []
+amended-by: ['0174']
 affects:
   - Engine.Core/Commands/CreateCylinderCommand.cs
   - Engine.Core/Commands/CreateCylinderCommandHandler.cs
@@ -124,7 +124,9 @@ Show all out of view on a small screen. C does not give enough room: the label "
    and its entry "Cylinder" opens a pad with the title "New cylinder" and the fields `radius` (5) and `height` (10), in
    the length unit of the document; its apply sends `CreateCylinder`. The desktop and the phone draw the same panel
    (ADR-0072). This item amends ADR-0032 item 4. The entries Cone (radius 5, height 10), Sphere (radius 5) and Torus
-   (radius 10, tube radius 3) follow, with pads of the same form (ADR-0089 item 5, phase K5e, TASK-0298).
+   (radius 10, tube radius 3) follow, with pads of the same form (ADR-0089 item 5, phase K5e, TASK-0298). ADR-0174 item 6
+   (TASK-0419) removes the list "New": the second level of "New" on the ring of the part and the command line open the same
+   pads.
 
 ## Consequences
 
@@ -148,3 +150,5 @@ the true surface and `CYLINDRICAL_SURFACE` after Q1 B.
 - 2026-11-06 · TASK-0251 · The affects field names the four files of the list "New" that TASK-0244 changed for item 7
   (finding T164 of the codebase review of 2026-11-06 (e)).
 - 2026-11-08 · TASK-0298 · Item 7: the entries Cone, Sphere and Torus (ADR-0089 item 5, phase K5e).
+- 2026-11-19 · TASK-0419 · ADR-0174 item 6 amends item 7: the list "New" leaves the panel; the ring of the part opens
+  each pad.
