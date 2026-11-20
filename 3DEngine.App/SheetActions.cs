@@ -2,6 +2,7 @@ using Engine.Contracts;
 using Engine.Contracts.Drawing;
 using Engine.Core;
 using Engine.Core.Commands;
+using Engine.Core.Queries;
 using ThreeDEngine.Core.Models;
 
 namespace ThreeDEngine.Desktop;
@@ -138,6 +139,32 @@ internal sealed class SheetActions(DocumentSession session)
         if (result.Status != CommandStatus.Applied)
             return $"AddSheetSection: {result.Error?.Message}";
         return result.Outputs.TryGet<string>("letter", out var letter) ? $"Added the section {letter}-{letter}." : "Added the section.";
+    }
+
+    // ADR-0176 items 3 to 5 (phase R30e, TASK-0421): "Put on sheet" of the pad of a value. The value goes on the first live
+    // sheet with a view of the exact frame of the flat view and no section, on the first such view, Offset outside the middle
+    // of its edge on the paper, by one PlaceSheetDimension. A value that the sheet shows already gives no command.
+    public string PutOnSheet(FlatView view, EdgeValues.Value value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        if (value.Model is not { } model || value.Reference || value.Free)
+            return "This value has no edge to put on a sheet.";
+        var frame = SheetPlacement.FrameOf(view);
+        bool Same(SheetView candidate) => candidate.Section is null && candidate.Direction.SequenceEqual(frame);
+        var sheet = session.Read((document, _) => document.Sheets.FirstOrDefault(live => live.Views.Any(Same))).GetAwaiter().GetResult();
+        if (sheet is null)
+            return $"No sheet has the {Name(view)} view: add the view first.";
+        var (source, kind) = value.Constraint is { } constraint ? (constraint, "constraint") : (value.Body, "distance");
+        if (sheet.Dimensions.Any(dimension => dimension.Source == source))
+            return $"{sheet.Name} shows this value already.";
+
+        var target = sheet.Views.First(Same);
+        var info = session.Query<SheetInfo>(new GetSheetQuery { SheetId = sheet.Id }).GetAwaiter().GetResult().Result;
+        if (info?.Views.FirstOrDefault(shown => shown.ViewId == target.Id) is not { } shownView)
+            return $"GetSheet gives no view '{target.Id}' of {sheet.Name}.";
+        var (x, y) = SheetValuePlace.Place(shownView, model.A, model.B);
+        return Apply(new PlaceSheetDimensionCommand { SheetId = sheet.Id, ViewId = target.Id, Source = source, SourceKind = kind, X = x, Y = y })
+            ?? $"Put {value.Text} on the {Name(view)} view of {sheet.Name}.";
     }
 
     // The word of a flat view in a text, as "front".
