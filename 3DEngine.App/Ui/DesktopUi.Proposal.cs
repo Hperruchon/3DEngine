@@ -157,6 +157,11 @@ internal sealed unsafe partial class DesktopUi
         AgentWaiting(displaySize);
         ProposalGlow(displaySize);
         var lines = ProposalLinesOf(card);
+        // ADR-0177 item 5 (phase R30f, TASK-0422): while the sheet page shows the sheet of this proposal, the boxes and the values on
+        // the paper show the commands, so the arc keeps its caption, Reject, Accept and the count, and the command lines, which
+        // covered the paper, do not show.
+        if (ProposalOnPage(card))
+            lines.RemoveAll(line => line.Item == ProposalMoreItem || line.Item.StartsWith(ProposalLineItem(0)[..^1], StringComparison.Ordinal));
         ProposalArc(displaySize, body, card, lines);
     }
 
@@ -477,7 +482,9 @@ internal sealed unsafe partial class DesktopUi
         // Item 6: a press and a release on one end, with no window, no chip and no row under the pointer, give its action. A
         // proposal that applies takes no tap.
         var io = ImGui.GetIO();
-        if (!card.Applying && ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !OverWindowAtRelease() && ChipAt(io.MousePos) is null && RowAt(io.MousePos) is null
+        // ADR-0177 item 5 (phase R30f, TASK-0422): the window of the sheet page lies under the arc, so it does not stop a tap; until
+        // TASK-0422 the page took each tap on Accept and Reject.
+        if (!card.Applying && ImGui.IsMouseReleased(ImGuiMouseButton.Left) && !(OverWindowAtRelease() && !_pageHovered) && ChipAt(io.MousePos) is null && RowAt(io.MousePos) is null
             && ProposalTargetAt(io.MousePos) is { } released && ProposalTargetAt(io.MouseClickedPos[0]) == released)
             _actions.Add(released ? new AcceptProposalAction(card.Id) : new RejectProposalAction(card.Id));
 
@@ -902,8 +909,10 @@ internal sealed unsafe partial class DesktopUi
 // command with no value. A card with no Values shows no pending chip.
 // ADR-0129 item 3 (finding V177, TASK-0356): CommandIds holds the identifier of each command, in the order of Commands, so
 // the text of the step of an accepted value goes to its own command.
+// ADR-0177 item 1 (phase R30f, TASK-0422): Sheet holds the sheet item of each command, in the order of Commands, or null for a
+// command that the sheet page does not show.
 internal sealed record ProposalCard(Guid Id, string Summary, IReadOnlyList<string> Commands, bool Stale = false, bool Applying = false,
-    IReadOnlyList<ProposedValue?>? Values = null, IReadOnlyList<Guid>? CommandIds = null)
+    IReadOnlyList<ProposedValue?>? Values = null, IReadOnlyList<Guid>? CommandIds = null, IReadOnlyList<ProposedSheetItem?>? Sheet = null)
 {
     // Item 5: the text of a command: its name and the value of each parameter, in the order of the envelope. An identifier
     // shows its first 8 characters, as a row of a body does; another value shows its JSON text.
