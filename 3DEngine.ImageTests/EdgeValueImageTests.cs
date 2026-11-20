@@ -78,11 +78,10 @@ public class EdgeValueImageTests
         // (phase R18a, TASK-0332): the chip has the ground of the scene, so its inside on the clear is the clear; until
         // TASK-0332 a point inside it had a blue ground.
         var row = (int)((chip.Y + chip.W) / 2);
-        var clear = Theme.Clear;
         var drawn = Enumerable.Range((int)chip.X - 1, 4).Any(column =>
         {
             var index = ((row * (int)Width) + column) * 4;
-            return Math.Abs(pixels[index] - clear.R) > 2 || Math.Abs(pixels[index + 1] - clear.G) > 2 || Math.Abs(pixels[index + 2] - clear.B) > 2;
+            return !GroundPixels.IsGround(pixels, column, row, (int)Width, (int)Height);
         });
         Assert.True(drawn, $"The picture {picture}: the outline of the chip at {chip} is not drawn.");
     }

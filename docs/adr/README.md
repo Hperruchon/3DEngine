@@ -113,7 +113,7 @@ names. Do not read all of them.
 | [0105](0105-the-values-on-the-edges-of-an-active-sketch.md) | The values of an active sketch show on its edges | Amended | Clients, rendering | — | 0115 |
 | [0106](0106-open-project-shows-an-stl-file-too.md) | "Open project..." shows an STL file too, and an STL file goes to the import | Accepted | Persistence, clients | 0102 | — |
 | [0107](0107-the-arc-of-a-proposal-is-in-the-free-room.md) | With no ring of a body, the arc of a proposal is in the room right of the panel | Accepted | Clients | 0092 | — |
-| [0108](0108-the-look-of-the-render.md) | The window has the look of the render, an almost black ground and outlined controls with no fill | Amended | Clients, rendering | 0078, 0081, 0092, 0095, 0098, 0113 | 0150 |
+| [0108](0108-the-look-of-the-render.md) | The window has the look of the render, an almost black ground and outlined controls with no fill | Amended | Clients, rendering | 0078, 0081, 0092, 0095, 0098, 0113 | 0150, 0178 |
 | [0109](0109-the-edges-of-the-body.md) | The edges of a body are lines, and the selected body is transparent with dashed hidden edges | Amended | Rendering, clients | 0029 | 0121, 0129 |
 | [0110](0110-a-proposal-shows-each-value-on-its-chip.md) | A proposal shows each value that it changes on the chip of that value | Amended | Clients, surface | 0092 | 0114, 0115, 0130 |
 | [0111](0111-a-proposal-takes-its-own-taps-and-commands.md) | A proposal takes its own taps, its own command identifiers and its own steps | Amended | Surface, clients | 0092 | 0114, 0135 |
@@ -183,6 +183,7 @@ names. Do not read all of them.
 | [0175](0175-compact-rows-of-the-structure-view.md) | Compact rows of the structure view for a mouse or a pen, and the setting "Compact" or "For touch" | Accepted | Clients, layout | 0027, 0091, 0174 | — |
 | [0176](0176-put-a-value-on-a-sheet-from-the-window.md) | "Put on sheet" in the pad of a value of a flat view places that value on the view of the sheet with the same frame | Accepted | Drawing, window | — | — |
 | [0177](0177-the-proposal-of-the-agent-on-the-sheet-page.md) | The sheet page shows a proposal of the agent as amber boxes of views and amber values before the accept | Accepted | Drawing, window | 0092, 0168 | — |
+| [0178](0178-the-soft-light-of-the-ground.md) | The ground of the scene has the soft light of the render, lighter at the middle and darker at the corners | Accepted | Clients, rendering | 0108 | — |
 
 ## Topics
 
