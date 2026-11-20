@@ -180,6 +180,7 @@ names. Do not read all of them.
 | [0172](0172-the-layout-of-small-windows-and-of-each-state.md) | The layout of small windows and of each state, down to 360 by 560 | Amended | Clients, layout | 0097, 0099, 0104, 0113, 0163 | 0174 |
 | [0173](0173-a-lost-runner-gets-one-automatic-re-run.md) | A run of CI whose only failures are jobs that GitHub gave no runner gets one automatic re-run, and no time limit decides a test that passes | Accepted | Pipeline | — | — |
 | [0174](0174-the-tools-of-the-part-on-the-ring-and-a-structure-view.md) | The tools of the part on the ring, a file menu, and a structure view in the place of the panel | Accepted | Clients, layout | 0056, 0076, 0081, 0093, 0100, 0102, 0172 | — |
+| [0175](0175-put-a-value-on-a-sheet-from-the-window.md) | "Put on sheet" in the pad of a value of a flat view places that value on the view of the sheet with the same frame | Accepted | Drawing, window | — | — |
 
 ## Topics
 
