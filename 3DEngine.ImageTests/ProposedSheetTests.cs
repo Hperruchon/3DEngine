@@ -12,6 +12,7 @@ using ThreeDEngine.Core.Input;
 using ThreeDEngine.Core.Models;
 using ThreeDEngine.Desktop;
 using ThreeDEngine.Desktop.Ui;
+using ThreeDEngine.Vulkan;
 
 namespace ThreeDEngine.ImageTests;
 
@@ -350,7 +351,9 @@ public sealed class ProposedSheetTests
         {
             using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
             var proposal = NewSheetProposal(Guid.NewGuid());
-            var card = new ProposalCard(proposal.Proposal, "3 views at 2:1 on A4", ["CreateSheet Proposed A4 true", "AddSheetView 7e000000 1 0 0"]);
+            // Finding V222 (TASK-0426): the two commands are sheet items of the sheet of the page, so the arc has no line of them.
+            var card = new ProposalCard(proposal.Proposal, "3 views at 2:1 on A4", ["CreateSheet Proposed A4 true", "AddSheetView 7e000000 1 0 0"],
+                Sheet: [new ProposedNewSheet(Sheet, "Proposed", "A4", true, false), new ProposedView(Front, Sheet, SheetPlacement.FrameOf(FlatView.Front), 2, 1, 100, 150)]);
             void Frame(params InputSample[] samples)
             {
                 ui.ShowSheetProposal(proposal);
@@ -380,6 +383,89 @@ public sealed class ProposedSheetTests
             Assert.Equal(accept ? [new AcceptProposalAction(proposal.Proposal)] : [new RejectProposalAction(proposal.Proposal)], ui.TakeActions());
             Assert.True(ui.PageOpen);
         }
+    }
+
+    // Finding V222 of the codebase review of 2026-11-20 (TASK-0426, Q3 A of the owner): on the page the arc keeps the line of each
+    // command that the page does not show, and only the lines of the sheet items of the sheet of the page go. Until TASK-0426 the
+    // arc showed no command line on the page, so a SetExtrudeDistance of the same proposal showed nowhere.
+    [Fact]
+    public void On_The_Page_The_Arc_Keeps_The_Line_Of_Each_Command_That_The_Page_Does_Not_Show()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        var proposal = NewSheetProposal(Guid.NewGuid());
+        var card = new ProposalCard(proposal.Proposal, "A sheet and a wider plate", ["CreateSheet Proposed A4 true", "AddSheetView 7e000000 1 0 0", "SetExtrudeDistance 7d000000 12"],
+            Sheet: [new ProposedNewSheet(Sheet, "Proposed", "A4", true, false), new ProposedView(Front, Sheet, SheetPlacement.FrameOf(FlatView.Front), 2, 1, 100, 150), null]);
+        void Frame()
+        {
+            ui.ShowSheetProposal(proposal);
+            ui.ShowSheets([]);
+            ui.ShowPage(null, false);
+            ui.Route([]);
+            ui.Frame(1f / 60f, Display, Vector2.One, [Body], null, new DocumentLine("plate", null), proposals: [card]);
+        }
+
+        Frame();
+        Frame();
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.ProposalLineItem(0)));
+        ui.OpenPage();
+        Frame();
+        Frame();
+        Assert.True(ui.ProposalOnPage(card));
+        Assert.Null(ui.ItemRectangle(DesktopUi.ProposalLineItem(0)));
+        Assert.Null(ui.ItemRectangle(DesktopUi.ProposalLineItem(1)));
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.ProposalLineItem(2)));
+        Assert.Equal("SetExtrudeDistance 7d000000 12", ui.ProposalTexts[DesktopUi.ProposalLineItem(2)]);
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.ProposalCountItem));
+    }
+
+    // Finding V221 of the codebase review of 2026-11-20 (TASK-0426): on the page the arc of a proposal draws after the paper, so the
+    // paper does not cover it, and a tap on Accept gives the accept and no tap on the paper, at each size of ADR-0113 item 1 and
+    // ADR-0172, and in the largest window of a resize of ADR-0163 item 4 (2560 by 1440), where Accept lies on the paper. Until
+    // TASK-0426 the arc drew under the paper, and a tap on Accept over the paper also set the place of a tap there.
+    [Theory]
+    [MemberData(nameof(ResponsiveLayoutTests.Sizes), MemberType = typeof(ResponsiveLayoutTests))]
+    [InlineData(2560, 1440)]
+    public void On_The_Page_The_Arc_Is_Over_The_Paper_And_Accept_Takes_The_Tap(int width, int height)
+    {
+        var display = new Vector2(width, height);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        var record = new SheetRecord(Sheet, "Sheet 1", "A4", true, false, [], []);
+        var live = new SheetInfo(Sheet, "Sheet 1", "A4", true, false, 297, 210, [], []);
+        var proposal = NewSheetProposal(Guid.NewGuid()) with { NewSheet = null };
+        var card = new ProposalCard(proposal.Proposal, "One view at 2:1", ["AddSheetView 7e000000 1 0 0"],
+            Sheet: [new ProposedView(Front, Sheet, SheetPlacement.FrameOf(FlatView.Front), 2, 1, 100, 150)]);
+        UiDrawData drawn = UiDrawData.Empty;
+        void Frame(params InputSample[] samples)
+        {
+            ui.ShowSheetProposal(proposal);
+            ui.ShowSheets([record]);
+            ui.ShowPage(live, false);
+            ui.Route(samples);
+            drawn = ui.Frame(1f / 60f, display, Vector2.One, [Body], null, new DocumentLine("plate", null), proposals: [card]);
+        }
+
+        Frame();
+        ui.OpenPage();
+        Frame();
+        Frame();
+        Frame();
+        Assert.NotNull(ui.PagePaper);
+        var vertices = drawn.Vertices;
+        var band = (DesktopUi.DimensionColour & 0x00FFFFFFu) | (0x48u << 24);
+        var lastPaper = Array.FindLastIndex(vertices, vertex => vertex.Colour == Theme.Paper);
+        var firstBand = Array.FindIndex(vertices, vertex => vertex.Colour == band);
+        Assert.True(lastPaper >= 0 && firstBand >= 0, $"{width}x{height}: no paper ({lastPaper}) or no band ({firstBand}).");
+        Assert.True(firstBand > lastPaper, $"{width}x{height}: the band of the arc draws at {firstBand}, under the paper at {lastPaper}.");
+
+        ui.TakeActions();
+        var at = Middle(ui.ItemRectangle(DesktopUi.ProposalAcceptItem) ?? throw new InvalidOperationException($"{width}x{height}: no Accept."));
+        Frame(Pointer(at, PointerButtons.None, PointerPhase.Move, 0));
+        Frame(Pointer(at, PointerButtons.Left, PointerPhase.Down, 50_000_000));
+        Frame(Pointer(at, PointerButtons.Left, PointerPhase.Up, 100_000_000));
+        Frame();
+        Assert.Equal([new AcceptProposalAction(proposal.Proposal)], ui.TakeActions());
+        Assert.Null(ui.PagePlace);
+        Assert.Null(ui.PageView);
     }
 
     // Item 3: a proposal for a live sheet shows its boxes over that sheet, and the page still takes a tap on the free paper.

@@ -156,24 +156,29 @@ internal sealed unsafe partial class DesktopUi
         var card = _proposals[0];
         AgentWaiting(displaySize);
         ProposalGlow(displaySize);
-        var lines = ProposalLinesOf(card);
         // ADR-0177 item 5 (phase R30f, TASK-0422): while the sheet page shows the sheet of this proposal, the boxes and the values on
-        // the paper show the commands, so the arc keeps its caption, Reject, Accept and the count, and the command lines, which
-        // covered the paper, do not show.
-        if (ProposalOnPage(card))
-            lines.RemoveAll(line => line.Item == ProposalMoreItem || line.Item.StartsWith(ProposalLineItem(0)[..^1], StringComparison.Ordinal));
+        // the paper show its sheet items, so the arc keeps its caption, Reject, Accept and the count, and the lines of those items,
+        // which covered the paper, do not show. Finding V222 of the codebase review of 2026-11-20 (TASK-0426, Q3 A of the owner):
+        // the arc keeps the line of each other command, which the page does not show. Until TASK-0426 the arc showed no command
+        // line on the page, so a person could accept a change that no line named.
+        var lines = ProposalLinesOf(card, ProposalOnPage(card) && _sheetProposal is { } shown
+            ? index => card.Sheet is { } items && index < items.Count && items[index]?.Sheet == shown.SheetId
+            : _ => false);
         ProposalArc(displaySize, body, card, lines);
     }
 
     // Item 5: at most four command lines and "and N more"; the count and the steps of undo (item 6); "1 of 3" when more
-    // proposals wait (item 3); and the line of a stale proposal (item 4).
-    private List<(string Item, string Text, bool Amber)> ProposalLinesOf(ProposalCard card)
+    // proposals wait (item 3); and the line of a stale proposal (item 4). Finding V222 (TASK-0426): a command that the page shows
+    // has no line, and the four lines and "and N more" count the other commands; each line keeps the index of its command in its
+    // item.
+    private List<(string Item, string Text, bool Amber)> ProposalLinesOf(ProposalCard card, Func<int, bool> onPage)
     {
         var lines = new List<(string Item, string Text, bool Amber)>();
-        for (var i = 0; i < Math.Min(ProposalLines, card.Commands.Count); i++)
-            lines.Add((ProposalLineItem(i), ProposalLine(card, i, _unit), false));
-        if (card.Commands.Count > ProposalLines)
-            lines.Add((ProposalMoreItem, $"and {card.Commands.Count - ProposalLines} more", false));
+        var shown = Enumerable.Range(0, card.Commands.Count).Where(index => !onPage(index)).ToList();
+        foreach (var index in shown.Take(ProposalLines))
+            lines.Add((ProposalLineItem(index), ProposalLine(card, index, _unit), false));
+        if (shown.Count > ProposalLines)
+            lines.Add((ProposalMoreItem, $"and {shown.Count - ProposalLines} more", false));
         var count = Counted(card.Commands.Count, "command");
         lines.Add((ProposalCountItem, card.Applying ? $"Applying {count}" : $"{count} · {Counted(card.Commands.Count, "step")} of undo", false));
         if (_proposals.Count > 1)
@@ -489,7 +494,10 @@ internal sealed unsafe partial class DesktopUi
             _actions.Add(released ? new AcceptProposalAction(card.Id) : new RejectProposalAction(card.Id));
 
         // The band of the arc: a light amber ground and an amber outline.
-        var list = ImGui.GetBackgroundDrawList();
+        // Finding V221 of the codebase review of 2026-11-20 (TASK-0426): while the sheet page shows, the arc draws on the list in
+        // front of each window, after the paper, which the page draws on the list of its window. Until TASK-0426 the arc drew on
+        // the background list, and the paper covered each part of the arc over it.
+        var list = PageOpen ? ImGui.GetForegroundDrawList() : ImGui.GetBackgroundDrawList();
         const int steps = 24;
         var ground = (DimensionColour & 0x00FFFFFFu) | (0x48u << 24);
         for (var i = 0; i < steps; i++)

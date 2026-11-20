@@ -151,6 +151,38 @@ public sealed class SheetPageTests
         Assert.False(queue.Busy);
     }
 
+    // Finding V210 of the codebase review of 2026-11-20 (TASK-0426): the frame reads the count of the changes, a command of the
+    // queue ends after that and raises the count, and Poll ends its work in the same frame. The read of the old count is done,
+    // so the queue gives the pending state: it is busy in the frame of the Poll that ended a work, and the page keeps its sent
+    // values until the read of the new count. Until TASK-0426 the page got the old sheet as not pending and cleared them.
+    [Fact]
+    public void The_Frame_In_Which_A_Command_Ends_Gives_A_Pending_Read()
+    {
+        var (cache, queue, sheet) = (new SheetReadCache(), new SheetCommandQueue(), Guid.NewGuid());
+        var version = 1L;
+        Task<SheetInfo?> Read() => Task.FromResult<SheetInfo?>(new SheetInfo(sheet, "Sheet", "A3", true, false, 420, 297, [], []));
+        cache.Read(version, sheet, Read);
+        Assert.False(cache.Read(version, sheet, Read).Pending);
+
+        using var gate = new ManualResetEventSlim();
+        queue.Send(() => { gate.Wait(); Interlocked.Increment(ref version); return "Moved the view."; });
+        Assert.Empty(queue.Poll());
+        // The frame of the race: the count before the end of the command, then the Poll that ends it.
+        var seen = Interlocked.Read(ref version);
+        gate.Set();
+        IReadOnlyList<string> texts = [];
+        Assert.True(SpinWait.SpinUntil(() => (texts = queue.Poll()).Count > 0, TimeSpan.FromSeconds(30)), "The command did not end.");
+        Assert.Equal(["Moved the view."], texts);
+        var (_, pending) = cache.Read(seen, sheet, Read);
+        Assert.False(pending);
+        Assert.True(queue.Busy, "The frame that ended the command gives a read of the old count as not pending.");
+
+        // The next frame reads the new count, and its read is pending until it ends.
+        Assert.Empty(queue.Poll());
+        Assert.False(queue.Busy);
+        Assert.True(cache.Read(Interlocked.Read(ref version), sheet, Read).Pending);
+    }
+
     // Items 2, 3 and 5: the commands of the page: a move, the switches of the lines, the scale of one view, a remove, and a view
     // at a tap on the free paper at the scale of the first view; a view that the sheet holds is not placed again.
     [Fact]
@@ -350,6 +382,45 @@ public sealed class SheetPageTests
         Assert.Null(SheetPage.Drag(removed, top.ViewId, 1, 1, true, false));
 
         // The next tap acts again: it selects the front view.
+        var front = removed.Views[0];
+        Tap(ui, display, removed, removedRecord, paper.Pixel(front.X, front.Y));
+        Assert.Equal(front.ViewId, ui.PageView);
+    }
+
+    // Finding V215 of the codebase review of 2026-11-20 (TASK-0426): a frame with no paper ("Reading the sheet") ends the active
+    // item of a drag with no release, and then a read comes without the dragged view. The release gives nothing, and the next tap
+    // on a view acts. Until TASK-0426 the page kept the mark of the lost drag, and the release of the next tap gave nothing.
+    [Fact]
+    public async Task A_Tap_After_A_Drag_That_A_Frame_With_No_Paper_Ended_Acts()
+    {
+        var (host, sheet, record) = await Setup();
+        using var _ = host;
+        var display = new Vector2(1280, 720);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        Frame(ui, display, sheet, record);
+        ui.OpenPage();
+        Frame(ui, display, sheet, record);
+        Frame(ui, display, sheet, record);
+        ui.TakeActions();
+        var paper = ui.PagePaper!.Value;
+        var top = sheet.Views[1];
+        var from = paper.Pixel(top.X, top.Y);
+        Frame(ui, display, sheet, record, Pointer(from, PointerButtons.None, PointerPhase.Move, 0));
+        Frame(ui, display, sheet, record, Pointer(from, PointerButtons.Left, PointerPhase.Down, 10_000_000));
+        Frame(ui, display, sheet, record, Pointer(from + new Vector2(20f, 0f), PointerButtons.Left, PointerPhase.Move, 20_000_000));
+        Assert.True(ui.PageDragging);
+
+        // A frame with no read, then the read after a remove of the dragged view.
+        Frame(ui, display, null, record, Pointer(from + new Vector2(40f, 0f), PointerButtons.Left, PointerPhase.Move, 30_000_000));
+        new SheetActions(host.Session).Remove(record.Id, top.ViewId);
+        var (removed, removedRecord) = await Read(host);
+        Frame(ui, display, removed, removedRecord, Pointer(from + new Vector2(60f, 0f), PointerButtons.Left, PointerPhase.Move, 40_000_000));
+        Frame(ui, display, removed, removedRecord, Pointer(from + new Vector2(60f, 0f), PointerButtons.Left, PointerPhase.Up, 50_000_000));
+        Frame(ui, display, removed, removedRecord);
+        Assert.False(ui.PageDragging);
+        Assert.Empty(ui.TakeActions().OfType<SheetMoveAction>());
+        Assert.Null(ui.PageView);
+
         var front = removed.Views[0];
         Tap(ui, display, removed, removedRecord, paper.Pixel(front.X, front.Y));
         Assert.Equal(front.ViewId, ui.PageView);

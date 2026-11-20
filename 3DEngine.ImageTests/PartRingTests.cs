@@ -242,6 +242,67 @@ public sealed class PartRingTests
         Assert.Equal([new PathAction(PathLevel.Document)], ui.TakeActions());
     }
 
+    // Finding V211 of the codebase review of 2026-11-20 (TASK-0426): after a tap on the structure view, the file menu still opens
+    // over it, so on a phone "Open project..." takes its tap. Until TASK-0426 the menu opened behind the view, which took the tap.
+    // A second tap on the file name closes the menu: a first form of the correction gave the menu the focus in each frame,
+    // which ended the press of the file name.
+    [Fact]
+    public void The_File_Menu_Opens_Over_The_Structure_View_After_A_Tap_On_The_View()
+    {
+        using var ui = Started(Phone);
+        var file = DesktopUi.PathSegmentItem(PathLevel.Document);
+        Tap(ui, Phone, file);
+        Tap(ui, Phone, file);
+        Assert.False(ui.FileMenuOpen);
+        Tap(ui, Phone, DesktopUi.DocumentRowItem);
+        Tap(ui, Phone, DesktopUi.DocumentRowItem);
+        Assert.False(ui.StructureOpen);
+        ui.TakeActions();
+
+        Tap(ui, Phone, file);
+        Assert.True(ui.FileMenuOpen);
+        Tap(ui, Phone, DesktopUi.OpenProjectLabel);
+        Assert.Equal([new OpenProjectAction()], ui.TakeActions());
+        Assert.False(ui.FileMenuOpen);
+        Assert.False(ui.StructureOpen);
+    }
+
+    // Finding V213 of the codebase review of 2026-11-20 (TASK-0426): ADR-0174 item 4, a tap outside the open file menu closes it
+    // and gives no other action, also on a control that draws before the menu: Undo, the structure view and "Views". Until
+    // TASK-0426 only the ring skipped that tap, so a tap on Undo closed the menu and gave Undo.
+    [Theory]
+    [InlineData(1280, 720)]
+    [InlineData(412, 915)]
+    public void A_Tap_Outside_The_File_Menu_Gives_No_Other_Action(int width, int height)
+    {
+        var display = new Vector2(width, height);
+        using var ui = Started(display);
+        var file = DesktopUi.PathSegmentItem(PathLevel.Document);
+        foreach (var outside in new[] { DesktopUi.UndoLabel, DesktopUi.DocumentRowItem, DesktopUi.ViewsLabel })
+        {
+            ui.TakeActions();
+            Tap(ui, display, file);
+            Assert.True(ui.FileMenuOpen);
+            // The menu covers a part of the first row of the structure view, so the tap is on an end of that row out of the menu.
+            var box = ui.ItemRectangle(outside) ?? throw new InvalidOperationException($"No item {outside}.");
+            var menu = ui.ItemRectangle(DesktopUi.FileMenuItem) ?? throw new InvalidOperationException("No file menu.");
+            var at = outside != DesktopUi.DocumentRowItem ? Mid(box)
+                : new Vector2(box.X + 8f < menu.X ? box.X + 8f : box.Z - 8f, (box.Y + box.W) / 2f);
+            Assert.False(at.X >= menu.X && at.X < menu.Z && at.Y >= menu.Y && at.Y < menu.W, $"The tap on {outside} at {at} is on the menu at {menu}.");
+            Step(ui, display, null, null, null, Pointer(at, PointerPhase.Down, 0));
+            Step(ui, display, null, null, null, Pointer(at, PointerPhase.Up, 50));
+            Step(ui, display);
+            Assert.False(ui.FileMenuOpen);
+            Assert.Empty(ui.TakeActions());
+            Assert.False(ui.StructureOpen);
+            Assert.False(ui.ViewsOpen);
+        }
+
+        // With the menu closed, the next tap on Undo gives Undo.
+        Tap(ui, display, DesktopUi.UndoLabel);
+        Assert.Equal([new UndoAction()], ui.TakeActions());
+    }
+
     // Item 5: the net of the views holds "Dimensions" and "Hidden too" on the row of "Lines". A tap changes the switch and does
     // not close the net; "Hidden too" takes no tap while "Dimensions" is off; each text fits its cell at the least scale.
     [Theory]

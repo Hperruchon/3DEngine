@@ -77,29 +77,8 @@ internal sealed unsafe partial class DesktopUi
     private void PadWindow(NumericPad pad, Vector2 displaySize)
     {
         var portrait = Portrait(displaySize);
-        var left = 16f + _inset.X;
-        var right = displaySize.X - 16f - _inset.Z;
-        var top = PadTop(displaySize);
+        var (left, top, width) = PadPlace(displaySize, _padCompact);
         var bottom = displaySize.Y - 16f - (_padLow ? 0f : AnchorRow) - _inset.W;
-        if (_padBySketch && _sketchWindow is { } sketch)
-        {
-            if (right - (sketch.Z + 16f) >= PadLeast)
-                left = sketch.Z + 16f;
-            else
-                top = sketch.W + 8f;
-        }
-
-        var width = right - left;
-        if (!portrait && !_padCompact)
-        {
-            // The pad beside the command line ends 12 pixels left of it, as the panel does.
-            var beside = Math.Min(PadWidth, CommandLeft(displaySize) - 12f - left);
-            if (beside >= PadLeast)
-                width = beside;
-            else
-                top = Math.Max(top, CommandBottom);
-        }
-
         var rows = PadLines(portrait);
         var height = Math.Max(Math.Min(PadNeed(pad, rows.Length, _padCompact), bottom - top), MinimumControlHeight);
         ImGui.SetNextWindowPos(new Vector2(left, top), ImGuiCond.Always);
@@ -171,6 +150,39 @@ internal sealed unsafe partial class DesktopUi
         ImGui.End();
     }
 
+    // ADR-0172 item 2: the left side, the top and the width of the pad, compact or not. A pad of a sketch opens beside the window
+    // of the sketch when it has room there, else under it; a pad that is not compact on a landscape display opens beside the
+    // command line when it has room there, else under it. Finding V212 of the codebase review of 2026-11-20 (TASK-0426): PlacePad
+    // decides "compact" and "low" from this top, the top where the pad opens. Until TASK-0426 PlacePad used the top of the
+    // panel, and a pad of a sketch on a phone opened lower, under the window of the sketch, so its last keys scrolled out.
+    private (float Left, float Top, float Width) PadPlace(Vector2 displaySize, bool compact)
+    {
+        var portrait = Portrait(displaySize);
+        var left = 16f + _inset.X;
+        var right = displaySize.X - 16f - _inset.Z;
+        var top = compact && !portrait ? Math.Max(PanelTop, CommandBottom) : PanelTop;
+        if (_padBySketch && _sketchWindow is { } sketch)
+        {
+            if (right - (sketch.Z + 16f) >= PadLeast)
+                left = sketch.Z + 16f;
+            else
+                top = sketch.W + 8f;
+        }
+
+        var width = right - left;
+        if (!portrait && !compact)
+        {
+            // The pad beside the command line ends 12 pixels left of it, as the panel does.
+            var beside = Math.Min(PadWidth, CommandLeft(displaySize) - 12f - left);
+            if (beside >= PadLeast)
+                width = beside;
+            else
+                top = Math.Max(top, CommandBottom);
+        }
+
+        return (left, top, width);
+    }
+
     // ADR-0172 item 2 (TASK-0418): the inner margin of a key at each side, the least scale of the text of a key, and the width
     // of the text of a key at that scale with its margin, for a test.
     internal const float PadKeyMargin = 2f;
@@ -200,10 +212,6 @@ internal sealed unsafe partial class DesktopUi
 
     // ADR-0172 item 2: the lines of keys of the pad of this frame.
     private string[][] PadLines(bool portrait) => _padCompact && !portrait ? PadLinesOfTen : PadRows;
-
-    // ADR-0172 item 2: the top of the pad: under the top bar, or under the command line for a compact pad on a landscape
-    // display, which takes the full width.
-    private float PadTop(Vector2 displaySize) => _padCompact && !Portrait(displaySize) ? Math.Max(PanelTop, CommandBottom) : PanelTop;
 
     // The bottom of the command line on a landscape display, and the gap under it.
     private float CommandBottom => 16f + _inset.Y + MinimumControlHeight + 8f;
@@ -254,9 +262,10 @@ internal sealed unsafe partial class DesktopUi
         if (_pad is not { } pad)
             return;
         var above = displaySize.Y - 16f - AnchorRow - _inset.W;
-        _padCompact = PanelTop + PadNeed(pad, PadRows.Length) > above;
+        // Finding V212 (TASK-0426): each state from the top where the pad opens in that state.
+        _padCompact = PadPlace(displaySize, compact: false).Top + PadNeed(pad, PadRows.Length) > above;
         if (_padCompact)
-            _padLow = PadTop(displaySize) + PadNeed(pad, PadLines(Portrait(displaySize)).Length, true) > above;
+            _padLow = PadPlace(displaySize, compact: true).Top + PadNeed(pad, PadLines(Portrait(displaySize)).Length, true) > above;
     }
 
     // A button of the pad: an edit, an apply, a cancel, or the text of its label.

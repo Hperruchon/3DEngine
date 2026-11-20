@@ -13,6 +13,7 @@ affects:
   - eng/lost-runner.js
   - Engine.Tests/Pipeline/**
   - Engine.Tests/Http/EngineHostSubscriptionTests.cs
+  - Engine.Tests/Http/HttpConcurrencyTests.cs
 enforced-by: Engine.Tests/Pipeline/LostRunnerTests.cs
 ---
 
@@ -49,7 +50,9 @@ a red run with no fault of the code stops the work until the owner sees it.
    first attempt in the ledger.
 4. **No time limit decides a test that passes.** In `A_Report_That_Blocks_Does_Not_Hold_The_Session` the report blocks until
    the test releases it, after the Apply and the Read ended. A report inside the commit can then never let the Apply end, and
-   a slow runner only makes the test slower. A limit of 60 seconds stops a test that waits for ever.
+   a slow runner only makes the test slower. A limit of 60 seconds stops a test that waits for ever. The same rule holds in
+   `HttpConcurrencyTests` (finding T183, Q8 A of the owner, 2026-11-20): the test of a deadlock fails only when no operation
+   ends for 60 seconds, so the time of the work is not a result, and a request of the class stops only after 60 seconds.
 
 ## Consequences
 
@@ -58,6 +61,8 @@ a red run with no fault of the code stops the work until the owner sees it.
   branch. The tests of the choice use three saved runs of 2026-11-18.
 - A failed install of the Android emulator (run 44416434810 on 2026-11-18) is a failed step, so it gets no re-run. A later
   task can decide on it with its own evidence.
+- A crash of a test host is a failed step, so it gets no re-run. On Windows the step "Test" collects a mini dump of the crash,
+  and a failed job keeps it as an artifact (finding T184, TASK-0426); `Engine.Tests/Pipeline/TestStepTests.cs` reads the step.
 
 ## Alternatives considered
 
@@ -69,3 +74,5 @@ a red run with no fault of the code stops the work until the owner sees it.
 ## History
 
 - 2026-11-19 · TASK-0417 · The workflow, the choice, the token and the test with no deciding limit (phase P0.168).
+- 2026-11-21 · TASK-0426 · Item 4 holds for `HttpConcurrencyTests`: a deadlock is no progress for 60 seconds (finding T183, Q8 A
+  of the owner); a crash of a test host on Windows keeps a mini dump (finding T184).

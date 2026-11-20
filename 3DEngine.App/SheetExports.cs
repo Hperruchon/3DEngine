@@ -88,7 +88,9 @@ internal static class SheetExports
             : ProjectFiles.WithExtension(path, "." + Filter(format).Pattern);
         if (save(target, content!) is { } failure)
             return $"{DiagnosticCodes.ExportWriteFailed}: {failure}";
-        var text = $"Exported {name} as {Label(format)} to {FileName(target)}, {content!.Length} bytes.";
+        var text = FileName(target) is { } file
+            ? $"Exported {name} as {Label(format)} to {file}, {content!.Length} bytes."
+            : $"Exported {name} as {Label(format)}, {content!.Length} bytes.";
         return skipped.Count == 0 ? text : $"{text} {string.Join(" ", skipped.Select(body => $"The body {body.Body} gives no lines: {body.Reason}"))}";
     }
 
@@ -96,13 +98,17 @@ internal static class SheetExports
     // URI of Android ends in an encoded document identifier, as "primary%3ADocuments%2Fplate.pdf"; its decoded last segment is
     // "primary:Documents/plate.pdf", and the name is the part after the last "/" or ":". Until TASK-0416 the text gave the
     // encoded segment.
-    public static string FileName(string target)
+    // Finding V216 of the codebase review of 2026-11-20 (TASK-0426): null when the decoded identifier has no "/" and its name has
+    // no extension, as "msf:1000018" of the folder Downloads, which is a number and not the name of a file. Until TASK-0426 the
+    // text named the file "1000018".
+    public static string? FileName(string target)
     {
         ArgumentNullException.ThrowIfNull(target);
         if (!target.StartsWith("content://", StringComparison.OrdinalIgnoreCase))
             return Path.GetFileName(target);
         var segment = target[(target.LastIndexOf('/') + 1)..];
         var decoded = Uri.UnescapeDataString(segment);
-        return decoded[(decoded.LastIndexOfAny(['/', ':']) + 1)..];
+        var name = decoded[(decoded.LastIndexOfAny(['/', ':']) + 1)..];
+        return decoded.Contains('/', StringComparison.Ordinal) || Path.HasExtension(name) ? name : null;
     }
 }

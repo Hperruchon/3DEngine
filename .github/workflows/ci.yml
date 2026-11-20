@@ -113,6 +113,11 @@ jobs:
       # writes a sequence file that names it, and the script reads that file.
       # Without the limit a hang held the runner for 360 minutes, and the step
       # never reached the script (codebase review of 2026-10-04, finding T8).
+      #
+      # On Windows a crash of the test host writes a mini dump into the results, and
+      # the sequence file names the test that did not end. Until TASK-0426 a crash
+      # gave no cause (finding T184 of the codebase review of 2026-11-20, attempt 1
+      # of run 44758589835). Engine.Tests/Pipeline/TestStepTests.cs reads this step.
       - name: Test
         env:
           # The image test writes its picture here (ADR-0025 item 5).
@@ -121,9 +126,20 @@ jobs:
           DETERMINISM_HASH_FILE: ${{ runner.temp }}/determinism/hash.txt
         run: |
           results="$RUNNER_TEMP/test-results"
+          crash=()
+          if [ "$RUNNER_OS" = "Windows" ]; then crash=(--blame-crash --blame-crash-dump-type mini); fi
           dotnet test --no-build --logger trx --results-directory "$results" \
-              --blame-hang-timeout 2m --blame-hang-dump-type none \
+              --blame-hang-timeout 2m --blame-hang-dump-type none "${crash[@]}" \
             || { node eng/report-failed-tests.js "$results"; exit 1; }
+
+      # A failed job on Windows keeps each crash dump of the step "Test" (finding T184).
+      - name: Keep the crash dump of the test host
+        if: failure() && runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-host-crash-dump
+          path: ${{ runner.temp }}/test-results/**/*.dmp
+          if-no-files-found: ignore
 
       # The job "Compare the determinism hashes" reads the hash of each runner (TASK-0156).
       # A runner whose test did not write the file fails here, and not only there.
