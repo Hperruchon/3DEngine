@@ -12244,3 +12244,38 @@ The letters of `SheetSectionTests` are 2.5 mm under the line of the arrow, for E
 New tests: 14. The test list holds 2960 (1714 in `Engine.Tests`, 390 in `3DEngine.Tests`, 853 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0; `E-SHEET-VIEW-INVALID` gets one more case. Since the
 review of v0.397, 3 product milestones and 8 entries followed it.
+
+## v0.406 — The ground of the scene has the soft light of the render, lighter at the middle and darker at the corners (R18p, TASK-0422)
+
+On 2026-11-20 the owner asked if the window has the gradient of the render, and then said "Yes, add it". ADR-0108 item 1
+(R18a) gave the scene one almost black colour, `#070d14`, and kept the soft light of the render for later; no row held it.
+Row R18p and ADR-0177 hold it now. P0.167 came to `main` at v0.405 first, and the branch merged it.
+
+**The change.**
+- The ground goes from `#03060b` at the corners to `#0a1a28` at the middle. The colour of a pixel is the colour of a corner
+  plus (1 − s) times the step to the colour of the middle, where s is the square distance to the middle divided by the square
+  distance from the middle to a corner. The sample of the render, `#0b1b2a`, is not "almost black" by the test of ADR-0108,
+  so the middle is one step under it.
+- A pipeline of the ground (`GroundPipeline`, `ground.vert`, `ground.frag`) draws one triangle over the target as the first
+  draw of the render pass, with no depth test, no depth write and no blend. Each body, image, edge and overlay draws over it.
+- `Theme.Clear` stays the clear under the ground and the plate under a text. `Theme.GroundAt` gives the colour of the ground
+  on the CPU, and `GroundPixels.IsGround` compares a pixel of a test picture with it.
+
+**Proof.** `GroundImageTests` has 3 tests: the computation goes from the corner to the middle, symmetric and with no channel
+that gets darker toward the middle; with no body, each pixel of a picture at 1280 by 720 and at 360 by 780 is the ground at
+that pixel within 1; a box at the middle lies over the light. `ThemeTests` holds "almost black" and the contrast of each
+colour on each point of the ground. The first run with the light failed seven image tests that compared a pixel with the one
+clear colour, and six more tests of the form "a pixel that is not the clear is drawn" passed for each pixel. Each of these
+eleven files now reads the ground at the pixel. Six injections, each restored byte for byte, each made a named test fail: no
+draw of the ground, the ground after the bodies, a computation without the height, a middle that is not almost black, the two
+colours swapped in the push block, and the old comparison with the clear (nine tests). The SPIR-V of each other shader did not
+change. A clean build gives 0 warnings, the phone project builds, `dotnet test` passes 2963 tests after the merge of `main`, and the write-set check and
+`eng/repo-gates` pass. The picture is a test picture of the renderer, not a screenshot of the window. Run 44813962866 of
+the first commit passed on each job; the runs after it are in the progress of TASK-0422. The failed runs since the entry
+v0.405, from the API: run 44814556105 of the merge `8dbaafb` of P0.167 on `main` failed on windows-latest only, in
+`HttpConcurrencyTests.Subscriptions_And_Commands_In_Parallel_For_One_Second_Do_Not_Deadlock` (the work did not end in 11 s).
+The other jobs passed, and the test is not in the write set of P0.167 or of this slice. A re-run waits for the owner.
+
+New tests: 3. The test list holds 2963 (1714 in `Engine.Tests`, 390 in `3DEngine.Tests`, 856 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.397, 4 product milestones and
+9 entries followed it.
