@@ -1,7 +1,7 @@
 ---
 id: 0422
 title: The ground of the scene has the soft light of the render, lighter at the middle and darker at the corners
-status: Active
+status: Done
 phase: R18p
 opened: 2026-11-20
 depends-on: [0332, 0333]
@@ -74,15 +74,18 @@ body lies over it. A person sees it in the window and on the phone.
 
 ## Acceptance criteria
 
-- [ ] With no body, each pixel of a picture at 1280 by 720 and at 360 by 780 is `Theme.GroundAt` at that pixel, within 1.
-- [ ] A body at the middle lies over the light, and a corner stays the ground.
-- [ ] Each point of the ground is almost black, and each colour keeps its contrast on the middle of the ground.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch.
+- [x] With no body, each pixel of a picture at 1280 by 720 and at 360 by 780 is `Theme.GroundAt` at that pixel, within 1.
+- [x] A body at the middle lies over the light, and a corner stays the ground.
+- [x] Each point of the ground is almost black, and each colour keeps its contrast on the middle of the ground.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch.
 
 ## Outcome
 
-Status: Active
+Status: Done · commit (the merge of the branch ground-light) · v0.406
+
+The ground of the scene goes from `#03060b` at the corners to `#0a1a28` at the middle, drawn first by the renderer, and
+each image test reads the ground at each pixel. The ledger entry v0.406 gives the proof.
 
 ## Method
 
@@ -102,3 +105,4 @@ Status: Active
   the old comparison with the one clear colour (nine tests fail).
 - 2026-11-20: run 44813962866 of `1c82d1b` passed on each job. P0.167 came to `main` at v0.405 (`8dbaafb`), so the branch
   merges `main`. The one conflict was the count of `3DEngine.ImageTests` in `eng/test-floor.txt`: 809, and 856 on Linux.
+- 2026-11-20: closed at v0.406.
