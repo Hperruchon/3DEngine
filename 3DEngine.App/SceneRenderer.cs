@@ -50,6 +50,9 @@ internal sealed unsafe class SceneRenderer : IDisposable
     // The images of the scene, each on a quad (ADR-0043, phase V1a).
     private readonly ImageRenderer _images;
 
+    // ADR-0178 item 2 (phase R18p, TASK-0423): the ground with the soft light of the render, the first draw after the clear.
+    private readonly GroundPipeline _ground;
+
     public SceneRenderer(GraphicsDevice device, VkRenderPass renderPass, ISessionHost host)
     {
         _device = device;
@@ -63,6 +66,7 @@ internal sealed unsafe class SceneRenderer : IDisposable
         _edges = new EdgePipeline(device, renderPass, hidden: false);
         _hiddenEdges = new EdgePipeline(device, renderPass, hidden: true);
         _images = new ImageRenderer(device, renderPass);
+        _ground = new GroundPipeline(device, renderPass);
         _bodies = new SessionBodies(host);
     }
 
@@ -204,6 +208,9 @@ internal sealed unsafe class SceneRenderer : IDisposable
         };
 
         _device.DeviceApi.vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VkSubpassContents.Inline);
+
+        // ADR-0178 item 2: the ground first, so each draw below lies over its light. Until TASK-0423 the clear was the ground.
+        _ground.Execute(commandBuffer, extent, Ui.Theme.GroundVector(Ui.Theme.GroundMiddle), Ui.Theme.GroundVector(Ui.Theme.GroundCorner));
         var projection = camera.Projection((float)extent.width / extent.height);
         _selected.Clear();
         _others.Clear();
@@ -253,5 +260,6 @@ internal sealed unsafe class SceneRenderer : IDisposable
         _edges.Dispose();
         _hiddenEdges.Dispose();
         _images.Dispose();
+        _ground.Dispose();
     }
 }

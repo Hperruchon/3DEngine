@@ -28,7 +28,9 @@ public sealed class ThemeTests
     public void The_Ground_Is_Almost_Black_And_A_Control_Has_No_Fill_At_Rest()
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
-        Assert.True(Luminance(Theme.Clear.R, Theme.Clear.G, Theme.Clear.B) < 0.01, "The ground is not almost black.");
+        // ADR-0178 item 1 (phase R18p, TASK-0423): each point of the ground with the soft light is almost black too.
+        foreach (var (name, (r, g, b)) in Grounds)
+            Assert.True(Luminance(r, g, b) < 0.01, $"The ground {name} is not almost black.");
         var look = ui.LookColours();
         Assert.Equal(0f, look.AtRest.W);
         Assert.Equal(0f, look.Field.W);
@@ -36,13 +38,18 @@ public sealed class ThemeTests
         Assert.InRange(look.Press.W, 0.1f, 0.4f);
     }
 
+    // ADR-0178 item 1: the colours of the ground, the clear under it, its middle and its corners.
+    private static readonly (string Name, (byte R, byte G, byte B) Colour)[] Grounds =
+        [("clear", Theme.Clear), ("middle", Theme.GroundMiddle), ("corner", Theme.GroundCorner)];
+
     // ADR-0108 item 1: each colour of a text keeps a contrast of 4.5:1 on the ground, and each colour of a mark or an
-    // outline keeps 3:1, as WCAG 2.2 gives the ratio.
+    // outline keeps 3:1, as WCAG 2.2 gives the ratio. ADR-0178 item 1 (TASK-0423): on the lightest point of the ground, the
+    // middle of its soft light; until TASK-0423 on the one colour of the clear.
     [Fact]
     public void Each_Colour_Keeps_Its_Contrast_On_The_Ground()
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
-        var ground = Luminance(Theme.Clear.R, Theme.Clear.G, Theme.Clear.B);
+        var ground = Grounds.Max(entry => Luminance(entry.Colour.R, entry.Colour.G, entry.Colour.B));
         var look = ui.LookColours();
         static (byte R, byte G, byte B) Style(Vector4 colour) => ((byte)Math.Round(colour.X * 255f), (byte)Math.Round(colour.Y * 255f), (byte)Math.Round(colour.Z * 255f));
         static (byte R, byte G, byte B) Packed(uint abgr) => ((byte)(abgr & 0xFF), (byte)((abgr >> 8) & 0xFF), (byte)((abgr >> 16) & 0xFF));

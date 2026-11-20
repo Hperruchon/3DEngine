@@ -114,15 +114,16 @@ public sealed class PlacedImageImageTests : IDisposable
 
     private static string Colour(byte[] pixels, Camera camera, (double X, double Y, double Z) point)
     {
-        var index = (((int)Row(camera, point) * (int)Width) + (int)Column(camera, point)) * 4;
+        var (column, row) = ((int)Column(camera, point), (int)Row(camera, point));
+        var index = ((row * (int)Width) + column) * 4;
         return (pixels[index], pixels[index + 1], pixels[index + 2]) switch
         {
             ( > 200, < 60, < 60) => "red",
             ( > 230, > 230, > 230) => "white",
             ( < 60, < 60, > 200) => "blue",
             ( > 200, > 200, < 60) => "yellow",
-            // ADR-0078 (TASK-0246): the clear of the theme, in place of the green key.
-            var (r, g, b) when Math.Abs(r - ThreeDEngine.Desktop.Ui.Theme.Clear.R) <= 2 && Math.Abs(g - ThreeDEngine.Desktop.Ui.Theme.Clear.G) <= 2 && Math.Abs(b - ThreeDEngine.Desktop.Ui.Theme.Clear.B) <= 2 => "background",
+            // ADR-0178 item 1 (TASK-0423): the ground at the pixel. Until TASK-0423 the one colour of the clear (ADR-0078).
+            _ when GroundPixels.IsGround(pixels, column, row, (int)Width, (int)Height) => "background",
             _ => "other",
         };
     }

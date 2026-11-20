@@ -282,7 +282,7 @@ public sealed class BodyFocusTests
                 renderer.Update(scene, camera, (float)width / height);
                 renderer.Focus = focused ? A : null;
                 var bare = target.Render((commandBuffer, framebuffer, frameExtent) => renderer.Record(commandBuffer, framebuffer, frameExtent, scene, camera));
-                drawn[focused] = Drawn(bare);
+                drawn[focused] = Drawn(bare, (int)width, (int)height);
 
                 using var panelRenderer = new UiRenderer(device, target.RenderPass);
                 var (atlasWidth, atlasHeight, rgba) = ui.FontAtlas();
@@ -315,14 +315,13 @@ public sealed class BodyFocusTests
             $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages.");
     }
 
-    // The count of pixels that differ from the clear colour.
-    private static int Drawn(byte[] rgba)
+    // The count of pixels that differ from the ground (ADR-0178 item 1).
+    private static int Drawn(byte[] rgba, int width, int height)
     {
-        var (r, g, b) = ((byte)Math.Round(SceneRenderer.Background.R * 255), (byte)Math.Round(SceneRenderer.Background.G * 255), (byte)Math.Round(SceneRenderer.Background.B * 255));
         var count = 0;
         for (var i = 0; i + 3 < rgba.Length; i += 4)
         {
-            if (Math.Abs(rgba[i] - r) > 2 || Math.Abs(rgba[i + 1] - g) > 2 || Math.Abs(rgba[i + 2] - b) > 2)
+            if (!GroundPixels.IsGround(rgba, (i / 4) % width, (i / 4) / width, width, height))
                 count++;
         }
 

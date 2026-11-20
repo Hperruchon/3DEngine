@@ -76,13 +76,12 @@ public class RingImageTests
     // A pixel within this distance of the point is not the clear.
     private static bool AnyNotClear(byte[] pixels, Vector2 point, int distance)
     {
-        var clear = Theme.Clear;
         for (var y = (int)point.Y - distance; y <= (int)point.Y + distance; y++)
         {
             for (var x = (int)point.X - distance; x <= (int)point.X + distance; x++)
             {
                 var index = ((y * (int)Width) + x) * 4;
-                if (Math.Abs(pixels[index] - clear.R) > 2 || Math.Abs(pixels[index + 1] - clear.G) > 2 || Math.Abs(pixels[index + 2] - clear.B) > 2)
+                if (!GroundPixels.IsGround(pixels, x, y, (int)Width, (int)Height))
                     return true;
             }
         }
