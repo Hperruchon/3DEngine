@@ -1,7 +1,7 @@
 ---
 id: 0420
 title: Compact rows of the structure view for a mouse or a pen, and the setting "Compact" or "For touch"
-status: Done
+status: Active
 phase: R31b
 opened: 2026-11-20
 depends-on: [0419]
@@ -97,3 +97,4 @@ Weakest:    the device density reads the operating system only, so a Windows tab
   of a pixel, and `SheetPageTests` failed with 79.39 for 80; the test now taps a whole pixel (see the ledger). A clean
   build gave 0 warnings, `dotnet test` passed, and the gates passed. Closed at v0.403; the merge waits for CI and the
   owner.
+- 2026-11-20: run 44697746839 passed on the branch on each of its seven jobs (6c13b5a).
