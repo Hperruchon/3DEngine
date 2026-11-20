@@ -12164,3 +12164,38 @@ as its limit; a place one pixel away fails it.
 New tests: 8. The test list holds 2929 (1709 in `Engine.Tests`, 390 in `3DEngine.Tests`, 827 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.397, 2 product milestones
 and 6 entries followed it.
+
+## v0.404 — "Put on sheet" in the pad of a value of a flat view places that value on the view of the sheet with the same frame (R30e, TASK-0421)
+
+The owner ordered "then start R30e" on 2026-11-20. ADR-0162 item 7 (D7 A) asks for "Put on sheet" on a value chip of a flat
+view. The engine had the command PlaceSheetDimension (ADR-0158), so this slice changes the window only. ADR-0176 records where
+the control goes, which view takes the value and where on the paper it goes; ADR-0162 left these open.
+
+**The change.**
+- A value of the selected body (the distance of the extrude, and each length and radius of its sketch) keeps the two ends of
+  its measured edge in the design, `EdgeValues.Value.Model`. A radius keeps the middle of its curve two times.
+- The pad of such a value has the button "Put on sheet" in a flat view, when a live sheet has a view of that frame that is not
+  a section. It is a line under the fields, and the pad counts its height; a compact pad has it beside its fields.
+- A tap sends one PlaceSheetDimension off the frame thread, on the first view of that frame of the first such sheet. The value
+  goes 10 mm of paper outside the middle of its edge, away from the centre of the view (`SheetValuePlace`, with + - * / and
+  sqrt only). A value that the sheet shows already, or a flat view that no sheet has, gives a text and no command.
+
+**Proof.** `SheetValueTests` has 17 tests. On a plate of 10 by 6 by 3 with the front view at (100, 150), the length of the top
+edge goes to (100, 161.5), and the distance goes 10 mm beside a vertical edge. A section of the top view with the look "up" has
+the frame of the front view, and the value goes past it to the front view of the next sheet. The pad shows the line only when
+each condition holds, and at seven sizes from 360 by 560 to 1280 by 720 each key, the field and the line stay inside the pad.
+At 640 by 360 and 844 by 390 the first form, a line under the fields of a compact pad, put the key "Delete" outside the pad;
+the compact pad now has the button beside its fields. Fifteen injections, each restored byte for byte: fourteen made a named
+test fail. One stayed green: the point of a radius as the ends of its edge in place of the middle of its curve. For a whole
+circle both give one point on the circle, and no test has an arc; the value then goes beside the arc in place of outside its
+middle. On the code of R31b, a clean build gives 0 warnings, the phone project builds, `dotnet test` passes 2946 tests, and
+the write-set check and `eng/repo-gates` pass. No picture of the real window was made. The run on the branch is in the
+progress of TASK-0421. The failed runs since the entry v0.403, from the API: none; run 44721925179 of `cc72b24` on `main` was in progress when this entry was written.
+
+Corrections: the work first had TASK-0420, ADR-0175 and v0.403 on the branch r30e-put-on-sheet, where runs 44698257634 and
+44701048827 passed. R31b took those three numbers on `main` before the merge, so this slice moved to the next free numbers on
+a new branch from `main`, and its code files changed only in the numbers that they cite.
+
+New tests: 17. The test list holds 2946 (1709 in `Engine.Tests`, 390 in `3DEngine.Tests`, 844 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.397, 3 product milestones and
+7 entries followed it.

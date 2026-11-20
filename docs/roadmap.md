@@ -486,6 +486,8 @@ Therefore each approved objective must have a track here.
   a report that blocks has no time limit that decides its result. v0.402, TASK-0417, ADR-0173.
 - R31b — The rows of the structure view are 30 pixels high with the text of a list for a mouse or a pen, and 44 pixels
   on a phone; the net of the views sets "Compact" or "For touch". v0.403, TASK-0420, ADR-0175.
+- R30e — "Put on sheet" in the pad of a value of a flat view places that value 10 mm outside its edge on the view of the
+  sheet with the same frame, by one PlaceSheetDimension. v0.404, TASK-0421, ADR-0176.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -826,7 +828,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R30b | "Add to sheet" and "Standard views" in the net of the views and in the command line; the pad of the paper and the scale; the place of a new view from the projection; the command ScaleSheetView (ADR-0162 items 4 to 6). After R30a. TASK-0407, ADR-0167. | 2 |
 | R30c | The sheet page on the desktop and the phone: the paper, the frame, the title block, the views and the values from GetSheet; a tap on a view gives "Go to", "Scale" and "Remove"; a tap on the paper places a new view; a drag keeps the alignment and sends MoveSheetViews (ADR-0162 items 1, 5 and 10). After R30b. TASK-0408, ADR-0168. | 2–3 |
 | R30d | The button "Export" on the sheet page: PDF, SVG and DXF, with the save dialog of the desktop and the save or share of the phone (ADR-0162 item 9). After R30h. TASK-0412, ADR-0170. | 1 |
-| R30e | "Put on sheet" on a value chip of a flat view (ADR-0162 item 7). After R30h. | 1 |
+| R30e | "Put on sheet" on a value chip of a flat view (ADR-0162 item 7). After R30h. TASK-0421, ADR-0176. | 1 |
 | R30f | The proposal of the agent on the sheet page: amber boxes and amber values, Accept and Reject on the arc (ADR-0162 item 8). After R30h. | 1–2 |
 | R30g | The flag of the hidden lines and the centre lines of each view, the centre lines and centre marks in GetSheet and the three files, and ⌀ for a whole circle; a contract change with its ADR (ADR-0162 items 11, 12, 14 and 17). After P0.162; it can run beside R30a to R30c. TASK-0405, ADR-0165. | 1–2 |
 | R30h | The section view of a sheet: the cut line, the cut plane and its letter, the hatch and the label "A–A", in GetSheet, the files and the sheet page; a contract change with its ADR (ADR-0162 items 13 and 17). After R30c and R30g. TASK-0411 gives the engine, GetSheet and the files (ADR-0169); the action "Section" of the sheet page follows R30d (ADR-0169 item 8), as TASK-0413 (ADR-0171). | 2–3 |
