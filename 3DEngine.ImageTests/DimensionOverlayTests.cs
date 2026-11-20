@@ -65,13 +65,17 @@ public class DimensionOverlayTests
     // Item 2: the toggles are off at each start, a tap and a click change each one, and Hidden too waits for Dimensions.
     // ADR-0131 items 1 and 3 (phase R18k, TASK-0360): with no selection the check boxes of the panel take the tap; with a
     // selected body the segment "Dimensions" of the ring and the row "Hidden too" take it, and the row shows only while the
-    // dimensions show.
+    // dimensions show. ADR-0174 item 5 (TASK-0419): with no selection the two switches of the net of the views take the tap.
     [Theory]
     [InlineData(DeviceKind.Mouse)]
     [InlineData(DeviceKind.Touch)]
     public void The_Toggles_Are_Off_At_The_Start_And_Take_A_Tap_And_A_Click(DeviceKind kind)
     {
         using var ui = Opened(NoBody);
+        // A new window of Dear ImGui takes no tap in its first frame.
+        ui.OpenViews();
+        StepWith(ui, NoBody);
+        StepWith(ui, NoBody);
         Assert.False(ui.ShowDimensions);
         Assert.False(ui.HiddenToo);
 
@@ -85,6 +89,8 @@ public class DimensionOverlayTests
         Assert.False(ui.HiddenToo);
         Tap(ui, kind, DesktopUi.DimensionsLabel, NoBody);
         Assert.False(ui.ShowDimensions);
+        Assert.True(ui.ViewsOpen);
+        Tap(ui, kind, DesktopUi.ViewsLabel, NoBody);
 
         Step(ui);
         Step(ui);
@@ -98,20 +104,26 @@ public class DimensionOverlayTests
         Assert.Null(ui.ItemRectangle(DesktopUi.HiddenTooItem));
     }
 
-    // Item 2 and ADR-0027 item 6: each toggle is at least 44 pixels high and inside the panel. ADR-0131 item 3 (phase R18k,
+    // Item 2 and ADR-0027 item 6: each toggle is at least 44 pixels high and inside the panel. ADR-0174 item 5 (TASK-0419): inside
+    // the net of the views, on the row of "Lines". ADR-0131 item 3 (phase R18k,
     // TASK-0360): with a selected body, the row "Hidden too" is at least 44 pixels high and inside the rows and the display.
     [Fact]
     public void Each_Toggle_Is_At_Least_44_Pixels_High_And_Inside_The_Panel()
     {
         using var ui = Opened(NoBody);
-        var panel = ui.PanelRectangles[0];
+        // A new window of Dear ImGui takes no tap in its first frame.
+        ui.OpenViews();
+        StepWith(ui, NoBody);
+        StepWith(ui, NoBody);
+        var lines = ui.ItemRectangle(DesktopUi.LinesItem) ?? throw new InvalidOperationException("The net has no Lines.");
         foreach (var label in new[] { DesktopUi.DimensionsLabel, DesktopUi.HiddenTooLabel })
         {
             var rectangle = ui.ItemRectangle(label) ?? throw new InvalidOperationException($"The panel has no control {label}.");
             Assert.True(rectangle.W - rectangle.Y >= DesktopUi.MinimumControlHeight, $"{label} is {rectangle.W - rectangle.Y} pixels high.");
-            Assert.True(rectangle.X >= panel.X && rectangle.Z <= panel.Z && rectangle.Y >= panel.Y && rectangle.W <= panel.W, $"{label} at {rectangle} is not inside the panel {panel}.");
+            Assert.True(rectangle.X >= 0 && rectangle.Z <= Portrait.X && rectangle.Y == lines.Y && rectangle.W == lines.W, $"{label} at {rectangle} is not on the row of Lines {lines} in the display.");
         }
 
+        Tap(ui, DeviceKind.Mouse, DesktopUi.ViewsLabel, NoBody);
         ui.ShowDimensionsOn();
         Step(ui);
         Step(ui);

@@ -45,6 +45,7 @@ public sealed class SketchWindowUiTests
         var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         Step(ui, panel);
         Step(ui, panel);
+        Step(ui, panel);
         return ui;
     }
 
@@ -72,13 +73,14 @@ public sealed class SketchWindowUiTests
         return ui.TakeActions();
     }
 
-    // ADR-0034 item 6: the panel has a button of a new sketch on each origin plane.
+    // ADR-0034 item 6: the panel has a button of a new sketch on each origin plane. ADR-0174 item 2 (TASK-0419): "Sketch" of the
+    // ring of the part opens the planes, and a tap on a plane makes the sketch.
     [Theory]
     [InlineData(DeviceKind.Mouse)]
     [InlineData(DeviceKind.Touch)]
     public void The_Panel_Makes_A_Sketch_On_Each_Origin_Plane(DeviceKind kind)
     {
-        var actions = Taps(kind, null, [.. DesktopUi.NewSketchButtons.Select(button => button.Label)]);
+        var actions = Taps(kind, null, [.. DesktopUi.NewSketchButtons.SelectMany(button => new[] { DesktopUi.RingTextItem(DesktopUi.PartSketchLabel), DesktopUi.RingTextItem(button.Label) })]);
 
         Assert.Equal(Datums.All.Select(datum => (PanelAction)new NewSketchAction(datum.Id)), actions);
     }

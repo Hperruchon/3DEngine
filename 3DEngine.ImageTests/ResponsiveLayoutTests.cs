@@ -26,7 +26,10 @@ public sealed class ResponsiveLayoutTests
     private static readonly DocumentLine Shelf = new("entry-hall-shelf.3de", null, Kind: Document.Part);
 
     // The states of the probe of TASK-0336. ADR-0172 item 5 (TASK-0418): and the home screen, an active sketch, an open pad,
-    // the history arc, the button "Images..." in the panel, and the open images with a selected body.
+    // the history arc, the button "Images..." in the panel, and the open images with a selected body. ADR-0174 item 7
+    // (TASK-0419): the state Images is the ring of the part with "Images", and the open structure view and the open file menu
+    // are two more states. The state of the open structure view has a centre of the part from the host, the other states with
+    // no selection have none. The open net of the views is a state too, because it holds "Dimensions" now.
     public enum State
     {
         Nothing,
@@ -39,6 +42,9 @@ public sealed class ResponsiveLayoutTests
         History,
         Images,
         ImagesOpen,
+        StructureOpen,
+        FileMenu,
+        ViewsOpen,
     }
 
     // The sizes of ADR-0113 item 1: the phones in portrait and in landscape, a tablet in both, and two windows.
@@ -89,7 +95,8 @@ public sealed class ResponsiveLayoutTests
 
     // ADR-0172 item 4 (TASK-0418): a tap on "Images..." opens the images in the place of the panel, under the top bar at the
     // left, and a tap on Close gives the panel back. Until TASK-0418 the images were a window that the person moved, which
-    // started folded at x 492 (ADR-0163 item 5).
+    // started folded at x 492 (ADR-0163 item 5). ADR-0174 item 4 (TASK-0419): "Images" of the ring of the part opens them, and
+    // Close gives the structure view back.
     [Theory]
     [InlineData(1280, 720)]
     [InlineData(360, 640)]
@@ -116,17 +123,18 @@ public sealed class ResponsiveLayoutTests
 
         Step();
         Step();
+        Step();
         Assert.Null(ui.ImagesRectangle);
         var panel = ui.PanelRectangles[0];
-        Tap(DesktopUi.OpenImagesLabel);
+        Tap(DesktopUi.RingTextItem(DesktopUi.PartImagesLabel));
         var open = ui.ImagesRectangle ?? throw new InvalidOperationException($"{width}x{height}: the images did not open.");
         Assert.Equal(panel.X, open.X, 0.5f);
         Assert.Equal(panel.Y, open.Y, 0.5f);
-        Assert.Null(ui.ItemRectangle(DesktopUi.OpenProjectLabel));
+        Assert.Null(ui.ItemRectangle(DesktopUi.DocumentRowItem));
         Assert.NotNull(ui.ItemRectangle(DesktopUi.ImageFileLabel));
         Tap(DesktopUi.CloseImagesLabel);
         Assert.Null(ui.ImagesRectangle);
-        Assert.NotNull(ui.ItemRectangle(DesktopUi.OpenProjectLabel));
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.DocumentRowItem));
     }
 
     // ADR-0172 item 2 (TASK-0418): each field and each key of an open pad shows inside the pad, with no scroll, on the phones,
@@ -177,7 +185,7 @@ public sealed class ResponsiveLayoutTests
     {
         using var ui = new DesktopUi(string.Empty, Document.Millimetre);
         var display = new Vector2(width, height);
-        Guid? selection = state is State.Nothing or State.Images ? null : A;
+        Guid? selection = state is State.Nothing or State.Images or State.StructureOpen or State.FileMenu or State.ViewsOpen ? null : A;
         var face = state == State.Face ? new FaceLine("Face +z: 100 square mm", true, [], null, null, "Face +z", null) : null;
         IReadOnlyList<ProposalCard>? cards = state == State.Proposal
             ? [new ProposalCard(Guid.NewGuid(), "Widen the plate to 75 mm", ["SetExtrudeDistance 1", "SetExtrudeDistance 2"])]
@@ -201,7 +209,17 @@ public sealed class ResponsiveLayoutTests
                 ui.OpenDistancePad(A, 10);
             if (state == State.ImagesOpen && i == 1)
                 ui.OpenImages();
-            ui.Frame(1f / 60f, display, Vector2.One, [Plate, Rib], selection, Shelf, sketchPanel: sketchPanel, imagePanel: images, face: face, ringCentre: selection is null && sketchPanel is null ? null : new Vector2(width / 2f, height * 0.55f), ringBody: 120f, history: history, proposals: cards);
+            if (state == State.StructureOpen && i == 1)
+                ui.OpenStructure();
+            if (state == State.FileMenu && i == 1)
+                ui.OpenFileMenu();
+            // The structure view is open too, so the state holds that the net takes its place.
+            if (state == State.ViewsOpen && i == 0)
+            {
+                ui.OpenStructure();
+                ui.OpenViews();
+            }
+            ui.Frame(1f / 60f, display, Vector2.One, [Plate, Rib], selection, Shelf, sketchPanel: sketchPanel, imagePanel: images, face: face, ringCentre: selection is null && sketchPanel is null && state != State.StructureOpen ? null : new Vector2(width / 2f, height * 0.55f), ringBody: 120f, history: history, proposals: cards);
         }
 
         var panels = ui.PanelRectangles.ToList();
@@ -213,6 +231,9 @@ public sealed class ResponsiveLayoutTests
         // ring. ADR-0131 item 1 (phase R18k, TASK-0360): at 360 by 640 the sheet does not fit. Until TASK-0360 the panel of
         // the selected body showed there, and its rule of the scrolled controls hid the tools of the ring under the sheet.
         var sheetOnRing = sheet is { } covering && ui.RingTop() is { } ringTop && covering.W > ringTop - 8f + 0.5f;
+        // ADR-0174 item 4 (TASK-0419): the open file menu is over each window and takes each tap, as an open list, so a control
+        // under it is no fault, and its own entries are under no window.
+        var menu = ui.ItemRectangle(DesktopUi.FileMenuItem);
         var faults = new List<string>();
         foreach (var (name, r) in ui.ItemRectangles)
         {
@@ -220,6 +241,8 @@ public sealed class ResponsiveLayoutTests
                 continue;
             if (r.X < -0.5f || r.Y < -0.5f || r.Z > width + 0.5f || r.W > height + 0.5f)
                 faults.Add($"{name} {Text(r)} goes out of the display");
+            if (menu is { } open && Holds(open, r))
+                continue;
             var middle = new Vector2((r.X + r.Z) / 2f, (r.Y + r.W) / 2f);
             // ADR-0131 item 1 (phase R18k, TASK-0360): the rows take each tap on them (finding V169), and they are no window,
             // so a tool of the ring on the rows is a fault too.
@@ -227,7 +250,7 @@ public sealed class ResponsiveLayoutTests
                 faults.Add($"{name} {Text(r)} is under the rows {Text(rows)}");
             foreach (var window in windows)
             {
-                if (!Inside(window, middle))
+                if (!Inside(window, middle) || window == menu)
                     continue;
                 // A tool of the ring and its label are on the scene, so they are never a control of a window.
                 var ring = name.StartsWith("Ring", StringComparison.Ordinal);
@@ -251,7 +274,7 @@ public sealed class ResponsiveLayoutTests
         {
             for (var j = i + 1; j < windows.Count; j++)
             {
-                if (windows[i] != sheet && windows[j] != sheet && Overlap(windows[i], windows[j]))
+                if (windows[i] != sheet && windows[j] != sheet && windows[i] != menu && windows[j] != menu && Overlap(windows[i], windows[j]))
                     faults.Add($"the window {Text(windows[i])} overlaps the window {Text(windows[j])}");
             }
         }

@@ -1,13 +1,13 @@
 ---
 id: 0172
 title: The layout of small windows and of each state, down to 360 by 560
-status: Accepted
+status: Amended
 topic: Clients, layout
 date: 2026-11-18
 supersedes: []
 superseded-by: []
 amends: ['0097', '0099', '0104', '0113', '0163']
-amended-by: []
+amended-by: ['0174']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Command.cs
   - 3DEngine.App/Ui/DesktopUi.Fixed.cs
@@ -114,3 +114,5 @@ that is a later task with its own record, and it moves the button "Images..." of
 ## History
 
 - 2026-11-18 · TASK-0418 · The record, from the review of the responsive layout and the answers of the owner (Q1 to Q4).
+- 2026-11-19 · TASK-0419 · ADR-0174 item 4 amends item 4: "Images" of the ring of the part opens the images; the button
+  "Images..." leaves the panel.

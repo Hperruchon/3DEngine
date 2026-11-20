@@ -76,19 +76,26 @@ public class DimensionImageTests
             camera.Distance *= 1.3;
 
             // ADR-0099 item 1 (the redesign, slice p, TASK-0313): the rows of a selected body take the place of the panel, so the
-            // tap on the toggle comes before the selection.
+            // tap on the toggle comes before the selection. ADR-0174 item 5 (TASK-0419): the toggle is a switch of the net of the
+            // views, so the net opens first, and a tap on "Views" closes it after the switch.
+            ui.OpenViews();
             for (var frame = 0; frame < 2; frame++)
                 ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies, null);
-            var toggle = ui.ItemRectangle(DesktopUi.DimensionsLabel)!.Value;
-            var (tx, ty) = ((toggle.X + toggle.Z) / 2, (toggle.Y + toggle.W) / 2);
-            // A tap is a frame with the press, a frame with the release, and two frames with no sample (DesktopUiTests).
-            foreach (var phase in new[] { PointerPhase.Down, PointerPhase.Up })
+            foreach (var item in new[] { DesktopUi.DimensionsLabel, DesktopUi.ViewsLabel })
             {
-                ui.Route([new PointerSample(DeviceKind.Touch, 1, 3, tx, ty, 1, PointerButtons.None, KeyModifiers.None, phase, 0)]);
-                ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies, null);
+                var toggle = ui.ItemRectangle(item)!.Value;
+                var (tx, ty) = ((toggle.X + toggle.Z) / 2, (toggle.Y + toggle.W) / 2);
+                // A tap is a frame with the press, a frame with the release, and two frames with no sample (DesktopUiTests).
+                foreach (var phase in new[] { PointerPhase.Down, PointerPhase.Up })
+                {
+                    ui.Route([new PointerSample(DeviceKind.Touch, 1, 3, tx, ty, 1, PointerButtons.None, KeyModifiers.None, phase, 0)]);
+                    ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies, null);
+                }
+                for (var frame = 0; frame < 2; frame++)
+                    ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies, null);
             }
-            for (var frame = 0; frame < 2; frame++)
-                ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies, null);
+
+            Assert.False(ui.ViewsOpen);
 
             Assert.True(ui.ShowDimensions);
             var box = renderer.BoxOf(selected)!.Value;

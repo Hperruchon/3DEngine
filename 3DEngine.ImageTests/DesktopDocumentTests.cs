@@ -57,16 +57,19 @@ public sealed class DesktopDocumentTests : IDisposable
     }
 
     // ADR-0102 item 1 (phase P9g, TASK-0316): the four controls of a file each give the action of their dialog. Until
-    // TASK-0316 a field took a name, and Save as and Open used it in the document folder.
+    // TASK-0316 a field took a name, and Save as and Open used it in the document folder. ADR-0174 item 4 (TASK-0419): the four
+    // controls are in the file menu, which a tap on the file name opens.
     [Fact]
     public void The_File_Controls_Give_The_Actions_Of_Their_Dialogs()
     {
         using var ui = Opened();
+        var file = DesktopUi.PathSegmentItem(PathLevel.Document);
 
-        Tap(ui, DeviceKind.Mouse, Centre(ui, DesktopUi.OpenProjectLabel));
-        Tap(ui, DeviceKind.Touch, Centre(ui, DesktopUi.SaveAsLabel));
-        Tap(ui, DeviceKind.Mouse, Centre(ui, DesktopUi.ExportStlLabel));
-        Tap(ui, DeviceKind.Touch, Centre(ui, DesktopUi.ImportStlLabel));
+        foreach (var (kind, label) in new[] { (DeviceKind.Mouse, DesktopUi.OpenProjectLabel), (DeviceKind.Touch, DesktopUi.SaveAsLabel), (DeviceKind.Mouse, DesktopUi.ExportStlLabel), (DeviceKind.Touch, DesktopUi.ImportStlLabel) })
+        {
+            Tap(ui, kind, Centre(ui, file));
+            Tap(ui, kind, Centre(ui, label));
+        }
 
         Assert.Equal([new OpenProjectAction(), new SaveAsAction(), new ExportStlAction(), new ImportStlAction()], ui.TakeActions());
     }
@@ -89,6 +92,9 @@ public sealed class DesktopDocumentTests : IDisposable
     public void Each_File_Control_Is_At_Least_44_Pixels_High()
     {
         using var ui = Opened();
+        ui.OpenFileMenu();
+        Step(ui);
+        Step(ui);
 
         foreach (var label in new[] { DesktopUi.OpenProjectLabel, DesktopUi.SaveAsLabel, DesktopUi.ExportStlLabel, DesktopUi.ImportStlLabel, DesktopUi.UndoLabel, DesktopUi.RedoLabel })
         {

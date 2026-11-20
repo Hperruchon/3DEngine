@@ -31,20 +31,24 @@ public class FaceArmTests
         Step(ui);
     }
 
-    // V84: a press of Face arms the arm of the panel and gives its message, and a press of "Sketch XY" ends it.
+    // V84: a press of Face arms the arm of the panel and gives its message, and a press of "Sketch XY" ends it. ADR-0174 item 2
+    // (TASK-0419): "Sketch" of the ring of the part opens Face and XY.
     [Fact]
     public void A_Press_Of_The_Buttons_Of_The_Panel_Drives_The_Arm()
     {
         using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
         Step(ui);
         Step(ui);
+        Step(ui);
 
-        Press(ui, DesktopUi.SketchOnFaceLabel);
+        Press(ui, DesktopUi.RingTextItem(DesktopUi.PartSketchLabel));
+        Press(ui, DesktopUi.RingTextItem(DesktopUi.SketchOnFaceLabel));
         Assert.Contains(ui.TakeActions(), action => action is SketchOnFaceAction);
         Assert.True(ui.FaceArm.Armed);
         Assert.Equal(FaceArm.ArmedMessage, ui.ArmMessage);
 
-        Press(ui, DesktopUi.NewSketchButtons[0].Label);
+        Press(ui, DesktopUi.RingTextItem(DesktopUi.PartSketchLabel));
+        Press(ui, DesktopUi.RingTextItem(DesktopUi.NewSketchButtons[0].Label));
         Assert.Contains(ui.TakeActions(), action => action is NewSketchAction);
         Assert.False(ui.FaceArm.Armed);
         Assert.Null(ui.ArmMessage);

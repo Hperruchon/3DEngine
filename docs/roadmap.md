@@ -479,8 +479,11 @@ Therefore each approved objective must have a track here.
   ADR-0165, ADR-0166, ADR-0167.
 - P0.169 — Each control stays free in ten states, the pad and the images are fixed parts of the layout, and the
   desktop window goes down to 360 by 560. v0.400, TASK-0418, ADR-0172.
+- R31a — With no selection the ring gives the tools of the part, the file name opens the file actions, the net of the
+  views holds the switches of the dimensions, and a structure view folded to one row takes the place of the panel. v0.401,
+  TASK-0419, ADR-0174.
 - P0.168 — A run of CI whose only failures are jobs that GitHub gave no runner gets one automatic re-run, and the test of
-  a report that blocks has no time limit that decides its result. v0.401, TASK-0417, ADR-0173.
+  a report that blocks has no time limit that decides its result. v0.402, TASK-0417, ADR-0173.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -826,6 +829,8 @@ The first objective. Each phase ends with something that a person can observe.
 | R30g | The flag of the hidden lines and the centre lines of each view, the centre lines and centre marks in GetSheet and the three files, and ⌀ for a whole circle; a contract change with its ADR (ADR-0162 items 11, 12, 14 and 17). After P0.162; it can run beside R30a to R30c. TASK-0405, ADR-0165. | 1–2 |
 | R30h | The section view of a sheet: the cut line, the cut plane and its letter, the hatch and the label "A–A", in GetSheet, the files and the sheet page; a contract change with its ADR (ADR-0162 items 13 and 17). After R30c and R30g. TASK-0411 gives the engine, GetSheet and the files (ADR-0169); the action "Section" of the sheet page follows R30d (ADR-0169 item 8), as TASK-0413 (ADR-0171). | 2–3 |
 | R30i | The title block of ISO 7200 by one command, the symbol of the projection and the centring marks; a contract change with its ADR (ADR-0162 items 15 and 17). After R30h. | 1 |
+| R31a | The left panel leaves (the study of the left panel of 2026-11-18, the choice of the owner "B plus C"): with no selection the ring gives the tools of the part ("New", "Sketch", "Bodies", "Images") with a second level for "New" and "Sketch"; the file name of the path line opens a menu of the four file actions; "Dimensions" and "Hidden too" go to the net of the views; a structure view, folded to one row and with a ground when open, takes the place of the panel (ADR-0174). TASK-0419. | 2–3 |
+| R31b | The rows of the structure view are 30 pixels high for a mouse or a pen and 44 pixels on a phone, with the setting "Compact" or "For touch" (the choice of the owner "B, 30 px" of 2026-11-18); a record that amends ADR-0027 item 6 for lists. After R31a. | 1–2 |
 
 ## Track K — The kernel
 
@@ -976,6 +981,8 @@ The tracks are not strictly sequential, but three rules hold:
    The second codebase review of 2026-11-18 comes after the Section action of R30h (v0.396, the answer of the owner "Start
    the review"). It puts P0.166, which holds a high finding, before the next product phase, R30e, and P0.167, which holds
    medium and low findings, after R30e, by the rule of `docs/templates.md`, section 7. P0.165 can come before R30e.
+   On 2026-11-19, after the merge of P0.169, the owner gave the order "start the left panel task, add the roadmap row". R31a
+   (TASK-0419) comes now, and R31b after it; then the rest of the order of 2026-11-18.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase

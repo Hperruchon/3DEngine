@@ -13,8 +13,9 @@ namespace ThreeDEngine.ImageTests;
 // the scene and then the panel of the user interface, in one render pass of an offscreen target
 // of a device with no window. The picture is compared by structure, with no reference picture:
 //
-// 1. Inside the panel, some pixels are bright: the glyphs of the text. ADR-0093 item 2 (TASK-0304): the panel has no
-//    ground, so most of its pixels have the colour of the clear; until TASK-0304 most of them were the dark ground.
+// 1. Inside the panel, some pixels are bright: the glyphs of the text. ADR-0174 item 3 (TASK-0419): the panel is the structure
+//    view, with the ground of a window, so few of its pixels have the colour of the clear. From TASK-0304 to TASK-0419 the
+//    panel had no ground (ADR-0093 item 2), and most of its pixels had the colour of the clear.
 // 2. Outside the panel, the pixels have the colour of the clear.
 //
 // The validation layer checks the synchronization, and each message fails the test.
@@ -80,9 +81,9 @@ public class PanelImageTests
             }
         }
 
-        // The buttons and the fields are filled; the rest of the panel is the clear, because the panel has no ground.
-        Assert.True(ground > inside * 0.4, $"The picture {picture}: {ground} of {inside} pixels of the panel are the clear; the panel has a ground.");
-        Assert.True(bright > 100, $"The picture {picture}: {bright} pixels of the panel are bright; the text is absent.");
+        // ADR-0174 item 3: the structure view has the ground of a window, so its text does not draw over the part.
+        Assert.True(ground < inside * 0.1, $"The picture {picture}: {ground} of {inside} pixels of the panel are the clear; the panel has no ground.");
+        Assert.True(bright > 30, $"The picture {picture}: {bright} pixels of the panel are bright; the text is absent.");
 
         foreach (var (column, row) in new[] { ((int)Width - 4, (int)Height - 4), ((int)panel.Z + 20, (int)panel.Y + 20) })
         {
@@ -118,10 +119,11 @@ public class PanelImageTests
             ui.SetFontTexture(panelRenderer.CreateTexture(atlasWidth, atlasHeight, rgba));
             renderer.Update(scene, camera, (float)PadWidth / PadHeight);
 
-            for (var frame = 0; frame < 2; frame++)
+            for (var frame = 0; frame < 3; frame++)
                 ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies);
-            // Phase K5b (TASK-0244): the list "New", and then its entry Box.
-            foreach (var item in new[] { DesktopUi.NewLabel, DesktopUi.NewBoxLabel })
+            // Phase K5b (TASK-0244): the list "New", and then its entry Box. ADR-0174 item 2 (TASK-0419): "New" of the ring of
+            // the part, and then Box.
+            foreach (var item in new[] { DesktopUi.RingTextItem(DesktopUi.NewLabel), DesktopUi.RingTextItem(DesktopUi.NewBoxLabel) })
             {
                 var button = ui.ItemRectangle(item)!.Value;
                 var (x, y) = ((button.X + button.Z) / 2, (button.Y + button.W) / 2);
@@ -170,6 +172,65 @@ public class PanelImageTests
         // The buttons of the pad are blue, so fewer pixels are dark than in the panel.
         Assert.True(dark > inside * 0.4, $"The picture {picture}: {dark} of {inside} pixels of the pad are dark.");
         Assert.True(bright > 300, $"The picture {picture}: {bright} pixels of the pad are bright; the text is absent.");
+    }
+
+    // ADR-0174 item 4 (TASK-0419): the open file menu has the ground of a window. The first form had no ground, and the real
+    // window showed its entries over the rows of the structure view. The part of the menu under the folded structure view is
+    // over the scene, so few of its pixels have the colour of the clear.
+    [VulkanImageFact]
+    public void The_File_Menu_Has_A_Ground()
+    {
+        var messagesBefore = GraphicsDevice.ValidationMessageCount;
+        using var host = new EngineHost(new InProcessMeshBackend());
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var scene = SessionScene.Create();
+        var camera = scene.Cameras[0];
+        var file = new DocumentLine("plate.3de", null);
+        byte[] pixels;
+        Vector4 panel, menu;
+
+        using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
+        {
+            using var target = new OffscreenTarget(device, new VkExtent2D(Width, Height));
+            using var renderer = new SceneRenderer(device, target.RenderPass, new HostedSession(host));
+            using var panelRenderer = new UiRenderer(device, target.RenderPass);
+            var (atlasWidth, atlasHeight, rgba) = ui.FontAtlas();
+            ui.SetFontTexture(panelRenderer.CreateTexture(atlasWidth, atlasHeight, rgba));
+            renderer.Update(scene, camera, (float)Width / Height);
+
+            var data = UiDrawData.Empty;
+            for (var frame = 0; frame < 3; frame++)
+                data = ui.Frame(1f / 60f, new Vector2(Width, Height), Vector2.One, renderer.LiveBodies, null, file);
+            ui.OpenFileMenu();
+            for (var frame = 0; frame < 3; frame++)
+                data = ui.Frame(1f / 60f, new Vector2(Width, Height), Vector2.One, renderer.LiveBodies, null, file);
+            panel = ui.PanelRectangles.Single();
+            menu = ui.ItemRectangle(DesktopUi.FileMenuItem) ?? throw new InvalidOperationException("No file menu.");
+
+            pixels = target.Render((commandBuffer, framebuffer, extent) =>
+                renderer.Record(commandBuffer, framebuffer, extent, scene, camera,
+                    overlay => panelRenderer.Record(overlay, extent, data, 0)));
+        }
+
+        var picture = SavePicture(pixels, Width, Height, "file-menu.png");
+        Assert.True(GraphicsDevice.ValidationMessageCount == messagesBefore,
+            $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages.");
+        Assert.True(menu.W > panel.W + 20f, $"The menu {menu} does not reach under the folded structure view {panel}.");
+
+        var clear = SceneRenderer.Background;
+        int ground = 0, inside = 0;
+        for (var row = (int)panel.W + 4; row < (int)menu.W - 4; row++)
+        {
+            for (var column = (int)menu.X + 4; column < (int)menu.Z - 4; column++)
+            {
+                var (r, g, b) = Pixel(pixels, column, row);
+                inside++;
+                if (Math.Abs(r - clear.R * 255) < 2 && Math.Abs(g - clear.G * 255) < 2 && Math.Abs(b - clear.B * 255) < 2)
+                    ground++;
+            }
+        }
+
+        Assert.True(ground < inside * 0.1, $"The picture {picture}: {ground} of {inside} pixels of the menu are the clear; the menu has no ground.");
     }
 
     private static (int R, int G, int B) Pixel(byte[] pixels, int column, int row)
