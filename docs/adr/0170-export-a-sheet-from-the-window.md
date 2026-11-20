@@ -39,6 +39,9 @@ sheet (ADR-0159 to ADR-0161).
    view and of the views to place; a second tap, a format, a tap on the paper or Escape closes it. On the page Escape closes
    that row first. The command line has "Export PDF", "Export SVG" and "Export DXF" while a live sheet exists; each exports the
    sheet of the page, which is the sheet that the person chose there or the first live sheet.
+   Findings V204 and V205 of the codebase review of 2026-11-18 (b) (TASK-0416): only one of the row of the formats and a
+   section is open: "Export" ends a section, and "Section" closes the row. The choice of another sheet closes the row and
+   ends a section.
 2. **The save dialog.** A format opens the save dialog of the system through SDL, with the filter of the format ("PDF file"
    and `pdf`, "SVG file" and `svg`, "DXF file" and `dxf`) and a purpose of its own (ADR-0102 item 2), so a late result of
    another dialog never writes a sheet. The dialog starts beside the file of the project at "<project> <sheet>.<format>", with
@@ -52,6 +55,8 @@ sheet (ADR-0159 to ADR-0161).
    The panel says "Exported Sheet 1 as PDF to plate Sheet 1.pdf, 2470 bytes.", with each body that gives no lines and its
    reason. A sheet that is not live gives the code of the engine, and a write that fails gives `E-EXPORT-WRITE-FAILED` with the
    reason of SDL. The file of the project does not change.
+   Finding V209 of the codebase review of 2026-11-18 (b) (TASK-0416): for a content URI the text names the file of its decoded
+   last segment, the part after the last "/" or ":", so `…/document/primary%3ADocuments%2Fplate.pdf` gives "plate.pdf".
 4. **No contract change.** The window calls the three writers of `Engine.Core/Export` as they are.
 
 ## Consequences
@@ -75,3 +80,4 @@ owner.
 
 - 2026-11-18 · TASK-0412 · The controls, the dialog and the file (phase R30d).
 - 2026-11-18 · TASK-0412 · Shipped at v0.395, after R30h took v0.394.
+- 2026-11-20 · TASK-0416 · Item 1: one open row (V204, V205); item 3: the name of a content URI (V209) (P0.167).

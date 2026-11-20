@@ -12199,3 +12199,48 @@ a new branch from `main`, and its code files changed only in the numbers that th
 New tests: 17. The test list holds 2946 (1709 in `Engine.Tests`, 390 in `3DEngine.Tests`, 844 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.397, 3 product milestones and
 7 entries followed it.
+
+## v0.405 — The medium and low findings of the codebase review of 2026-11-18 (b) (P0.167, TASK-0416)
+
+The owner ordered "go" on 2026-11-20 after the merge of R30e. TASK-0416 holds the twelve medium and low findings of the
+review of 2026-11-18 (b), after R30e by section 7 of `docs/templates.md`. The owner answered Q1 A on 2026-11-18 (TASK-0415).
+
+**The change.**
+- E221: a cut line whose place on the paper is not a finite number is not given, with its ends, arrows and letters
+  (`SheetLayout.Place`), so the read stays valid JSON and the SVG file has no arrow head at 0.
+- E222: `SectionCut.Cut` keeps the last 16 cuts with their B-Rep, under the exact content of the solid, the point, the frame
+  and the view. A read after a command that changes no body makes no new cut. The kernel is outside the write set, so the cut
+  of each polygon by the plane, the first correction of the review, waits; ADR-0169 ("Bad") gives the sizes.
+- E223 (Q1 A): an edge of a cut face gives the axis of a cylinder or a cone when it lies in one plane with the axis
+  (`ViewEdges.AxisSide`), so a cut through the axis of a cone shows the axis in each look.
+- E224: Size of a text is the height of a capital. The SVG and the PDF file write the size of the font Size / 0.718, the cap
+  height of Helvetica; the DXF file keeps the height; a letter of a cut line has its base line Size / 2 under its arrow.
+- E225: MoveSheetViews refuses a move to the place that the view has with `E-SHEET-VIEW-INVALID`, and the page sends no
+  move for a drag that ends at the place of its view.
+- V203: a field or a pad that holds the keys at the start of a frame holds them for the whole frame, so the Escape of a pad
+  does not reach the page.
+- V204 and V205: a read without the view of an open section or of the selection ends it; the choice of another sheet ends the
+  section and the row of the formats; "Export" ends a section and "Section" closes the row; Escape closes the row first.
+- V206: the page keeps the place and the switches of each view as it sent them last, until a read that is not pending comes
+  after the send, and shows each view with them.
+- V207: the paper starts under room for the highest of the rows that change at the width of the page, and "…" keeps its room.
+- V208: "Section" shows for a view of a flat frame, as "Go to".
+- V209: the text of an export to a content URI of Android names the file of its decoded last segment.
+
+**Proof.** Five new tests in `Engine.Tests` and nine in `3DEngine.ImageTests` (the theory of the paper runs at 390 by 844,
+488 by 844 and 1280 by 720). Twenty injections, each restored byte for byte, made a named test fail. The first form of the
+test of the paper missed one: "…" with no room. A probe test, removed, found that at a width of 476 to 500 pixels the mark of
+a pending read put "Export" on a new row and moved the paper; the theory now runs at 488 pixels, and that injection fails
+it. The cut of a sphere of radius 20 in a Front view: the view alone read in 1.1 s, the first read
+with a section in 3.6 s, and a read after a move of the view in 1.25 s (a probe test, removed). A clean build gives 0
+warnings, the phone project builds, `dotnet test` passes 2960 tests, and the write-set check and `eng/repo-gates` pass. No
+picture of the real window was made. The run on the branch is in the progress of TASK-0416. The failed runs since the entry
+v0.404, from the API: none.
+
+Corrections: `SheetPageTests.A_Drag_Gives_One_Move` dragged the top view after a move of the front view with no read between;
+with V206 the page keeps the sent place, so the test now gives a pending read and a read after each drag, as the host does.
+The letters of `SheetSectionTests` are 2.5 mm under the line of the arrow, for E224.
+
+New tests: 14. The test list holds 2960 (1714 in `Engine.Tests`, 390 in `3DEngine.Tests`, 853 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0; `E-SHEET-VIEW-INVALID` gets one more case. Since the
+review of v0.397, 3 product milestones and 8 entries followed it.

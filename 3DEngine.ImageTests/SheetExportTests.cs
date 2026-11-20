@@ -101,6 +101,24 @@ public sealed class SheetExportTests : IDisposable
         Assert.Equal("content://com.android.providers.downloads.documents/document/42", written[^1].Path);
     }
 
+    // Finding V209 of the codebase review of 2026-11-18 (b) (TASK-0416): the text of an export to a content URI of Android names
+    // the file of the decoded document identifier, not the encoded segment; a path of a file gives its name.
+    [Fact]
+    public async Task The_Text_Of_An_Export_On_The_Phone_Names_The_File()
+    {
+        var (host, sheet) = await Setup();
+        using var _ = host;
+        const string uri = "content://com.android.externalstorage.documents/document/primary%3ADocuments%2Fplate.pdf";
+
+        var text = SheetExports.Write(host.Session, sheet.Id, SheetFormat.Pdf, uri, (_, _) => null);
+
+        Assert.StartsWith("Exported Sheet 1 as PDF to plate.pdf, ", text, StringComparison.Ordinal);
+        Assert.Equal("plate.pdf", SheetExports.FileName(uri));
+        Assert.Equal("42", SheetExports.FileName("content://com.android.providers.downloads.documents/document/42"));
+        Assert.Equal("my plate.dxf", SheetExports.FileName("content://x/document/primary%3AMy%20Folder%2Fmy%20plate.dxf"));
+        Assert.Equal("plate.svg", SheetExports.FileName(Path.Combine(_folder, "plate.svg")));
+    }
+
     // Item 3: a sheet that is not live gives the code of the engine and writes nothing; a write that fails gives
     // E-EXPORT-WRITE-FAILED with the reason.
     [Fact]

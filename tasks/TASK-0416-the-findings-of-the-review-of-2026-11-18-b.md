@@ -1,7 +1,7 @@
 ---
 id: 0416
 title: The medium and low findings of the codebase review of 2026-11-18 (b)
-status: Ready
+status: Active
 phase: P0.167
 opened: 2026-11-18
 depends-on: [0415]
@@ -85,9 +85,9 @@ Each of the twelve findings has a correction or a recorded answer, and a test th
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test that failed on the code of v0.396 or of the version before this task, and each rule has an
+- [x] Each finding has a test that failed on the code of v0.396 or of the version before this task, and each rule has an
       injection that a test catches.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
 - [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
@@ -95,3 +95,25 @@ Each of the twelve findings has a correction or a recorded answer, and a test th
 
 Read the section of each finding in the review: its place, its probe and its recommended correction. TASK-0415 may add a step
 that clears each state of the page whose view is not in the read; V204 can use it.
+
+## Outcome
+
+Status: Active · commit (the merge of the branch p0167-review-findings) · v0.405
+
+Each of the twelve findings has a correction and a test, and ADR-0168 to ADR-0171 record them. The ledger entry v0.405 gives
+the proof.
+
+## Method
+
+- Read each finding of the review (its place, its probe and its correction) and ADR-0168 to ADR-0171 before the code.
+- E222: the kernel is outside the write set (`forbid: Engine.Kernel/**`), and `Engine.Core` cannot make a solid of polygons of
+  several tags, so the read keeps the cut, as `GetFacesQueryHandler` keeps a B-Rep. A probe test measured a sphere.
+- Ran the tests of each changed file, then 20 injections with `inject0416.js` in the scratchpad; each file came back byte for
+  byte (sha256).
+- A clean build, the phone project, `dotnet test`, the write-set check and `eng/repo-gates` before the commit.
+
+## Progress
+
+- 2026-11-20: opened under the order of the owner "go" after the merge of R30e, branch p0167-review-findings from `main` at
+  `d7936b4`.
+- 2026-11-20: the work: the twelve corrections, 14 tests, and the items of ADR-0168 to ADR-0171. Ledger entry v0.405.
