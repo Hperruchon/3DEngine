@@ -1,7 +1,7 @@
 ---
 id: 0427
 title: The scenarios of R20a and R20c in the window, and the answer of the owner on the ring of the document
-status: Active
+status: Done
 phase: P0.170
 opened: 2026-11-20
 depends-on: [0422]
@@ -57,11 +57,11 @@ The results of the two scenarios and the answer on R-0064 are a record, and each
 
 - [x] The register holds the result of each scenario, and its count of open entries falls from 14 to 12.
 - [x] ADR-0178 records the answer, with the reading of the answer and its reason.
-- [ ] The write-set check, `eng/repo-gates` and `dotnet test` pass, and continuous integration passes on the branch.
+- [x] The write-set check, `eng/repo-gates` and `dotnet test` pass, and continuous integration passes on the branch.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0170-window-scenarios) · v0.407
+Status: Done · commit (the merge of the branch p0170-window-scenarios) · v0.407
 
 ## Method
 
@@ -81,3 +81,4 @@ Status: Active · commit (the merge of the branch p0170-window-scenarios) · v0.
 - 2026-11-20: run 44816204676 of `218dac6`, the first branch, passed on each job.
 - 2026-11-20: a parallel session merged R30f as TASK-0422, ADR-0177 and v0.406. This task became TASK-0427 with ADR-0178
   and v0.407 on the branch p0170-window-scenarios-b from `main` at `05aafda`; the first branch is not merged.
+- 2026-11-20: run 44824302952 of `c45a825` passed on each job. Closed at v0.407.
