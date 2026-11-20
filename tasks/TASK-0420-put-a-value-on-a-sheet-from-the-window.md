@@ -1,7 +1,7 @@
 ---
 id: 0420
 title: "Put on sheet" in the pad of a value of a flat view places that value on the view of the sheet with the same frame
-status: Active
+status: Done
 phase: R30e
 opened: 2026-11-20
 depends-on: [0411, 0413]
@@ -68,11 +68,11 @@ one PlaceSheetDimension, as an agent sends it.
 - [x] The line does not show outside a flat view, with no sheet view of that frame, or for a value with no edge.
 - [x] A value that the sheet shows already, and a flat view with no sheet view, give a text and no command.
 - [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch r30e-put-on-sheet) · v0.403
+Status: Done · commit (the merge of the branch r30e-put-on-sheet) · v0.403
 
 The pad of a value of the selected body in a flat view has "Put on sheet", and a tap places that value on the view of the
 sheet with the same frame, 10 mm outside its edge, by one PlaceSheetDimension. The ledger entry v0.403 gives the proof.
@@ -90,3 +90,4 @@ sheet with the same frame, 10 mm outside its edge, by one PlaceSheetDimension. T
 - 2026-11-20: the work: ADR-0175, `SheetValuePlace`, the edge of a value, the button of the pad, the host action and 17
   tests. The first form of the button put "Delete" of a compact pad outside the pad at 640 by 360; the compact pad now has
   the button beside its fields. Fourteen of fifteen injections failed a named test. Ledger entry v0.403.
+- 2026-11-20: run 44698257634 of `87dd8ee` passed on each job. Closed at v0.403; the merge waits for the owner.
