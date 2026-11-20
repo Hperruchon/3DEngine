@@ -1,7 +1,7 @@
 ---
 id: 0420
 title: Compact rows of the structure view for a mouse or a pen, and the setting "Compact" or "For touch"
-status: Active
+status: Done
 phase: R31b
 opened: 2026-11-20
 depends-on: [0419]
