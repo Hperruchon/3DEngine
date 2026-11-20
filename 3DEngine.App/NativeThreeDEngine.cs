@@ -618,6 +618,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                     var addBox = _renderer?.SheetBox;
                     _sheetQueue.Send(() => addActions.AddAt(addAt.Sheet, addAt.View, addAt.X, addAt.Y, addBox));
                     break;
+                // ADR-0176 item 5 (phase R30e, TASK-0421): "Put on sheet" goes to the queue of the sheet, off the frame thread.
+                case PutOnSheetAction put when _sheetActions is { } valueActions:
+                    _sheetQueue.Send(() => valueActions.PutOnSheet(put.View, put.Value));
+                    break;
                 case FrameAction:
                     FrameBodies();
                     break;
