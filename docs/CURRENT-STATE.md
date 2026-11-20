@@ -12317,3 +12317,39 @@ not merged.
 New tests: 0. The test list holds 2969 (1714 in `Engine.Tests`, 390 in `3DEngine.Tests`, 862 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.397, 4 product milestones and
 10 entries followed it, so the codebase review is due before the next product milestone.
+
+## v0.408 — The codebase review of 2026-11-20 (governance, TASK-0425)
+
+Four product milestones (R31a, R31b, R30e and R30f) and eleven entries followed v0.396, the version that the second review of
+2026-11-18 examined, so the next product milestone, R20d, needs a review first.
+
+**The review.** `docs/reviews/2026-11-20-codebase-review.md` examines `c45a825`, the commit of P0.170 at v0.407, after the
+merge of R30f.
+- Of the thirteen findings of the last review, eleven are fixed, and V206 and V209 are fixed for their forms. E222 is fixed in
+  part: the cache of the cuts is correct, but the first read after a change of a body still makes the cut under the serial lock.
+- No new finding is critical or high.
+- T183, V210, V211, V212, V221 and V222 are medium: the concurrency test of the HTTP host decides its result with a time limit
+  of 11 s and failed on Windows at v0.355, v0.376, v0.400 and v0.405 with progress in each run; a race of one frame in the host
+  clears the sent values of V206; the file menu can open behind the structure view, so on a phone "Open project..." takes no
+  tap; a pad of a sketch on a phone measures its room at one top and opens at another; on the sheet page the paper covers the
+  arc of a proposal, and a tap on Accept over the paper also acts on the paper; and on the sheet page the arc hides the line of
+  each command, also of a command that the page does not show.
+- E226, T184 and V213 to V220 are low: the cache of 16 cuts, no cause for a crash of the test host, the tap outside the file
+  menu, the boxes of a ring that is gone, a drag that a read ended, two message texts, two statements of ADR-0178, and a first
+  row that is not cut.
+- TASK-0426 (P0.171) holds the sixteen findings after R20d, and R30i comes after P0.171. Section 4 names two texts of the
+  history arc with no ground in the branch of R20d; R20d gives them before its merge.
+- Questions Q1 to Q8 each have the recommended option A. Under the order of the owner of 2026-11-20 the session takes A; the
+  first commit of P0.171 (Q1, Q2, Q3, Q8) and of R30i (Q4 to Q7) records them.
+- Open findings: 0 critical, 2 high, 13 medium and 26 low.
+
+**Proof.** One agent examined the change from v0.396 to v0.407 in a detached copy of `c45a825`, with probes in its scratch
+folder. Its first form examined `b3b9b6e`, the commit of R20d; the merge of R30f by a parallel session made the review due
+before R20d, so the agent wrote it again. The session read the summary, the measures, the heading of each finding and the
+questions. The measures come from the script of the last review, which gives its values at `8b2619a`. A clean build gives 0
+warnings, and `dotnet test` passes 2969 tests. `CodebaseReviewGateTests`, the write-set check and `eng/repo-gates` pass. The
+run on the branch is in the progress of TASK-0425. The failed runs since the entry v0.407, from the API: none.
+
+New tests: 0. The test list holds 2969 (1714 in `Engine.Tests`, 390 in `3DEngine.Tests`, 862 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product
+milestones and 0 entries follow it.
