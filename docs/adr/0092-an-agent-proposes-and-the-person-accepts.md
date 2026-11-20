@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0107', '0108', '0110', '0111', '0113', '0130', '0133', '0134', '0135', '0136']
+amended-by: ['0107', '0108', '0110', '0111', '0113', '0130', '0133', '0134', '0135', '0136', '0177']
 affects:
   - Engine.Api.Http/Proposals.cs
   - Engine.Api.Http/Endpoints/ProposalsEndpoint.cs
@@ -158,3 +158,5 @@ first one.
   sheet of its lines with no buttons is under it.
 - 2026-11-14 · TASK-0367 · ADR-0136 item 1 amends item 7: the arc ends at 305 degrees or earlier, where Accept and its
   word lie on no target of a tool of the ring.
+- 2026-11-20 · TASK-0422 · ADR-0177 item 5 amends item 5: while the sheet page shows the sheet of the proposal, the arc has
+  no command lines, and the boxes and the values on the paper show the commands.

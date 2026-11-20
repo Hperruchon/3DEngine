@@ -60,6 +60,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     private readonly SheetReadCache _sheetRead = new();
     private readonly SheetCommandQueue _sheetQueue = new();
 
+    // ADR-0177 item 2 (phase R30f, TASK-0422): the read of the sheet items of the waiting proposal, off the frame thread.
+    private readonly SheetProposalCache _sheetProposal = new();
+
     // ADR-0170 item 2 (phase R30d, TASK-0412): the sheet and the format of the save dialog that is open, or null.
     private (Guid Sheet, SheetFormat Format)? _exportWaiting;
 
@@ -1073,6 +1076,20 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         // ADR-0110 item 3 (TASK-0334): the name, the label and the value now of each proposed value, from the sketches, the
         // bodies and the values of the frame.
         var proposals = ProposedValues.Named(_proposalDesk?.Waiting(), _sketches?.Live ?? [], _renderer.LiveBodies, values);
+        // ADR-0177 item 2 (phase R30f, TASK-0422): the boxes and the values of the sheet items of the proposal that the arc shows, from
+        // GetViewLines, GetBodyInfo and the sketches of this frame, read on the thread pool; the frame does not wait.
+        SheetProposal? sheetProposal = null;
+        if (proposals is [{ Sheet: { } sheetItems } shownProposal, ..] && ProposedSheet.Of(sheetItems) is { } proposedSheet)
+        {
+            sheetProposal = _sheetProposal.Read(version, shownProposal.Id, () =>
+            {
+                var sketched = (_sketches?.Live ?? []).ToList();
+                return Task.Run(() => SheetProposal.Read(shownProposal.Id, proposedSheet, sketched,
+                    async query => (await _host.Session.Query<Engine.Core.Queries.ViewLinesInfo>(query).ConfigureAwait(false)).Result,
+                    async body => (await _host.Session.Query<Engine.Core.Queries.BodyInfo>(new Engine.Core.Queries.GetBodyInfoQuery { BodyId = body }).ConfigureAwait(false)).Result?.Distance));
+            });
+        }
+        _ui.ShowSheetProposal(sheetProposal);
 
         // ADR-0102 item 5 (Q3 A): the question shows while a change of project waits for its answer.
         _ui.ShowQuestion(_projects?.Asking ?? false);
@@ -1087,7 +1104,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         foreach (var text in _sheetQueue.Poll())
             _documentMessage = text;
         var pageShown = _ui.PageOpen;
-        if (pageShown && _ui.PageSheetId is { } pageSheet)
+        // ADR-0177 item 4 (TASK-0422): the new sheet of a proposal is not in the Document, so the page reads no GetSheet for it.
+        if (pageShown && _ui.PageSheetId is { } pageSheet && !_ui.PageProposedNew)
         {
             var (pageInfo, pagePending) = _sheetRead.Read(version, pageSheet, () => Task.Run(async () =>
                 (await _host.Session.Query<Engine.Core.Queries.SheetInfo>(new Engine.Core.Queries.GetSheetQuery { SheetId = pageSheet }).ConfigureAwait(false)).Result));

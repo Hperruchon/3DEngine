@@ -10,7 +10,7 @@ namespace ThreeDEngine.Desktop;
 // ADR-0092 item 7 (TASK-0326): the window reads the queue of the proposals of the host through this class, because the
 // application project does not reference the surface library, which the phone does not have.
 // ADR-0110 item 1 (TASK-0334): each card holds the proposed value of each command too, from the parameters that the queue
-// keeps.
+// keeps. ADR-0177 item 1 (phase R30f, TASK-0422): and the sheet item of each command, for the sheet page.
 internal sealed class HostedSession(EngineHost host) : ISessionHost, IProposalDesk
 {
     public EngineHost Host { get; } = host;
@@ -26,7 +26,8 @@ internal sealed class HostedSession(EngineHost host) : ISessionHost, IProposalDe
     public IReadOnlyList<ProposalCard> Waiting()
         => [.. Host.Proposals.Waiting().Select(proposal => new ProposalCard(proposal.Id, proposal.Summary,
             [.. proposal.Commands.Select(command => ProposalCard.Line(command.Name, command.Parameters))], proposal.Stale, proposal.State == ProposalStates.Applying,
-            [.. proposal.Commands.Select(command => ProposedValues.Of(command.Name, command.Parameters))], [.. proposal.Commands.Select(command => command.CommandId)]))];
+            [.. proposal.Commands.Select(command => ProposedValues.Of(command.Name, command.Parameters))], [.. proposal.Commands.Select(command => command.CommandId)],
+            [.. proposal.Commands.Select(command => ProposedSheet.ItemOf(command.Name, command.Parameters, command.CommandId))]))];
 
     public async Task<ProposalOutcome> Accept(Guid id) => Outcome(await Host.Proposals.Accept(id).ConfigureAwait(false));
 

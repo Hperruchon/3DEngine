@@ -7,7 +7,7 @@ date: 2026-11-18
 supersedes: []
 superseded-by: []
 amends: ['0138', '0155', '0167']
-amended-by: ['0170', '0171']
+amended-by: ['0170', '0171', '0177']
 affects:
   - Engine.Core/Commands/MoveSheetViewsCommand.cs
   - Engine.Core/Commands/MoveSheetViewsCommandHandler.cs
@@ -125,3 +125,5 @@ offers each other sheet by name only. The texts of the title block need a paper 
 - 2026-11-18 · TASK-0415 · Item 3: a read without the dragged view ends the drag (finding V202, P0.166).
 - 2026-11-20 · TASK-0416 · Items 1, 3, 4 and 6: the room of the header (V207), no move to the same place (E225), the values that
   the page sent (V206), and the keys of a pad (V203) (P0.167).
+- 2026-11-20 · TASK-0422 · ADR-0177 items 3 and 4 amend item 1: the button "Sheet" and the page show the sheet of a
+  proposal of the agent, with its amber boxes and values, and a new sheet of a proposal takes no tap (R30f).
