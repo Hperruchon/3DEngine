@@ -1,0 +1,65 @@
+---
+id: 0178
+title: "Show hidden" is on the ring of the part, and the count of the hidden bodies goes on the path line where the status line has no room
+status: Accepted
+topic: Clients, rendering
+date: 2026-11-20
+supersedes: []
+superseded-by: []
+amends: ['0124']
+amended-by: []
+affects:
+  - 3DEngine.App/Ui/DesktopUi.cs
+  - 3DEngine.App/Ui/DesktopUi.Fixed.cs
+  - 3DEngine.ImageTests/ShowHiddenTests.cs
+enforced-by: 3DEngine.ImageTests/ShowHiddenTests.cs (TASK-0424 creates it)
+---
+
+# ADR-0178 — "Show hidden" is on the ring of the part, and the count of the hidden bodies goes on the path line where the status line has no room
+
+This document uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, section "Language".
+
+## Context
+
+Register entry R-0064 (2026-11-12) held two questions of improvement B of the UX test of 2026-11-10. First, the place of a ring
+of the document with "Show hidden", because no ring showed with nothing selected. Second, the place of the part "N hidden ·
+Show" of ADR-0124 item 2 on a portrait phone: at 390 pixels the status line has 38 pixels of room right of Home, so the part
+does not show, and the way back is the panel.
+
+On 2026-11-20 the owner chose "On the path line" from four options: the path line, the top bar, the centre of the scene, or
+the panel only. The question said "a tap on the path line with nothing selected opens the ring of the document; the phone uses
+the same place".
+
+The question did not say that R31a (ADR-0174 item 1, v0.401) already gives a ring with nothing selected: the ring of the part,
+with "New", "Sketch", "Bodies" and "Images". A second ring for the same state would put two rings on one display. ADR-0174 item
+4 also gives a tap on the file name of the path line to the file menu.
+
+## Decision
+
+1. **"Show hidden" on the ring of the part (amends ADR-0124 item 4).** The ring of the part of ADR-0174 item 1 is the ring of
+   the document. While at least one live body is hidden, it has one more segment, "Show hidden", which sends the command "Show
+   all" (one step of undo, as the button of ADR-0124 item 3). With no hidden body the segment does not show.
+2. **The count on the path line (amends ADR-0124 item 2).** Where the status line has no room for the part "N hidden · Show"
+   (a portrait phone of 390 pixels), the part shows on the path line, right of the file name, with the same tap as in the
+   status line (the list of ADR-0124 item 3). Where the status line has room, the part stays there, and the path line does not
+   repeat it. The phone and the desktop use the same rule.
+3. **No contract change, no engine change.** The ring, the segment and the part are states of the client (ADR-0007).
+4. **No code in this record.** Roadmap row R20e (TASK-0424) gives items 1 and 2, with the tests in `ShowHiddenTests` and the
+   layout test of ADR-0172.
+
+## Consequences
+
+**Good:** a person finds "Show hidden" where the tools of the part are, on each display, and a portrait phone shows the count
+of the hidden bodies.
+
+**Bad:** the answer of the owner named a tap on the path line that opens a ring. This record reads it as the place of the count
+of the hidden bodies, and keeps one ring with nothing selected. The owner can correct the reading.
+
+## Alternatives considered
+
+- A second ring that opens from a tap on the path line: two rings for one state, and the file name already opens the file menu.
+- The panel only: the owner did not choose it.
+
+## History
+
+- 2026-11-20 · TASK-0427 · The record, from the answer of the owner of 2026-11-20 to R-0064.

@@ -12284,4 +12284,36 @@ windows-latest", and attempt 2 passed.
 
 New tests: 9. The test list holds 2969 (1714 in `Engine.Tests`, 390 in `3DEngine.Tests`, 862 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.397, 4 product milestones and
-9 entries followed it.
+## v0.407 — The scenarios of R20a and R20c in the window, and the answer on the ring of the document (P0.170, TASK-0427)
+
+On 2026-11-20 the owner ordered a run until 2026-11-22 09:00 under the rules of the batch of 2026-11-14, and answered four
+questions with the recommended option: merge after green continuous integration, K10 with the bookcase as its first case,
+the control of the window for the scenarios of R-0063 and R-0065, and the path line for R-0064.
+
+**The scenarios.** The desktop host of v0.405 ran at 1280 by 720 on a copy of `Bibliotheque120.3de` (19 bodies), and the
+session controlled it by computer use.
+- R20a passes. Three steps of the wheel put no module under the band of the ring, so the session zoomed eight steps. A click
+  under the tile of Move, away from its icon and its label, selected "Module 15 - volume indicatif" and opened no pad. A click
+  on the icon of Move opened the pad of Move. R-0063 closes.
+- R20c passes in part. The labels say what they measure: "Cote gauche · X 18 mm", "· Y 400 mm" and "· Z 800 mm" in the colour
+  of the selection, and "Overall · X 3400 mm", "· Y 400 mm" and "· Z 2350 mm" in grey. But the history arc crosses the plate
+  "Overall · Y 400 mm", and a dimension line crosses the label "Box" of the history arc. R-0065 stays open, and the new row R20d
+  corrects both before its due date.
+
+**The answer on R-0064.** ADR-0178 reads "On the path line" with the ring of the part of R31a, which shows with nothing
+selected since v0.401: "Show hidden" is a segment of that ring while a body is hidden, and the part "N hidden · Show" goes on
+the path line where the status line has no room. ADR-0178 says that the owner can correct the reading. Row R20e gives it.
+
+**Proof.** No code changed. The write-set check, `eng/repo-gates` and `dotnet test` pass. The pictures of the scenarios are
+in the report to the owner, not in the repository. The failed runs since the entry v0.406, from the API: attempt 1 of run
+44814556105 (`8dbaafb`, v0.405 on `main`) failed on windows-latest in the step "Test":
+`HttpConcurrencyTests.Subscriptions_And_Commands_In_Parallel_For_One_Second_Do_Not_Deadlock` did not end in 11 s. The owner
+re-ran the job, and attempt 2 passed. The same file failed on Windows at v0.355, v0.376 and v0.400.
+
+Renumbered: a parallel session merged R30f as TASK-0422, ADR-0177 and v0.406 while this task waited for its run, so this task
+is TASK-0427 with ADR-0178 and v0.407 on a new branch from `main` at `05aafda`. The first branch, p0170-window-scenarios, is
+not merged.
+
+New tests: 0. The test list holds 2969 (1714 in `Engine.Tests`, 390 in `3DEngine.Tests`, 862 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.397, 4 product milestones and
+10 entries followed it, so the codebase review is due before the next product milestone.
