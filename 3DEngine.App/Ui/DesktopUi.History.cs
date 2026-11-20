@@ -36,6 +36,22 @@ internal sealed unsafe partial class DesktopUi
     // The nodes of this frame: the step, the centre of its node, and the rectangle of its text.
     private List<(HistoryStep Step, Vector2 Centre, Vector4 Text)> _historyNodes = [];
 
+    // ADR-0125 item 4 (phase R20d, TASK-0423): the stroke of the arc is a cover for a plate of a dimension, as its nodes and its
+    // texts. The arc is cut into HistoryArcParts chords; each cover is the box of one chord, wider by half the widest stroke
+    // of the glow. Until TASK-0423 the stroke was no cover, and in the window the arc went across "Overall · Y 400 mm".
+    internal const int HistoryArcParts = 12;
+    internal const float HistoryArcHalfWidth = 5f;
+    private List<Vector4> _historyArcCovers = [];
+
+    internal IReadOnlyList<Vector4> HistoryArcCovers => _historyArcCovers;
+
+    // The arc of this frame for a test: its centre, its radius, and its two ends as angles; null with no arc.
+    internal (Vector2 Centre, float Radius, float Upper, float Lower)? HistoryArc { get; private set; }
+
+    // ADR-0125 item 4 (TASK-0423): each text of the arc has the ground of the scene behind it, wider by this on each side, so a
+    // dimension line, which the frame draws under the arc, does not go across the text. Until TASK-0423 a line went across "Box".
+    internal const float HistoryGroundPad = 2f;
+
     // True when the point is on a node or on its text in this frame.
     private bool OverHistory(double x, double y) => HistoryAt(new Vector2((float)x, (float)y)) is not null;
 
@@ -48,6 +64,8 @@ internal sealed unsafe partial class DesktopUi
     private void History(Vector2 displaySize, LiveBody? body, IReadOnlyList<HistoryStep>? steps)
     {
         _historyNodes = [];
+        _historyArcCovers = [];
+        HistoryArc = null;
         HistoryAlphaOfFrame = ImGui.GetStyle().Alpha;
         if (body is null || steps is not { Count: > 0 } || _ring is not { } ring || _sketchActive || _pad is not null || Portrait(displaySize))
             return;
@@ -58,6 +76,7 @@ internal sealed unsafe partial class DesktopUi
         // apart, and a node past the bottom does not show.
         var radius = ring.Inner + (RingBand / 2f);
         var (upper, lower) = (MathF.PI * 0.75f, MathF.PI / 2f);
+        HistoryArc = (ring.Centre, radius, upper, lower);
         var step = Math.Max((upper - lower) / (HistorySteps.Most - 1), (HistoryNode + 4f) / radius);
         Vector2 At(float angle) => ring.Centre + (new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * radius);
         var lineHeight = ImGui.GetTextLineHeight();
@@ -100,10 +119,17 @@ internal sealed unsafe partial class DesktopUi
         // the circle of 44 pixels. Until TASK-0346 the arc was faint and each node a round button of 44 pixels with an icon.
         var list = ImGui.GetBackgroundDrawList();
         var colours = ImGui.GetStyle().Colors;
-        foreach (var (width, alpha) in new[] { (10f, 0.08f), (5f, 0.18f), (2f, 1f) })
+        foreach (var (width, alpha) in new[] { (HistoryArcHalfWidth * 2f, 0.08f), (5f, 0.18f), (2f, 1f) })
         {
             list.PathArcTo(ring.Centre, radius, upper, lower, 48);
             list.PathStroke(AccentAlpha(alpha), ImDrawFlags.None, width);
+        }
+        for (var part = 0; part < HistoryArcParts; part++)
+        {
+            var (a, b) = (At(upper - ((upper - lower) * part / HistoryArcParts)), At(upper - ((upper - lower) * (part + 1) / HistoryArcParts)));
+            _historyArcCovers.Add(new Vector4(
+                MathF.Min(a.X, b.X) - HistoryArcHalfWidth, MathF.Min(a.Y, b.Y) - HistoryArcHalfWidth,
+                MathF.Max(a.X, b.X) + HistoryArcHalfWidth, MathF.Max(a.Y, b.Y) + HistoryArcHalfWidth));
         }
 
         var ink = ImGui.GetColorU32(colours[(int)ImGuiCol.Text]);
@@ -128,6 +154,7 @@ internal sealed unsafe partial class DesktopUi
 
             // The text, and the state of a failed or an unresolved step after it in red, as the rows say it.
             var words = shown.Text;
+            list.AddRectFilled(new Vector2(text.X - HistoryGroundPad, text.Y), new Vector2(text.Z + HistoryGroundPad, text.W), ImGui.GetColorU32(Theme.Plate(1f)));
             list.AddText(new Vector2(text.X, text.Y), shown.State == Engine.Core.Queries.GetFeaturesQueryHandler.Consumed ? quiet : ink, words);
             // Finding V170 of the codebase review of 2026-11-12 (TASK-0350): the red goes through GetColorU32, so it fades with
             // the arc (ADR-0116 item 2); until TASK-0350 it kept its full alpha during a gesture.

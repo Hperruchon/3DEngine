@@ -12273,3 +12273,30 @@ in the report to the owner, not in the repository. The failed runs since the ent
 New tests: 0. The test list holds 2960 (1714 in `Engine.Tests`, 390 in `3DEngine.Tests`, 853 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.397, 3 product milestones and
 9 entries followed it.
+
+## v0.407 — No plate of a dimension lies on the stroke of the history arc, and each text of the arc has the ground of the scene (R20d, TASK-0423)
+
+The scenario of R20c in the window on 2026-11-20 (v0.406) found two faults: the history arc went across the plate "Overall ·
+Y 400 mm", and a dimension line went across the text "Box" of the arc. Register entry R-0065 held them.
+
+**The change.**
+- The stroke of the history arc is a cover for the placement of ADR-0125 item 4: twelve boxes of its chords, each wider by 5
+  pixels, half the widest stroke of its glow (`DesktopUi.History.cs`, `DimensionCovers`).
+- Each text of the arc has a rectangle of the ground of the scene behind it, 2 pixels wider on each side. The frame draws the
+  dimensions on the first channel of the background list, under the arc, so a line under a text does not show.
+
+**Proof.** Two new tests in `DimensionLabelsTests`. The first measures each plate from 361 points of the arc in 96 views (24
+sides, four heights of the eye) and asserts that some plates start on the arc. The second reads the vertices that `Frame`
+returns and finds the ground at the four corners of each text, after the last dimension vertex inside it. Three injections,
+each restored byte for byte, made a named test fail: no cover of the stroke, no ground, and covers with no width. The first
+form of the test compared the plates with the covers of the program, and the third injection stayed green; the test now
+measures from the arc. A call of `ImGui.GetBackgroundDrawList` outside a frame stopped the test host, so the test reads the
+returned draw data. A clean build gives 0 warnings, `dotnet test` passes 2962 tests, and the write-set check and
+`eng/repo-gates` pass. No new picture of the window was made. The run on the branch is in the progress of TASK-0423. The
+failed runs since the entry v0.406, from the API: run 44814556105 of `8dbaafb` (v0.405 on `main`)
+failed on windows-latest in the step "Test": `HttpConcurrencyTests.Subscriptions_And_Commands_In_Parallel_For_One_Second_Do_Not_Deadlock`
+did not end in 11 s. The same file failed on Windows at v0.355, v0.376 and v0.400; the review that is due holds it.
+
+New tests: 2. The test list holds 2962 (1714 in `Engine.Tests`, 390 in `3DEngine.Tests`, 855 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 11 of 15 (R-0065 closes). New diagnostic codes: 0. Since the review of v0.397, 4 product
+milestones and 10 entries followed it, so the codebase review is due before the next product milestone.

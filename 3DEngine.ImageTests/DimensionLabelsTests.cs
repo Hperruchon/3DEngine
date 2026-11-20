@@ -3,6 +3,7 @@ using Engine.Core.Queries;
 using ThreeDEngine.Core.Models;
 using ThreeDEngine.Desktop;
 using ThreeDEngine.Desktop.Ui;
+using ThreeDEngine.Vulkan;
 
 namespace ThreeDEngine.ImageTests;
 
@@ -296,6 +297,91 @@ public sealed class DimensionLabelsTests
         var placed = DimensionOverlay.Place(labels, Size, Display, covers);
 
         Assert.Equal(labels.Select(label => label.At), placed.Select(label => label.At));
+    }
+
+    // Phase R20d (TASK-0423): the scenario of R20c in the window on 2026-11-20 found the history arc across "Overall · Y 400 mm".
+    // From 24 sides and four heights of the eye, with the panel selected, its ring and its history arc, no plate lies on the
+    // stroke of the arc, and in some views a plate starts on it, so the placement moved it. The test measures each plate from
+    // points of the arc itself, 1/8 of a degree apart, so a cover that does not hold the whole stroke fails it.
+    [Fact]
+    public void No_Plate_Lies_On_The_Stroke_Of_The_History_Arc()
+    {
+        LiveBody[] bodies = [Panel, new(Guid.Parse("72000000-0000-0000-0000-000000000009"), "Extrude", "Fond", true)];
+        var (on, started) = (new List<string>(), 0);
+        foreach (var pitch in new[] { 10f, 20f, 35f, 50f })
+        {
+            for (var yaw = 0; yaw < 360; yaw += 15)
+            {
+                var camera = new Camera { ZUp = true, YawDegrees = yaw, PitchDegrees = pitch, FarPlane = 50000f };
+                camera.Frame(Whole.Min, Whole.Max, Display.X / Display.Y);
+                var strokes = DimensionOverlay.Of(Whole, Board, camera, Display.X, Display.Y, "mm");
+                using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+                for (var frame = 0; frame < 3; frame++)
+                    ui.Frame(1f / 60f, Display, Vector2.One, bodies, Panel.Id, dimensions: strokes, ringCentre: Centre(camera, Board), history: Steps);
+
+                var arc = ui.HistoryArcCovers;
+                Assert.Equal(DesktopUi.HistoryArcParts, arc.Count);
+                var (centre, radius, upper, lower) = ui.HistoryArc!.Value;
+                var points = Enumerable.Range(0, 361).Select(k => upper - ((upper - lower) * k / 360f))
+                    .Select(angle => centre + (new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * radius)).ToList();
+                // The distance from a point to a rectangle; 0 inside it.
+                static float Distance(Vector2 point, Vector4 box)
+                    => new Vector2(MathF.Max(MathF.Max(box.X - point.X, 0f), point.X - box.Z), MathF.Max(MathF.Max(box.Y - point.Y, 0f), point.Y - box.W)).Length();
+                started += strokes.Measures.Select((measured, i) => (measured, i)).Count(entry =>
+                {
+                    var (measured, size) = (entry.measured, ui.PlateSize(ui.DimensionPlates[entry.i].Text));
+                    var at = EdgeValues.Placed(measured.Line) + (measured.Line.Normal * DesktopUi.Half(size, measured.Line.Normal)) - (size / 2f);
+                    return arc.Any(cover => Overlap(new Vector4(at.X, at.Y, at.X + size.X, at.Y + size.Y), cover));
+                });
+                // The widest stroke of the glow is 2 * HistoryArcHalfWidth; a chord is 0.1 pixel at most from its arc.
+                on.AddRange(ui.DimensionPlates
+                    .Where(plate => points.Min(point => Distance(point, plate.Plate)) < DesktopUi.HistoryArcHalfWidth - 0.2f)
+                    .Select(plate => $"{yaw}/{pitch}: {plate.Text} at {plate.Plate} on the arc"));
+            }
+        }
+
+        Assert.True(started > 0, "No plate starts on the arc, so the test proves nothing.");
+        Assert.True(on.Count == 0, string.Join("; ", on));
+    }
+
+    // Phase R20d (TASK-0423), ADR-0125 item 4: the scenario of R20c found a dimension line across the text "Box" of the history
+    // arc. Each text of the arc has the ground of the scene behind it: the background list holds a rectangle of that colour from
+    // HistoryGroundPad left of the text to HistoryGroundPad right of it. The dimensions are on the first channel, so the
+    // rectangle comes after their lines.
+    [Fact]
+    public void Each_Text_Of_The_History_Arc_Has_The_Ground_Of_The_Scene_Behind_It()
+    {
+        var camera = Camera();
+        var strokes = DimensionOverlay.Of(Whole, Board, camera, Display.X, Display.Y, "mm");
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        LiveBody[] bodies = [Panel, new(Guid.Parse("72000000-0000-0000-0000-000000000009"), "Extrude", "Fond", true)];
+        var drawn = UiDrawData.Empty;
+        for (var frame = 0; frame < 3; frame++)
+            drawn = ui.Frame(1f / 60f, Display, Vector2.One, bodies, Panel.Id, dimensions: strokes, ringCentre: Centre(camera, Board), history: Steps);
+
+        Assert.NotEmpty(strokes.Measures);
+        var vertices = drawn.Vertices;
+        var ground = Theme.Plate(1f);
+        Assert.Contains(vertices, vertex => vertex.Colour is DesktopUi.OverallDimensionColour or DesktopUi.SelectionDimensionColour);
+        var shown = 0;
+        foreach (var step in Steps)
+        {
+            if (ui.ItemRectangle(DesktopUi.HistoryTextItem(step.Id)) is not { } text)
+                continue;
+            shown++;
+            var (left, right) = (text.X - DesktopUi.HistoryGroundPad, text.Z + DesktopUi.HistoryGroundPad);
+            // The last vertex of a dimension inside the ground: the ground must come after it.
+            var lastLine = Array.FindLastIndex(vertices, vertex => vertex.Colour is DesktopUi.OverallDimensionColour or DesktopUi.SelectionDimensionColour
+                && vertex.Position.X >= left && vertex.Position.X <= right && vertex.Position.Y >= text.Y && vertex.Position.Y <= text.W);
+            foreach (var corner in new[] { new Vector2(left, text.Y), new Vector2(right, text.Y), new Vector2(right, text.W), new Vector2(left, text.W) })
+            {
+                var found = Enumerable.Range(0, vertices.Length)
+                    .Where(i => vertices[i].Colour == ground && Vector2.Distance(vertices[i].Position, corner) < 0.01f).ToList();
+                Assert.True(found.Count > 0, $"No ground at {corner} behind the text of {step.Text}.");
+                Assert.True(found.Any(i => i > lastLine), $"The ground at {corner} is under a dimension line.");
+            }
+        }
+        Assert.True(shown > 0, "The arc shows no text.");
     }
 
     // Item 5: a body that is not a board has no thickness line.
