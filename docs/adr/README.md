@@ -178,6 +178,7 @@ names. Do not read all of them.
 | [0170](0170-export-a-sheet-from-the-window.md) | The sheet page and the command line export a sheet as PDF, SVG or DXF through the save dialog of the system, off the frame thread | Accepted | Drawing, window, export | 0168 | — |
 | [0171](0171-the-section-action-of-the-sheet-page.md) | On the sheet page a person cuts a view with "Section", a look and two taps, and the page draws the section as the files do | Accepted | Drawing, window | 0155, 0168, 0169 | — |
 | [0172](0172-the-layout-of-small-windows-and-of-each-state.md) | The layout of small windows and of each state, down to 360 by 560 | Amended | Clients, layout | 0097, 0099, 0104, 0113, 0163 | 0174 |
+| [0173](0173-a-lost-runner-gets-one-automatic-re-run.md) | A run of CI whose only failures are jobs that GitHub gave no runner gets one automatic re-run, and no time limit decides a test that passes | Accepted | Pipeline | — | — |
 | [0174](0174-the-tools-of-the-part-on-the-ring-and-a-structure-view.md) | The tools of the part on the ring, a file menu, and a structure view in the place of the panel | Accepted | Clients, layout | 0056, 0076, 0081, 0093, 0100, 0102, 0172 | — |
 
 ## Topics

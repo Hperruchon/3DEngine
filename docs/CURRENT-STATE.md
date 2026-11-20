@@ -12091,3 +12091,41 @@ the line only.
 New tests: 14. The test list holds 2916 (1704 in `Engine.Tests`, 390 in `3DEngine.Tests`, 819 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.397, 1 product milestone
 and 4 entries followed it.
+
+## v0.402 — A run of CI whose only failures are jobs that GitHub gave no runner gets one automatic re-run, and no time limit decides the test of a report that blocks (P0.168, TASK-0417)
+
+The owner asked on 2026-11-18 why many runs failed, answered "Yes, open a task", and ordered "then start TASK-0417" and
+"Merge it". TASK-0418 took v0.400 and TASK-0419 took v0.401 on `main` first, so the branch merged `main` twice and this
+entry is v0.402. Of the 44
+runs that started on 2026-11-18, 4 failed and none for a fault of the code: three for a macOS runner that GitHub did not give,
+and one for a time limit of 5 seconds on a slow Windows runner.
+
+**The change.**
+- The new workflow `.github/workflows/rerun-lost-runner.yml` runs after each run of CI. `eng/lost-runner.js` asks for one
+  re-run of the failed jobs when the first attempt failed only in jobs with the annotation "was not acquired by Runner" and no
+  failed step. A failed step, a second attempt or a run of another workflow stays red. The log names each run and its attempt.
+- The workflow checks out the default branch only, with no credentials, and its token has `actions: write`, `checks: read` and
+  `contents: read` only. ADR-0173 records the reason.
+- `A_Report_That_Blocks_Does_Not_Hold_The_Session`: the report blocks until the test releases it, after the Apply and the
+  Read ended. A limit of 60 seconds only stops a test that waits for ever.
+- `docs/templates.md`, section 5, names the workflow.
+
+**Proof.** `LostRunnerTests` gives the script three saved first attempts of 2026-11-18 from the API: the lost macOS runner of
+run 44337062610 gets a re-run, and the failed test of run 44409491212 and the failed install of the emulator of run
+44416434810 get none. Changed copies give a second attempt, another workflow, a run that passed, a lost runner with a failed
+test in another job, and a lost runner with no annotation, and none of them gets a re-run. Eleven injections each gave the
+expected result, and each file came back byte for byte: the report back inside the commit made the test fail after 60 seconds;
+a listener that sleeps 10 seconds in each event (20 seconds in the commit) left the new test green; five changes of the
+choice and four changes of the workflow (a token that writes the code, a checkout of the branch of the run, kept
+credentials, a re-run of a second attempt) each made a named test fail. The test of v0.399 with the same slow listener failed
+with `System.TimeoutException`, as in run 44409491212. A clean build gives 0 warnings, `dotnet test` passes 2898 tests, and the
+write-set check and `eng/repo-gates` pass. The workflow runs only from `main`, so its first real run comes after the merge. The
+run on the branch is in the progress of TASK-0417. The failed runs since the entry v0.399, from the API: the first attempt of
+run 44416434810 on `74b45b8`, the opening of TASK-0417, failed in the step "Install the emulator and a system image of Android
+14"; the re-run of the owner passed. The re-run of run 44409491212 on `main`, which the entry v0.399 names, passed. The entry v0.401 names the failed first attempt
+of run 44425726090. A lost runner was not its cause, so the new workflow keeps such a run red. Since the merge of v0.400,
+5 runs started and none failed.
+
+New tests: 5. The test list holds 2921 (1709 in `Engine.Tests`, 390 in `3DEngine.Tests`, 819 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.397, 1 product milestone and
+5 entries followed it.
