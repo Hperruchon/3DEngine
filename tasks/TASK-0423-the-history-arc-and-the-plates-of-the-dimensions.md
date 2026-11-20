@@ -1,7 +1,7 @@
 ---
 id: 0423
 title: No plate of a dimension lies on the stroke of the history arc, and each text of the arc has the ground of the scene
-status: Active
+status: Done
 phase: R20d
 opened: 2026-11-20
 depends-on: [0425]
@@ -60,11 +60,11 @@ The scenario of R20c passes: no element covers a plate, and no line goes across 
 - [x] Each text of the arc, its caption and a pending text have a rectangle of the ground of the scene behind them, after
       each dimension line under them, and the pending text is a cover.
 - [x] Each of six injections makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch r20d-history-arc-b) · v0.409
+Status: Done · commit (the merge of the branch r20d-history-arc-b) · v0.409
 
 ## Method
 
@@ -85,3 +85,4 @@ Status: Active · commit (the merge of the branch r20d-history-arc-b) · v0.409
   v0.408) named the caption and the pending text (finding V220 of its first form). This task added their ground and the
   cover, made the test of the ground a theory with and without a pending step, and moved to the branch r20d-history-arc-b
   from the review. Ledger entry v0.409; the first branch is not merged.
+- 2026-11-20: run 44826283924 of `0b8b0ab` passed on each job. Closed at v0.409.
