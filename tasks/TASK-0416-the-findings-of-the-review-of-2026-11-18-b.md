@@ -1,7 +1,7 @@
 ---
 id: 0416
 title: The medium and low findings of the codebase review of 2026-11-18 (b)
-status: Active
+status: Done
 phase: P0.167
 opened: 2026-11-18
 depends-on: [0415]
@@ -88,7 +88,7 @@ Each of the twelve findings has a correction or a recorded answer, and a test th
 - [x] Each finding has a test that failed on the code of v0.396 or of the version before this task, and each rule has an
       injection that a test catches.
 - [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on the branch and on
       `main` after the merge.
 
 ## Notes for the implementer
@@ -98,7 +98,7 @@ that clears each state of the page whose view is not in the read; V204 can use i
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0167-review-findings) · v0.405
+Status: Done · commit (the merge of the branch p0167-review-findings) · v0.405
 
 Each of the twelve findings has a correction and a test, and ADR-0168 to ADR-0171 record them. The ledger entry v0.405 gives
 the proof.
@@ -117,3 +117,6 @@ the proof.
 - 2026-11-20: opened under the order of the owner "go" after the merge of R30e, branch p0167-review-findings from `main` at
   `d7936b4`.
 - 2026-11-20: the work: the twelve corrections, 14 tests, and the items of ADR-0168 to ADR-0171. Ledger entry v0.405.
+- 2026-11-20: run 44758589835 of `67b7825` passed on each job at attempt 2. Attempt 1 failed on windows-latest in the step
+  "Test": the test host of `3DEngine.ImageTests` crashed. Five local runs passed 853 of 853. The owner re-ran the job. The
+  automatic re-run of ADR-0173 does not cover a failed step. Closed at v0.405; the merge waits for the owner.
