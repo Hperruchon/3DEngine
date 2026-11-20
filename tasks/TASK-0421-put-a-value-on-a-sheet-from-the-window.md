@@ -1,7 +1,7 @@
 ---
 id: 0421
 title: "Put on sheet" in the pad of a value of a flat view places that value on the view of the sheet with the same frame
-status: Active
+status: Done
 phase: R30e
 opened: 2026-11-20
 depends-on: [0411, 0413]
@@ -73,7 +73,7 @@ one PlaceSheetDimension, as an agent sends it.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch r30e-put-on-sheet-b) · v0.404
+Status: Done · commit (the merge of the branch r30e-put-on-sheet-b) · v0.404
 
 The pad of a value of the selected body in a flat view has "Put on sheet", and a tap places that value on the view of the
 sheet with the same frame, 10 mm outside its edge, by one PlaceSheetDimension. The ledger entry v0.404 gives the proof.
@@ -97,3 +97,4 @@ sheet with the same frame, 10 mm outside its edge, by one PlaceSheetDimension. T
   `cc72b24` of the branch density), so nothing was pushed. The task moves to TASK-0421, ADR-0176 and v0.404 on the branch
   r30e-put-on-sheet-b from `main` at `cc72b24`. Each code file is the file of `63a5563` with the new numbers. The branch
   r30e-put-on-sheet stays unmerged.
+- 2026-11-20: run 44722655418 of `beda917` passed on each job. Closed at v0.404.
