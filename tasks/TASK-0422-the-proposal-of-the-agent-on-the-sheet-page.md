@@ -1,7 +1,7 @@
 ---
 id: 0422
 title: The sheet page shows a proposal of the agent as amber boxes of views and amber values before the accept
-status: Done
+status: Active
 phase: R30f
 opened: 2026-11-20
 depends-on: [0413, 0416]
@@ -104,3 +104,4 @@ over the page. The ledger entry v0.406 gives the proof.
   open, and a page that went to the first sheet after the accept. Each has a test now. `DesktopUi.Sheet.cs` joined the write
   set for the third.
 - 2026-11-20: closed at v0.406. P0.167 reached `main` at `8dbaafb7` meanwhile, with the same commits as the base of this branch.
+- 2026-11-20: run 44815031048 of 3267a150 on the branch passed each of its seven jobs at attempt 1.
