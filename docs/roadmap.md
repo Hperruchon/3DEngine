@@ -491,6 +491,8 @@ Therefore each approved objective must have a track here.
 - P0.167 — The medium and low findings of the codebase review of 2026-11-18 (b): E221 to E225 and V203 to V209, each with a
   test and an injection; a section through the axis of a cone shows the axis (Q1 A), and the read keeps the cut of a
   section. v0.405, TASK-0416.
+- P0.170 — The scenarios of R20a and R20c ran in the window: R20a passes, and R20c finds a label under the history arc
+  (R20d). The owner chose the path line for R-0064 (ADR-0177, R20e). v0.406, TASK-0422, ADR-0177.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -811,6 +813,8 @@ The first objective. Each phase ends with something that a person can observe.
 | R20b1 | "Dimensions" is a segment of the ring of a body, with the state of a tool in use while the dimensions are on (ADR-0122). TASK-0348. | 1 |
 | R20b2 | The selection stays after a Hide, the status line shows "N hidden · Show", and the ring of the document has "Show hidden". After R20b1. TASK-0351 (ADR-0124); the ring of the document waits for the owner (R-0064). | 1 |
 | R20c | Each dimension says what it measures: the selected piece in the colour of the selection with its name, the whole in a neutral colour with "Overall", each label on a plate outside the silhouette, and no label under the status line, the ring or the history arc (improvement C, problems 3 and 4; amends ADR-0056). After R18c. TASK-0352 (ADR-0125). | 1–2 |
+| R20d | No label of a dimension under the history arc, and no line of a dimension over a label of the history arc: the scenario of R20c in the window on 2026-11-20 found the history arc across "Overall · Y 400 mm" and a dimension line across "Box" (R-0065, due 2026-11-26). After P0.170. | 1 |
+| R20e | "Show hidden" on the ring of the part while a body is hidden, and the part "N hidden · Show" on the path line where the status line has no room (ADR-0177, the answer of the owner to R-0064). After R20d. TASK-0424. | 1 |
 | R21 | The flat views in the window: a front, a top, a side and the other three views with no perspective, one tap each, and a return to the 3D view; Frame fills the free part of the scene (ADR-0118 item 2; Q5 A of 2026-11-10; problem 6 of the UX test). After R18. | 2–3 |
 | R21a | The flat views of the camera with no perspective, one source of the axes for the view, the pick, the overlay and the gizmo, and the commands of the views in the command line (ADR-0137). After R18. TASK-0369. | 1 |
 | R21b | The controls of the six flat views and of the return to the 3D view, a button "Views" and a net, and the keys of the views (ADR-0137 item 5, ADR-0138). After R21a. TASK-0370. | 1 |
@@ -991,6 +995,9 @@ The tracks are not strictly sequential, but three rules hold:
    On 2026-11-19, after the merge of P0.169, the owner gave the order "start the left panel task, add the roadmap row". R31a
    (TASK-0419) comes now, and R31b after it; then the rest of the order of 2026-11-18. On 2026-11-20, after the merge of
    R31a, the owner gave the order "start R31b" (TASK-0420).
+   On 2026-11-20 the owner ordered a run until 2026-11-22 09:00 and answered four questions. P0.170 (TASK-0422) records the
+   scenarios of R20a and R20c and the answer on R-0064. R20d comes next, because R-0065 is due on 2026-11-26; then R30f, the
+   codebase review that is due after it, R30i, R20e, and K10 with the bookcase as its first case (R-0070).
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase
