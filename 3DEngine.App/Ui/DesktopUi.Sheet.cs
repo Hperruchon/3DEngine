@@ -37,7 +37,9 @@ internal sealed unsafe partial class DesktopUi
     {
         ArgumentNullException.ThrowIfNull(sheets);
         (_sheet, _liveSheets) = (sheets.FirstOrDefault(), sheets);
-        if (_pageSheetId is { } chosen && sheets.All(sheet => sheet.Id != chosen))
+        // ADR-0177 item 3 (phase R30f, TASK-0422): the new sheet of the waiting proposal stays the chosen sheet, so after the accept
+        // the page stays on it. Until TASK-0422 each sheet that was not live went, and the page went to the first live sheet.
+        if (_pageSheetId is { } chosen && sheets.All(sheet => sheet.Id != chosen) && _sheetProposal?.SheetId != chosen)
             _pageSheetId = null;
     }
 

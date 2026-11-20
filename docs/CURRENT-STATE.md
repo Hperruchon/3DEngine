@@ -12244,3 +12244,44 @@ The letters of `SheetSectionTests` are 2.5 mm under the line of the arrow, for E
 New tests: 14. The test list holds 2960 (1714 in `Engine.Tests`, 390 in `3DEngine.Tests`, 853 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0; `E-SHEET-VIEW-INVALID` gets one more case. Since the
 review of v0.397, 3 product milestones and 8 entries followed it.
+
+## v0.406 — The sheet page shows a proposal of the agent as amber boxes of views and amber values before the accept (R30f, TASK-0422)
+
+The owner ordered "Yes, start R30f" on 2026-11-20. ADR-0162 item 8 (D8 A) asks for a proposed view as an amber box at its place
+and a proposed dimension as an amber value on the sheet page, with Accept and Reject on the arc, and no preview in the log. The
+engine had each query that the preview needs, so this slice changes the window only. ADR-0177 records the choices that ADR-0162
+left open. The branch starts from the closed branch of TASK-0416 (v0.405), so the page has the corrections of P0.167.
+
+**The change.**
+- The window reads three commands of the proposal that the arc shows: CreateSheet, AddSheetView and PlaceSheetDimension
+  (`ProposedSheet`). The identifier of each command is the identifier of its sheet, view or dimension after the accept.
+- Off the frame thread, once for each proposal and each version, the host reads GetViewLines on the frame of each proposed
+  view and GetBodyInfo for each proposed distance (`SheetProposal.Read`). The box of a view is the box of its edges and
+  outlines around its centre, times the scale, as GetSheet places the view. Nothing is sent.
+- The button "Sheet" has an amber outline while the proposal has sheet items, also with no live sheet. A new proposal takes
+  the page to its sheet one time. The page draws an amber box with the name and the scale of each view, each value in amber
+  at its place, and an amber outline round the paper of a new sheet. The paper of a new sheet takes no tap and has no
+  "Export". After the accept the page stays on the new sheet, also when other sheets exist.
+- On the page the arc keeps its caption, Reject, Accept and the count, and has no command lines.
+
+**Faults that the real window showed, now fixed with tests.** At 1280 by 720 the command lines of the arc covered the paper. A
+tap on Accept did nothing while the page was open: the arc refused a release over each window, and the window of the page lies
+under the arc. `ShowSheets` dropped each chosen sheet that was not live, so after an accept with other live sheets the page
+went to the first sheet.
+
+**Proof.** `ProposedSheetTests` has 9 tests. An agent posts a new A4 sheet, the front, top and right views at 2:1 and two
+values to the desktop over HTTP. Before the accept the log does not change and the Document has no sheet; after the accept
+each box is the box of the edges and the outlines of GetSheet for its view within 0.001 mm, and each value is the value of
+GetSheet at its place ("10" and "3"). Seventeen injections, each restored byte for byte: sixteen made a named test fail. One
+stayed green: the page took the sheet of the proposal when no sheet was chosen, but the page always has a chosen sheet then,
+so that code was dead and is removed. A guard that kept a tap on Accept from the paper had no case at the tested sizes, and
+is removed too. The real window, with a plate of 60 by 40 by 10 and a proposal of three views on A3: the amber button, the
+page with the boxes and the values, and the views in ink at the same places after a tap on Accept (log 12 to 18). On the code
+of P0.167 (now on `main` at `8dbaafb7`), a clean build gives 0 warnings, the phone project builds, `dotnet test` passes 2969 tests, and the write-set check
+and `eng/repo-gates` pass. The run on the branch is in the progress of TASK-0422. The failed runs since the entry v0.405, from
+the API: attempt 1 of run 44758589835 of `67b78256` on the branch p0167-review-findings failed in the job "Gate on
+windows-latest", and attempt 2 passed.
+
+New tests: 9. The test list holds 2969 (1714 in `Engine.Tests`, 390 in `3DEngine.Tests`, 862 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.397, 4 product milestones and
+9 entries followed it.

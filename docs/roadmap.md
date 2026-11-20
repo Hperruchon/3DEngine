@@ -491,6 +491,8 @@ Therefore each approved objective must have a track here.
 - P0.167 — The medium and low findings of the codebase review of 2026-11-18 (b): E221 to E225 and V203 to V209, each with a
   test and an injection; a section through the axis of a cone shows the axis (Q1 A), and the read keeps the cut of a
   section. v0.405, TASK-0416.
+- R30f — The sheet page shows a proposal of the agent before the accept: an amber box with the name of each proposed view
+  at the place where GetSheet puts it, and each proposed value in amber at its place. v0.406, TASK-0422, ADR-0177.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -832,7 +834,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R30c | The sheet page on the desktop and the phone: the paper, the frame, the title block, the views and the values from GetSheet; a tap on a view gives "Go to", "Scale" and "Remove"; a tap on the paper places a new view; a drag keeps the alignment and sends MoveSheetViews (ADR-0162 items 1, 5 and 10). After R30b. TASK-0408, ADR-0168. | 2–3 |
 | R30d | The button "Export" on the sheet page: PDF, SVG and DXF, with the save dialog of the desktop and the save or share of the phone (ADR-0162 item 9). After R30h. TASK-0412, ADR-0170. | 1 |
 | R30e | "Put on sheet" on a value chip of a flat view (ADR-0162 item 7). After R30h. TASK-0421, ADR-0176. | 1 |
-| R30f | The proposal of the agent on the sheet page: amber boxes and amber values, Accept and Reject on the arc (ADR-0162 item 8). After R30h. | 1–2 |
+| R30f | The proposal of the agent on the sheet page: amber boxes and amber values, Accept and Reject on the arc (ADR-0162 item 8). After R30h. TASK-0422, ADR-0177. | 1–2 |
 | R30g | The flag of the hidden lines and the centre lines of each view, the centre lines and centre marks in GetSheet and the three files, and ⌀ for a whole circle; a contract change with its ADR (ADR-0162 items 11, 12, 14 and 17). After P0.162; it can run beside R30a to R30c. TASK-0405, ADR-0165. | 1–2 |
 | R30h | The section view of a sheet: the cut line, the cut plane and its letter, the hatch and the label "A–A", in GetSheet, the files and the sheet page; a contract change with its ADR (ADR-0162 items 13 and 17). After R30c and R30g. TASK-0411 gives the engine, GetSheet and the files (ADR-0169); the action "Section" of the sheet page follows R30d (ADR-0169 item 8), as TASK-0413 (ADR-0171). | 2–3 |
 | R30i | The title block of ISO 7200 by one command, the symbol of the projection and the centring marks; a contract change with its ADR (ADR-0162 items 15 and 17). After R30h. | 1 |
@@ -990,7 +992,8 @@ The tracks are not strictly sequential, but three rules hold:
    medium and low findings, after R30e, by the rule of `docs/templates.md`, section 7. P0.165 can come before R30e.
    On 2026-11-19, after the merge of P0.169, the owner gave the order "start the left panel task, add the roadmap row". R31a
    (TASK-0419) comes now, and R31b after it; then the rest of the order of 2026-11-18. On 2026-11-20, after the merge of
-   R31a, the owner gave the order "start R31b" (TASK-0420).
+   R31a, the owner gave the order "start R31b" (TASK-0420). On 2026-11-20, after P0.167, the owner gave the order "Yes, start
+   R30f" (TASK-0422).
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase
