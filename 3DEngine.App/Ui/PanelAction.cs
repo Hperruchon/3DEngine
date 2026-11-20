@@ -119,6 +119,9 @@ internal sealed record SheetLinesAction(Guid Sheet, Guid View, bool HiddenLines,
 
 internal sealed record SheetAddAtAction(Guid Sheet, FlatView View, double X, double Y) : PanelAction;
 
+// ADR-0176 items 2 and 5 (phase R30e, TASK-0421): "Put on sheet" in the pad of a value of the flat view.
+internal sealed record PutOnSheetAction(FlatView View, EdgeValues.Value Value) : PanelAction;
+
 // ADR-0171 item 4 (TASK-0413): "Section" of the sheet page: the parent, the look, the point of the cut in the design and the
 // place of the section on the paper.
 internal sealed record SheetSectionAction(Guid Sheet, Guid View, string Look, double PointX, double PointY, double PointZ, double X, double Y) : PanelAction;

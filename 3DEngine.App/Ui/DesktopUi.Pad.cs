@@ -110,7 +110,10 @@ internal sealed unsafe partial class DesktopUi
             if (!_padCompact)
                 ImGui.TextUnformatted(pad.Title);
             var fields = pad.Fields;
-            var fieldWidth = _padCompact ? MathF.Floor((ImGui.GetContentRegionAvail().X - ((fields.Count - 1) * ImGui.GetStyle().ItemSpacing.X)) / fields.Count) : 0f;
+            // ADR-0176 item 2 (phase R30e, TASK-0421): a compact pad has "Put on sheet" as one more column of the line of its fields.
+            var sheetValue = _view is null ? null : SheetValue();
+            var columns = fields.Count + (_padCompact && sheetValue is not null ? 1 : 0);
+            var fieldWidth = _padCompact ? MathF.Floor((ImGui.GetContentRegionAvail().X - ((columns - 1) * ImGui.GetStyle().ItemSpacing.X)) / columns) : 0f;
             for (var index = 0; index < fields.Count; index++)
             {
                 if (_padCompact && index > 0)
@@ -118,6 +121,17 @@ internal sealed unsafe partial class DesktopUi
                 if (ImGui.Selectable($"{fields[index].Name} = {fields[index].Text}  {pad.Unit}##field{index}", pad.Active == index, ImGuiSelectableFlags.None, new Vector2(fieldWidth, MinimumControlHeight)))
                     pad.Select(index);
                 Item(PadItem(fields[index].Name));
+            }
+
+            // ADR-0176 item 2: "Put on sheet" for the value of the pad in a flat view, under the fields, or beside them in a compact
+            // pad; the pad stays open.
+            if (sheetValue is not null && _view is { } flat)
+            {
+                if (_padCompact)
+                    ImGui.SameLine();
+                if (ImGui.Button(PutOnSheetLabel, new Vector2(_padCompact ? fieldWidth : ImGui.GetContentRegionAvail().X, MinimumControlHeight)))
+                    _actions.Add(new PutOnSheetAction(flat, sheetValue));
+                Item(PadItem(PutOnSheetLabel));
             }
 
             var preview = pad.Preview;
@@ -204,7 +218,25 @@ internal sealed unsafe partial class DesktopUi
         var text = ImGui.GetTextLineHeight() + gap;
         var fields = compact ? MinimumControlHeight + gap : text + (pad.Fields.Count * (MinimumControlHeight + gap));
         return (2f * style.WindowPadding.Y) + fields + text
-            + (pad.Message is null ? 0f : text) + 1f + gap + (lines * (MinimumControlHeight + gap)) - gap;
+            + (pad.Message is null ? 0f : text) + (compact || SheetValue() is null ? 0f : MinimumControlHeight + gap)
+            + 1f + gap + (lines * (MinimumControlHeight + gap)) - gap;
+    }
+
+    // ADR-0176 item 2 (phase R30e, TASK-0421): the words of the line of the pad that puts its value on a sheet.
+    public const string PutOnSheetLabel = "Put on sheet";
+
+    // ADR-0176 item 2: the value of the open pad when the pad has the line "Put on sheet": the pad is the pad of a value of the
+    // selected body, the window shows a flat view, the value has an edge, and a live sheet has a view of the frame of that flat
+    // view with no section. Else null.
+    private EdgeValues.Value? SheetValue()
+    {
+        if (_view is not { } view || _padScope != PadScope.Body || _pendingValue is not { } key)
+            return null;
+        var value = _chips.FirstOrDefault(chip => chip.Value.Key == key).Value;
+        if (value is not { Model: not null, Reference: false, Free: false })
+            return null;
+        var frame = SheetPlacement.FrameOf(view);
+        return _liveSheets.Any(sheet => sheet.Views.Any(shown => shown.Section is null && shown.Direction.SequenceEqual(frame))) ? value : null;
     }
 
     // ADR-0172 item 2 (TASK-0418): a pad with no room for its title, its fields and five lines of keys above the anchors is

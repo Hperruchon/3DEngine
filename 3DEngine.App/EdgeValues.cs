@@ -20,7 +20,10 @@ internal static class EdgeValues
     // ADR-0148 item 1 (phase R22b, TASK-0383): InView is false for a value whose length the flat view does not show true; it
     // keeps its row and has no chip. Reference is true for the reference of a chain, which has a chip and no row and no pad.
     public sealed record Value(string Key, string Text, Vector2 At, double Number, Guid Body, Guid? Sketch, Guid? Constraint, string Label = "Value", Measure? Line = null, string? Name = null,
-        bool InView = true, bool Reference = false, bool Free = false);
+        bool InView = true, bool Reference = false, bool Free = false, (DatumPoint A, DatumPoint B)? Model = null);
+
+    // ADR-0176 item 1 (phase R30e, TASK-0421): Model is the two ends of the measured edge in the design, for "Put on sheet": the
+    // middle of the curve two times for a radius, and null for a value with no edge of a body.
 
     // ADR-0149 item 2 (phase R22c, TASK-0384): the key of a length that no constraint fixes, on the line of a sketch.
     public static string FreeKey(Guid line) => $"Free:{line:N}";
@@ -108,7 +111,8 @@ internal static class EdgeValues
             if (along.At is { } on)
             {
                 var line = MeasureOf(along.Edge, on);
-                values.Add(new Value(DistanceKey(body), $"{Exact(d)} {unit}", Placed(line), d, body, null, null, "Distance", line, InView: TrueLength(along.Edge, camera, radius: false)));
+                values.Add(new Value(DistanceKey(body), $"{Exact(d)} {unit}", Placed(line), d, body, null, null, "Distance", line, InView: TrueLength(along.Edge, camera, radius: false),
+                    Model: Ends(along.Edge)));
             }
         }
 
@@ -139,7 +143,8 @@ internal static class EdgeValues
                 // ADR-0117 item 3: a length along an axis is a width, a depth or a height.
                 var named = constraint.Kind == "distance" ? Direction(edge) : label;
                 values.Add(new Value(ConstraintKey(constraint.Id), $"{prefix}{Exact(constraint.Values[0])} {unit}", Placed(line), constraint.Values[0], body, of.SketchId, constraint.Id, named, line,
-                    names.TryGetValue(constraint.Id, out var name) ? name : null, InView: TrueLength(edge, camera, constraint.Kind == "radius")));
+                    names.TryGetValue(constraint.Id, out var name) ? name : null, InView: TrueLength(edge, camera, constraint.Kind == "radius"),
+                    Model: constraint.Kind == "radius" ? (MiddleOf(edge), MiddleOf(edge)) : Ends(edge)));
                 if (constraint.Kind == "distance")
                     measured[id] = (edge, constraint.Values[0]);
             }
@@ -322,9 +327,16 @@ internal static class EdgeValues
     {
         if (edge.Segments.Count == 0)
             return null;
+        var middle = MiddleOf(edge);
+        return SketchOverlay.Segment(camera, width, height, (middle.X, middle.Y, middle.Z), (middle.X, middle.Y, middle.Z))?.A;
+    }
+
+    // The middle of the middle segment of an edge with at least one segment, in the design. ADR-0176 item 1 (TASK-0421): the
+    // point of a radius for "Put on sheet". Until TASK-0421 the code was a part of Middle.
+    private static DatumPoint MiddleOf(EdgeEntry edge)
+    {
         var segment = edge.Segments[edge.Segments.Count / 2];
-        var middle = ((segment.Start.X + segment.End.X) / 2, (segment.Start.Y + segment.End.Y) / 2, (segment.Start.Z + segment.End.Z) / 2);
-        return SketchOverlay.Segment(camera, width, height, middle, middle)?.A;
+        return new((segment.Start.X + segment.End.X) / 2, (segment.Start.Y + segment.End.Y) / 2, (segment.Start.Z + segment.End.Z) / 2);
     }
 
     // ADR-0117 item 3 (phase R18d, TASK-0342): the label of a length from the direction of its edge in the Document: along
