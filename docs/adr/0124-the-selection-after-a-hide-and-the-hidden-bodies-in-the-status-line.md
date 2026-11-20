@@ -7,7 +7,7 @@ date: 2026-11-12
 supersedes: []
 superseded-by: []
 amends: ['0029', '0093']
-amended-by: ['0129']
+amended-by: ['0129', '0177']
 affects:
   - 3DEngine.App/BodyActions.cs
   - 3DEngine.App/NativeThreeDEngine.cs
@@ -80,3 +80,5 @@ phone of 390 pixels does not show the part, so there the way back is still the p
 - 2026-11-12 · TASK-0351 · Shipped at v0.336.
 - 2026-11-14 · TASK-0356 · ADR-0129 item 1 amends item 3: when the rows of the list do not fit, "Show all" comes first,
   then the hidden bodies that fit, then "N more" (finding V174 of the codebase review of 2026-11-14).
+- 2026-11-20 · TASK-0422 · ADR-0177 amends items 2 and 4: "Show hidden" is a segment of the ring of the part, and the part
+  "N hidden · Show" goes on the path line where the status line has no room (the answer of the owner to R-0064).

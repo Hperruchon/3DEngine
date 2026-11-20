@@ -129,7 +129,7 @@ names. Do not read all of them.
 | [0121](0121-the-edges-of-a-large-mesh-are-found-on-the-thread-pool.md) | The edges of a mesh of more than 100 000 triangles are found on the thread pool | Accepted | Rendering, clients | 0109 | — |
 | [0122](0122-dimensions-is-a-segment-of-the-ring.md) | Dimensions is a segment of the ring of a body | Accepted | Clients, rendering | 0119 | — |
 | [0123](0123-the-sketch-that-made-a-body-is-found-along-the-first-input.md) | The sketch that made a body is found along the first input, and the history keeps it after the six newest steps | Accepted | Clients, rendering | 0104, 0117, 0119 | — |
-| [0124](0124-the-selection-after-a-hide-and-the-hidden-bodies-in-the-status-line.md) | The selection after a hide, and the hidden bodies in the status line | Amended | Clients, rendering | 0029, 0093 | 0129 |
+| [0124](0124-the-selection-after-a-hide-and-the-hidden-bodies-in-the-status-line.md) | The selection after a hide, and the hidden bodies in the status line | Amended | Clients, rendering | 0029, 0093 | 0129, 0177 |
 | [0125](0125-each-dimension-says-what-it-measures.md) | Each dimension says what it measures, on a plate outside its box, and no control covers it | Amended | Clients, rendering | 0056 | 0129 |
 | [0126](0126-assemblies-with-joints-and-geometric-checks.md) | Assemblies with joints and their geometric checks have a date after P10c, and a load check follows them | Amended | Charter, assembly | — | 0157 |
 | [0127](0127-the-fixed-controls-and-the-status-as-in-the-render.md) | The row of the anchors holds Undo, Redo and the step of Undo, and the status gives the log, the agent and the save | Amended | Clients, rendering | 0083, 0093, 0098 | 0129, 0138 |
@@ -182,6 +182,7 @@ names. Do not read all of them.
 | [0174](0174-the-tools-of-the-part-on-the-ring-and-a-structure-view.md) | The tools of the part on the ring, a file menu, and a structure view in the place of the panel | Amended | Clients, layout | 0056, 0076, 0081, 0093, 0100, 0102, 0172 | 0175 |
 | [0175](0175-compact-rows-of-the-structure-view.md) | Compact rows of the structure view for a mouse or a pen, and the setting "Compact" or "For touch" | Accepted | Clients, layout | 0027, 0091, 0174 | — |
 | [0176](0176-put-a-value-on-a-sheet-from-the-window.md) | "Put on sheet" in the pad of a value of a flat view places that value on the view of the sheet with the same frame | Accepted | Drawing, window | — | — |
+| [0177](0177-show-hidden-on-the-ring-of-the-part-and-the-path-line.md) | "Show hidden" is on the ring of the part, and the count of the hidden bodies goes on the path line where the status line has no room | Accepted | Clients, rendering | 0124 | — |
 
 ## Topics
 
