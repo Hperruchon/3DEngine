@@ -12415,7 +12415,8 @@ Q1, Q2, Q3 and Q8. The branch starts from the closed branch of R20d (`9cadf07`, 
 - V221: while the sheet page shows, the arc of a proposal draws on the foreground list, over the paper, and the paper takes no
   tap whose press or release is on Reject or Accept.
 - V222 (Q3 A): on the sheet page the arc keeps the line of each command that the page does not show. ADR-0177 item 5 says so.
-  The amber value with the proposed number, which the review also recommended, changes ADR-0177 item 2 and is not done.
+  The amber value with the proposed number, which the review also recommended, changes ADR-0177 item 2 and is not done;
+  register entry R-0071 holds it.
 
 **Proof.** Four new tests in `Engine.Tests` and 28 test cases in `3DEngine.ImageTests`. Each new test failed on the code of
 v0.409 in one case at least; for V211, V213 and V214 the final form of the test failed through the injection that gives back
@@ -12431,12 +12432,12 @@ test of T184 reads the workflow as text; a local `dotnet test` with the options 
 A clean build gives 0 warnings, the phone project builds, `dotnet test` passes 3004 tests, and the write-set check and
 `eng/repo-gates` pass. No picture of the real window was made, and the injection of the opposite order of the locks of T183
 was not run. The failed runs since
-the entry v0.409, from the API: FAILED_RUNS.
+the entry v0.409, from the API: none.
 
 Corrections: `ProposedSheetTests.Accept_And_Reject_Take_A_Tap_Over_The_Page` gives its card the sheet items of its two
 commands, because the arc now keeps the line of a command with no sheet item. `SheetExportTests` no longer expects the name
 "42" for the content URI ".../document/42".
 
 New tests: 32. The test list holds 3004 (1718 in `Engine.Tests`, 390 in `3DEngine.Tests`, 893 in `3DEngine.ImageTests`, 3 in
-`3DEngine.VisionTests`). Open entries: 11 of 15. New diagnostic codes: 0. Since the review of v0.407, 1 product milestone and
+`3DEngine.VisionTests`). Open entries: 12 of 15 (R-0071 opens). New diagnostic codes: 0. Since the review of v0.407, 1 product milestone and
 3 entries followed it.
