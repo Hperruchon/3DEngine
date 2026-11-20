@@ -495,6 +495,7 @@ Therefore each approved objective must have a track here.
   (R20d). The owner chose the path line for R-0064 (ADR-0177, R20e). v0.406, TASK-0422, ADR-0177.
 - R20d — No plate of a dimension lies on the stroke of the history arc, and each text of the arc has the ground of the
   scene, so no dimension line goes across it. v0.407, TASK-0423, ADR-0125.
+- Review — The codebase review of 2026-11-20. v0.408, TASK-0425.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -682,6 +683,7 @@ This track removes each condition that blocks other work.
 | P0.165 | The medium and low findings of the codebase review of 2026-11-18 (E218 to E220, V194 to V201: the cross of a circle that is part hidden, a comment, the centre lines of a flat view, the group of a new sheet, the keys of the pad of a sheet, the commands of a sheet on the frame thread, the box of a new view, the gizmo under the paper, the place of a new view, and a skipped body in a flat view), after the next product phase, R30c. TASK-0410. | 1–2 |
 | P0.166 | The high finding of the codebase review of 2026-11-18 (b) (V202: a view that leaves the sheet during a drag of the sheet page stops the window), before the next product phase, R30e. TASK-0415. | 1 |
 | P0.167 | The medium and low findings of the codebase review of 2026-11-18 (b) (E221 to E225, V203 to V209: a cut point that gives infinite numbers, the time of a section of many facets, the axis of a cone, the size of a text, a move with no change, the Escape of a pad on the page, a section after its view goes, the row of the formats and a section together, two changes before a read, the paper of the phone, "Section" on a view that the engine refuses, and the name of an export on the phone), after the next product phase, R30e. TASK-0416. | 1–2 |
+| P0.171 | The medium and low findings of the codebase review of 2026-11-20 (T183, V210 to V212, E226, T184, V213 to V221: the time limit of the concurrency test, a race of one frame that clears the sent values, the file menu behind the structure view, the room of a pad of a sketch on a phone, the size of the cache of the cuts, the cause of a crash of the test host, and nine low findings of the window and of ADR-0177), after the next product phase, R30f. TASK-0426. | 1–2 |
 | P0.168 | A run of the pipeline is red only for a fault of the code: one automatic re-run of a job whose macOS runner GitHub did not give, and no time limit that decides the test of a report that blocks (the question of the owner of 2026-11-18 on the failed runs). It can come at any place in the order. TASK-0417. | 1 |
 | P0.169 | The layout of small windows and of each state (the review of the responsive layout of 2026-11-18 and the answers of the owner, Q1 to Q4 A): the rows beside the ring, the pad and the images as fixed parts of the layout, the rows and the ring of a sketch, the history arc and the home screen inside the display, ten states in the layout test, and the desktop window down to 360 by 560 (ADR-0172). TASK-0418. | 1–2 |
 | P0.102 | The cache of a face, the fixed controls, the list New, the edges and the safe area hold their next forms (V113 to V118 of the codebase review of 2026-11-06 (e); after P0.101). TASK-0252. | 1–2 |
@@ -1000,6 +1002,8 @@ The tracks are not strictly sequential, but three rules hold:
    On 2026-11-20 the owner ordered a run until 2026-11-22 09:00 and answered four questions. P0.170 (TASK-0422) records the
    scenarios of R20a and R20c and the answer on R-0064. R20d comes next, because R-0065 is due on 2026-11-26; then R30f, the
    codebase review that is due after it, R30i, R20e, and K10 with the bookcase as its first case (R-0070).
+   R20d made the review due before R30f: the codebase review of 2026-11-20 (TASK-0425) comes after R20d, and puts P0.171
+   (TASK-0426), which holds medium and low findings, after the next product phase, R30f, by the rule of section 7.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase
