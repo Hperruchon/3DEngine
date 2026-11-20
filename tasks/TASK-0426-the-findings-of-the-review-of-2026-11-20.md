@@ -38,6 +38,7 @@ writes:
     - docs/adr/0177-the-proposal-of-the-agent-on-the-sheet-page.md
     - docs/adr/0178-show-hidden-on-the-ring-of-the-part-and-the-path-line.md
     - eng/test-floor.txt
+    - docs/register.md
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
   forbid:
@@ -141,7 +142,8 @@ Judgement:
   size of the list of ADR-0113 Accept lies above the paper, so the guard had no case there; the theory has the size 2560 by
   1440 of the resize of ADR-0163 item 4, where both ends lie on the paper.
 - V222: the arc removes the line of each command whose sheet item is on the sheet of the page. The review also recommended an
-  amber value with the proposed number; that changes ADR-0177 item 2, which no answer of the owner covers, so it is not done.
+  amber value with the proposed number; that changes ADR-0177 item 2, which no answer of the owner covers, so it is not done,
+  and register entry R-0071 holds it.
 
 Weakest: the place of a pad of a sketch in its first two frames (V212), and the foreground list of V221, which draws the arc
 over a pad or a message window on the page too. `ResponsiveLayoutTests.Each_Key_Of_A_Pad_Of_A_Sketch_Shows_On_A_Phone` and
