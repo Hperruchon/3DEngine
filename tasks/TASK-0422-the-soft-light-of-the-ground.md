@@ -100,3 +100,5 @@ Status: Active
   read the ground at each pixel. Six injections each made a named test fail: no draw of the ground, the ground after the bodies, a
   computation on the CPU without the height, a middle that is not almost black, the two colours swapped in the push block, and
   the old comparison with the one clear colour (nine tests fail).
+- 2026-11-20: run 44813962866 of `1c82d1b` passed on each job. P0.167 came to `main` at v0.405 (`8dbaafb`), so the branch
+  merges `main`. The one conflict was the count of `3DEngine.ImageTests` in `eng/test-floor.txt`: 809, and 856 on Linux.

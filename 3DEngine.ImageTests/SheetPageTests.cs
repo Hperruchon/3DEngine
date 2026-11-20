@@ -183,6 +183,17 @@ public sealed class SheetPageTests
         ui.Frame(1f / 60f, display, Vector2.One, [Body], null, new DocumentLine("plate", null));
     }
 
+    // Finding V206 (TASK-0416): the host gives a pending read while a command waits, then the read of its version. The page keeps
+    // the values that it sent until then.
+    private static void ReadComes(DesktopUi ui, Vector2 display, SheetInfo sheet, SheetRecord record)
+    {
+        ui.ShowSheets([record]);
+        ui.ShowPage(sheet, true);
+        ui.Route([]);
+        ui.Frame(1f / 60f, display, Vector2.One, [Body], null, new DocumentLine("plate", null));
+        Frame(ui, display, sheet, record);
+    }
+
     private static PointerSample Pointer(Vector2 at, PointerButtons buttons, PointerPhase phase, ulong time, KeyModifiers modifiers = KeyModifiers.None)
         => new(DeviceKind.Mouse, 1, 0, at.X, at.Y, 1, buttons, modifiers, phase, time);
 
@@ -367,10 +378,12 @@ public sealed class SheetPageTests
         Assert.Equal((record.Id, front.ViewId, true), (move.Sheet, move.View, move.Aligned));
         Assert.Equal(front.X + (20 / paper.Scale), move.X, 3);
         Assert.Equal(front.Y + (10 / paper.Scale), move.Y, 3);
+        ReadComes(ui, display, sheet, record);
 
         Drag(ui, display, sheet, record, paper.Pixel(top.X, top.Y), paper.Pixel(top.X, top.Y) + step);
         move = Assert.Single(ui.TakeActions().OfType<SheetMoveAction>());
         Assert.Equal((top.ViewId, top.X, false), (move.View, move.X, move.Aligned));
+        ReadComes(ui, display, sheet, record);
 
         Drag(ui, display, sheet, record, paper.Pixel(top.X, top.Y), paper.Pixel(top.X, top.Y) + step, KeyModifiers.Shift);
         move = Assert.Single(ui.TakeActions().OfType<SheetMoveAction>());
@@ -416,6 +429,157 @@ public sealed class SheetPageTests
         Assert.DoesNotContain(ui.TakeActions(), action => action is CreateSheetAction);
         ui.ShowHome(null);
         Assert.False(ui.PageOpen);
+    }
+
+    // Finding V203 of the codebase review of 2026-11-18 (b) (TASK-0416): the Escape that closes the pad of a sheet or cancels a
+    // numeric pad on the page ends only that pad: the selected view stays, and with no selection the page stays open.
+    [Fact]
+    public async Task The_Escape_Of_A_Pad_Does_Not_Reach_The_Page()
+    {
+        var (host, sheet, record) = await Setup();
+        using var _ = host;
+        var display = new Vector2(1280, 720);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        Frame(ui, display, sheet, record);
+        ui.OpenPage();
+        Frame(ui, display, sheet, record);
+        Frame(ui, display, sheet, record);
+        var top = sheet.Views[1];
+        void Escape()
+        {
+            Frame(ui, display, sheet, record, new KeySample(InputKey.Escape, true, KeyModifiers.None, 1));
+            Frame(ui, display, sheet, record, new KeySample(InputKey.Escape, false, KeyModifiers.None, 2));
+        }
+
+        Tap(ui, display, sheet, record, ui.PagePaper!.Value.Pixel(top.X, top.Y));
+        Tap(ui, display, sheet, record, Middle(Item(ui, DesktopUi.PageItem(DesktopUi.ScaleViewLabel))));
+        Assert.NotNull(ui.SheetPadShown);
+        Escape();
+        Assert.Null(ui.SheetPadShown);
+        Assert.Equal(top.ViewId, ui.PageView);
+
+        ui.OpenDistancePad(Body.Id, 10);
+        Frame(ui, display, sheet, record);
+        Assert.NotNull(ui.Pad);
+        Escape();
+        Assert.Null(ui.Pad);
+        Assert.Equal(top.ViewId, ui.PageView);
+
+        Escape();
+        Assert.Null(ui.PageView);
+        ui.OpenDistancePad(Body.Id, 10);
+        Frame(ui, display, sheet, record);
+        Escape();
+        Assert.Null(ui.Pad);
+        Assert.True(ui.PageOpen);
+    }
+
+    // Finding V206 of the codebase review of 2026-11-18 (b) (TASK-0416): two changes of one view before the read keep the first.
+    // A tap on "Hidden lines" and then on "Centre lines" sends both changes; two drags of the top view give two places, the
+    // second from the first; after the read, the page starts from the read again.
+    [Fact]
+    public async Task Two_Changes_Of_One_View_Before_The_Read_Keep_The_First()
+    {
+        var (host, sheet, record) = await Setup();
+        using var _ = host;
+        var display = new Vector2(1280, 720);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        Frame(ui, display, sheet, record);
+        ui.OpenPage();
+        Frame(ui, display, sheet, record);
+        Frame(ui, display, sheet, record);
+        ui.TakeActions();
+        var paper = ui.PagePaper!.Value;
+        var top = sheet.Views[1];
+        var (hidden, centre) = (top.HiddenLines, top.CentreLines);
+
+        Tap(ui, display, sheet, record, paper.Pixel(top.X, top.Y));
+        Tap(ui, display, sheet, record, Middle(Item(ui, DesktopUi.PageItem(DesktopUi.HiddenLinesLabel))));
+        Tap(ui, display, sheet, record, Middle(Item(ui, DesktopUi.PageItem(DesktopUi.CentreLinesLabel))));
+        Assert.Equal(
+            [new SheetLinesAction(record.Id, top.ViewId, !hidden, centre), new SheetLinesAction(record.Id, top.ViewId, !hidden, !centre)],
+            ui.TakeActions().OfType<SheetLinesAction>());
+
+        var step = new Vector2(0f, -20f);
+        Drag(ui, display, sheet, record, paper.Pixel(top.X, top.Y), paper.Pixel(top.X, top.Y) + step);
+        var first = Assert.Single(ui.TakeActions().OfType<SheetMoveAction>());
+        Drag(ui, display, sheet, record, paper.Pixel(first.X, first.Y), paper.Pixel(first.X, first.Y) + step);
+        var second = Assert.Single(ui.TakeActions().OfType<SheetMoveAction>());
+        Assert.Equal(top.Y + (20 / paper.Scale), first.Y, 3);
+        Assert.Equal(first.Y + (20 / paper.Scale), second.Y, 3);
+        Assert.Equal((top.X, top.X), (first.X, second.X));
+
+        ReadComes(ui, display, sheet, record);
+        Tap(ui, display, sheet, record, paper.Pixel(top.X, top.Y));
+        if (ui.PageView != top.ViewId)
+            Tap(ui, display, sheet, record, paper.Pixel(top.X, top.Y));
+        Tap(ui, display, sheet, record, Middle(Item(ui, DesktopUi.PageItem(DesktopUi.HiddenLinesLabel))));
+        Assert.Equal([new SheetLinesAction(record.Id, top.ViewId, !hidden, centre)], ui.TakeActions().OfType<SheetLinesAction>());
+
+        // Finding E225 (TASK-0416): a drag that comes back to the place of the view sends no move.
+        var at = paper.Pixel(top.X, top.Y);
+        Frame(ui, display, sheet, record, Pointer(at, PointerButtons.None, PointerPhase.Move, 0));
+        Frame(ui, display, sheet, record, Pointer(at, PointerButtons.Left, PointerPhase.Down, 10_000_000));
+        Frame(ui, display, sheet, record, Pointer(at + new Vector2(0f, -20f), PointerButtons.Left, PointerPhase.Move, 20_000_000));
+        Assert.True(ui.PageDragging);
+        Frame(ui, display, sheet, record, Pointer(at, PointerButtons.Left, PointerPhase.Move, 30_000_000));
+        Frame(ui, display, sheet, record, Pointer(at, PointerButtons.Left, PointerPhase.Up, 40_000_000));
+        Frame(ui, display, sheet, record);
+        Assert.Empty(ui.TakeActions().OfType<SheetMoveAction>());
+    }
+
+    // Finding V207 of the codebase review of 2026-11-18 (b) (TASK-0416): the paper keeps its place while the rows of the header
+    // change: with no selection, with a selected view, with a section, with the views to place, with the formats, and with the
+    // mark of a pending read. At a width of 476 to 500 pixels that mark put "Export" on a new row when it showed.
+    [Theory]
+    [InlineData(390, 844)]
+    [InlineData(488, 844)]
+    [InlineData(1280, 720)]
+    public async Task The_Paper_Keeps_Its_Place_While_The_Header_Changes(int width, int height)
+    {
+        var (host, sheet, record) = await Setup();
+        using var _ = host;
+        var display = new Vector2(width, height);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        Frame(ui, display, sheet, record);
+        ui.OpenPage();
+        Frame(ui, display, sheet, record);
+        Frame(ui, display, sheet, record);
+        var paper = ui.PagePaper!.Value;
+        var front = sheet.Views[0];
+        void Escape()
+        {
+            Frame(ui, display, sheet, record, new KeySample(InputKey.Escape, true, KeyModifiers.None, 1));
+            Frame(ui, display, sheet, record, new KeySample(InputKey.Escape, false, KeyModifiers.None, 2));
+        }
+
+        void Same(string state)
+        {
+            var now = ui.PagePaper!.Value;
+            Assert.True(now.Rectangle == paper.Rectangle, $"{state}: the paper is at {now.Rectangle}, and it was at {paper.Rectangle}.");
+        }
+
+        Tap(ui, display, sheet, record, paper.Pixel(front.X, front.Y));
+        Assert.Equal(front.ViewId, ui.PageView);
+        Same("a selected view");
+        Tap(ui, display, sheet, record, Middle(Item(ui, DesktopUi.PageItem(DesktopUi.SectionLabel))));
+        Assert.NotNull(ui.PageSection);
+        Same("a section");
+        Escape();
+        Escape();
+        Assert.Null(SheetPage.Hit(sheet, (40, 260)));
+        Tap(ui, display, sheet, record, paper.Pixel(40, 260));
+        Assert.NotNull(ui.PagePlace);
+        Same("the views to place");
+        Escape();
+        Tap(ui, display, sheet, record, Middle(Item(ui, DesktopUi.PageItem(DesktopUi.ExportSheetLabel))));
+        Assert.True(ui.ExportOpen);
+        Same("the formats");
+        ui.ShowSheets([record]);
+        ui.ShowPage(sheet, true);
+        ui.Route([]);
+        ui.Frame(1f / 60f, display, Vector2.One, [Body], null, new DocumentLine("plate", null));
+        Same("a pending read");
     }
 
     // Item 1: on a phone the page takes the place of the panel, the paper fits the width, and each control of the page is inside

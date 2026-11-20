@@ -488,6 +488,9 @@ Therefore each approved objective must have a track here.
   on a phone; the net of the views sets "Compact" or "For touch". v0.403, TASK-0420, ADR-0175.
 - R30e — "Put on sheet" in the pad of a value of a flat view places that value 10 mm outside its edge on the view of the
   sheet with the same frame, by one PlaceSheetDimension. v0.404, TASK-0421, ADR-0176.
+- P0.167 — The medium and low findings of the codebase review of 2026-11-18 (b): E221 to E225 and V203 to V209, each with a
+  test and an injection; a section through the axis of a cone shows the axis (Q1 A), and the read keeps the cut of a
+  section. v0.405, TASK-0416.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
