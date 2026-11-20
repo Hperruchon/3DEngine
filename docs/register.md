@@ -412,32 +412,6 @@ edges on a slower processor. This session did not run the APK with the lines.
 Exit: a run on the S23 Ultra or on the emulator records the frame time and the time of the upload of a large mesh, and
 ADR-0109 adds them, with a lower limit of edges if they are too slow.
 
-### R-0063 · The scenario of R20a in the window was not done
-- class: risk
-- opened: 2026-11-11
-- due: 2026-11-25
-- extended: no
-- refs: `3DEngine.App/Ui/DesktopUi.Ring.cs` (RingTapAt), `docs/adr/0116-the-ring-takes-a-tap-only-on-its-labels.md`,
-  `docs/proposals/2026-11-10-ux-test-of-a-multi-part-project.md` (problem 1), TASK-0341
-The first acceptance criterion of TASK-0341 is a click in the window at 1280 by 720 on a copy of `Bibliotheque120.3de`:
-select "Fond", zoom three steps, and click the module to the right under the band. The control of the window was refused
-two times on 2026-11-11, and the owner was not at the computer, so the owner closed R20a on the tests and continuous
-integration. The tests drive the library with simulated taps; they do not draw the window or pick a body on the GPU.
-Exit: the scenario runs in the window, and the module is selected with no pad open; or it fails, and a task corrects it.
-### R-0064 · No ring of the document, and no part of the hidden bodies on a portrait phone
-- class: question
-- opened: 2026-11-12
-- due: 2026-11-26
-- extended: no
-- refs: `docs/adr/0124-the-selection-after-a-hide-and-the-hidden-bodies-in-the-status-line.md` items 2 and 4,
-  `docs/proposals/2026-11-10-ux-test-of-a-multi-part-project.md` (improvement B), TASK-0351
-Improvement B of the UX test of 2026-11-10 puts "Show hidden" on a ring of the document. No ring shows with nothing
-selected, and its place on the screen is not decided: the centre of the scene, the path line, or the top bar. On a portrait
-phone of 390 pixels the status line has 38 pixels of room right of Home, so the part "N hidden · Show" of ADR-0124 does not
-show, and the way back is the panel. The owner decides the place of the ring of the document, and the place of the part on a
-portrait phone.
-Exit: the owner chooses, and a task gives the ring of the document or a place of the part on a portrait phone; or the owner
-accepts the panel as the way back on a portrait phone, and drops the ring of the document.
 ### R-0065 · The scenario of R20c in the window was not done, and a far plate has long lines
 - class: risk
 - opened: 2026-11-12
@@ -452,6 +426,9 @@ that picture "X 18 mm" of the panel moves about 150 pixels down to leave the oth
 the model.
 Exit: the scenario runs in the window and passes; or it fails, or the long lines confuse the person, and a task
 corrects it.
+On 2026-11-20 the session ran the scenario in the window (TASK-0427). The labels name what they measure ("Cote gauche · Z
+800 mm" in the colour of the selection, "Overall · Z 2350 mm" in grey), but the history arc crosses the plate "Overall · Y
+400 mm", and a dimension line crosses the label "Box" of the history arc. R20d corrects both.
 ### R-0069 · A read of a sheet with three views of a sphere takes about 5 s
 - class: debt
 - opened: 2026-11-15
@@ -617,6 +594,41 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0063 · The scenario of R20a in the window was not done
+- class: risk
+- opened: 2026-11-11
+- due: 2026-11-25
+- extended: no
+- refs: `3DEngine.App/Ui/DesktopUi.Ring.cs` (RingTapAt), `docs/adr/0116-the-ring-takes-a-tap-only-on-its-labels.md`,
+  `docs/proposals/2026-11-10-ux-test-of-a-multi-part-project.md` (problem 1), TASK-0341
+The first acceptance criterion of TASK-0341 is a click in the window at 1280 by 720 on a copy of `Bibliotheque120.3de`:
+select "Fond", zoom three steps, and click the module to the right under the band. The control of the window was refused
+two times on 2026-11-11, and the owner was not at the computer, so the owner closed R20a on the tests and continuous
+integration. The tests drive the library with simulated taps; they do not draw the window or pick a body on the GPU.
+Exit: the scenario runs in the window, and the module is selected with no pad open; or it fails, and a task corrects it.
+Closed 2026-11-20 · resolved · TASK-0427. The owner granted the control of the window on 2026-11-20, and the session ran the
+scenario in the window at 1280 by 720 on a copy of `Bibliotheque120.3de` (v0.405). After three steps of the wheel no module
+lay under the band, so the session zoomed eight steps in all. A click under the tile of Move, away from its icon and its
+label, selected "Module 15 - volume indicatif" and opened no pad; a click on the icon of Move opened the pad of Move.
+
+### R-0064 · No ring of the document, and no part of the hidden bodies on a portrait phone
+- class: question
+- opened: 2026-11-12
+- due: 2026-11-26
+- extended: no
+- refs: `docs/adr/0124-the-selection-after-a-hide-and-the-hidden-bodies-in-the-status-line.md` items 2 and 4,
+  `docs/proposals/2026-11-10-ux-test-of-a-multi-part-project.md` (improvement B), TASK-0351
+Improvement B of the UX test of 2026-11-10 puts "Show hidden" on a ring of the document. No ring shows with nothing
+selected, and its place on the screen is not decided: the centre of the scene, the path line, or the top bar. On a portrait
+phone of 390 pixels the status line has 38 pixels of room right of Home, so the part "N hidden · Show" of ADR-0124 does not
+show, and the way back is the panel. The owner decides the place of the ring of the document, and the place of the part on a
+portrait phone.
+Exit: the owner chooses, and a task gives the ring of the document or a place of the part on a portrait phone; or the owner
+accepts the panel as the way back on a portrait phone, and drops the ring of the document.
+Closed 2026-11-20 · decided · TASK-0427 · ADR-0178. The owner chose the path line on 2026-11-20 (the batch of the weekend).
+ADR-0178 gives "Show hidden" on the ring of the part and the part "N hidden · Show" on the path line where the status line
+has no room; R20e gives it.
 
 ### R-0068 · A view of a sheet takes an exact frame only, so no pictorial view exists
 - class: question
