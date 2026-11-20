@@ -186,7 +186,8 @@ public sealed class DocumentPathTests
         var panel = ui.PanelRectangles[0];
         Assert.True(first.Y - panel.Y <= 20f, $"The first row of the document at {first} is not at the top of the panel at {panel}.");
         var rows = bodies.Select(body => Rectangle(ui, DesktopUi.RowText(body))).ToArray();
-        Assert.All(rows, row => Assert.True(row.W - row.Y >= DesktopUi.RowHeight, $"The row at {row} is lower than a row."));
+        // ADR-0175 item 1 (TASK-0420): a row is as high as a row of the density.
+        Assert.All(rows, row => Assert.True(row.W - row.Y >= ui.StructureRowHeight - 0.5f, $"The row at {row} is lower than a row."));
         Assert.True(rows[0].Y >= first.W && rows[1].Y >= rows[0].W, "The rows of the bodies are not under the first row, in the order of the bodies.");
         // ADR-0174 items 3 and 4: the filter shows from eight bodies, and the file controls are in the file menu.
         Assert.Null(ui.ItemRectangle(DesktopUi.FilterLabel));

@@ -177,6 +177,8 @@ internal sealed unsafe partial class DesktopUi
             if (_items.TryGetValue(LinesItem, out var switchBox))
                 ImGui.GetWindowDrawList().AddRect(new Vector2(switchBox.X + 1f, switchBox.Y + 1f), new Vector2(switchBox.Z - 1f, switchBox.W - 1f), ImGui.GetColorU32(on ? ImGuiCol.ButtonActive : ImGuiCol.Border), ImGui.GetStyle().FrameRounding, ImDrawFlags.None, Theme.OutlineWidth);
             DimensionSwitches(cell, accent);
+            // ADR-0175 item 2 (phase R31b, TASK-0420): the density of the rows of the structure view.
+            DensityCells(cell, accent);
             SheetRow(cell);
 
             ImGui.PopStyleVar();

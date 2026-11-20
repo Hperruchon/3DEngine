@@ -275,6 +275,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         _monoFont = io.Fonts.AddFontFromMemoryTTF(_fontData[1].Pointer, _fontData[1].Length, FontSize, font);
         // ADR-0117 item 1 (phase R18d, TASK-0342): Instrument Sans again at the size of the name of a body, for its first row.
         _titleFont = io.Fonts.AddFontFromMemoryTTF(_fontData[0].Pointer, _fontData[0].Length, TitleSize, font);
+        // Phase R31b (TASK-0420): Instrument Sans again at the size of the text of a list, for the compact rows of the structure
+        // view.
+        _listFont = io.Fonts.AddFontFromMemoryTTF(_fontData[0].Pointer, _fontData[0].Length, ListSize, font);
         font.Destroy();
 
         var style = ImGui.GetStyle();

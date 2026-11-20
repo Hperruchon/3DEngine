@@ -285,11 +285,18 @@ public sealed class SheetPageTests
         Frame(ui, display, sheet, record);
         ui.TakeActions();
 
-        var at = ui.PagePaper!.Value.Pixel(80, 80);
+        // A pointer gives whole pixels, so the tap is on the pixel nearest to the point of 80 by 80 millimetres, and the place
+        // is within half a pixel of that point. Until TASK-0420 the test tapped between two pixels and took 0.5 millimetres as
+        // its limit; a paper that started 0.68 pixels from a whole pixel put the place 0.6 millimetres away.
+        var paper = ui.PagePaper!.Value;
+        var point = paper.Pixel(80, 80);
+        var at = new Vector2(MathF.Round(point.X), MathF.Round(point.Y));
         Tap(ui, display, sheet, record, at);
         var place = ui.PagePlace ?? throw new InvalidOperationException("No place.");
-        Assert.Equal(80, place.X, 0);
-        Assert.Equal(80, place.Y, 0);
+        var (x, y) = paper.Millimetres(at);
+        Assert.Equal(x, place.X, 3);
+        Assert.Equal(y, place.Y, 3);
+        Assert.True(Math.Abs(place.X - 80) <= 0.5 / paper.Scale && Math.Abs(place.Y - 80) <= 0.5 / paper.Scale, $"The place {place} is more than half a pixel from 80 by 80.");
         Tap(ui, display, sheet, record, Middle(Item(ui, DesktopUi.PageItem("Place Bottom"))));
         Assert.Equal([new SheetAddAtAction(record.Id, FlatView.Bottom, place.X, place.Y)], ui.TakeActions());
         Assert.Null(ui.PagePlace);
