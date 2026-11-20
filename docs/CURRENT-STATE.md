@@ -12353,3 +12353,33 @@ run on the branch is in the progress of TASK-0425. The failed runs since the ent
 New tests: 0. The test list holds 2969 (1714 in `Engine.Tests`, 390 in `3DEngine.Tests`, 862 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product
 milestones and 0 entries follow it.
+
+## v0.409 — No plate of a dimension lies on the stroke of the history arc, and each text of the arc has the ground of the scene (R20d, TASK-0423)
+
+The scenario of R20c in the window on 2026-11-20 (v0.407) found two faults: the history arc went across the plate "Overall ·
+Y 400 mm", and a dimension line went across the text "Box" of the arc. Register entry R-0065 held them. Section 4 of the codebase
+review of 2026-11-20 (v0.408) found two more texts with no ground: the caption "HISTORY" and the amber text of a pending step.
+
+**The change.**
+- The stroke of the history arc is a cover for the placement of ADR-0125 item 4: twelve boxes of its chords, each wider by 5
+  pixels, half the widest stroke of its glow (`DesktopUi.History.cs`, `DimensionCovers`). The amber text of a pending step
+  is a cover too (the item "HistoryText:pending").
+- Each text of the arc, the caption and the pending text have a rectangle of the ground of the scene behind them, 2 pixels
+  wider on each side. The frame draws the dimensions on the first channel of the background list, under the arc, so a line
+  under a text does not show.
+
+**Proof.** Two new tests in `DimensionLabelsTests`, one a theory of two cases. The first measures each plate from 361 points
+of the arc in 96 views (24 sides, four heights of the eye) and asserts that some plates start on the arc. The second reads the
+vertices that `Frame` returns and finds the ground at the four corners of each text, after the last vertex of a dimension
+line inside it, with and without a pending step. Six injections, each restored byte for byte, made a named test fail: no cover
+of the stroke, no ground of a text of a step, covers with no width, no ground of the caption, no ground of the pending text,
+and a pending text that is no cover. The first form of the test of the stroke compared the plates with the covers of the
+program, and the injection of covers with no width stayed green; the test now measures from the arc. A call of
+`ImGui.GetBackgroundDrawList` outside a frame stopped the test host, so the test reads the returned draw data. A clean build
+gives 0 warnings, `dotnet test` passes 2972 tests, and the write-set check and `eng/repo-gates` pass. No new picture of the
+window was made. The run on the branch is in the progress of TASK-0423. The failed runs since the entry v0.408, from the API:
+none.
+
+New tests: 3. The test list holds 2972 (1714 in `Engine.Tests`, 390 in `3DEngine.Tests`, 865 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 11 of 15 (R-0065 closes). New diagnostic codes: 0. Since the review of v0.407, 1 product
+milestone and 2 entries followed it.
