@@ -7,7 +7,7 @@ date: 2026-10-27
 supersedes: []
 superseded-by: []
 amends: ['0026']
-amended-by: ['0029', '0061', '0072', '0091']
+amended-by: ['0029', '0061', '0072', '0091', '0175']
 affects:
   - 3DEngine.App/Ui/**
   - 3DEngine.App/3DEngine.App.csproj
@@ -108,3 +108,5 @@ the package of the desktop must leave it out. A gesture that starts over a panel
   review of 2026-11-06 (e)).
 - 2026-11-08 · TASK-0292 · ADR-0091 amends item 6: the font is Instrument Sans, and a value on an edge uses JetBrains
   Mono; the two font files and their licences enter the repository.
+- 2026-11-20 · TASK-0420 · ADR-0175 item 1 amends item 6 for the rows of the structure view: in the density "Compact"
+  a row is 30 pixels high, for a mouse or a pen. Each other control keeps 44 pixels.

@@ -45,7 +45,9 @@ internal sealed unsafe partial class DesktopUi
         if (open)
             StructureView(bodies, document);
 
-        _panelHeight = ImGui.GetCursorPosY() + ImGui.GetStyle().WindowPadding.Y;
+        // ADR-0175 item 3 (phase R31b, TASK-0420): the view ends one margin of the window under its last row. Until TASK-0420 the
+        // gap of two items (10 pixels) after the last item was in the height too.
+        _panelHeight = (open ? ImGui.GetItemRectMax().Y - ImGui.GetWindowPos().Y + ImGui.GetScrollY() : ImGui.GetCursorPosY()) + ImGui.GetStyle().WindowPadding.Y;
         var position = ImGui.GetWindowPos();
         var size = ImGui.GetWindowSize();
         _panels.Add(new Vector4(position.X, position.Y, position.X + size.X, position.Y + size.Y));
@@ -59,6 +61,11 @@ internal sealed unsafe partial class DesktopUi
 
     // ADR-0174 item 3: open or fold the structure view, as a tap on its first row does; for a test too.
     internal void OpenStructure(bool open = true) => _structureOpen = open;
+
+    // ADR-0175 item 3 (phase R31b, TASK-0420): the right end of the text of the first row in the last frame, for a test.
+    private float _structureTextEnd;
+
+    internal float StructureTextEnd => _structureTextEnd;
 
     // ADR-0174 item 3: the filter shows from this count of live bodies.
     internal const int FilterFrom = 8;
@@ -79,20 +86,49 @@ internal sealed unsafe partial class DesktopUi
         var list = ImGui.GetWindowDrawList();
         var lineHeight = ImGui.GetTextLineHeight();
         var width = ImGui.GetContentRegionAvail().X;
+        // ADR-0175 item 1 (phase R31b, TASK-0420): the height of each row of the view in this density.
+        var rowHeight = StructureRowHeight;
+        var compact = _density == RowDensity.Compact;
+        // ADR-0175 item 3: a first row of two lines is as high as the two lines and a margin of 4 pixels above and under them.
+        // Until TASK-0420 it was 44 pixels high, and the line under it crossed its second line of 26 pixels.
+        var firstHeight = compact ? rowHeight : Math.Max(rowHeight, (2f * lineHeight) + 8f);
 
-        if (ImGui.InvisibleButton("##structure", new Vector2(width, RowHeight)))
+        if (ImGui.InvisibleButton("##structure", new Vector2(width, firstHeight)))
             _structureOpen = !_structureOpen;
         Item(DocumentRowItem);
         var (min, max) = (ImGui.GetItemRectMin(), ImGui.GetItemRectMax());
         if (ImGui.IsItemHovered())
             list.AddRectFilled(min, max, ImGui.GetColorU32(colours[(int)ImGuiCol.ButtonHovered]), 4f);
-        var first = min.Y + ((RowHeight - (2f * lineHeight)) / 2f);
-        list.AddText(new Vector2(min.X, first), text, DocumentKind(document));
-        var x = min.X;
-        foreach (var (part, red) in DocumentState(bodies))
+        if (compact)
         {
-            list.AddText(new Vector2(x, first + lineHeight), red ? FailedColour : quiet, part);
-            x += ImGui.CalcTextSize(part).X;
+            // ADR-0175 item 3: a compact first row is one line in the text of a list: the kind, then the unit, the count and the
+            // state of the bodies.
+            ImGui.PushFont(_listFont);
+            var centre = min.Y + ((rowHeight - ImGui.GetTextLineHeight()) / 2f);
+            var kind = DocumentKind(document) + "  ";
+            list.AddText(new Vector2(min.X, centre), text, kind);
+            var at = min.X + ImGui.CalcTextSize(kind).X;
+            foreach (var (part, red) in DocumentState(bodies))
+            {
+                list.AddText(new Vector2(at, centre), red ? FailedColour : quiet, part);
+                at += ImGui.CalcTextSize(part).X;
+            }
+
+            _structureTextEnd = at;
+            ImGui.PopFont();
+        }
+        else
+        {
+            var first = min.Y + ((firstHeight - (2f * lineHeight)) / 2f);
+            list.AddText(new Vector2(min.X, first), text, DocumentKind(document));
+            var x = min.X;
+            foreach (var (part, red) in DocumentState(bodies))
+            {
+                list.AddText(new Vector2(x, first + lineHeight), red ? FailedColour : quiet, part);
+                x += ImGui.CalcTextSize(part).X;
+            }
+
+            _structureTextEnd = x;
         }
 
         // The mark: a chevron down while folded, up while open.
@@ -117,17 +153,24 @@ internal sealed unsafe partial class DesktopUi
 
         if (bodies.Count >= FilterFrom)
             FilterLine();
-        var middle = (RowHeight - lineHeight) / 2f;
+        // ADR-0175 item 3: a compact body row has the text of a list, and two body rows have no gap between them in each
+        // density, so a row of 30 pixels is 30 pixels from the next one. Until TASK-0420 the gap of two items (10 pixels) was
+        // between two rows.
+        if (compact)
+            ImGui.PushFont(_listFont);
+        ImGui.PushStyleVar(ImGuiStyleVar.ItemSpacing, ImGui.GetStyle().ItemSpacing with { Y = 0f });
+        var middle = (rowHeight - ImGui.GetTextLineHeight()) / 2f;
         foreach (var body in bodies)
         {
             var row = RowText(body);
             if (bodies.Count >= FilterFrom && _filter.Length > 0 && !row.Contains(_filter, StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            if (ImGui.Selectable($"##document{body.Id}", false, ImGuiSelectableFlags.None, new Vector2(0f, RowHeight)))
+            if (ImGui.Selectable($"##document{body.Id}", false, ImGuiSelectableFlags.None, new Vector2(0f, rowHeight)))
                 _actions.Add(new SelectBodyAction(body.Id));
             Item(row);
             _shown.Add(row);
+            _structureRowFont = ImGui.GetFontSize();
             // A selectable is half the space between two items wider on each side than the column, so the texts start and end
             // in the column, under the first row.
             var inside = ImGui.GetStyle().ItemSpacing.X / 2f;
@@ -142,9 +185,14 @@ internal sealed unsafe partial class DesktopUi
             list.AddLine(new Vector2(min.X, max.Y), max, line, 1f);
         }
 
-        // ADR-0174 item 3: "Show all" only while a body is hidden.
+        ImGui.PopStyleVar();
+        if (compact)
+            ImGui.PopFont();
+
+        // ADR-0174 item 3: "Show all" only while a body is hidden, with the gap of two items above it.
         if (bodies.Any(body => !body.Visible))
         {
+            ImGui.Spacing();
             if (ImGui.Button(ShowAllLabel))
                 _actions.Add(new ShowAllAction());
             Item(ShowAllLabel);

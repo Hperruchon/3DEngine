@@ -12129,3 +12129,38 @@ of run 44425726090. A lost runner was not its cause, so the new workflow keeps s
 New tests: 5. The test list holds 2921 (1709 in `Engine.Tests`, 390 in `3DEngine.Tests`, 819 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.397, 1 product milestone and
 5 entries followed it.
+
+## v0.403 — On a desktop the rows of the structure view are 30 pixels high with the text of a list, and the net of the views sets "Compact" or "For touch" (R31b, TASK-0420)
+
+On 2026-11-18 the owner said that the open structure view was too spaced, and chose rows of 30 pixels for a mouse or a pen,
+rows of 44 pixels on a phone, and a setting "Compact" or "For touch". On 2026-11-20, after the merge of R31a, the owner gave
+the order "start R31b".
+
+**The change.**
+- In the density "Compact" each row of the structure view is 30 pixels high, with Instrument Sans at 20 pixels, the text
+  of a list. The first row is one line. In the density "For touch" each row is 44 pixels high, as in R31a. A phone starts
+  "For touch"; each other device starts "Compact". Each other control keeps 44 pixels. ADR-0175 items 1, 3 and 4.
+- The net of the views holds "Compact" at the left of "Top" and "For touch" at its right. A tap sets the density and does
+  not close the net. The setting lasts for the session. ADR-0175 item 2.
+- Two body rows have no gap between them in each density; in R31a a row took 54 pixels with the gap of two items.
+- ADR-0175 amends ADR-0027 item 6 (for the rows of the structure view), ADR-0091 item 2 (a fourth font in the atlas) and
+  ADR-0174 items 3 and 5.
+
+**Proof.** `RowDensityTests` holds items 1 to 4, and the layout test of ADR-0172 has a state of the open structure view
+for each density. 13 injections, each restored from its saved text, each failed a named test. Pictures of the real window at
+1280 by 720 and 360 by 640 showed the compact rows, the two cells and the rows for touch. They also showed two faults of
+R31a that no test held: the first row for touch was 44 pixels high, so the line under it crossed its second line of 26
+pixels, and the view had the gap of two items (10 pixels) under its last row. The first row for touch is now 60 pixels high,
+and the view ends one margin of the window under its last row; `RowDensityTests` holds both. A clean build gives 0 warnings,
+`dotnet test` passes, and the write-set check and `eng/repo-gates` pass. The run on the branch is in the progress of
+TASK-0420. The failed runs since the entry v0.402, from the API: none; run 44648705606 on `main` has the conclusion
+"skipped", and it is the workflow of the automatic re-run of ADR-0173, which had no lost runner to re-run.
+
+Corrections: `SheetPageTests.A_Tap_On_The_Free_Paper_Places_A_View` tapped between two pixels and took 0.5 millimetres as
+its limit, while one pixel of that paper is about 0.9 millimetres. The new height of the view moved the paper 0.68 pixels
+from a whole pixel, and the test failed with 79.39 for 80. The test now taps the nearest whole pixel and takes half a pixel
+as its limit; a place one pixel away fails it.
+
+New tests: 8. The test list holds 2929 (1709 in `Engine.Tests`, 390 in `3DEngine.Tests`, 827 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.397, 2 product milestones
+and 6 entries followed it.

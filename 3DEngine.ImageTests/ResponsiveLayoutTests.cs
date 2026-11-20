@@ -29,7 +29,9 @@ public sealed class ResponsiveLayoutTests
     // the history arc, the button "Images..." in the panel, and the open images with a selected body. ADR-0174 item 7
     // (TASK-0419): the state Images is the ring of the part with "Images", and the open structure view and the open file menu
     // are two more states. The state of the open structure view has a centre of the part from the host, the other states with
-    // no selection have none. The open net of the views is a state too, because it holds "Dimensions" now.
+    // no selection have none. The open net of the views is a state too, because it holds "Dimensions" now. ADR-0175 item 5
+    // (TASK-0420): the state StructureOpen has the density of the device ("Compact" on each runner), and StructureForTouch is
+    // the open structure view with the density "For touch".
     public enum State
     {
         Nothing,
@@ -43,6 +45,7 @@ public sealed class ResponsiveLayoutTests
         Images,
         ImagesOpen,
         StructureOpen,
+        StructureForTouch,
         FileMenu,
         ViewsOpen,
     }
@@ -185,7 +188,7 @@ public sealed class ResponsiveLayoutTests
     {
         using var ui = new DesktopUi(string.Empty, Document.Millimetre);
         var display = new Vector2(width, height);
-        Guid? selection = state is State.Nothing or State.Images or State.StructureOpen or State.FileMenu or State.ViewsOpen ? null : A;
+        Guid? selection = state is State.Nothing or State.Images or State.StructureOpen or State.StructureForTouch or State.FileMenu or State.ViewsOpen ? null : A;
         var face = state == State.Face ? new FaceLine("Face +z: 100 square mm", true, [], null, null, "Face +z", null) : null;
         IReadOnlyList<ProposalCard>? cards = state == State.Proposal
             ? [new ProposalCard(Guid.NewGuid(), "Widen the plate to 75 mm", ["SetExtrudeDistance 1", "SetExtrudeDistance 2"])]
@@ -209,8 +212,10 @@ public sealed class ResponsiveLayoutTests
                 ui.OpenDistancePad(A, 10);
             if (state == State.ImagesOpen && i == 1)
                 ui.OpenImages();
-            if (state == State.StructureOpen && i == 1)
+            if (state is State.StructureOpen or State.StructureForTouch && i == 1)
                 ui.OpenStructure();
+            if (state == State.StructureForTouch && i == 0)
+                ui.Density = DesktopUi.RowDensity.ForTouch;
             if (state == State.FileMenu && i == 1)
                 ui.OpenFileMenu();
             // The structure view is open too, so the state holds that the net takes its place.
@@ -219,7 +224,7 @@ public sealed class ResponsiveLayoutTests
                 ui.OpenStructure();
                 ui.OpenViews();
             }
-            ui.Frame(1f / 60f, display, Vector2.One, [Plate, Rib], selection, Shelf, sketchPanel: sketchPanel, imagePanel: images, face: face, ringCentre: selection is null && sketchPanel is null && state != State.StructureOpen ? null : new Vector2(width / 2f, height * 0.55f), ringBody: 120f, history: history, proposals: cards);
+            ui.Frame(1f / 60f, display, Vector2.One, [Plate, Rib], selection, Shelf, sketchPanel: sketchPanel, imagePanel: images, face: face, ringCentre: selection is null && sketchPanel is null && state is not (State.StructureOpen or State.StructureForTouch) ? null : new Vector2(width / 2f, height * 0.55f), ringBody: 120f, history: history, proposals: cards);
         }
 
         var panels = ui.PanelRectangles.ToList();
