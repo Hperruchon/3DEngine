@@ -1,0 +1,325 @@
+{
+  "run": {
+    "id": 44337062610,
+    "name": "CI",
+    "conclusion": "failure",
+    "run_attempt": 1
+  },
+  "jobs": [
+    {
+      "id": 134916520172,
+      "name": "Build the APK of the phone",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install the workload of .NET for Android",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install the Android dependencies of the program",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build the APK",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check the platforms of the projects of the phone",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check the native libraries of the APK",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the APK",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 134916520566,
+      "name": "Gate on macos-latest",
+      "conclusion": "cancelled",
+      "steps": []
+    },
+    {
+      "id": 134916520639,
+      "name": "Gate on windows-latest",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Report the runner",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install lavapipe and the validation layers",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Test",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the determinism hash",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the picture of the image test",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Count the tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Smoke test the command-line host with NoOp",
+          "conclusion": "success"
+        },
+        {
+          "name": "Smoke test the geometry path with CreateBox",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 134916520727,
+      "name": "Gate on ubuntu-latest",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Report the runner",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install lavapipe and the validation layers",
+          "conclusion": "success"
+        },
+        {
+          "name": "Test",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the determinism hash",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the picture of the image test",
+          "conclusion": "skipped"
+        },
+        {
+          "name": "Count the tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "Smoke test the command-line host with NoOp",
+          "conclusion": "success"
+        },
+        {
+          "name": "Smoke test the geometry path with CreateBox",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 134916520957,
+      "name": "Write set of the governing task",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build the judge from main",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check each commit against the write set of its task",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run the repository gates",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Set up .NET",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 134918146520,
+      "name": "Start the APK on the emulator",
+      "conclusion": "success",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Take the APK",
+          "conclusion": "success"
+        },
+        {
+          "name": "Permit the emulator to use KVM",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install the emulator and a system image of Android 14",
+          "conclusion": "success"
+        },
+        {
+          "name": "Start the emulator",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run the smoke test",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the determinism hash of the phone",
+          "conclusion": "success"
+        },
+        {
+          "name": "Keep the log of Android",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ]
+    },
+    {
+      "id": 134926794360,
+      "name": "Compare the determinism hashes",
+      "conclusion": "skipped",
+      "steps": []
+    }
+  ],
+  "annotations": {
+    "134916520566": [
+      {
+        "annotation_level": "failure",
+        "message": "The job was not acquired by Runner of type hosted even after multiple attempts"
+      },
+      {
+        "annotation_level": "notice",
+        "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."
+      },
+      {
+        "annotation_level": "notice",
+        "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."
+      },
+      {
+        "annotation_level": "notice",
+        "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."
+      }
+    ]
+  }
+}

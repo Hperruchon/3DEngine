@@ -482,6 +482,8 @@ Therefore each approved objective must have a track here.
 - R31a — With no selection the ring gives the tools of the part, the file name opens the file actions, the net of the
   views holds the switches of the dimensions, and a structure view folded to one row takes the place of the panel. v0.401,
   TASK-0419, ADR-0174.
+- P0.168 — A run of CI whose only failures are jobs that GitHub gave no runner gets one automatic re-run, and the test of
+  a report that blocks has no time limit that decides its result. v0.402, TASK-0417, ADR-0173.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
