@@ -300,9 +300,9 @@ public class FirstDemonstrationImageTests
 
     private static bool IsBackground(byte[] pixels, int column, int row)
     {
-        // ADR-0078 (TASK-0246): the clear is a colour of bytes, so the bytes compare; R * 255 in float can fall below them.
-        var background = ThreeDEngine.Desktop.Ui.Theme.Clear;
-        return Colour(pixels, column, row) == (background.R, background.G, background.B);
+        // ADR-0177 item 1 (TASK-0422): the ground at the pixel, within 1 for the rounding of the GPU. Until TASK-0422 the
+        // bytes compared with the one colour of the clear (ADR-0078, TASK-0246).
+        return GroundPixels.IsGround(pixels, column, row, (int)Width, (int)Height, 1);
     }
 
     private static (int R, int G, int B) Colour(byte[] pixels, int column, int row)

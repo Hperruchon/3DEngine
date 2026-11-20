@@ -33,6 +33,31 @@ internal static class Theme
     // bytes of a picture. Until TASK-0332 it was viewport-clear #3f4955 of ADR-0078.
     internal static readonly (byte R, byte G, byte B) Clear = (0x07, 0x0D, 0x14);
 
+    // ADR-0177 item 1 (phase R18p, TASK-0422): the soft light of the render behind the scene. The ground goes from the colour
+    // of a corner to the colour of the middle; ground.frag draws it, and GroundAt gives the same colour for a test. Clear stays
+    // the colour of a plate and of the clear under the ground. Until TASK-0422 the whole ground was Clear.
+    internal static readonly (byte R, byte G, byte B) GroundMiddle = (0x0A, 0x1A, 0x28);
+    internal static readonly (byte R, byte G, byte B) GroundCorner = (0x03, 0x06, 0x0B);
+
+    // ADR-0177 item 1: the colour of the ground at the pixel (column, row) of a target of width by height, as ground.frag
+    // computes it in floats at the centre of the pixel, and as a target of 8 bits rounds it.
+    internal static (byte R, byte G, byte B) GroundAt(int column, int row, int width, int height)
+    {
+        var (halfX, halfY) = (width * 0.5f, height * 0.5f);
+        var (x, y) = (column + 0.5f - halfX, row + 0.5f - halfY);
+        var s = ((x * x) + (y * y)) / ((halfX * halfX) + (halfY * halfY));
+        static byte Channel(byte corner, byte middle, float s)
+        {
+            var (c, m) = (corner / 255f, middle / 255f);
+            return (byte)Math.Round((c + ((1f - s) * (m - c))) * 255f);
+        }
+
+        return (Channel(GroundCorner.R, GroundMiddle.R, s), Channel(GroundCorner.G, GroundMiddle.G, s), Channel(GroundCorner.B, GroundMiddle.B, s));
+    }
+
+    // ADR-0177 item 2: a colour of the ground as the push block of the pipeline of the ground reads it, from 0 to 1.
+    internal static Vector3 GroundVector((byte R, byte G, byte B) colour) => new(colour.R / 255f, colour.G / 255f, colour.B / 255f);
+
     // The marks of the viewport, as ImGui packs a colour (alpha, blue, green, red).
     internal const uint OtherSketch = 0xFFB8ACA3;   // sketch-other #a3acb8
     internal const uint Reference = 0xFF5690B9;     // sketch-reference #b99056
