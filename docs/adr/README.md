@@ -40,7 +40,7 @@ names. Do not read all of them.
 | [0024](0024-in-process-events-and-body-origin.md) | The events of a session in its host, and the origin of a body in double precision | Accepted | Rendering, clients | 0019, 0023 | — |
 | [0025](0025-observe-a-cut.md) | The first demonstration, a device with no window, and an image test | Amended | Rendering, boundary | 0009, 0017, 0022 | 0029, 0094 |
 | [0026](0026-intent-layer.md) | Device-tagged pointer samples, an intent layer, and a parity test of touch and mouse | Amended | Rendering, clients | 0023 | 0027, 0029, 0032, 0034, 0038, 0041 |
-| [0027](0027-text-and-panels.md) | Text and panels through Dear ImGui, drawn by a first-party renderer | Amended | Rendering, clients | 0026 | 0029, 0061, 0072, 0091 |
+| [0027](0027-text-and-panels.md) | Text and panels through Dear ImGui, drawn by a first-party renderer | Amended | Rendering, clients | 0026 | 0029, 0061, 0072, 0091, 0175 |
 | [0028](0028-body-name-and-visibility.md) | The name and the visibility of a body | Amended | Contracts, geometry | 0012, 0021 | 0037, 0049 |
 | [0029](0029-selection-and-hide-gestures.md) | The selection, the hide gestures and the frame of the camera in the desktop | Amended | Rendering, clients | 0025, 0026, 0027 | 0034, 0053, 0075, 0109, 0124 |
 | [0030](0030-document-file-in-the-desktop.md) | The document file in the desktop and for an agent | Amended | Persistence, deployment | — | 0061, 0071, 0080, 0090, 0102 |
@@ -96,7 +96,7 @@ names. Do not read all of them.
 | [0088](0088-the-window-of-a-sketch-beside-its-ring.md) | While the ring of a sketch shows, the window of the sketch does not repeat it | Accepted | Clients, sketch | 0034 | — |
 | [0089](0089-the-cone-the-sphere-and-the-torus-are-closed-meshes.md) | The cone, the sphere and the torus are closed meshes that the engine makes | Accepted | Geometry, kernel | — | — |
 | [0090](0090-the-answer-of-a-save-lists-its-warnings.md) | The HTTP answer of a save lists its warnings | Accepted | Surface, persistence | 0030 | — |
-| [0091](0091-the-fonts-of-the-redesign.md) | The interface draws with Instrument Sans, and a value on an edge with JetBrains Mono | Amended | Clients, rendering | 0027, 0078 | 0117 |
+| [0091](0091-the-fonts-of-the-redesign.md) | The interface draws with Instrument Sans, and a value on an edge with JetBrains Mono | Amended | Clients, rendering | 0027, 0078 | 0117, 0175 |
 | [0092](0092-an-agent-proposes-and-the-person-accepts.md) | An agent proposes commands, and the person accepts or rejects them | Amended | Surface, clients | — | 0107, 0108, 0110, 0111, 0113, 0130, 0133, 0134, 0135, 0136 |
 | [0093](0093-the-layout-of-the-mix-has-no-panel-chrome.md) | The layout of the mix has a top bar, a panel with no chrome and a status line at the lower right | Amended | Clients, rendering | 0080 | 0099, 0100, 0113, 0124, 0127, 0174 |
 | [0094](0094-a-framed-part-fills-45-percent-of-the-picture.md) | A framed part fills 45 % of the half picture, as in the render of the mix | Accepted | Clients, rendering | 0025 | — |
@@ -179,7 +179,8 @@ names. Do not read all of them.
 | [0171](0171-the-section-action-of-the-sheet-page.md) | On the sheet page a person cuts a view with "Section", a look and two taps, and the page draws the section as the files do | Accepted | Drawing, window | 0155, 0168, 0169 | — |
 | [0172](0172-the-layout-of-small-windows-and-of-each-state.md) | The layout of small windows and of each state, down to 360 by 560 | Amended | Clients, layout | 0097, 0099, 0104, 0113, 0163 | 0174 |
 | [0173](0173-a-lost-runner-gets-one-automatic-re-run.md) | A run of CI whose only failures are jobs that GitHub gave no runner gets one automatic re-run, and no time limit decides a test that passes | Accepted | Pipeline | — | — |
-| [0174](0174-the-tools-of-the-part-on-the-ring-and-a-structure-view.md) | The tools of the part on the ring, a file menu, and a structure view in the place of the panel | Accepted | Clients, layout | 0056, 0076, 0081, 0093, 0100, 0102, 0172 | — |
+| [0174](0174-the-tools-of-the-part-on-the-ring-and-a-structure-view.md) | The tools of the part on the ring, a file menu, and a structure view in the place of the panel | Amended | Clients, layout | 0056, 0076, 0081, 0093, 0100, 0102, 0172 | 0175 |
+| [0175](0175-compact-rows-of-the-structure-view.md) | Compact rows of the structure view for a mouse or a pen, and the setting "Compact" or "For touch" | Accepted | Clients, layout | 0027, 0091, 0174 | — |
 
 ## Topics
 
