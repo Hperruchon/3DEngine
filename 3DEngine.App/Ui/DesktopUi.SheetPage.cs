@@ -63,8 +63,41 @@ internal sealed unsafe partial class DesktopUi
     private bool _pageSentSeen;
     private SheetInfo? _pageShown;
 
-    // The read of the page with the values that the page sent last.
-    private SheetInfo? ShownPage => _pageShown ??= _pageRead is { } read && _pageSent.Count > 0
+    // ADR-0177 items 2 and 3 (phase R30f, TASK-0422): the sheet items of the waiting proposal as the host read them, or null; and
+    // the proposal whose sheet the page took last.
+    private SheetProposal? _sheetProposal;
+    private Guid? _sheetProposalSeen;
+
+    internal SheetProposal? SheetProposalShown => _sheetProposal;
+
+    // ADR-0177 item 3: the boxes of the proposed views and the places of the proposed values on the screen in the last frame, for
+    // a test: the rectangle (left, top, right, bottom) of each box, and the pixel of the middle of the base line of each value.
+    internal IReadOnlyList<(Guid View, Vector4 Rectangle)> ProposedBoxes { get; private set; } = [];
+
+    internal IReadOnlyList<(Guid Dimension, string Text, Vector2 At)> ProposedTexts { get; private set; } = [];
+
+    // ADR-0177 item 3: a new proposal with sheet items takes the page to its sheet once; the person can choose another sheet
+    // after it. The selection, the place of a tap, a section and the row of the formats end with it.
+    public void ShowSheetProposal(SheetProposal? proposal)
+    {
+        _sheetProposal = proposal;
+        if (proposal is not null && proposal.Proposal != _sheetProposalSeen)
+        {
+            (_pageSheetId, _pageView, _pagePlace, _pageSection, _exportOpen, _pageShown) = (proposal.SheetId, null, null, null, false, null);
+            _sheetProposalSeen = proposal.Proposal;
+        }
+    }
+
+    // ADR-0177 item 5: true while the page shows the sheet of the proposal of the card.
+    internal bool ProposalOnPage(ProposalCard card)
+        => PageOpen && _sheetProposal is { } proposal && proposal.Proposal == card.Id && PageSheetId == proposal.SheetId;
+
+    // ADR-0177 item 4: true while the page shows the new sheet of a proposal, which is not in the Document. The host then reads no
+    // GetSheet, and the page takes no tap on the paper.
+    internal bool PageProposedNew => _sheetProposal?.NewSheet is { } proposed && PageSheetId == proposed.SheetId;
+
+    // The read of the page with the values that the page sent last. ADR-0177 item 4: the paper of the new sheet of a proposal.
+    private SheetInfo? ShownPage => PageProposedNew ? _sheetProposal!.NewSheet : _pageShown ??= _pageRead is { } read && _pageSent.Count > 0
         ? read with { Views = [.. read.Views.Select(view => _pageSent.TryGetValue(view.ViewId, out var sent) ? SheetPage.Sent(view, sent.X, sent.Y, sent.Hidden, sent.Centre) : view)] }
         : _pageRead;
 
@@ -112,6 +145,9 @@ internal sealed unsafe partial class DesktopUi
     // The paper of the last frame on the screen, for a test.
     internal SheetPage.Paper? PagePaper { get; private set; }
 
+    // ADR-0177 item 5 (TASK-0422): true when the window of the page is the window under the pointer in this frame.
+    private bool _pageHovered;
+
     // The rectangle of the page in the last frame, which holds the pointer.
     private Vector4? _pageRectangle;
 
@@ -138,9 +174,10 @@ internal sealed unsafe partial class DesktopUi
     }
 
     // ADR-0168 item 1: the button "Sheet" beside "Views" while a live sheet exists; a tap opens or closes the page.
+    // ADR-0177 item 3 (TASK-0422): also while the waiting proposal has sheet items, with an amber outline.
     private void SheetButton()
     {
-        if (_sheet is null)
+        if (_sheet is null && _sheetProposal is null)
             return;
         ImGui.SameLine(0f, 8f);
         var open = _pageOpen;
@@ -158,7 +195,11 @@ internal sealed unsafe partial class DesktopUi
             ImGui.PopStyleColor();
         Item(SheetLabel);
         if (_items.TryGetValue(SheetLabel, out var button))
-            ImGui.GetWindowDrawList().AddRect(new Vector2(button.X + 1f, button.Y + 1f), new Vector2(button.Z - 1f, button.W - 1f), ImGui.GetColorU32(open ? ImGuiCol.ButtonActive : ImGuiCol.Border), ImGui.GetStyle().FrameRounding, ImDrawFlags.None, Theme.OutlineWidth);
+        {
+            var outline = _sheetProposal is not null ? DimensionColour : ImGui.GetColorU32(open ? ImGuiCol.ButtonActive : ImGuiCol.Border);
+            ImGui.GetWindowDrawList().AddRect(new Vector2(button.X + 1f, button.Y + 1f), new Vector2(button.Z - 1f, button.W - 1f), outline, ImGui.GetStyle().FrameRounding, ImDrawFlags.None,
+                _sheetProposal is not null ? Theme.InUseWidth : Theme.OutlineWidth);
+        }
     }
 
     // ADR-0168 items 1 and 6: the keys of the page: Escape ends the place of a tap, then the selection, then the page. The page
@@ -198,7 +239,9 @@ internal sealed unsafe partial class DesktopUi
         _pageRectangle = null;
         if (!PageOpen)
             return;
-        if (_sheet is null && _pageSheetId is null)
+        (ProposedBoxes, ProposedTexts, _pageHovered) = ([], [], false);
+        // ADR-0177 item 3 (TASK-0422): the page stays open on the new sheet of a proposal.
+        if (PageSheetId is null)
         {
             ClosePage();
             return;
@@ -213,6 +256,7 @@ internal sealed unsafe partial class DesktopUi
             | ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoSavedSettings | ImGuiWindowFlags.NoBringToFrontOnFocus | ImGuiWindowFlags.NoBackground;
         if (ImGui.Begin("##SheetPage", flags))
         {
+            _pageHovered = ImGui.IsWindowHovered(ImGuiHoveredFlags.AllowWhenBlockedByActiveItem);
             // The ground of the scene under the page, so no body shows through it.
             ImGui.GetBackgroundDrawList().AddRectFilled(Vector2.Zero, displaySize, Theme.Plate(1f));
             // Finding V204 of the codebase review of 2026-11-18 (b) (TASK-0416): a read without the view of the open section or
@@ -259,21 +303,29 @@ internal sealed unsafe partial class DesktopUi
         SameLineIfFits(CheckboxWidth(KeepAlignedLabel));
         ImGui.Checkbox($"{KeepAlignedLabel}##Page", ref _keepAligned);
         Item(PageItem(KeepAlignedLabel));
-        // With several live sheets, a button of each sheet chooses the sheet of the page.
-        if (_liveSheets.Count > 1)
+        // With several live sheets, a button of each sheet chooses the sheet of the page. ADR-0177 item 3 (TASK-0422): the new
+        // sheet of a waiting proposal has a button too, with an amber text.
+        var choices = _liveSheets.Select(live => (live.Id, live.Name, Proposed: false)).ToList();
+        if (_sheetProposal?.NewSheet is { } proposedSheet)
+            choices.Add((proposedSheet.SheetId, proposedSheet.Name, true));
+        if (choices.Count > 1)
         {
-            foreach (var live in _liveSheets)
+            foreach (var (choice, name, proposed) in choices)
             {
-                SameLineIfFits(ButtonWidth(live.Name));
-                var chosen = live.Id == PageSheetId;
+                SameLineIfFits(ButtonWidth(name));
+                var chosen = choice == PageSheetId;
                 if (chosen)
                     ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertU32ToFloat4(Theme.Accent) with { W = 0.3f });
+                if (proposed)
+                    ImGui.PushStyleColor(ImGuiCol.Text, DimensionColour);
                 // Finding V204 (TASK-0416): another sheet also ends the section and the row of the formats.
-                if (ImGui.Button($"{live.Name}##PageSheet{live.Id:N}", height))
-                    (_pageSheetId, _pageView, _pagePlace, _pageSection, _exportOpen) = (live.Id, null, null, null, false);
+                if (ImGui.Button($"{name}##PageSheet{choice:N}", height))
+                    (_pageSheetId, _pageView, _pagePlace, _pageSection, _exportOpen) = (choice, null, null, null, false);
+                if (proposed)
+                    ImGui.PopStyleColor();
                 if (chosen)
                     ImGui.PopStyleColor();
-                Item(PageItem($"Sheet {live.Id:N}"));
+                Item(PageItem($"Sheet {choice:N}"));
             }
         }
         else if (ShownPage is { } named)
@@ -290,7 +342,8 @@ internal sealed unsafe partial class DesktopUi
         else
             ImGui.Dummy(ImGui.CalcTextSize("…"));
 
-        if (ShownPage is not { } sheet)
+        // ADR-0177 item 4 (TASK-0422): the new sheet of a proposal has no export, no view to select and no place to tap.
+        if (ShownPage is not { } sheet || PageProposedNew)
             return;
 
         // ADR-0170 item 1: "Export" opens a row of the formats, PDF first, in the place of the actions of a view and of the views
@@ -430,11 +483,13 @@ internal sealed unsafe partial class DesktopUi
         ImGui.InvisibleButton("##Paper", new Vector2(Math.Max(1f, rect.Z - rect.X), Math.Max(1f, rect.W - rect.Y)));
         Item(PageItem("Paper"));
         var mouse = ImGui.GetIO().MousePos;
+        // ADR-0177 item 4 (TASK-0422): the paper of the new sheet of a proposal takes no tap and no drag.
+        var taps = !PageProposedNew;
         // ADR-0168 item 3 (finding V202, TASK-0415): a read without the dragged view ends the drag.
         if (_pageDrag is { } lost && sheet.Views.All(view => view.ViewId != lost.View))
             (_pageDrag, _pageDragLost) = (null, true);
         // ADR-0171 item 4 (TASK-0413): no drag while a section is open.
-        if (ImGui.IsItemActivated())
+        if (ImGui.IsItemActivated() && taps)
             _pageDrag = _pageSection is null && SheetPage.Hit(sheet, paper.Millimetres(mouse)) is { } hit ? (hit, mouse, false) : null;
         (double X, double Y, bool Aligned)? moving = null;
         if (_pageDrag is { } drag && ImGui.IsItemActive())
@@ -464,7 +519,7 @@ internal sealed unsafe partial class DesktopUi
 
             (_pageDrag, _pageDragLost) = (null, false);
         }
-        else if (ImGui.IsItemDeactivated())
+        else if (ImGui.IsItemDeactivated() && taps)
         {
             var at = paper.Millimetres(mouse);
             if (_pageDragLost)
@@ -581,6 +636,36 @@ internal sealed unsafe partial class DesktopUi
             var size = Size(3.5);
             var width = ImGui.CalcTextSize(text).X * size / ImGui.GetFontSize();
             list.AddText(font, size, paper.Pixel(dimension.X, dimension.Y) - new Vector2(width / 2f, size), Theme.Ink, text);
+        }
+
+        // ADR-0177 item 3 (phase R30f, TASK-0422): the proposal of the agent over the sheet, in amber: an outline round the paper of a
+        // new sheet, a box with its name above its upper left corner for each view, and each value at its place as the values of
+        // the sheet.
+        if (_sheetProposal is { } proposal && proposal.SheetId == sheet.SheetId)
+        {
+            if (PageProposedNew)
+                list.AddRect(new Vector2(rect.X - 3f, rect.Y - 3f), new Vector2(rect.Z + 3f, rect.W + 3f), DimensionColour, 0f, ImDrawFlags.None, 2f);
+            var boxes = new List<(Guid, Vector4)>(proposal.Boxes.Count);
+            foreach (var box in proposal.Boxes)
+            {
+                var (from, to) = (paper.Pixel(box.X0, box.Y1), paper.Pixel(box.X1, box.Y0));
+                list.AddRect(from, to, DimensionColour, 0f, ImDrawFlags.None, 2f);
+                var size = Size(3.5);
+                list.AddText(font, size, from - new Vector2(0f, size + 2f), DimensionColour, box.Name);
+                boxes.Add((box.View, new Vector4(from.X, from.Y, to.X, to.Y)));
+            }
+
+            var texts = new List<(Guid, string, Vector2)>(proposal.Values.Count);
+            foreach (var value in proposal.Values)
+            {
+                var size = Size(3.5);
+                var width = ImGui.CalcTextSize(value.Text).X * size / ImGui.GetFontSize();
+                var at = paper.Pixel(value.X, value.Y);
+                list.AddText(font, size, at - new Vector2(width / 2f, size), DimensionColour, value.Text);
+                texts.Add((value.Dimension, value.Text, at));
+            }
+
+            (ProposedBoxes, ProposedTexts) = (boxes, texts);
         }
 
         // The mark of a tap on the free paper.

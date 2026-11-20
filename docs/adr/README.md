@@ -97,7 +97,7 @@ names. Do not read all of them.
 | [0089](0089-the-cone-the-sphere-and-the-torus-are-closed-meshes.md) | The cone, the sphere and the torus are closed meshes that the engine makes | Accepted | Geometry, kernel | — | — |
 | [0090](0090-the-answer-of-a-save-lists-its-warnings.md) | The HTTP answer of a save lists its warnings | Accepted | Surface, persistence | 0030 | — |
 | [0091](0091-the-fonts-of-the-redesign.md) | The interface draws with Instrument Sans, and a value on an edge with JetBrains Mono | Amended | Clients, rendering | 0027, 0078 | 0117, 0175 |
-| [0092](0092-an-agent-proposes-and-the-person-accepts.md) | An agent proposes commands, and the person accepts or rejects them | Amended | Surface, clients | — | 0107, 0108, 0110, 0111, 0113, 0130, 0133, 0134, 0135, 0136 |
+| [0092](0092-an-agent-proposes-and-the-person-accepts.md) | An agent proposes commands, and the person accepts or rejects them | Amended | Surface, clients | — | 0107, 0108, 0110, 0111, 0113, 0130, 0133, 0134, 0135, 0136, 0177 |
 | [0093](0093-the-layout-of-the-mix-has-no-panel-chrome.md) | The layout of the mix has a top bar, a panel with no chrome and a status line at the lower right | Amended | Clients, rendering | 0080 | 0099, 0100, 0113, 0124, 0127, 0174 |
 | [0094](0094-a-framed-part-fills-45-percent-of-the-picture.md) | A framed part fills 45 % of the half picture, as in the render of the mix | Accepted | Clients, rendering | 0025 | — |
 | [0095](0095-the-look-of-the-orbit-ring.md) | The ring has the look of the orbit of the render, with a guide, icons and a caption | Amended | Clients, rendering | 0081, 0086 | 0108 |
@@ -173,7 +173,7 @@ names. Do not read all of them.
 | [0165](0165-the-hidden-and-centre-lines-of-a-view.md) | Each view of a sheet has a flag for its hidden lines and one for its centre lines, the read gives the centre lines, and a whole circle reads as a diameter | Amended | Contracts, drawing | 0153, 0155, 0158, 0159, 0160, 0161 | 0169 |
 | [0166](0166-the-lines-of-the-sheet-in-a-flat-view.md) | A flat view of the window shows the lines of the sheet on a light paper, with the switch "Lines" and the key L, and Frame fills the free part | Accepted | Drawing, window | 0138, 0140 | — |
 | [0167](0167-add-a-view-to-a-sheet-from-the-window.md) | A person adds the flat view or the standard views to a sheet from the window, at the place of the projection and the scale that fits, and ScaleSheetView changes the scale | Amended | Drawing, window | 0138, 0155 | 0168 |
-| [0168](0168-the-sheet-page.md) | A sheet page replaces the scene with the paper of a sheet, where a tap on a view gives its actions, a drag keeps the alignment with one MoveSheetViews, and a tap on the paper places a view | Amended | Drawing, window | 0138, 0155, 0167 | 0170, 0171 |
+| [0168](0168-the-sheet-page.md) | A sheet page replaces the scene with the paper of a sheet, where a tap on a view gives its actions, a drag keeps the alignment with one MoveSheetViews, and a tap on the paper places a view | Amended | Drawing, window | 0138, 0155, 0167 | 0170, 0171, 0177 |
 | [0169](0169-the-section-view-of-a-sheet.md) | A section of a sheet is a view with a cut plane, a parent and a letter, and the read gives its hatch, its cut line and its label | Amended | Contracts, drawing | 0153, 0155, 0159, 0160, 0161, 0165 | 0171 |
 | [0170](0170-export-a-sheet-from-the-window.md) | The sheet page and the command line export a sheet as PDF, SVG or DXF through the save dialog of the system, off the frame thread | Accepted | Drawing, window, export | 0168 | — |
 | [0171](0171-the-section-action-of-the-sheet-page.md) | On the sheet page a person cuts a view with "Section", a look and two taps, and the page draws the section as the files do | Accepted | Drawing, window | 0155, 0168, 0169 | — |
@@ -182,6 +182,7 @@ names. Do not read all of them.
 | [0174](0174-the-tools-of-the-part-on-the-ring-and-a-structure-view.md) | The tools of the part on the ring, a file menu, and a structure view in the place of the panel | Amended | Clients, layout | 0056, 0076, 0081, 0093, 0100, 0102, 0172 | 0175 |
 | [0175](0175-compact-rows-of-the-structure-view.md) | Compact rows of the structure view for a mouse or a pen, and the setting "Compact" or "For touch" | Accepted | Clients, layout | 0027, 0091, 0174 | — |
 | [0176](0176-put-a-value-on-a-sheet-from-the-window.md) | "Put on sheet" in the pad of a value of a flat view places that value on the view of the sheet with the same frame | Accepted | Drawing, window | — | — |
+| [0177](0177-the-proposal-of-the-agent-on-the-sheet-page.md) | The sheet page shows a proposal of the agent as amber boxes of views and amber values before the accept | Accepted | Drawing, window | 0092, 0168 | — |
 
 ## Topics
 
