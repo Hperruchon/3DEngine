@@ -245,7 +245,8 @@ public sealed class SheetSectionTests : IDisposable
         Assert.Equal(["165,200 170,200", "230,200 235,200"], Lines(parent, "cut-end"));
         Assert.Equal(["167.5,200 167.5,207", "232.5,200 232.5,207"], Lines(parent, "arrow"));
         Assert.All(parent.Lines.Where(line => line.Kind is "cut" or "cut-end" or "arrow"), line => Assert.Equal(section, line.Body));
-        Assert.Equal([new SheetText(167.5, 211 - 1.75, "A", 5), new SheetText(232.5, 211 - 1.75, "A", 5)], parent.Texts);
+        // Finding E224 (TASK-0416): the size 5 is the height of a capital, so the base line is 2.5 mm under the place.
+        Assert.Equal([new SheetText(167.5, 211 - 2.5, "A", 5), new SheetText(232.5, 211 - 2.5, "A", 5)], parent.Texts);
         Assert.Empty(Lines(parent, "hatch"));
         Assert.Null(parent.Section);
 
@@ -385,5 +386,103 @@ public sealed class SheetSectionTests : IDisposable
         Assert.Contains("(A-A) Tj", pdf, StringComparison.Ordinal);
         Assert.Contains("0.25 w [] 0 d\n", pdf, StringComparison.Ordinal);
         Assert.Equal(Encoding.ASCII.GetByteCount(pdf), pdf.Length);
+    }
+
+    // Finding E224 of the codebase review of 2026-11-18 (b) (TASK-0416): the Size of a text is the height of a capital letter in
+    // the three files. The DXF file writes it as the height (group 40); the SVG and the PDF file write the size of the font
+    // that gives a capital of Helvetica of that height, Size / 0.718.
+    [NativeManifoldFact]
+    public async Task The_Size_Of_A_Text_Is_The_Height_Of_A_Capital_In_The_Three_Files()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var (session, sheet, top, _) = await Plate(backend);
+        await Applied(session, Section(sheet, top, "up", 30, 20, 0, 200, 100), "viewId");
+        var read = await Read(session, sheet);
+        var font = (5 / 0.718).ToString("R", CultureInfo.InvariantCulture);
+
+        var svg = SvgExport.Text(read);
+        Assert.Contains($"font-size=\"{font}\">A-A</text>", svg, StringComparison.Ordinal);
+        Assert.Equal(2, svg.Split($"font-size=\"{font}\">A</text>").Length - 1);
+        var labels = PdfExport.Text(read).Split('\n').Where(line => line.EndsWith("(A-A) Tj ET", StringComparison.Ordinal) || line.EndsWith("(A) Tj ET", StringComparison.Ordinal)).ToList();
+        Assert.Equal(3, labels.Count);
+        Assert.All(labels, line => Assert.StartsWith($"BT /F1 {font} Tf ", line, StringComparison.Ordinal));
+        Assert.Contains("\n40\n5\n1\nA-A\n", DxfExport.Text(read), StringComparison.Ordinal);
+    }
+
+    // Finding E221 of the codebase review of 2026-11-18 (b) (TASK-0416): a section whose point is far from the part, x = 1e308
+    // on a Top view at 2 : 1, would put its cut line at x = +∞ on the paper. The parent then gives no cut line, no arrows and no
+    // letters of it, the read is valid JSON, and the SVG file has no arrow head at 0.
+    [Fact]
+    public async Task A_Cut_Line_At_A_Place_That_Is_Not_Finite_Is_Not_Given()
+    {
+        var session = NewSession();
+        await Applied(session, new CreateBoxCommand { SizeX = 60, SizeY = 40, SizeZ = 10 }, "bodyId");
+        var sheet = await Applied(session, new CreateSheetCommand { SheetName = "Far", Paper = "A3" }, "sheetId");
+        var top = await Applied(session, View(sheet, Top, 2, 1, 200, 200), "viewId");
+        await Applied(session, Section(sheet, top, "left", 1e308, 0, 0, 100, 100), "viewId");
+
+        var read = await Read(session, sheet);
+
+        var parent = read.Views[0];
+        Assert.Contains(parent.Lines, line => line.Kind == "edge" || line.Kind == "outline");
+        Assert.DoesNotContain(parent.Lines, line => line.Kind is "cut" or "cut-end" or "arrow");
+        Assert.Empty(parent.Texts);
+        Assert.All(read.Views.SelectMany(view => view.Lines), line => Assert.True(double.IsFinite(line.FromX) && double.IsFinite(line.FromY) && double.IsFinite(line.ToX) && double.IsFinite(line.ToY)));
+        Assert.All(read.Views.SelectMany(view => view.Texts), text => Assert.True(double.IsFinite(text.X) && double.IsFinite(text.Y)));
+        Assert.Contains("\"sheetId\"", System.Text.Json.JsonSerializer.Serialize(read, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web)), StringComparison.Ordinal);
+        Assert.DoesNotContain("<path fill=\"black\"", SvgExport.Text(read), StringComparison.Ordinal);
+    }
+
+    // Finding E222 of the codebase review of 2026-11-18 (b) (TASK-0416): the read keeps the cut of a section. A second read, and
+    // a read after a move of a view, make no new cut and give the same lines; a read after a change of the body cuts again;
+    // and an export, which reads the sheet, takes the kept cut.
+    [NativeManifoldFact]
+    public async Task A_Read_Keeps_The_Cut_Until_A_Body_Changes()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var (session, sheet, top, plate) = await Plate(backend);
+        var section = await Applied(session, Section(sheet, top, "up", 30, 20, 0, 200, 100), "viewId");
+
+        var first = await Read(session, sheet);
+        Assert.Equal(1, SectionCut.CutsOf(section));
+        var again = await Read(session, sheet);
+        await Applied(session, new MoveSheetViewsCommand { SheetId = sheet, ViewId = top, X = 210, Y = 200 }, "viewId");
+        var moved = await Read(session, sheet);
+        await session.Read((document, _) => SvgExport.Write(document, sheet));
+        Assert.Equal(1, SectionCut.CutsOf(section));
+        string Cut(SheetInfo read) => string.Join(" ", read.Views[1].Lines.Select(line => P(line.FromX, line.FromY) + " " + P(line.ToX, line.ToY)));
+        Assert.Equal(Cut(first), Cut(again));
+        Assert.Equal(Cut(first), Cut(moved));
+
+        await Applied(session, new TranslateCommand { BodyId = plate, Dx = 0, Dy = 1, Dz = 0 }, "bodyId");
+        var changed = await Read(session, sheet);
+        Assert.Equal(2, SectionCut.CutsOf(section));
+        Assert.NotEqual(Cut(first), Cut(changed));
+    }
+
+    // Finding E223 of the codebase review of 2026-11-18 (b) (TASK-0416, Q1 A of the owner): a section through the axis of a cone
+    // shows the axis in each look. A cone of radius 10 and height 20 at the origin: a section of Front with the look "left" and
+    // a section of Top with the look "up", each through (0, 0, 0), give one centre line along the axis, 20 mm long plus 3 mm at
+    // each end. Until TASK-0416 the section of Top gave none, because the edges of its cut are slanted lines of the side.
+    [NativeManifoldFact]
+    public async Task A_Section_Through_The_Axis_Of_A_Cone_Shows_The_Axis_In_Each_Look()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = new DocumentSession(EngineHosting.CreateDefault(backend));
+        await Applied(session, new CreateConeCommand { Radius = 10, Height = 20 }, "bodyId");
+        var sheet = await Applied(session, new CreateSheetCommand { SheetName = "Cone", Paper = "A3" }, "sheetId");
+        var front = await Applied(session, View(sheet, Front, x: 100, y: 200), "viewId");
+        var top = await Applied(session, View(sheet, Top, x: 300, y: 200), "viewId");
+        await Applied(session, Section(sheet, front, "left", 0, 0, 0, 100, 80), "viewId");
+        await Applied(session, Section(sheet, top, "up", 0, 0, 0, 300, 80), "viewId");
+
+        var read = await Read(session, sheet);
+
+        foreach (var cut in read.Views.Skip(2))
+        {
+            var axis = Assert.Single(cut.Lines, line => line.Kind == "centre");
+            Assert.Equal(axis.FromX, axis.ToX, 9);
+            Assert.Equal(26, Math.Abs(axis.ToY - axis.FromY), 9);
+        }
     }
 }

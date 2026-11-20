@@ -46,6 +46,11 @@ point of the design.
 2. **"Section" (D16 A; amends ADR-0168 item 2).** A selected view gets the action "Section". It starts the section of that
    view: the row of the page shows the looks "Left", "Right", "Up" and "Down", the direction of the arrows (ADR-0169 item 2),
    with "Up" first, and "Cancel section". Escape, "Cancel section" and the close of the page end it; Escape ends a section before it ends the selection.
+   Finding V208 of the codebase review of 2026-11-18 (b) (TASK-0416): "Section" shows for a view whose frame is the frame of a
+   flat view of the window, as "Go to" does; the section of such a view has the frame of a flat view too, so the engine takes
+   it. The engine also takes a parent of another frame whose right has a rational length; an agent sends that command.
+   Findings V204 and V205 (TASK-0416): a read without the view of the section ends the section and the selection, the choice
+   of another sheet ends it, "Section" closes the row of the formats, and "Export" ends the section.
 3. **The cut (D16 A).** While the section has no cut, a line of the colour of the accent goes across the box of the view
    through the pointer: horizontal for "Up" and "Down", vertical for "Left" and "Right". Its place snaps to the centre of
    each whole circle of the view that is within 2 mm of paper. A tap on the view, or within 3 mm of its box, sets the cut at
@@ -77,3 +82,4 @@ no place of the projection is proposed.
 
 - 2026-11-18 · TASK-0413 · The record, for the action of the page of row R30h (ADR-0169 item 8).
 - 2026-11-18 · TASK-0413 · Shipped at v0.396.
+- 2026-11-20 · TASK-0416 · Item 2: "Section" for a flat frame (V208), and the end of a section (V204, V205) (P0.167).

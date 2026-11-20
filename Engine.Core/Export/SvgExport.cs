@@ -25,6 +25,14 @@ public static class SvgExport
     public const double ArrowHead = 3;
     public const double ArrowWidth = 1.6;
 
+    // Finding E224 of the codebase review of 2026-11-18 (b) (TASK-0416): the Size of a SheetText is the height of a capital
+    // letter (ADR-0169 item 5). A capital of Helvetica is 718 thousandths of the size of the font (CapHeight of its metrics), so
+    // the SVG and the PDF file write the size of the font Size / CapHeight. Until TASK-0416 they wrote Size as the size of the
+    // font, and a capital was about 3.6 mm in place of 5 mm.
+    public const double CapHeight = 0.718;
+
+    public static double FontSize(double capital) => capital / CapHeight;
+
     // ADR-0159 item 4: the frame is 10 mm inside the edge of the paper, and the title block is 120 by 20 mm in the lower right
     // corner of the frame.
     public const double Margin = 10;
@@ -95,7 +103,7 @@ public static class SvgExport
             {
                 w.Append($"<g id=\"texts-{view.ViewId}\" font-family=\"sans-serif\" fill=\"black\" text-anchor=\"middle\">\n");
                 foreach (var text in view.Texts)
-                    w.Append($"<text x=\"{N(text.X)}\" y=\"{N(svg.Y(text.Y))}\" font-size=\"{N(text.Size)}\">{Escape(text.Text)}</text>\n");
+                    w.Append($"<text x=\"{N(text.X)}\" y=\"{N(svg.Y(text.Y))}\" font-size=\"{N(FontSize(text.Size))}\">{Escape(text.Text)}</text>\n");
                 w.Append("</g>\n");
             }
         }

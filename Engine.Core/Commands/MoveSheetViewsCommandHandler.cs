@@ -62,6 +62,11 @@ public sealed class MoveSheetViewsCommandHandler : ICommandHandler, ICommandEnco
             return Task.FromResult(SheetResults.NotFound(move.SheetId));
         if (sheet.Views.FirstOrDefault(view => view.Id == move.ViewId) is not { } moved)
             return Task.FromResult(SheetResults.ViewNotFound(sheet.Id, move.ViewId));
+        // Finding E225 of the codebase review of 2026-11-18 (b) (TASK-0416): a move to the place that the view has changes
+        // nothing, so it is refused and gives no step of undo. Until TASK-0416 it was Applied.
+        if (move.X == moved.X && move.Y == moved.Y)
+            return Task.FromResult(SheetResults.ViewInvalid(
+                $"The view '{moved.Id}' is at ({moved.X}, {moved.Y}) already, so the move changes nothing (ADR-0168 item 3)."));
 
         var (dx, dy) = (move.X - moved.X, move.Y - moved.Y);
         var views = new List<SheetView>(sheet.Views.Count);
