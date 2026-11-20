@@ -1,7 +1,7 @@
 ---
 id: 0422
 title: The sheet page shows a proposal of the agent as amber boxes of views and amber values before the accept
-status: Active
+status: Done
 phase: R30f
 opened: 2026-11-20
 depends-on: [0413, 0416]
