@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: ['0027', '0078']
-amended-by: ['0117']
+amended-by: ['0117', '0175']
 affects:
   - 3DEngine.App/Ui/DesktopUi.cs
   - 3DEngine.App/Ui/DesktopUi.Values.cs
@@ -65,3 +65,5 @@ instance of a variable font.
 - 2026-11-08 · TASK-0292 · Shipped at v0.278.
 - 2026-11-10 · TASK-0342 · ADR-0117 item 1 amends item 2: the atlas holds Instrument Sans a third time, at 34 pixels, for
   the name of a body.
+- 2026-11-20 · TASK-0420 · ADR-0175 item 4 amends item 2: the atlas holds Instrument Sans a fourth time, at 20 pixels,
+  for the text of a compact row of a list.

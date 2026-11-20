@@ -1,13 +1,13 @@
 ---
 id: 0174
 title: The tools of the part on the ring, a file menu, and a structure view in the place of the panel
-status: Accepted
+status: Amended
 topic: Clients, layout
 date: 2026-11-19
 supersedes: []
 superseded-by: []
 amends: ['0056', '0076', '0081', '0093', '0100', '0102', '0172']
-amended-by: []
+amended-by: ['0175']
 affects:
   - 3DEngine.App/NativeThreeDEngine.cs
   - 3DEngine.App/Ui/DesktopUi.Fixed.cs
@@ -100,3 +100,5 @@ not show.
 
 - 2026-11-19 · TASK-0419 · The record, from the study of the left panel and the choices of the owner of 2026-11-18 (B plus
   C, density B).
+- 2026-11-20 · TASK-0420 · ADR-0175 amends item 3 (the rows of 30 pixels in the density "Compact", and no gap between two
+  body rows) and item 5 (the cells "Compact" and "For touch" on the row of "Top").

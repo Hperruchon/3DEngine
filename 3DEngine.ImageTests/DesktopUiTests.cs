@@ -282,6 +282,9 @@ public class DesktopUiTests
     public void Each_Row_And_Each_Control_Of_The_Selection_Is_At_Least_44_Pixels_High()
     {
         using var ui = Opened();
+        // ADR-0175 item 1 (TASK-0420): a body row is 44 pixels high in the density "For touch"; RowDensityTests holds the rows
+        // of 30 pixels of the density "Compact".
+        ui.Density = DesktopUi.RowDensity.ForTouch;
         StepOf(ui, FirstHidden, null);
         StepOf(ui, FirstHidden, null);
         foreach (var label in new[] { DesktopUi.RowText(FirstHidden[0]), DesktopUi.ShowAllLabel })
