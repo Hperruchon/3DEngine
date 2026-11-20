@@ -86,6 +86,12 @@ field with a default keeps each log valid.
    tag along its axis, as the edge of a cut face, gives the axis of the side as an outline does (amends ADR-0165 item 3).
    So a section through the axis of a hole shows the axis, also when the cut goes through the corners of the facets and
    the side has no outline.
+   Finding E223 of the codebase review of 2026-11-18 (b) (TASK-0416, Q1 A of the owner): such an edge gives the axis when it
+   lies in one plane with the axis, so the slanted edges of a cut through the axis of a cone give the axis in each look.
+   An edge parallel to the axis, the edge of a cylinder, lies in one plane with it too.
+   Finding E222 (TASK-0416): the read keeps the last 16 cuts with their B-Rep, under the exact content of the solid, the
+   point, the frame and the view. The cut is a function of that content only, so a read after a command that changes no
+   body makes no new cut and gives the same lines.
 4. **The hatch (D16 A; ADR-0162 item 20 puts it in the scope of ADR-0118 item 7).** GetSheet gives the hatch of the cut faces of each body as lines of the kind
    "hatch": thin, continuous lines on the paper, 2.5 mm apart, at 45° (ISO 128-50). The first body with a cut face has lines
    that go up to the right, the next one lines that go down to the right, and so on, so two parts that touch have different
@@ -102,6 +108,10 @@ field with a default keeps each log valid.
    each arrow, and the label of a section is "A-A" for the letter A, 10 mm under the box of its lines. Each text has the size
    5 mm (ISO 3098). The label uses the hyphen of ASCII, so the three files print the same text. A view with no line has no
    cut line.
+   Finding E221 of the codebase review of 2026-11-18 (b) (TASK-0416): a cut line whose place on the paper is not a finite
+   number, from a point far from the part, is not given, with its ends, its arrows and its letters; the read stays valid
+   JSON. Finding E224 (TASK-0416): the size of a text is the height of a capital letter, so a letter at the end of an arrow
+   has its base line half of the size under the line of the arrow.
 6. **The files (amends ADR-0159 item 3, ADR-0160 item 3 and ADR-0161 item 3).** The order is: the hidden lines, the centre
    lines and the cut lines, the hatch, the visible lines and the thick ends, then the arrows and the texts. A hatch line is
    thin, 0.25 mm, and continuous. A cut line is thin with the dashes of a centre line. A thick end is thick, 0.5 mm. An arrow
@@ -109,6 +119,9 @@ field with a default keeps each log valid.
    puts the hatch on a layer HATCH of the colour 8 and the line type CONTINUOUS, the cut lines on a layer CUT of the colour 7
    and the line type CENTER, the thick ends on the layer VISIBLE, and the arrows (a LINE and a SOLID) and the texts on the
    layer TEXT. The PDF file holds the widths of Helvetica for the capital letters.
+   Finding E224 (TASK-0416): the DXF file writes the size as the height of a text (group 40). The SVG and the PDF file write the
+   size of the font size / 0.718, because a capital of Helvetica is 718 thousandths of the size of its font (CapHeight), so
+   a capital is 5 mm in the three files. The sheet page uses the same size of the font.
 7. **The record of a read.** GetSheet gives each view its section as the field `section` of `SheetViewInfo`, null for a view
    that is not a section, and its texts as the field `texts`.
 8. **Not in this record.** A cut line with steps, a half section, a detail view, a rib that is not hatched, and the action
@@ -121,7 +134,11 @@ field with a default keeps each log valid.
 128-50. The cut uses the subtraction of the owned kernel, so the section of R26 in the window can use the same cut.
 
 **Bad:** each read of a section subtracts one box from each solid, so a section costs more than a view. A hatch line ends on
-the chord of a facet, not on the arc.
+the chord of a facet, not on the arc. Finding E222 of the codebase review of 2026-11-18 (b) gives a size: a torus of 4,096
+polygons took 1.8 s with no section and 25.5 s with one, under the serial lock. Since TASK-0416 the read keeps the cut (item
+3), so only the first read after a change of a body pays it; a sphere of radius 20 takes 3.6 s for that read and 1.25 s for
+a read after a move of a view, with 1.1 s for the view alone. A cut of each polygon by the plane with one cap needs a change
+of the owned kernel, which TASK-0416 does not write.
 
 **Neutral:** a log before this record gives the same sheets. A section is a view, so MoveSheetView, ScaleSheetView,
 SetSheetViewLines and RemoveSheetView apply to it.
@@ -139,3 +156,5 @@ SetSheetViewLines and RemoveSheetView apply to it.
 - 2026-11-18 · TASK-0411 · The record, for row R30h and ADR-0162 items 11, 13 and 17.
 - 2026-11-18 · TASK-0411 · Shipped at v0.394.
 - 2026-11-18 · TASK-0413 · Amended by ADR-0171: the action "Section" of the sheet page (item 8).
+- 2026-11-20 · TASK-0416 · Items 3, 5 and 6: the axis of a cone (E223, Q1 A), the kept cut (E222), a cut line that is not
+  finite (E221), and the size of a text (E224) (P0.167).

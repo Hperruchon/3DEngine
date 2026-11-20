@@ -54,6 +54,9 @@ centre lines (ADR-0165), and asks for their control on the page if it fits.
    sheet or, with several live sheets, a button for each sheet, and "…" while a read or a command runs. The window reads
    GetSheet of the sheet off the frame thread, one read at a time, for a new sheet or a new version of the Document, and
    keeps the last read of the same sheet until the new one comes.
+   Finding V207 of the codebase review of 2026-11-18 (b) (TASK-0416): the paper also starts under room for the highest of
+   the rows that change (the actions of a view, the views to place, a section and the formats) at the width of the page, and
+   "…" keeps its room when it does not show, so on a phone the paper keeps its place at the first tap too.
 2. **A tap on a view.** A tap on a view, or within 3 mm of the box of its lines, selects it with an outline in the accent; a
    second tap ends the selection. The header then gives "Go to" (the flat view of its frame, framed, and the page closes),
    "Scale" (the pad of the scale of ADR-0167 item 5 for that view, which sends ScaleSheetView with the view), "Remove"
@@ -72,9 +75,16 @@ centre lines (ADR-0165), and asks for their control on the page if it fits.
    is one command and one step of undo. The places compare with no tolerance; the window keeps them equal. A read that comes
    without the dragged view, after an undo, an agent or a command of the queue, ends the drag, and its release gives no
    command, no selection and no place (finding V202 of the codebase review of 2026-11-18 (b), TASK-0415).
+   Finding E225 of the same review (TASK-0416): a move to the place that the view has changes nothing, so MoveSheetViews
+   refuses it with `E-SHEET-VIEW-INVALID` after the checks of the sheet and of the view, and it gives no step of undo. A drag
+   that ends at the place of its view sends no command.
 4. **The commands off the frame thread (finding V196).** Each command of the page and of the pad of the scale goes to a queue
    that sends it on the thread pool, one at a time in their order, so a frame never waits for the serial lock of the session.
    The panel shows the text of each command when it ends.
+   Finding V206 of the codebase review of 2026-11-18 (b) (TASK-0416): the page keeps the place and the two switches of each
+   view as it sent them last, and of each view that an aligned move takes, and shows each view with them. They stay until
+   a read comes that is not pending after the send: the host gives a pending read while a command waits or runs and until
+   the read of its version ends. So a second change of a view before the read starts from the first one.
 5. **A tap on the free paper (D5 B).** A tap on the paper with no view under it marks the place and gives the six views and
    "Cancel" in the header. A view goes to that place at the scale of the first view of the sheet, or at the scale that fits for
    a sheet with no view (ADR-0167 item 4); a view whose frame the sheet holds is not added again.
@@ -82,6 +92,8 @@ centre lines (ADR-0165), and asks for their control on the page if it fits.
    which they show, also the Escape that closes them, so no key reaches the intents of the scene. On the page Escape ends the
    mark of a tap, then the selection, then the page, and the keys of the views, F and L rest. The home screen closes the page
    and the pad of a sheet, and the keys of the pad rest while it shows.
+   Finding V203 of the codebase review of 2026-11-18 (b) (TASK-0416): a field, a numeric pad or the pad of a sheet that holds
+   the keys at the start of a frame holds them for the whole frame, so the Escape that closes a pad gives the page no key.
 7. **The free place (the answer of the owner of 2026-11-18, amends ADR-0167 item 3).** D5 A of the design file says that a
    view that does not fit goes to the largest free part of the paper. The owner chose the free place nearest to the place of
    the projection, as R30b does ("Nearest place"); the design file has a note.
@@ -111,3 +123,5 @@ offers each other sheet by name only. The texts of the title block need a paper 
 - 2026-11-18 · TASK-0412 · ADR-0170 item 1 amends items 1 and 6: the header has "Export", and Escape closes its row first.
 - 2026-11-18 · TASK-0413 · Amended by ADR-0171 item 2: "Section" of a selected view (R30h).
 - 2026-11-18 · TASK-0415 · Item 3: a read without the dragged view ends the drag (finding V202, P0.166).
+- 2026-11-20 · TASK-0416 · Items 1, 3, 4 and 6: the room of the header (V207), no move to the same place (E225), the values that
+  the page sent (V206), and the keys of a pad (V203) (P0.167).

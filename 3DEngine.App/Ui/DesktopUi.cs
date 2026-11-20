@@ -484,9 +484,14 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         // ADR-0168 item 6 (phase R30c, TASK-0408, finding V199 of the codebase review of 2026-11-18): the pad of a sheet and the
         // sheet page hold the keys of the frame in which they show, also the Escape that closes them, so it reaches no intent.
         var holdKeys = _textActive || _pad is not null || _sheetPad is not null || PageOpen;
+        // Finding V203 of the codebase review of 2026-11-18 (b) (TASK-0416): a field or a pad that holds the keys at the start of
+        // the frame keeps them for the whole frame, so the Escape that closes the pad of a sheet or cancels a numeric pad does
+        // not also reach the page. Until TASK-0416 the page read the pads after WatchSheetPadKeys had closed its pad, and it did
+        // not read the numeric pad.
+        var padHolds = _textActive || _pad is not null || _sheetPad is not null;
         WatchSheetPadKeys(samples);
         // ADR-0168 item 6: the keys of the sheet page; the keys of the views and F rest while it shows.
-        WatchPageKeys(samples);
+        WatchPageKeys(samples, padHolds);
         if (_pad is null && _sheetPad is null && !_textActive && _home is null && !PageOpen)
         {
             WatchFrameKey(samples);

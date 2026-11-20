@@ -136,6 +136,34 @@ internal static class SheetPage
         return (view.X + dx, view.Y + dy, false);
     }
 
+    // Finding V206 of the codebase review of 2026-11-18 (b) (TASK-0416): the view at the place (x, y) with the two flags, as the
+    // page sent them last: its lines, its curves and its texts move with it, so a drag, a tap and the cut of a section start
+    // from the place that the page sent. The centre (cu, cv) of the view does not change.
+    public static SheetViewInfo Sent(SheetViewInfo view, double x, double y, bool hidden, bool centre)
+    {
+        ArgumentNullException.ThrowIfNull(view);
+        var (dx, dy) = (x - view.X, y - view.Y);
+        if (dx == 0 && dy == 0)
+            return view with { HiddenLines = hidden, CentreLines = centre };
+        return view with
+        {
+            X = x,
+            Y = y,
+            HiddenLines = hidden,
+            CentreLines = centre,
+            Lines = [.. view.Lines.Select(line => line with
+            {
+                FromX = line.FromX + dx,
+                FromY = line.FromY + dy,
+                ToX = line.ToX + dx,
+                ToY = line.ToY + dy,
+                Circle = line.Circle is { } c ? c with { X = c.X + dx, Y = c.Y + dy } : null,
+                Ellipse = line.Ellipse is { } e ? e with { X = e.X + dx, Y = e.Y + dy } : null,
+            })],
+            Texts = [.. view.Texts.Select(text => text with { X = text.X + dx, Y = text.Y + dy })],
+        };
+    }
+
     // ADR-0168 item 2: the flat view of the window with the frame of a view, for "Go to", or null for a frame of no flat view.
     public static FlatView? FlatOf(IReadOnlyList<double> direction)
     {

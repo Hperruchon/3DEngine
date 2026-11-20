@@ -189,18 +189,23 @@ internal static class ViewEdges
 
             try
             {
+                Brep brep;
                 if (cut is { } plane)
                 {
-                    if (SectionCut.Apply(solid, plane.Point, frame, plane.View) is not { } kept)
+                    // Finding E222 (TASK-0416): the cut and its B-Rep come from the cuts that the read keeps.
+                    if (SectionCut.Cut(solid, plane.Point, frame, plane.View) is not { } kept)
                     {
                         skipped.Add((record.Handle.Id, "The cut plane of the section leaves no material of the body (ADR-0169 item 3)."));
                         continue;
                     }
 
-                    solid = kept;
+                    brep = kept.Brep;
+                }
+                else
+                {
+                    brep = Brep.Of(solid);
                 }
 
-                var brep = Brep.Of(solid);
                 bodies.Add((record.Handle.Id, brep));
                 if (cut is { } faces)
                 {
@@ -926,6 +931,10 @@ internal static class ViewEdges
     // from the side: a line of its outline, or an edge between its side and a face of another tag along its axis, as the edge
     // of a cut face. Until TASK-0411 only an outline gave the axis, so a section through the axis of a hole, whose cut goes
     // through the corners of the facets, had no axis. Else null.
+    //
+    // Finding E223 of the codebase review of 2026-11-18 (b) (TASK-0416, Q1 A of the owner): the edge lies in one plane with the
+    // axis, (to − from) × axis · (from − base) = 0, so the slanted edge of a cut through the axis of a cone gives the axis in
+    // each look. Until TASK-0416 the edge had to be parallel to the axis, which only a cylinder gives.
     private static (FaceTag Tag, SideCurve Side)? AxisSide(ViewLine line, IReadOnlyDictionary<FaceTag, SideCurve> curves)
     {
         if (line.World is not var (from, to))
@@ -940,6 +949,6 @@ internal static class ViewEdges
         };
         if (found is not var (_, side) || side.Kind == SideCurveKind.Sphere || side.Axis.IsZero)
             return null;
-        return line.Kind == ViewLineKind.Edge && !(to - from).Cross(side.Axis).IsZero ? null : found;
+        return line.Kind == ViewLineKind.Edge && !(to - from).Cross(side.Axis).Dot(from - side.Base).IsZero ? null : found;
     }
 }

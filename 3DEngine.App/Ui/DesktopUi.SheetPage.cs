@@ -22,6 +22,7 @@ internal sealed unsafe partial class DesktopUi
     public const string HiddenLinesLabel = "Hidden lines";
     public const string CentreLinesLabel = "Centre lines";
     public const string PlaceCancelLabel = "Cancel";
+    public const string PlaceHint = "Place a view here:";
     public const string PageReading = "Reading the sheet…";
 
     // ADR-0171 items 2 to 4 (TASK-0413): "Section", its looks in their order, its "Cancel" and the two hints of its row.
@@ -50,8 +51,32 @@ internal sealed unsafe partial class DesktopUi
     // ADR-0168 item 1: true while the page shows; the sheet that it shows; and the read that the host gives before each frame.
     private bool _pageOpen;
     private Guid? _pageSheetId;
-    private SheetInfo? _page;
+    private SheetInfo? _pageRead;
     private bool _pagePending;
+
+    // Finding V206 of the codebase review of 2026-11-18 (b) (TASK-0416): the place and the two flags of each view as the page
+    // sent them last. They stay until a read comes that is not pending after the send: the host gives a pending read while a
+    // command waits or runs and until the read of its version ends. The page shows each view with them, so a second change
+    // before the read starts from the first one. Until TASK-0416 each change started from the read, so a second switch sent
+    // the first flag back, and a view went back to its old place until the read came.
+    private readonly Dictionary<Guid, (double X, double Y, bool Hidden, bool Centre)> _pageSent = [];
+    private bool _pageSentSeen;
+    private SheetInfo? _pageShown;
+
+    // The read of the page with the values that the page sent last.
+    private SheetInfo? ShownPage => _pageShown ??= _pageRead is { } read && _pageSent.Count > 0
+        ? read with { Views = [.. read.Views.Select(view => _pageSent.TryGetValue(view.ViewId, out var sent) ? SheetPage.Sent(view, sent.X, sent.Y, sent.Hidden, sent.Centre) : view)] }
+        : _pageRead;
+
+    private void PageSend(SheetViewInfo view, double x, double y, bool hidden, bool centre)
+    {
+        _pageSent[view.ViewId] = (x, y, hidden, centre);
+        (_pageSentSeen, _pageShown) = (false, null);
+    }
+
+    // Finding V207 (TASK-0416): the top of the rows of the header that change, the actions of a view, the views to place, a
+    // section and the formats, in the last frame; null before the first read.
+    private float? _pageStateTop;
 
     // ADR-0168 items 2, 3 and 5: the selected view, the place of a tap on the free paper, "Keep aligned", and a drag.
     private Guid? _pageView;
@@ -90,11 +115,27 @@ internal sealed unsafe partial class DesktopUi
     // The rectangle of the page in the last frame, which holds the pointer.
     private Vector4? _pageRectangle;
 
-    public void ShowPage(SheetInfo? sheet, bool pending) => (_page, _pagePending) = (sheet, pending);
+    public void ShowPage(SheetInfo? sheet, bool pending)
+    {
+        (_pageRead, _pagePending, _pageShown) = (sheet, pending, null);
+        // Finding V206: a pending read after the last send, then a read that is not pending, ends the values that the page sent.
+        if (pending)
+            _pageSentSeen = true;
+        else if (_pageSentSeen)
+        {
+            _pageSent.Clear();
+            _pageSentSeen = false;
+        }
+    }
 
     internal void OpenPage() => _pageOpen = true;
 
-    private void ClosePage() => (_pageOpen, _pageView, _pagePlace, _pageDrag, _pageDragLost, _exportOpen, _pageSection) = (false, null, null, null, false, false, null);
+    private void ClosePage()
+    {
+        (_pageOpen, _pageView, _pagePlace, _pageDrag, _pageDragLost, _exportOpen, _pageSection) = (false, null, null, null, false, false, null);
+        _pageSent.Clear();
+        (_pageSentSeen, _pageShown) = (false, null);
+    }
 
     // ADR-0168 item 1: the button "Sheet" beside "Views" while a live sheet exists; a tap opens or closes the page.
     private void SheetButton()
@@ -122,7 +163,8 @@ internal sealed unsafe partial class DesktopUi
 
     // ADR-0168 items 1 and 6: the keys of the page: Escape ends the place of a tap, then the selection, then the page. The page
     // holds each key, so no key reaches the intents of the scene behind it.
-    private void WatchPageKeys(IReadOnlyList<InputSample> samples)
+    // Finding V203 (TASK-0416): padHolds is true when a field or a pad held the keys at the start of the frame.
+    private void WatchPageKeys(IReadOnlyList<InputSample> samples, bool padHolds)
     {
         foreach (var sample in samples)
         {
@@ -130,15 +172,16 @@ internal sealed unsafe partial class DesktopUi
                 _pointerShift = (pointer.Modifiers & KeyModifiers.Shift) != 0;
         }
 
-        if (!PageOpen || _textActive || _sheetPad is not null)
+        if (!PageOpen || padHolds)
             return;
         if (samples.Any(sample => sample is KeySample { Down: true, Key: InputKey.Escape }))
         {
             // ADR-0170 item 1 (TASK-0412): the row of the formats closes first. ADR-0171 item 2 (TASK-0413): then a section.
-            if (_pageSection is not null)
-                _pageSection = null;
-            else if (_exportOpen)
+            // Finding V205 (TASK-0416): only one of the two is open, and the order is the order of the comment.
+            if (_exportOpen)
                 _exportOpen = false;
+            else if (_pageSection is not null)
+                _pageSection = null;
             else if (_pagePlace is not null)
                 _pagePlace = null;
             else if (_pageView is not null)
@@ -172,12 +215,30 @@ internal sealed unsafe partial class DesktopUi
         {
             // The ground of the scene under the page, so no body shows through it.
             ImGui.GetBackgroundDrawList().AddRectFilled(Vector2.Zero, displaySize, Theme.Plate(1f));
+            // Finding V204 of the codebase review of 2026-11-18 (b) (TASK-0416): a read without the view of the open section or
+            // of the selection ends them. Until TASK-0416 a section of a removed view stayed hidden and blocked each drag.
+            if (ShownPage is { } current && current.SheetId == PageSheetId)
+            {
+                if (_pageSection is { } open && current.Views.All(view => view.ViewId != open.View))
+                    _pageSection = null;
+                if (_pageView is { } selected && current.Views.All(view => view.ViewId != selected))
+                    _pageView = null;
+            }
+
+            var width = ImGui.GetContentRegionAvail().X;
+            _pageStateTop = null;
             PageHeader();
             // The paper keeps its place while the rows of the header change: it starts under room for three rows of the header,
             // or under the header when the header is higher.
-            var top = Math.Max(ImGui.GetCursorScreenPos().Y, room.Y + 8f + (3f * (MinimumControlHeight + ImGui.GetStyle().ItemSpacing.Y)));
+            // Finding V207 of the codebase review of 2026-11-18 (b) (TASK-0416): and under room for the highest of the rows that
+            // change, at the width of the page. Until TASK-0416 a phone of 390 pixels needed four rows for the actions of a view,
+            // and the paper went 54 pixels down at the first tap.
+            var row = MinimumControlHeight + ImGui.GetStyle().ItemSpacing.Y;
+            var top = Math.Max(ImGui.GetCursorScreenPos().Y, room.Y + 8f + (3f * row));
+            if (_pageStateTop is { } stateTop)
+                top = Math.Max(top, stateTop + (PageStateRows(width) * row));
             var paperRoom = new Vector4(room.X, top, room.Z, room.W);
-            if (_page is { } sheet && sheet.SheetId == PageSheetId)
+            if (ShownPage is { } sheet && sheet.SheetId == PageSheetId)
                 PagePaperDraw(sheet, paperRoom);
             else
                 ImGui.TextUnformatted(PageReading);
@@ -207,26 +268,29 @@ internal sealed unsafe partial class DesktopUi
                 var chosen = live.Id == PageSheetId;
                 if (chosen)
                     ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertU32ToFloat4(Theme.Accent) with { W = 0.3f });
+                // Finding V204 (TASK-0416): another sheet also ends the section and the row of the formats.
                 if (ImGui.Button($"{live.Name}##PageSheet{live.Id:N}", height))
-                    (_pageSheetId, _pageView, _pagePlace) = (live.Id, null, null);
+                    (_pageSheetId, _pageView, _pagePlace, _pageSection, _exportOpen) = (live.Id, null, null, null, false);
                 if (chosen)
                     ImGui.PopStyleColor();
                 Item(PageItem($"Sheet {live.Id:N}"));
             }
         }
-        else if (_page is { } named)
+        else if (ShownPage is { } named)
         {
             SameLineIfFits(ImGui.CalcTextSize(named.Name).X);
             ImGui.TextUnformatted(named.Name);
         }
 
+        // Finding V207 (TASK-0416): the mark of a pending read keeps its room when it does not show, so the rows of the header
+        // do not change with it.
+        SameLineIfFits(ImGui.CalcTextSize("…").X);
         if (_pagePending)
-        {
-            SameLineIfFits(ImGui.CalcTextSize("…").X);
             ImGui.TextUnformatted("…");
-        }
+        else
+            ImGui.Dummy(ImGui.CalcTextSize("…"));
 
-        if (_page is not { } sheet)
+        if (ShownPage is not { } sheet)
             return;
 
         // ADR-0170 item 1: "Export" opens a row of the formats, PDF first, in the place of the actions of a view and of the views
@@ -235,11 +299,13 @@ internal sealed unsafe partial class DesktopUi
         var exporting = _exportOpen;
         if (exporting)
             ImGui.PushStyleColor(ImGuiCol.Button, ImGui.ColorConvertU32ToFloat4(Theme.Accent) with { W = 0.3f });
+        // Finding V205 (TASK-0416): "Export" also ends a section, so only one of the two is open (ADR-0170 item 1).
         if (ImGui.Button($"{ExportSheetLabel}##Page", height))
-            (_exportOpen, _pageView, _pagePlace) = (!_exportOpen, null, null);
+            (_exportOpen, _pageView, _pagePlace, _pageSection) = (!_exportOpen, null, null, null);
         if (exporting)
             ImGui.PopStyleColor();
         Item(PageItem(ExportSheetLabel));
+        _pageStateTop = ImGui.GetCursorScreenPos().Y;
         if (_exportOpen)
         {
             var firstFormat = true;
@@ -298,24 +364,38 @@ internal sealed unsafe partial class DesktopUi
                 Item(PageItem(label));
             }
 
-            if (SheetPage.FlatOf(selected.Direction) is { } flat)
-                Action(GoToLabel, () => { _actions.Add(new FlatViewAction(flat)); _actions.Add(new FrameAction()); ClosePage(); });
+            var flat = SheetPage.FlatOf(selected.Direction);
+            if (flat is { } goTo)
+                Action(GoToLabel, () => { _actions.Add(new FlatViewAction(goTo)); _actions.Add(new FrameAction()); ClosePage(); });
             Action(ScaleViewLabel, () => OpenScalePad(sheet.SheetId, selected.ViewId, (selected.ScaleNumerator, selected.ScaleDenominator)));
             Action(RemoveViewLabel, () => { _actions.Add(new SheetRemoveAction(sheet.SheetId, selected.ViewId)); _pageView = null; });
-            Action(SectionLabel, () => _pageSection = (selected.ViewId, "up", null));
+            // Finding V208 of the codebase review of 2026-11-18 (b) (TASK-0416): "Section" shows for a view whose frame is a flat
+            // view, as "Go to"; the section of such a parent has a flat frame too, so the engine takes it. Until TASK-0416 it
+            // showed for each view, and the engine refused a pictorial parent after four taps.
+            if (flat is not null)
+                Action(SectionLabel, () => (_pageSection, _exportOpen) = ((selected.ViewId, "up", null), false));
+            // Finding V206 (TASK-0416): the switches start from the values that the page sent last, and each change is kept.
             var (hidden, centre) = (selected.HiddenLines, selected.CentreLines);
             SameLineIfFits(CheckboxWidth(HiddenLinesLabel));
             if (ImGui.Checkbox($"{HiddenLinesLabel}##Page", ref hidden))
+            {
                 _actions.Add(new SheetLinesAction(sheet.SheetId, selected.ViewId, hidden, centre));
+                PageSend(selected, selected.X, selected.Y, hidden, centre);
+            }
+
             Item(PageItem(HiddenLinesLabel));
             SameLineIfFits(CheckboxWidth(CentreLinesLabel));
             if (ImGui.Checkbox($"{CentreLinesLabel}##Page", ref centre))
+            {
                 _actions.Add(new SheetLinesAction(sheet.SheetId, selected.ViewId, hidden, centre));
+                PageSend(selected, selected.X, selected.Y, hidden, centre);
+            }
+
             Item(PageItem(CentreLinesLabel));
         }
         else if (_pagePlace is { } place)
         {
-            ImGui.TextUnformatted("Place a view here:");
+            ImGui.TextUnformatted(PlaceHint);
             foreach (var view in Enum.GetValues<FlatView>())
             {
                 var label = view.ToString();
@@ -392,9 +472,16 @@ internal sealed unsafe partial class DesktopUi
                 // The release of a drag that a read ended gives nothing.
             }
             else if (_pageDrag is { Moving: true } done
-                && SheetPage.Drag(sheet, done.View, (mouse - done.From).X / paper.Scale, -(mouse - done.From).Y / paper.Scale, _keepAligned, _pointerShift) is var (x, y, aligned))
+                && SheetPage.Drag(sheet, done.View, (mouse - done.From).X / paper.Scale, -(mouse - done.From).Y / paper.Scale, _keepAligned, _pointerShift) is var (x, y, aligned)
+                && sheet.Views.FirstOrDefault(view => view.ViewId == done.View) is { } dragged
+                && (x != dragged.X || y != dragged.Y))
             {
+                // Finding E225 (TASK-0416): a drag that ends at the place of the view sends no move. Finding V206: the page keeps
+                // the new place of the view and of each view that the move aligns, until the read comes.
                 _actions.Add(new SheetMoveAction(sheet.SheetId, done.View, x, y, aligned));
+                foreach (var view in sheet.Views.Where(view => aligned && OnLineOf(sheet, done.View, view)).ToList())
+                    PageSend(view, view.X + (x - dragged.X), view.Y + (y - dragged.Y), view.HiddenLines, view.CentreLines);
+                PageSend(dragged, x, y, dragged.HiddenLines, dragged.CentreLines);
                 _pageView = done.View;
             }
             else if (SheetPage.Hit(sheet, at) is { } view)
@@ -464,7 +551,8 @@ internal sealed unsafe partial class DesktopUi
             // ADR-0171 item 5: the letters of a cut line and the label of a section, centred at their places.
             foreach (var text in view.Texts)
             {
-                var size = Size(text.Size);
+                // Finding E224 (TASK-0416): the size of the font that gives a capital of text.Size, as in the SVG and the PDF file.
+                var size = Size(SvgExport.FontSize(text.Size));
                 var width = ImGui.CalcTextSize(text.Text).X * size / ImGui.GetFontSize();
                 list.AddText(font, size, paper.Pixel(text.X + ox, text.Y + oy) - new Vector2(width / 2f, size), Theme.Ink, text.Text);
             }
@@ -503,6 +591,38 @@ internal sealed unsafe partial class DesktopUi
             list.AddLine(at - new Vector2(12f, 0f), at + new Vector2(12f, 0f), Theme.Accent, 2f);
             list.AddLine(at - new Vector2(0f, 12f), at + new Vector2(0f, 12f), Theme.Accent, 2f);
         }
+    }
+
+    // Finding V207 (TASK-0416): the count of the rows that the highest of the rows that change needs at the width: the formats,
+    // a section, the actions of a view and the views to place. Each item goes on the line of the item before it when it fits,
+    // as SameLineIfFits puts it.
+    private int PageStateRows(float width)
+    {
+        static float Text(string text) => ImGui.CalcTextSize(text).X;
+        IEnumerable<float>[] states =
+        [
+            SheetExports.Formats.Select(format => Math.Max(ButtonWidth(SheetExports.Label(format)), 72f)),
+            [Math.Max(Text(SectionCutHint), Text(SectionPlaceHint)), .. SectionLooks.Select(ButtonWidth), ButtonWidth(SectionCancelLabel)],
+            [ButtonWidth(GoToLabel), ButtonWidth(ScaleViewLabel), ButtonWidth(RemoveViewLabel), ButtonWidth(SectionLabel), CheckboxWidth(HiddenLinesLabel), CheckboxWidth(CentreLinesLabel)],
+            [Text(PlaceHint), .. Enum.GetValues<FlatView>().Select(view => ButtonWidth(view.ToString())), ButtonWidth(PlaceCancelLabel)],
+        ];
+        var gap = ImGui.GetStyle().ItemSpacing.X;
+        var most = 0;
+        foreach (var items in states)
+        {
+            var (rows, used) = (0, -1f);
+            foreach (var item in items)
+            {
+                if (used < 0 || width - (used + gap) < item)
+                    (rows, used) = (rows + 1, item);
+                else
+                    used += gap + item;
+            }
+
+            most = Math.Max(most, rows);
+        }
+
+        return most;
     }
 
     // ADR-0168 item 3: a view on a line of projection through the dragged view, as MoveSheetViews takes it.
