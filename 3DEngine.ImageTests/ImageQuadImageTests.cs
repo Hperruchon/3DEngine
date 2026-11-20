@@ -84,24 +84,30 @@ public class ImageQuadImageTests
     // The colour of the pixel of a point of the scene, as the GPU projects it.
     private static (byte R, byte G, byte B) Rgb(byte[] pixels, Camera camera, (double X, double Y, double Z) point)
     {
-        var eye = camera.Eye();
-        var clip = Vector4.Transform(new Vector4((float)(point.X - eye.X), (float)(point.Y - eye.Y), (float)(point.Z - eye.Z), 1), camera.View() * camera.Projection((float)Width / Height));
-        var column = (int)((clip.X / clip.W + 1) / 2 * Width);
-        var row = (int)((1 - (clip.Y / clip.W)) / 2 * Height);
+        var (column, row) = Pixel(camera, point);
         var index = ((row * (int)Width) + column) * 4;
         return (pixels[index], pixels[index + 1], pixels[index + 2]);
+    }
+
+    // The column and the row of the pixel of a point of the scene.
+    private static (int Column, int Row) Pixel(Camera camera, (double X, double Y, double Z) point)
+    {
+        var eye = camera.Eye();
+        var clip = Vector4.Transform(new Vector4((float)(point.X - eye.X), (float)(point.Y - eye.Y), (float)(point.Z - eye.Z), 1), camera.View() * camera.Projection((float)Width / Height));
+        return ((int)((clip.X / clip.W + 1) / 2 * Width), (int)((1 - (clip.Y / clip.W)) / 2 * Height));
     }
 
     // The colour class of the pixel of a point of the scene.
     private static string Colour(byte[] pixels, Camera camera, (double X, double Y, double Z) point)
     {
+        var (column, row) = Pixel(camera, point);
         return Rgb(pixels, camera, point) switch
         {
             ( > 200, < 60, < 60) => "red",
             ( < 60, < 60, > 200) => "blue",
             ( > 230, > 230, > 230) => "white",
-            // ADR-0078 (TASK-0246): the clear of the theme, in place of the green key.
-            var (r, g, b) when Math.Abs(r - ThreeDEngine.Desktop.Ui.Theme.Clear.R) <= 2 && Math.Abs(g - ThreeDEngine.Desktop.Ui.Theme.Clear.G) <= 2 && Math.Abs(b - ThreeDEngine.Desktop.Ui.Theme.Clear.B) <= 2 => "background",
+            // ADR-0177 item 1 (TASK-0422): the ground at the pixel. Until TASK-0422 the one colour of the clear (ADR-0078).
+            _ when GroundPixels.IsGround(pixels, column, row, (int)Width, (int)Height) => "background",
             _ => "other",
         };
     }

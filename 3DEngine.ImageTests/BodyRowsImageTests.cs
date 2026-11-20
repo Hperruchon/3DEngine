@@ -76,14 +76,13 @@ public class BodyRowsImageTests
             $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages.");
 
         // The rows have no ground, so the text of the name is the only colour that is not the clear in the first row.
-        var clear = Theme.Clear;
         var drawn = 0;
         for (var y = (int)title.Y; y < (int)title.W; y++)
         {
             for (var x = (int)title.X; x < (int)title.Z; x++)
             {
                 var index = ((y * (int)Width) + x) * 4;
-                if (Math.Abs(pixels[index] - clear.R) > 2 || Math.Abs(pixels[index + 1] - clear.G) > 2 || Math.Abs(pixels[index + 2] - clear.B) > 2)
+                if (!GroundPixels.IsGround(pixels, x, y, (int)Width, (int)Height))
                     drawn++;
             }
         }

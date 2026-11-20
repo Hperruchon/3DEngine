@@ -66,14 +66,13 @@ public class FixedStatusImageTests
             $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages.");
 
         // The row has no ground, so the text of the step is the only colour that is not the clear in its rectangle.
-        var clear = Theme.Clear;
         var drawn = 0;
         for (var y = (int)step.Y; y < (int)step.W; y++)
         {
             for (var x = (int)step.X; x < (int)step.Z; x++)
             {
                 var index = ((y * (int)Width) + x) * 4;
-                if (Math.Abs(pixels[index] - clear.R) > 2 || Math.Abs(pixels[index + 1] - clear.G) > 2 || Math.Abs(pixels[index + 2] - clear.B) > 2)
+                if (!GroundPixels.IsGround(pixels, x, y, (int)Width, (int)Height))
                     drawn++;
             }
         }
