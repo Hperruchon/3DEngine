@@ -70,6 +70,23 @@ public sealed class SheetMoveTests
         Assert.Equal(before, await Places(session));
     }
 
+    // Finding E225 of the codebase review of 2026-11-18 (b) (TASK-0416): a move to the place that the view has, aligned or not,
+    // is refused with E-SHEET-VIEW-INVALID, so the log gets no step of undo that changes nothing.
+    [Fact]
+    public async Task A_Move_To_The_Place_Of_The_View_Is_Refused()
+    {
+        var (session, sheet, front, _) = await Setup();
+        var before = await Places(session);
+        var count = await session.Read((document, _) => document.Log.Count);
+
+        Assert.Equal(DiagnosticCodes.SheetViewInvalid, await Refused(session, new MoveSheetViewsCommand { SheetId = sheet, ViewId = front, X = 255, Y = 203.5 }));
+        Assert.Equal(DiagnosticCodes.SheetViewInvalid, await Refused(session, new MoveSheetViewsCommand { SheetId = sheet, ViewId = front, X = 255, Y = 203.5, Aligned = true }));
+
+        Assert.Equal(before, await Places(session));
+        Assert.Equal(count, await session.Read((document, _) => document.Log.Count));
+        await Applied(session, new MoveSheetViewsCommand { SheetId = sheet, ViewId = front, X = 255, Y = 203 }, "viewId");
+    }
+
     // With no Aligned flag, only the view moves.
     [Fact]
     public async Task A_Move_Not_Aligned_Takes_One_View()
