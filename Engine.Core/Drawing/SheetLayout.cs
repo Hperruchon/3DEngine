@@ -168,6 +168,11 @@ internal static class SheetLayout
                 // sight is the opposite of the normal.
                 var vertical = b.IsZero;
                 var place = vertical ? Paper(point.Dot(frame.Right).ToDouble(), 0).X : Paper(0, point.Dot(frame.Up).ToDouble()).Y;
+                // Finding E221 of the codebase review of 2026-11-18 (b) (TASK-0416): a point far from the part can put the cut line
+                // at a place on the paper that is not a finite number. That section then has no cut line, no arrows and no letters,
+                // so the read stays valid JSON and the files write no 0 in place of infinity.
+                if (!double.IsFinite(place))
+                    continue;
                 var (low, high) = vertical ? (y0, y1) : (x0, x1);
                 var sight = -(vertical ? a.Sign : b.Sign);
                 (double X, double Y) At(double along, double across)
@@ -186,7 +191,9 @@ internal static class SheetLayout
                     var (tail, tip) = (At(end, 0), At(end, sight * ArrowLength));
                     placed.Add(new SheetLine(child.Id, tail.X, tail.Y, tip.X, tip.Y, true, "arrow"));
                     var letter = At(end, sight * (ArrowLength + LetterGap));
-                    texts.Add(new SheetText(letter.X, letter.Y - (TextSize * 0.35), child.Section!.Letter, TextSize));
+                    // Finding E224 (TASK-0416): TextSize is the height of a capital letter, so the base line is half of it under the
+                    // place, and the letter is centred on the line of its arrow. Until TASK-0416 the shift was 0.35 of TextSize.
+                    texts.Add(new SheetText(letter.X, letter.Y - (TextSize / 2), child.Section!.Letter, TextSize));
                 }
             }
         }

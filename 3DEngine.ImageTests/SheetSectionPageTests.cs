@@ -176,6 +176,128 @@ public sealed class SheetSectionPageTests
         Assert.Contains(after.Views[1].Lines, line => line.Kind == "cut");
     }
 
+    // Finding V204 of the codebase review of 2026-11-18 (b) (TASK-0416): a read without the view of an open section ends the
+    // section and the selection, so the next drag moves a view; the choice of another sheet ends the section and the row of the
+    // formats.
+    [Fact]
+    public async Task A_Section_Ends_When_Its_View_Or_Its_Sheet_Goes()
+    {
+        var (host, sheet, record) = await Setup();
+        using var _ = host;
+        var display = new Vector2(1280, 720);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        Frame(ui, display, sheet, record);
+        ui.OpenPage();
+        Frame(ui, display, sheet, record);
+        Frame(ui, display, sheet, record);
+        var (front, top) = (sheet.Views[0], sheet.Views[1]);
+        ui.TakeActions();
+
+        Tap(ui, display, sheet, record, ui.PagePaper!.Value.Pixel(top.X, top.Y));
+        Tap(ui, display, sheet, record, Middle(Item(ui, DesktopUi.PageItem(DesktopUi.SectionLabel))));
+        Assert.Equal(top.ViewId, ui.PageSection?.View);
+        Assert.Equal("Removed the view. Undo gives it back.", new SheetActions(host.Session).Remove(record.Id, top.ViewId));
+        var (removed, removedRecord) = await Read(host);
+        Frame(ui, display, removed, removedRecord);
+        Assert.Null(ui.PageSection);
+        Assert.Null(ui.PageView);
+        Assert.True(Drag(ui, display, removed, removedRecord, ui.PagePaper!.Value.Pixel(front.X, front.Y), ui.PagePaper!.Value.Pixel(front.X + 10, front.Y)));
+        Assert.Single(ui.TakeActions().OfType<SheetMoveAction>());
+
+        new SheetActions(host.Session).Create("Sheet 2", "A3", true, (2, 1), SheetPlacement.Standard, Plate);
+        var records = await host.Session.Read((document, _) => document.Sheets.ToList());
+        void Both(params InputSample[] samples)
+        {
+            ui.ShowSheets(records);
+            ui.ShowPage(removed, false);
+            ui.Route(samples);
+            ui.Frame(1f / 60f, display, Vector2.One, [Body], null, new DocumentLine("plate", null));
+        }
+
+        void TapBoth(Vector2 at)
+        {
+            Both(Pointer(at, PointerButtons.None, PointerPhase.Move, 0));
+            Both(Pointer(at, PointerButtons.Left, PointerPhase.Down, 50_000_000));
+            Both(Pointer(at, PointerButtons.Left, PointerPhase.Up, 100_000_000));
+            Both();
+            Both();
+        }
+
+        Both();
+        Both();
+        // The drag selected the front view.
+        Assert.Equal(front.ViewId, ui.PageView);
+        TapBoth(Middle(Item(ui, DesktopUi.PageItem(DesktopUi.SectionLabel))));
+        Assert.NotNull(ui.PageSection);
+        TapBoth(Middle(Item(ui, DesktopUi.PageItem($"Sheet {records[1].Id:N}"))));
+        Assert.Equal(records[1].Id, ui.PageSheetId);
+        Assert.Null(ui.PageSection);
+        TapBoth(Middle(Item(ui, DesktopUi.PageItem($"Sheet {records[0].Id:N}"))));
+        TapBoth(Middle(Item(ui, DesktopUi.PageItem(DesktopUi.ExportSheetLabel))));
+        Assert.True(ui.ExportOpen);
+        TapBoth(Middle(Item(ui, DesktopUi.PageItem($"Sheet {records[1].Id:N}"))));
+        Assert.False(ui.ExportOpen);
+    }
+
+    // Finding V205 of the codebase review of 2026-11-18 (b) (TASK-0416): only one of the row of the formats and a section is
+    // open: "Export" ends a section, "Section" closes the row, and Escape closes the row first.
+    [Fact]
+    public async Task The_Formats_And_A_Section_Are_Not_Open_Together()
+    {
+        var (host, sheet, record) = await Setup();
+        using var _ = host;
+        var display = new Vector2(1280, 720);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        Frame(ui, display, sheet, record);
+        ui.OpenPage();
+        Frame(ui, display, sheet, record);
+        Frame(ui, display, sheet, record);
+        var front = sheet.Views[0];
+
+        Tap(ui, display, sheet, record, ui.PagePaper!.Value.Pixel(front.X, front.Y));
+        Tap(ui, display, sheet, record, Middle(Item(ui, DesktopUi.PageItem(DesktopUi.SectionLabel))));
+        Assert.NotNull(ui.PageSection);
+        Tap(ui, display, sheet, record, Middle(Item(ui, DesktopUi.PageItem(DesktopUi.ExportSheetLabel))));
+        Assert.True(ui.ExportOpen);
+        Assert.Null(ui.PageSection);
+
+        Frame(ui, display, sheet, record, new KeySample(InputKey.Escape, true, KeyModifiers.None, 1));
+        Frame(ui, display, sheet, record, new KeySample(InputKey.Escape, false, KeyModifiers.None, 2));
+        Assert.False(ui.ExportOpen);
+        Assert.True(ui.PageOpen);
+    }
+
+    // Finding V208 of the codebase review of 2026-11-18 (b) (TASK-0416): "Section" shows for a view whose frame is a flat view,
+    // and not for a slanted view whose right has no rational length, which the engine refuses as a parent.
+    [Fact]
+    public async Task Section_Shows_Only_For_A_View_That_The_Engine_Can_Cut()
+    {
+        var (host, _, record) = await Setup();
+        using var _ = host;
+        var slant = await host.Session.Apply(new AddSheetViewCommand
+        {
+            SheetId = record.Id, RightX = 1, RightY = 1, RightZ = 0, UpX = -1, UpY = 1, UpZ = 0, EyeX = 0, EyeY = 0, EyeZ = 1,
+            ScaleNumerator = 1, ScaleDenominator = 1, X = 60, Y = 260,
+        });
+        Assert.Equal(CommandStatus.Applied, slant.Status);
+        var (sheet, withSlant) = await Read(host);
+        var display = new Vector2(1280, 720);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        Frame(ui, display, sheet, withSlant);
+        ui.OpenPage();
+        Frame(ui, display, sheet, withSlant);
+        Frame(ui, display, sheet, withSlant);
+        var (front, pictorial) = (sheet.Views[0], sheet.Views[^1]);
+
+        Tap(ui, display, sheet, withSlant, ui.PagePaper!.Value.Pixel(pictorial.X, pictorial.Y));
+        Assert.Equal(pictorial.ViewId, ui.PageView);
+        Assert.Null(ui.ItemRectangle(DesktopUi.PageItem(DesktopUi.SectionLabel)));
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.PageItem(DesktopUi.ScaleViewLabel)));
+        Tap(ui, display, sheet, withSlant, ui.PagePaper!.Value.Pixel(front.X, front.Y));
+        Assert.Equal(front.ViewId, ui.PageView);
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.PageItem(DesktopUi.SectionLabel)));
+    }
+
     private static void Frame(DesktopUi ui, Vector2 display, SheetInfo? sheet, SheetRecord? record, params InputSample[] samples)
     {
         ui.ShowSheets(record is null ? [] : [record]);

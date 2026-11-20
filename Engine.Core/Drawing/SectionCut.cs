@@ -96,6 +96,108 @@ internal static class SectionCut
         return PlanarBoolean.Subtract(solid, box);
     }
 
+    // Finding E222 of the codebase review of 2026-11-18 (b) (TASK-0416): the cut of a solid of many facets and its B-Rep take
+    // seconds (a torus of 4,096 polygons: 11.7 s and 10.9 s), and the sheet page reads the sheet after each command. The read
+    // keeps the last CacheSize cuts with their B-Rep, under the exact content of the solid, the point, the frame and the view,
+    // so a read after a command that changes no body makes no new cut. The cut is a function of that content only, so a kept
+    // result is the result that a new cut gives, in each document of the process. A cut that leaves no material is kept as
+    // null. A cut that throws is not kept.
+    public const int CacheSize = 16;
+
+    private static readonly object Gate = new();
+    private static readonly LinkedList<(CutKey Key, (KernelSolid Solid, Brep Brep)? Value)> Kept = new();
+    private static readonly Dictionary<Guid, int> Made = [];
+
+    // The count of the cuts that the read made for a view, for a test of the cache. The count goes back to 0 for each view
+    // when it holds 1,024 views.
+    internal static int CutsOf(Guid view)
+    {
+        lock (Gate)
+            return Made.GetValueOrDefault(view);
+    }
+
+    // ADR-0169 item 3: the cut of Apply with its B-Rep, from the kept cuts when one has the same content.
+    public static (KernelSolid Solid, Brep Brep)? Cut(KernelSolid solid, Vector3R point, ViewFrame frame, Guid view)
+    {
+        ArgumentNullException.ThrowIfNull(solid);
+        var key = new CutKey(solid.Polygons, point, frame, view);
+        lock (Gate)
+        {
+            for (var node = Kept.First; node is not null; node = node.Next)
+            {
+                if (!node.Value.Key.Equals(key))
+                    continue;
+                Kept.Remove(node);
+                Kept.AddFirst(node);
+                return node.Value.Value;
+            }
+        }
+
+        (KernelSolid Solid, Brep Brep)? value = Apply(solid, point, frame, view) is { } kept ? (kept, Brep.Of(kept)) : null;
+        lock (Gate)
+        {
+            if (Made.Count >= 1024 && !Made.ContainsKey(view))
+                Made.Clear();
+            Made[view] = Made.GetValueOrDefault(view) + 1;
+            Kept.AddFirst((key, value));
+            while (Kept.Count > CacheSize)
+                Kept.RemoveLast();
+        }
+
+        return value;
+    }
+
+    // The exact content of a cut: each polygon of the solid with its vertices, its plane and its tag, in order; the point; the
+    // frame; and the view, whose identifier is the tag of the cut faces.
+    private sealed class CutKey(IReadOnlyList<KernelPolygon> polygons, Vector3R point, ViewFrame frame, Guid view) : IEquatable<CutKey>
+    {
+        private readonly int _hash = Hash(polygons, point, frame, view);
+
+        private static int Hash(IReadOnlyList<KernelPolygon> polygons, Vector3R point, ViewFrame frame, Guid view)
+        {
+            var hash = new HashCode();
+            hash.Add(point);
+            hash.Add(frame);
+            hash.Add(view);
+            hash.Add(polygons.Count);
+            foreach (var polygon in polygons)
+            {
+                hash.Add(polygon.Plane);
+                hash.Add(polygon.Tag);
+                foreach (var vertex in polygon.Vertices)
+                    hash.Add(vertex);
+            }
+
+            return hash.ToHashCode();
+        }
+
+        public bool Equals(CutKey? other)
+        {
+            if (other is null || other._hash != _hash || other.Point != Point || other.Frame != Frame || other.View != View || other.Polygons.Count != Polygons.Count)
+                return false;
+            for (var i = 0; i < Polygons.Count; i++)
+            {
+                var (a, b) = (Polygons[i], other.Polygons[i]);
+                if (!ReferenceEquals(a, b) && (a.Plane != b.Plane || a.Tag != b.Tag || !a.Vertices.SequenceEqual(b.Vertices)))
+                    return false;
+            }
+
+            return true;
+        }
+
+        public override bool Equals(object? obj) => Equals(obj as CutKey);
+
+        public override int GetHashCode() => _hash;
+
+        private IReadOnlyList<KernelPolygon> Polygons { get; } = polygons;
+
+        private Vector3R Point { get; } = point;
+
+        private ViewFrame Frame { get; } = frame;
+
+        private Guid View { get; } = view;
+    }
+
     // ADR-0169 item 4: the hatch of the loops of the cut faces of one body on the paper: lines that go up to the right
     // (x - y = n s) or down to the right (x + y = n s), with s = 2.5 sqrt 2, clipped by the rule of even and odd.
     public static IEnumerable<SheetLine> Hatch(Guid body, IReadOnlyList<IReadOnlyList<(double X, double Y)>> loops, bool rising)

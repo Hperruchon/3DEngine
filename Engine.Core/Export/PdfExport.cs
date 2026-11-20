@@ -130,8 +130,9 @@ public static class PdfExport
                 }
             }
 
+            // Finding E224 (TASK-0416): Size is the height of a capital letter, so the size of the font is Size / CapHeight.
             foreach (var text in view.Texts)
-                Label(w, text.Text, text.X, text.Y, text.Size, centred: true);
+                Label(w, text.Text, text.X, text.Y, SvgExport.FontSize(text.Size), centred: true);
             foreach (var skipped in view.Skipped)
                 w.Append(CultureInfo.InvariantCulture, $"% The body {skipped.Body} gives no lines: {OneLine(skipped.Reason)}\n");
         }
