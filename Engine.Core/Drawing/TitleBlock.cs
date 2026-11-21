@@ -170,8 +170,9 @@ public static class TitleBlock
     }
 
     // ADR-0179 item 4: the width of a text in millimetres, for a capital letter of the size: the widths of Helvetica in
-    // thousandths of the size of its font, which is the size divided by the cap height (finding E224). A character with no width
-    // in the table takes 1000, the width of a wide character, so the text stays inside its cell.
+    // thousandths of the size of its font, which is the size divided by the cap height (finding E224). Finding E229 of the codebase
+    // review of 2026-11-21 (TASK-0431): a character with no width in the table takes 1015, the width of "@", the widest character
+    // of Helvetica, so the text stays inside its cell. Until TASK-0431 it took 1000, and "@" is wider.
     public static double Measure(string text, double size)
     {
         ArgumentNullException.ThrowIfNull(text);
@@ -189,7 +190,7 @@ public static class TitleBlock
                 '°' => 400,
                 '_' or '#' => 556,
                 '&' => 667,
-                _ => 1000,
+                _ => 1015,
             };
         }
 

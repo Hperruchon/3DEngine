@@ -61,8 +61,8 @@ internal sealed unsafe partial class DesktopUi
                 ImGui.TextUnformatted(program);
                 ImGui.SameLine(0f, 12f);
                 // ADR-0138 (phase R21b, TASK-0370): the top bar ends 12 pixels left of the button "Views"; the review of the branch
-                // found "not saved" under the button at 360 pixels wide.
-                ImGui.TextDisabled(Fit(UnitText, displaySize.X - 16f - _inset.Z - ViewsButtonWidth - 12f - left - ImGui.CalcTextSize(program).X - 12f));
+                // found "not saved" under the button at 360 pixels wide. Finding V225 (TASK-0431): and left of "Sheet" beside it.
+                ImGui.TextDisabled(Fit(UnitText, displaySize.X - 16f - _inset.Z - UpperRightWidth - 12f - left - ImGui.CalcTextSize(program).X - 12f));
             }
             else
             {
@@ -248,7 +248,9 @@ internal sealed unsafe partial class DesktopUi
             list.AddText(low + new Vector2(0f, pad), Theme.Accent, hidden);
         }
 
-        var folderRoom = room - hiddenRoom - ImGui.CalcTextSize(texts[0]).X - 12f;
+        // Finding V227 of the codebase review of 2026-11-21 (TASK-0431): the segment of the file name is wider by the chevron while
+        // it opens the file menu, so the room of the folder is less by the chevron. Until TASK-0431 the row ended 20 pixels late.
+        var folderRoom = room - hiddenRoom - ImGui.CalcTextSize(texts[0]).X - (menu ? FileMark : 0f) - 12f;
         if (segments.Count == 1 && document?.Folder is { } folder && folderRoom >= 48f)
         {
             ImGui.SameLine(0f, 12f);
@@ -278,7 +280,8 @@ internal sealed unsafe partial class DesktopUi
         if (ImGui.Begin("##Path", FixedFlags))
         {
             // ADR-0138 (phase R21b, TASK-0370): the button "Views" is at the upper right, so the path line ends 12 pixels left of it.
-            PathRow(document, body, displaySize.X - 16f - _inset.Z - 12f - left - ViewsButtonWidth - 12f, PathPad);
+            // Finding V225 of the codebase review of 2026-11-21 (TASK-0431): left of "Views" and "Sheet" while a sheet exists.
+            PathRow(document, body, displaySize.X - 16f - _inset.Z - 12f - left - UpperRightWidth - 12f, PathPad);
             AddWindowRectangle();
             _items[PathItem] = _fixed[^1];
         }
@@ -506,7 +509,9 @@ internal sealed unsafe partial class DesktopUi
 
         // ADR-0178 item 2: where the status line has no room for the part of the hidden bodies, the path line shows it. The
         // rule is the same on a phone and on the desktop.
-        _pathHidden = hidden is null ? PathHiddenText(bodies) : null;
+        // Finding V226 of the codebase review of 2026-11-21 (TASK-0431, Q5 A of the owner): only while no body is selected, so the
+        // segments of a selection keep the room of the path line. Until TASK-0431 the part showed with a selection too.
+        _pathHidden = hidden is null && body is null ? PathHiddenText(bodies) : null;
         TopBar(displaySize, document, body);
 
         // ADR-0124 item 3: the list closes when no body is hidden, or when the part shows in neither place.

@@ -579,16 +579,18 @@ internal sealed unsafe partial class DesktopUi
 
         var font = ImGui.GetFont();
         float Size(double millimetres) => Math.Max(6f, (float)(millimetres * paper.Scale));
-        // The texts of the title block stay inside it.
-        var (bx0, by0, bx1, by1) = TitleBlock.Box(sheet.Width, sheet.Height);
-        list.PushClipRect(paper.Pixel(bx0, by1), paper.Pixel(bx1, by0), true);
+        // Finding V224 of the codebase review of 2026-11-21 (TASK-0431): each text of the title block stays inside its cell. A text
+        // has a floor of 6 pixels, so at a small scale of the paper a label is larger than its cell. Until TASK-0431 the clip was
+        // the whole block, and a label went into the next cell.
+        var (bx0, by0, _, _) = TitleBlock.Box(sheet.Width, sheet.Height);
         foreach (var text in block.Texts)
         {
+            var cell = TitleBlock.Cells.First(cell => bx0 + cell.X0 + TitleBlock.Padding == text.X && text.Y > by0 + cell.Y0 && text.Y < by0 + cell.Y1);
+            list.PushClipRect(paper.Pixel(bx0 + cell.X0, by0 + cell.Y1), paper.Pixel(bx0 + cell.X1, by0 + cell.Y0), true);
             var size = Size(SvgExport.FontSize(text.Size));
             list.AddText(font, size, paper.Pixel(text.X, text.Y) - new Vector2(0f, size), Theme.Ink, text.Text);
+            list.PopClipRect();
         }
-
-        list.PopClipRect();
 
         // The views: hidden lines thin and dashed, centre lines thin with a long dash, visible lines thick.
         foreach (var view in sheet.Views)

@@ -5,6 +5,7 @@ using Engine.Contracts.Handlers;
 using Engine.Core;
 using Engine.Core.Commands;
 using Engine.Core.Drawing;
+using Engine.Core.Export;
 using Engine.Core.Geometry;
 using Engine.Core.Hosting;
 using Engine.Core.Persistence;
@@ -263,5 +264,56 @@ public sealed class SheetTitleTests : IDisposable
             "frame 10,10 200,10", "frame 200,10 200,287", "frame 200,287 10,287", "frame 10,287 10,10",
             "frame 105,0 105,10", "frame 105,297 105,282", "frame 0,148.5 15,148.5", "frame 210,148.5 195,148.5",
         ], Frame(Paper("A4", landscape: false)));
+    }
+
+    // Finding E227 of the codebase review of 2026-11-21 (TASK-0431, Q6 A of the owner): a SetSheetTitle that gives the block that
+    // the sheet has changes nothing, so it is refused with E-SHEET-TITLE-INVALID, with no event and no step of undo, as a move
+    // of a view to its own place is (finding E225). An empty block on a sheet with no block is a change, so it is Applied.
+    [Fact]
+    public async Task A_SetSheetTitle_That_Changes_Nothing_Is_Refused()
+    {
+        var (session, events) = NewSession();
+        var id = await Applied(session, new CreateSheetCommand { SheetName = "Sheet 1" });
+        await Applied(session, new SetSheetTitleCommand { SheetId = id });
+        Assert.Equal(SheetTitleBlock.Empty, (await Sheet(session)).TitleBlock);
+        Assert.Equal(DiagnosticCodes.SheetTitleInvalid, await Refused(session, new SetSheetTitleCommand { SheetId = id }));
+
+        await Applied(session, Full(id));
+        var before = events.Snapshot().Count;
+        var version = await session.Read((document, _) => document.Version);
+        Assert.Equal(DiagnosticCodes.SheetTitleInvalid, await Refused(session, Full(id)));
+        Assert.Equal(version, await session.Read((document, _) => document.Version));
+        Assert.DoesNotContain(events.Snapshot().Skip(before), record => record.Kind == "sheet.changed");
+        Assert.Equal(FullBlock, (await Sheet(session)).TitleBlock);
+
+        await Applied(session, new UndoCommand());
+        Assert.Equal(SheetTitleBlock.Empty, (await Sheet(session)).TitleBlock);
+    }
+
+    // Finding E228 (TASK-0431): in a TEXT of a DXF file "%%" starts a control code of AutoCAD, so "50%%d" shows "50°". Each "%" of
+    // a text of the block is "%%%" in the file, the code of one "%". The "%%c" of a diameter (ADR-0165 item 4) is not a text of
+    // the block, and keeps its code.
+    [Fact]
+    public void A_Percent_Sign_Of_The_Block_Stays_A_Percent_Sign_In_The_Dxf_File()
+    {
+        var sheet = Paper("A3", landscape: true, block: SheetTitleBlock.Empty with { Material = "50%%d", Revision = "5%" });
+        var values = DxfExport.Text(sheet).Split('\n').Select(line => line.TrimEnd('\r')).ToList();
+
+        Assert.Contains("50%%%%%%d", values);
+        Assert.Contains("5%%%", values);
+        Assert.DoesNotContain("50%%d", values);
+        Assert.DoesNotContain("5%", values);
+    }
+
+    // Finding E229 (TASK-0431): a character that the table of widths does not hold takes the width of "@", 1015 thousandths, the
+    // widest character of Helvetica, so a text of such characters stays inside its cell. Until TASK-0431 it took 1000.
+    [Theory]
+    [InlineData("@")]
+    [InlineData("中")]
+    [InlineData("Æ")]
+    public void A_Character_With_No_Width_In_The_Table_Is_As_Wide_As_The_Widest_Character(string text)
+    {
+        foreach (var size in new[] { TitleBlock.LabelSize, TitleBlock.ValueSize, TitleBlock.TitleSize })
+            Assert.Equal(1015 * SvgExport.FontSize(size) / 1000, TitleBlock.Measure(text, size), 12);
     }
 }
