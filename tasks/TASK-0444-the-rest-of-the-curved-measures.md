@@ -1,7 +1,7 @@
 ---
 id: 0444
 title: The measure queries give the volume of a plate with holes, and the distance and the angle of the side of a cone, of an arc and of two curved faces
-status: Active
+status: Done
 phase: K15c
 opened: 2026-11-21
 depends-on: [0434]
@@ -85,7 +85,7 @@ along an axis, and refuse each other case with `E-MEASURE-CURVED`.
   it gives its angle to three plane faces.
 - [x] Two sides of a cylinder, a cone or an arc give the angle of their axes; a sphere is refused.
 - [x] An injection in each part makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
   (Local: each passes. Continuous integration runs after the push.)
 
 ## Decisions
@@ -109,7 +109,7 @@ hold. This task takes these decisions; the owner accepts the change of the secti
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch k15c-curved-rest) · v0.428
+Status: Done · commit (the merge of the branch k15c-curved-rest) · v0.428
 
 ## Method
 
@@ -174,3 +174,4 @@ does not name that file. The comment now names `GetConnectors` without the ADR.
 - 2026-11-21: opened after K17 (TASK-0443, v0.427, not merged yet), branch `k15c-curved-rest` from `2a79f573`. ADR-0180
   items 14 to 19, the files `CutMass.cs` and `RevolvedDistance.cs`, eight new tests, two tests of K15b changed, the row
   K15d. Ledger entry v0.428.
+- 2026-11-21: run 44932220648 of `53772dce` passed on each job. Closed at v0.428.
