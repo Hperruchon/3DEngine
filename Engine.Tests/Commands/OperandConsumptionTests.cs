@@ -262,6 +262,20 @@ public class OperandConsumptionTests
             Store("Subtract", result);
         }
 
+        public void Union(BodyHandle result, BodyHandle first, BodyHandle second)
+        {
+            Require(first);
+            Require(second);
+            Store("Union", result);
+        }
+
+        public void Intersect(BodyHandle result, BodyHandle first, BodyHandle second)
+        {
+            Require(first);
+            Require(second);
+            Store("Intersect", result);
+        }
+
         private void Require(BodyHandle handle)
         {
             if (!_bodies.Contains(handle.Id))

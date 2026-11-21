@@ -91,14 +91,15 @@ internal static class KernelProjection
     }
 
     // ADR-0059 item 3: the handle at the end of the chain of consumers of the body of a feature, and true when a Subtract
-    // is on the chain. A consumer that is not a Translate, a Rotate (ADR-0112 item 6) or a Subtract gives no end.
+    // is on the chain. A consumer that is not a Translate, a Rotate (ADR-0112 item 6) or a Subtract gives no end. ADR-0181
+    // item 6 (phase K16, TASK-0433): a Union and an Intersect can remove a face too, so each is on the chain as a Subtract is.
     public static (Guid? End, bool Cut) End(FeatureGraph graph, Guid feature)
     {
         ArgumentNullException.ThrowIfNull(graph);
         var (handle, cut) = (feature, false);
         while (graph.Consumer(handle) is { } consumer)
         {
-            if (consumer is SubtractCommand)
+            if (consumer is SubtractCommand or UnionCommand or IntersectCommand)
                 cut = true;
             else if (consumer is not (TranslateCommand or RotateCommand))
                 return (null, cut);
@@ -159,6 +160,10 @@ internal static class KernelProjection
                     curves.TryAdd(tag, curve);
                 return curves;
             }
+            // ADR-0181 item 6 (phase K16, TASK-0433): a Union and an Intersect keep the curves of the two bodies, as they keep
+            // their tags. The step is a method of its own, so the frame of this recursive method stays small.
+            case UnionCommand or IntersectCommand:
+                return PairCurves(graph, Pair(graph.Creator(handle)!), state, frameOf);
             default:
                 return [];
         }
@@ -252,6 +257,11 @@ internal static class KernelProjection
                 var result = PlanarBoolean.Subtract(minuend, subtrahend);
                 return result is null ? (null, $"The Subtract '{subtract.CommandId}' leaves no solid in the owned kernel.") : (result, null);
             }
+            // ADR-0181 item 5 (phase K16, TASK-0433): the union and the intersection of the solids of the two bodies. The step
+            // is a method of its own: a local of a case is a part of the frame of this recursive method, and a chain of 150
+            // turns of the bookcase (K10a) overflowed the stack of a test with the larger frame.
+            case UnionCommand or IntersectCommand:
+                return PairSolid(graph, graph.Creator(handle)!, state, frameOf);
             case ImportStlCommand:
                 return (null, $"The body '{handle}' is a mesh body of an STL file, which the owned kernel does not build (ADR-0083 item 4).");
             case null:
@@ -260,6 +270,39 @@ internal static class KernelProjection
                 return (null, $"The owned kernel does not build the command '{other.Name}'.");
         }
     }
+
+    // ADR-0181 item 6: the curves of the two bodies of a Union or an Intersect.
+    private static Dictionary<FaceTag, Drawing.SideCurve> PairCurves(
+        FeatureGraph graph, (Guid First, Guid Second) pair, Func<ExtrudeCommand, DatumResolver.ExtrudeState> state, Func<Guid, DatumFrame?> frameOf)
+    {
+        var curves = CurvesOf(graph, pair.First, state, frameOf);
+        foreach (var (tag, curve) in CurvesOf(graph, pair.Second, state, frameOf))
+            curves.TryAdd(tag, curve);
+        return curves;
+    }
+
+    // ADR-0181 item 5: the solid of a Union or an Intersect from the solids of its two bodies.
+    private static (KernelSolid? Solid, string? Reason) PairSolid(
+        FeatureGraph graph, Command command, Func<ExtrudeCommand, DatumResolver.ExtrudeState> state, Func<Guid, DatumFrame?> frameOf)
+    {
+        var (firstId, secondId) = Pair(command);
+        var (first, firstReason) = Solid(graph, firstId, state, frameOf);
+        if (first is null)
+            return (null, firstReason);
+        var (second, secondReason) = Solid(graph, secondId, state, frameOf);
+        if (second is null)
+            return (null, secondReason);
+        var result = command is UnionCommand ? PlanarBoolean.Union(first, second) : PlanarBoolean.Intersect(first, second);
+        return result is null ? (null, $"The {command.Name} '{command.CommandId}' leaves no solid in the owned kernel.") : (result, null);
+    }
+
+    // ADR-0181 item 1: the two operands of a Union or an Intersect.
+    private static (Guid First, Guid Second) Pair(Command command) => command switch
+    {
+        UnionCommand union => (union.FirstBodyId, union.SecondBodyId),
+        IntersectCommand intersect => (intersect.FirstBodyId, intersect.SecondBodyId),
+        _ => throw new ArgumentException($"The command '{command.Name}' is not a Union or an Intersect.", nameof(command)),
+    };
 
     // Item 2: the profile of the sketch in the state, with the item of each side, on the frame of its datum, by the
     // distance in the state. The distance keeps its sign, so the start face is on the plane of the sketch, as ADR-0051

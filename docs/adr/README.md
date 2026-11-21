@@ -25,7 +25,7 @@ names. Do not read all of them.
 | [0008](0008-command-query-event-triad.md) | Command, query and event triad with structured results | Amended | Contracts | 0006 | 0020 |
 | [0009](0009-3dengine-core-peer-render-kernel.md) | 3DEngine.Core is a peer render kernel | Amended | Boundary, clients | — | 0022, 0025 |
 | [0010](0010-subscription-reset-snapshot-format.md) | subscription.reset snapshot format | Amended | Contracts, observability | — | 0020, 0015 |
-| [0012](0012-geometry-backend-wiring.md) | Geometry backend wiring | Amended | Boundary, geometry, contracts | — | 0018, 0021, 0028, 0015, 0033, 0037, 0045, 0051, 0071, 0112 |
+| [0012](0012-geometry-backend-wiring.md) | Geometry backend wiring | Amended | Boundary, geometry, contracts | — | 0018, 0021, 0028, 0015, 0033, 0037, 0045, 0051, 0071, 0112, 0181 |
 | [0013](0013-command-query-schema-declaration.md) | Command and query schema declaration | Amended | Contracts, observability | — | 0060 |
 | [0014](0014-manifold-native-interop.md) | Manifold backend native-interop posture | Accepted | Boundary, geometry, native-interop | — | — |
 | [0015](0015-command-log-persistence.md) | The document file | Amended | Persistence, contracts | 0010, 0012 | 0071 |
@@ -70,8 +70,8 @@ names. Do not read all of them.
 | [0054](0054-ordered-feature-list.md) | The ordered feature list, a fold of the log | Amended | Feature graph, runtime | 0039 | 0055 |
 | [0055](0055-regeneration.md) | The regeneration of the features after an edit | Amended | Feature graph, geometry, runtime | 0037, 0039, 0054 | 0059 |
 | [0056](0056-dimension-overlay.md) | The dimension overlay of the desktop | Amended | Desktop, renderer | — | 0125, 0174 |
-| [0057](0057-planar-subtract-in-the-owned-kernel.md) | The exact planar subtract of the owned kernel, with the provenance of each face | Amended | Kernel, geometry, determinism | — | 0058 |
-| [0058](0058-the-engine-reads-the-owned-kernel.md) | The engine reads the owned kernel for the faces of a body | Amended | Kernel, geometry, queries | 0057 | 0059, 0112 |
+| [0057](0057-planar-subtract-in-the-owned-kernel.md) | The exact planar subtract of the owned kernel, with the provenance of each face | Amended | Kernel, geometry, determinism | — | 0058, 0181 |
+| [0058](0058-the-engine-reads-the-owned-kernel.md) | The engine reads the owned kernel for the faces of a body | Amended | Kernel, geometry, queries | 0057 | 0059, 0112, 0181 |
 | [0059](0059-references-by-the-identity-of-a-face.md) | The references by the identity of a face, and a datum on a face that a cut removed | Amended | Kernel, feature graph, sketch | 0051, 0053, 0055, 0058 | 0112 |
 | [0060](0060-unit-kind-in-the-command-schema.md) | The unit kind of each number parameter in the command schema | Amended | Contracts, clients | 0013 | 0071, 0112 |
 | [0061](0061-android-platform.md) | Android is a platform of the program, with the person on the phone and no surface | Accepted | Platform, clients, rendering | 0017, 0027, 0030 | — |
@@ -186,6 +186,7 @@ names. Do not read all of them.
 | [0178](0178-show-hidden-on-the-ring-of-the-part-and-the-path-line.md) | "Show hidden" is on the ring of the part, and the count of the hidden bodies goes on the path line where the status line has no room | Accepted | Clients, rendering | 0124 | — |
 | [0179](0179-the-title-block-of-a-sheet.md) | A sheet holds the fields of the title block of ISO 7200, SetSheetTitle gives them, and the frame shows the block, the symbol of the projection and the centring marks | Accepted | Contracts, drawing | 0153, 0155, 0159, 0160, 0161 | — |
 | [0180](0180-the-measure-queries-of-plane-faces.md) | The measure queries GetMassProperties, GetDistance and GetAngle read the exact solid of the owned kernel, first for plane faces | Accepted | Kernel, queries | — | — |
+| [0181](0181-the-union-and-the-intersection-of-two-bodies.md) | The union and the intersection of two bodies, in the form of the subtract | Accepted | Kernel, geometry, commands | 0012, 0057, 0058 | — |
 
 ## Topics
 

@@ -255,7 +255,7 @@ public sealed class PlanarSubtractTests
         Assert.True(empty > 0, "No subtract was empty.");
     }
 
-    private static (KernelSolid Solid, Guid Key) Large(ManifoldGeometryBackend backend)
+    internal static (KernelSolid Solid, Guid Key) Large(ManifoldGeometryBackend backend)
     {
         var key = Guid.NewGuid();
         backend.TryGet<IMeshOps>()!.CreateBox(new BodyHandle(key), new BoxParameters(100, 100, 100));
@@ -263,7 +263,7 @@ public sealed class PlanarSubtractTests
     }
 
     // A random body in the kernel and in Manifold: a box or an L extrude on XY, moved by whole steps.
-    private static (KernelSolid Solid, Guid Key) Body(ManifoldGeometryBackend backend, Random random)
+    internal static (KernelSolid Solid, Guid Key) Body(ManifoldGeometryBackend backend, Random random)
     {
         var key = Guid.NewGuid();
         KernelSolid solid;
@@ -289,7 +289,7 @@ public sealed class PlanarSubtractTests
     }
 
     // The volume and the bounds of a solid of Manifold, from its triangles.
-    private static (double Volume, ((double, double, double), (double, double, double)) Box) Measure(ManifoldGeometryBackend backend, Guid key)
+    internal static (double Volume, ((double, double, double), (double, double, double)) Box) Measure(ManifoldGeometryBackend backend, Guid key)
     {
         var mesh = backend.TryGet<ITessellationOps>()!.Tessellate(new BodyHandle(key));
         var volume = 0.0;
@@ -305,7 +305,7 @@ public sealed class PlanarSubtractTests
         return (volume, ((box.MinX, box.MinY, box.MinZ), (box.MaxX, box.MaxY, box.MaxZ)));
     }
 
-    private static ((double, double, double) Min, (double, double, double) Max) Bounds(KernelSolid solid)
+    internal static ((double, double, double) Min, (double, double, double) Max) Bounds(KernelSolid solid)
     {
         var points = solid.Polygons.SelectMany(polygon => polygon.Vertices).Select(point => point.ToDoubles()).ToList();
         return ((points.Min(p => p.X), points.Min(p => p.Y), points.Min(p => p.Z)), (points.Max(p => p.X), points.Max(p => p.Y), points.Max(p => p.Z)));

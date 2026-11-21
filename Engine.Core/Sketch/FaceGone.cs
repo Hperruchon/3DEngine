@@ -7,7 +7,8 @@ namespace Engine.Core.Sketch;
 
 // ADR-0059 item 3 (phase K4c, TASK-0185): a datum on a face that a cut removed. The datum stays on the plane of its
 // reference (ADR-0051 item 8), and it gets the fault W-DATUM-REFERENCE-FAILED with the reason that the face is gone. Only
-// a Subtract removes a whole face, so a datum is checked only when its chain holds a Subtract.
+// a boolean removes a whole face, so a datum is checked only when its chain holds a boolean: a Subtract, and since ADR-0181
+// item 6 (phase K16, TASK-0433) a Union or an Intersect (KernelProjection.End).
 internal static class FaceGone
 {
     // The fault of a datum whose face is not a face of the body at the end of its chain.
