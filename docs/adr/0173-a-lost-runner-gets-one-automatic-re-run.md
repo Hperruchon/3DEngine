@@ -52,7 +52,9 @@ a red run with no fault of the code stops the work until the owner sees it.
    the test releases it, after the Apply and the Read ended. A report inside the commit can then never let the Apply end, and
    a slow runner only makes the test slower. A limit of 60 seconds stops a test that waits for ever. The same rule holds in
    `HttpConcurrencyTests` (finding T183, Q8 A of the owner, 2026-11-20): the test of a deadlock fails only when no operation
-   ends for 60 seconds, so the time of the work is not a result, and a request of the class stops only after 60 seconds.
+   ends for 60 seconds, so the time of the work is not a result. A request of the class stops only after 90 seconds, after
+   that limit, so a deadlock fails with its own text and not as a cancel, and before the hang limit of 2 minutes of the step
+   "Test" (finding T185 of the codebase review of 2026-11-21).
 
 ## Consequences
 
@@ -76,3 +78,5 @@ a red run with no fault of the code stops the work until the owner sees it.
 - 2026-11-19 · TASK-0417 · The workflow, the choice, the token and the test with no deciding limit (phase P0.168).
 - 2026-11-21 · TASK-0426 · Item 4 holds for `HttpConcurrencyTests`: a deadlock is no progress for 60 seconds (finding T183, Q8 A
   of the owner); a crash of a test host on Windows keeps a mini dump (finding T184).
+- 2026-11-21 · TASK-0431 · Item 4: a request of `HttpConcurrencyTests` stops after 90 seconds, after the stall limit of 60
+  seconds (finding T185).

@@ -24,6 +24,7 @@ affects:
   - Engine.Api.Http/Endpoints/SchemaEventsEndpoint.cs
   - Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs
   - 3DEngine.App/SheetPlacement.cs
+  - 3DEngine.App/SessionSheets.cs
   - Engine.Tests/Drawing/SheetTitleTests.cs
 enforced-by: Engine.Tests/Drawing/SheetTitleTests.cs
 notes: R30i. The answers Q4 A to Q7 A of the codebase review of 2026-11-20, by the standing order of the owner of 2026-11-20.
@@ -77,7 +78,9 @@ marks of ISO 5457. The review marked the fields of ISO 7200 as inferred.
    is `sheetId`. It refuses, in this order:
    - a sheet that is not live (`E-SHEET-NOT-FOUND`);
    - a field that breaks the rules of the name of a body (ADR-0028 item 3): more than 128 UTF-16 units, a control character,
-     or text that is not well-formed UTF-16 (`E-SHEET-TITLE-INVALID`, a new code).
+     or text that is not well-formed UTF-16 (`E-SHEET-TITLE-INVALID`, a new code);
+   - a block that is the block of the sheet already, so the command changes nothing (`E-SHEET-TITLE-INVALID`; finding E227,
+     Q6 A of the codebase review of 2026-11-21). The empty block on a sheet with no block is a change.
    The command does not check the form of a date: `IssueDate` is the text of the client, and the engine reads no clock, so a
    replay gives the same record on each platform (anti-objective 16). The command lives in `Engine.Core/Commands` and
    `HandlerCatalog` (ADR-0016).
@@ -100,11 +103,12 @@ marks of ISO 5457. The review marked the fields of ISO 7200 as inferred.
    Each cell has its label at its upper left corner, a capital of 1.8 mm, and its value at its lower left corner, 2 mm over
    its lower line, a capital of 3.5 mm; the title has 5 mm. Each text is 1.5 mm from the left line of its cell. A text that is
    wider than its cell less 3 mm gets a smaller size, at which it has the width of that room; its width comes from the widths
-   of Helvetica, and a character with no width in the table takes the width of a wide character. The title shows the name of
-   the sheet when its field is empty. The scale is the text of ADR-0159 item 4, the unit is "mm", and the paper is its name.
-   The symbol cell has no label. The text of the projection and of the orientation in the old block go. The band of the block
-   is the band of ADR-0167 item 3, so the area of a new view is above 54 mm from the lower edge of the paper; a view that a log
-   put in the band stays where it is, and the block can cover it.
+   of Helvetica, and a character with no width in the table takes 1015, the width of "@", the widest character of Helvetica
+   (finding E229). The title shows the name of the sheet when its field is empty. The scale is the text of ADR-0159 item 4,
+   the unit is "mm", and the paper is its name. The symbol cell has no label. The text of the projection and of the
+   orientation in the old block go. The band of the block is the band of ADR-0167 item 3, so the area of a new view is above
+   54 mm from the lower edge of the paper; a view that a log put in the band stays where it is, and its lines go over the
+   block, because each drawer draws the block first (finding E229).
 5. **The centring marks (ISO 5457).** A thick line at the middle of each side of the paper, from the edge of the paper to 5 mm
    past the frame. The mark of the lower side stops at the frame when the block holds the middle of the paper, as on A4 and on
    A3 in portrait.
@@ -120,13 +124,13 @@ marks of ISO 5457. The review marked the fields of ISO 7200 as inferred.
      item 3), and one text for each text in the group `title`, at its left end, with the size of the font of its capital
      letters (finding E224).
    - DXF: each line on the layer FRAME, a circle as a CIRCLE, and a centre line of the symbol as a LINE with its own line type
-     CENTER (group 6); each text as a TEXT on the layer TEXT with the height of its capital letters and no justification.
-     Release 12 has no width of a line, so the thick and the thin lines differ by their layer only in the views, and not in
+     CENTER (group 6); each text as a TEXT on the layer TEXT with the height of its capital letters and no justification. Each
+     "%" of a text is "%%%", because "%%" starts a control code of a TEXT (finding E228). Release 12 has no width of a line, so the thick and the thin lines differ by their layer only in the views, and not in
      the block.
    - PDF: each line with its width and its dashes, and each text in Helvetica with the size of the font of its capital
      letters.
    - The sheet page (ADR-0168 item 1, whose `affects` field holds the page): each thick line of 2 pixels, each thin line of 1 pixel, each centre line of 1 pixel in long dashes, and
-     each text inside the box of the block.
+     each text clipped to its cell (finding V224).
 8. **Replay and the saved documents.** The record is a function of the log: the commands of a log before this record give the
    same sheets with `TitleBlock` null, and a document file before this record opens with no change (ADR-0015). The block, its
    lines and its texts are presentation: no command, event or Document holds them (determinism rule 6).
@@ -139,10 +143,11 @@ marks of ISO 5457. The review marked the fields of ISO 7200 as inferred.
 **Good:** a drawing has the fields that ISO 7200 makes mandatory, a person or an agent sets them in one step of undo, and the
 three files and the page draw one list, so they cannot disagree. Each log and each document file stays valid.
 
-**Bad:** the band of the block is 44 mm and not 20 mm, so a new view goes 12 mm higher than before, and the block can cover a
-view that an earlier log put in the band. A long text gets a small size and not a second line. The widths of Helvetica are an
-estimate for the SVG file and the page, which use other fonts. The proportions of the symbol and the centring marks come from
-memory of the standards, not from the paid texts. Each event of a sheet carries one more field.
+**Bad:** the band of the block is 44 mm and not 20 mm, so a new view goes 12 mm higher than before, and a view that an earlier
+log put in the band goes over the block. A long text gets a small size and not a second line. The widths of Helvetica are an
+estimate for the SVG file, the DXF file and the page, which use other fonts. In the DXF file the CAD program chooses the font of
+the style STANDARD, so a text that fits its cell in the PDF file can go into the next cell there (finding E228). The proportions of the symbol and the
+centring marks come from memory of the standards, not from the paid texts. Each event of a sheet carries one more field.
 
 **Next:** a form of the fields on the sheet page (a slice after R30i, Q7 A).
 
@@ -170,3 +175,7 @@ The answers Q4 to Q7 do not decide these points. The session took the smallest o
 ## History
 
 - 2026-11-21 · TASK-0428 · The record, for row R30i and ADR-0162 items 15 and 17, with the answers Q4 A to Q7 A.
+- 2026-11-21 · TASK-0431 · Item 2 refuses a block with no change (E227, Q6 A of the codebase review of 2026-11-21); item 4 gives a
+  character with no width the width of "@" and says that a view goes over the block (E229); item 7 writes "%" as "%%%" in DXF
+  (E228) and clips each text of the page to its cell (V224); "Bad" names the font of the DXF file (E228); `affects` names
+  `3DEngine.App/SessionSheets.cs`, whose copy of a sheet reads the block of the event (V223).

@@ -1262,7 +1262,10 @@ public class DependencyDirectionGateTests
 
     // TASK-0038 split Engine.Api.Http into the surface library and the program
     // engine-api-http, Engine.Api.Http.Server.
-    private static readonly string[] HeadlessClients = ["Engine.Cli", "Engine.Api.Http.Server"];
+    // Finding T186 of the codebase review of 2026-11-21 (TASK-0431): eng/bookcase-compare
+    // is a program that replays a document file and runs a builder through a session,
+    // so it is a headless client with the rules of a client.
+    private static readonly string[] HeadlessClients = ["Engine.Cli", "Engine.Api.Http.Server", "BookcaseCompare"];
 
     // The HTTP and WebSocket surface as a library that a host mounts on its
     // session (ADR-0019 item 3, TASK-0038). It is not a client: a client

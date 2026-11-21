@@ -101,4 +101,48 @@ public sealed class SheetTitlePageTests
             Assert.True(ink.Any(p => p.X >= from.X && p.X <= to.X && p.Y >= from.Y - 2 && p.Y <= to.Y + 2), $"No ink in the box of the text '{text.Text}'.");
         }
     }
+
+    // Finding V224 of the codebase review of 2026-11-21 (TASK-0431): a text of the block has a floor of 6 pixels, so at a small
+    // scale of the paper a label is larger than its cell. Each text is clipped to its cell (ADR-0179 item 7): each text has a
+    // draw whose clip is inside its cell and that has ink in the cell. Until TASK-0431 the clip was the whole block, so a label
+    // went into the next cell.
+    [Theory]
+    [InlineData(1280, 720)]
+    [InlineData(390, 844)]
+    public void Each_Text_Of_The_Block_Is_Clipped_To_Its_Cell(int width, int height)
+    {
+        var display = new Vector2(width, height);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        var id = Guid.NewGuid();
+        var record = new SheetRecord(id, "Sheet 1", "A3", true, false, [], []);
+        var sheet = new SheetInfo(id, "Sheet 1", "A3", true, false, 420, 297, [], [])
+        {
+            TitleBlock = SheetTitleBlock.Empty with { Title = "Bracket", IdentificationNumber = "DWG-0042", Material = "AlMg3", Revision = "B" },
+        };
+        var drawn = UiDrawData.Empty;
+        for (var frame = 0; frame < 4; frame++)
+        {
+            if (frame == 1)
+                ui.OpenPage();
+            ui.ShowSheets([record]);
+            ui.ShowPage(sheet, false);
+            drawn = ui.Frame(1f / 60f, display, Vector2.One, [Body], null, new DocumentLine("plate", null));
+        }
+
+        var paper = ui.PagePaper ?? throw new InvalidOperationException("No paper.");
+        var (bx, by, _, _) = TitleBlock.Box(sheet.Width, sheet.Height);
+        bool Ink(UiDrawCommand command, Vector4 cell) => Enumerable.Range(0, (int)command.IndexCount)
+            .Select(i => drawn.Vertices[command.VertexOffset + drawn.Indices[command.FirstIndex + i]])
+            .Any(vertex => vertex.Colour == Theme.Ink && vertex.Position.X > cell.X && vertex.Position.X < cell.Z && vertex.Position.Y > cell.Y && vertex.Position.Y < cell.W);
+        foreach (var text in TitleBlock.Layout(sheet).Texts)
+        {
+            var cell = TitleBlock.Cells.Single(cell => bx + cell.X0 + TitleBlock.Padding == text.X && text.Y > by + cell.Y0 && text.Y < by + cell.Y1);
+            var (low, high) = (paper.Pixel(bx + cell.X0, by + cell.Y1), paper.Pixel(bx + cell.X1, by + cell.Y0));
+            var box = new Vector4(low.X, low.Y, high.X, high.Y);
+            Assert.True(
+                drawn.Commands.Any(command => command.ClipRectangle.X >= box.X - 0.5f && command.ClipRectangle.Y >= box.Y - 0.5f
+                    && command.ClipRectangle.Z <= box.Z + 0.5f && command.ClipRectangle.W <= box.W + 0.5f && Ink(command, box)),
+                $"No draw of the text '{text.Text}' has a clip inside its cell {box}.");
+        }
+    }
 }

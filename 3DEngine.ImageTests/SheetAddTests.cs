@@ -218,6 +218,34 @@ public sealed class SheetAddTests
         Assert.Equal(["Sheet 2"], sheets.Live.Select(sheet => sheet.Name));
     }
 
+    // Finding V223 of the codebase review of 2026-11-21 (TASK-0431): the copy of the window reads the title block of the event
+    // (ADR-0179 item 3), so after SetSheetTitle and after a later change of the sheet it has the block of the Document, and after
+    // an undo of the block it has none. Until TASK-0431 each event of a sheet gave the copy no block.
+    [Fact]
+    public async Task The_Window_Keeps_The_Title_Block_Of_Each_Sheet()
+    {
+        using var host = new EngineHost(new ManifoldGeometryBackend());
+        var create = new CreateSheetCommand { SheetName = "Sheet 1" };
+        await host.Session.Apply(create);
+        using var sheets = new SessionSheets(new HostedSession(host));
+        Assert.Null(Assert.Single(sheets.Live).TitleBlock);
+
+        await host.Session.Apply(new SetSheetTitleCommand { SheetId = create.CommandId, Title = "Bracket", Material = "AlMg3" });
+        sheets.Apply();
+        var block = SheetTitleBlock.Empty with { Title = "Bracket", Material = "AlMg3" };
+        Assert.Equal(block, Assert.Single(sheets.Live).TitleBlock);
+        Assert.Equal(Assert.Single(await Sheets(host)).TitleBlock, Assert.Single(sheets.Live).TitleBlock);
+
+        await host.Session.Apply(new RenameSheetCommand { SheetId = create.CommandId, SheetName = "Plate" });
+        sheets.Apply();
+        Assert.Equal(("Plate", block), (Assert.Single(sheets.Live).Name, Assert.Single(sheets.Live).TitleBlock));
+
+        await host.Session.Apply(new UndoCommand());
+        await host.Session.Apply(new UndoCommand());
+        sheets.Apply();
+        Assert.Null(Assert.Single(sheets.Live).TitleBlock);
+    }
+
     private static void Frame(DesktopUi ui, Vector2 display, params InputSample[] samples)
     {
         ui.Route(samples);

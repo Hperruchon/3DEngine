@@ -91,6 +91,12 @@ internal sealed unsafe partial class DesktopUi
     // The width of the button "Views": its word and the padding of a button.
     private static float ViewsButtonWidth => ImGui.CalcTextSize(ViewsLabel).X + (2f * ImGui.GetStyle().FramePadding.X);
 
+    // Finding V225 of the codebase review of 2026-11-21 (TASK-0431): the width of the controls at the upper right of a portrait
+    // display: "Views", and "Sheet" 8 pixels right of it while a sheet or a proposed sheet exists (SheetButton). The top bar and
+    // the path line end 12 pixels left of them. Until TASK-0431 they kept the width of "Views" only, so "Views" covered them.
+    private float UpperRightWidth => ViewsButtonWidth
+        + (_sheet is null && _sheetProposal is null ? 0f : 8f + ImGui.CalcTextSize(SheetLabel).X + (2f * ImGui.GetStyle().FramePadding.X));
+
     // The button "Views", as high as an anchor, with its outline 1 pixel inside, where the clip of the window does not cut it.
     private void ViewsButton()
     {

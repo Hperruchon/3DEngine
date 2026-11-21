@@ -509,6 +509,9 @@ Therefore each approved objective must have a track here.
 - Review — The codebase review of 2026-11-21. v0.414, TASK-0430.
 - K15a — Three queries give the exact volume and centre of a body, the minimum distance between two bodies, faces or
   edges with its two points, and the cosine and the sine between two plane faces. v0.415, TASK-0432, ADR-0180.
+- P0.172 — The eleven findings of the codebase review of 2026-11-21 each have a correction and a test, the comparison
+  with the file of the bookcase is the program `eng/bookcase-compare`, and R-0072 asks the owner about a phone of 360
+  pixels with a sheet. v0.416, TASK-0431.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.

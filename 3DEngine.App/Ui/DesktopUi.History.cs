@@ -134,6 +134,11 @@ internal sealed unsafe partial class DesktopUi
 
         var ink = ImGui.GetColorU32(colours[(int)ImGuiCol.Text]);
         var quiet = ImGui.GetColorU32(colours[(int)ImGuiCol.TextDisabled]);
+        // Finding V228 of the codebase review of 2026-11-21 (TASK-0431): near the lower end of the arc a text goes left of its node,
+        // over the dot of the node above it. So the ground of each text comes first, then the dots and the texts, and no ground
+        // hides a dot. Until TASK-0431 the loop drew the dot, the ground and the text of one node, then the next node.
+        foreach (var (_, _, text) in _historyNodes)
+            Ground(list, text);
         foreach (var (shown, centre, text) in _historyNodes)
         {
             var hovered = shown.Tap != HistoryTap.None && !ImGui.IsWindowHovered(ImGuiHoveredFlags.AnyWindow) && HistoryAt(io.MousePos)?.Id == shown.Id;
@@ -154,7 +159,6 @@ internal sealed unsafe partial class DesktopUi
 
             // The text, and the state of a failed or an unresolved step after it in red, as the rows say it.
             var words = shown.Text;
-            Ground(list, text);
             list.AddText(new Vector2(text.X, text.Y), shown.State == Engine.Core.Queries.GetFeaturesQueryHandler.Consumed ? quiet : ink, words);
             // Finding V170 of the codebase review of 2026-11-12 (TASK-0350): the red goes through GetColorU32, so it fades with
             // the arc (ADR-0116 item 2); until TASK-0350 it kept its full alpha during a gesture.

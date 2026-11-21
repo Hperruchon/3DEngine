@@ -43,7 +43,9 @@ internal sealed class SessionSheets : IDisposable
         }
     }
 
-    // The record of the fields of the event (CommandBus.SheetFields).
+    // The record of the fields of the event (CommandBus.SheetFields). Finding V223 of the codebase review of 2026-11-21
+    // (TASK-0431): the title block of the event too (ADR-0179 item 3), null for a sheet with no block. Until TASK-0431 the copy
+    // lost its block at each event.
     private static SheetRecord Record(Guid id, IReadOnlyDictionary<string, object?> payload) => new(
         id,
         (string)payload["name"]!,
@@ -51,7 +53,8 @@ internal sealed class SessionSheets : IDisposable
         (bool)payload["landscape"]!,
         (bool)payload["thirdAngle"]!,
         (IReadOnlyList<SheetView>)payload["views"]!,
-        (IReadOnlyList<SheetDimension>)payload["dimensions"]!);
+        (IReadOnlyList<SheetDimension>)payload["dimensions"]!,
+        (SheetTitleBlock?)payload["titleBlock"]);
 
     // The live sheets in the order of the Document, as the last call of Apply left them.
     public IReadOnlyList<SheetRecord> Live => _live;
