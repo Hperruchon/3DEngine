@@ -13151,3 +13151,50 @@ Corrections: none.
 New tests: 2. The test list holds 3128 (1805 in `Engine.Tests`, 390 in `3DEngine.Tests`, 930 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.420, 1 product milestone
 and 6 entries followed it.
+
+## v0.427 — An agent reads the connectors of a body: its named datums, the centre and the normal of each plane face, and the axis of a whole cylinder (K17, TASK-0443)
+
+Row K17, after K11 (v0.420), P17 (v0.422) and P0.177 (v0.426). K10a is done, and K10b waits for the sizes of the lamp
+(R-0070); the order of the owner of the weekend lets the next rows start, as K15 started. The branch `k17-connectors` starts
+from `e8112673` (v0.426, not merged yet). ADR-0157 item 4 gives the rule of the owner; ADR-0183 records the shape of the
+query. No change of `Engine.Contracts`, `Engine.Kernel` or `3DEngine.App`.
+
+**The change.**
+- The query `GetConnectors` (the name of card N8 of the design file of 2026-11-15) takes `bodyId` and gives `datums` and
+  `faces`. It reads the exact solid of the owned kernel by the path of the measure queries, writes nothing to the log, and
+  has their refusals: `E-GEOM-BODY-NOT-FOUND`, `E-MESH-UNSUPPORTED`, `E-GEOM-BODY-FAULTED` and `E-GEOM-FACES-FAILED`.
+- `datums`: each datum with a name whose feature has the body at the end of its chain of consumers, in the order of the
+  log, with its reference, its frame and its fault as `GetDatum` gives them.
+- `faces`: one entry for each face name, with the names and in the order of `GetFaces`. A plane face gives the kind
+  `Plane`, `point`, the exact centre of its area, and `direction`, its outward unit normal. The whole side of a cylinder or
+  of an extrude of a circle, with only `Translate` and `Rotate` after it, gives `Cylinder`, with the centre of its base, the
+  unit direction of its axis and `radius`. Each other curved face gives `Curved` and no frame.
+- The centre is Σ w (a + b + c) / (3 Σ w) over a fan of triangles of each convex piece of the kernel, with
+  w = ((b - a) × (c - a)) · n: `+`, `-`, `*` and `/` on exact rationals, so a hole has no area in the sum. Each component of
+  a unit direction is the root of the nearest double to v_i² / (v · v), with the sign of v_i: one `Math.Sqrt` for each
+  component, and the same bits for each multiple of the normal.
+- The guide for an agent has an example of `GetConnectors` on "Bas", and a limit for the connectors.
+
+**A fact of the datums.** A datum keeps the frame of its place in the log (ADR-0051 item 2): a `Translate` or a `Rotate`
+of its body after the datum does not move it. The design file of 2026-11-15 says that a datum "follows its body"; that is
+true only for the steps before the datum. The query gives the frame of the record, a test holds the fact, the guide says
+it, and P11.0 decides if a datum follows (ADR-0183 item 3).
+
+**Proof.** Nine new tests in `Engine.Tests`: eight in `GetConnectorsQueryTests` (a box: six exact centres and normals in
+the order of `GetFaces`, with no change of the version; the same box after a Translate and a Rotate of the quaternion
+(2, 0, 0, 1): each centre the exact turn of the nine doubles; a cylinder, also turned and moved: its axis, its radius and its
+two caps; an extrude of a circle, with a cone, a sphere, a torus and the side of an arc as `Curved`; the named datums of a
+body; a plate with a square hole: the centre (-15/7, -5/7, 5) of its top; the six frames of a module of the bookcase; the
+refusals) and one in `HttpConnectorsScenarioTests` (the route `/queries` and the schema). `AgentGuideExamplesTests` names the
+query, and its test of the examples sends the new example to a host. The nine tests failed against a stub that gave no datum
+and no face. Seventeen injections, each restored byte for byte (sha256), made a named test fail; TASK-0443 lists them
+in its section "Method". A clean build gives 0 warnings, the phone project builds with 0 warnings, `dotnet test` passes 3137
+tests, and the write-set check and `eng/repo-gates` pass. The desktop was not run.
+The failed runs since the entry v0.426, from the API: none.
+
+Corrections: none.
+
+New tests: 9. The test list holds 3137 (1814 in `Engine.Tests`, 390 in `3DEngine.Tests`, 930 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0; `E-GEOM-BODY-NOT-FOUND`, `E-GEOM-BODY-FAULTED`,
+`E-GEOM-FACES-FAILED` and `E-MESH-UNSUPPORTED` get one more place where they are raised. Since the review of v0.420, 2
+product milestones and 7 entries followed it.
