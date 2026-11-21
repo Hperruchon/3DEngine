@@ -18,7 +18,9 @@ namespace Engine.Tests;
 // the read and returned a result.
 public class DocumentSessionReentryTests
 {
-    private static readonly TimeSpan Limit = TimeSpan.FromSeconds(2);
+    // TASK-0435 (phase P0.173): the result is the type of the exception and the version, not a time. The limit only ends a
+    // call that waits for ever, so it is the 60 s of ADR-0173 item 4; until TASK-0435 it was 2 s.
+    private static readonly TimeSpan Limit = TimeSpan.FromSeconds(60);
 
     [Fact]
     public async Task A_Sink_That_Calls_The_Session_Gets_An_Exception_And_Does_Not_Wait()

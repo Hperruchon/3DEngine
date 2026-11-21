@@ -47,11 +47,34 @@ public static class SketchSolver
     // (ADR-0156), so it does not depend on the size of a part of the sketch.
     public static (bool Solved, int Freedom) Status(SketchRecord sketch)
     {
+        var products = 0L;
+        return Status(sketch, ref products);
+    }
+
+    // TASK-0435 (phase P0.173): the work of the status and of the analysis of GetSketch, as the count of the products of two
+    // numbers that each one computes. A test compares the two counts, and not two times on a runner: the time of a runner
+    // changed by a factor of eight between two runs of the same code (run 44866049139). The count changes no value.
+    internal static long StatusWork(SketchRecord sketch)
+    {
+        var products = 0L;
+        Status(sketch, ref products);
+        return products;
+    }
+
+    internal static long AnalysisWork(SketchRecord sketch)
+    {
+        var products = 0L;
+        Analyse(sketch, ref products);
+        return products;
+    }
+
+    private static (bool Solved, int Freedom) Status(SketchRecord sketch, ref long products)
+    {
         var system = new EquationSystem(sketch, null);
         var x = system.Start();
         system.Evaluate(x);
         system.NormaliseRows();
-        var rank = system.Rows == 0 ? 0 : Eliminate(system.Product(), new double[system.Rows], out _);
+        var rank = system.Rows == 0 ? 0 : Eliminate(system.Product(ref products), new double[system.Rows], out _, ref products);
         return (system.WithinTolerance() && system.CurvesHaveRadius(x), system.Variables - rank);
     }
 
@@ -70,6 +93,12 @@ public static class SketchSolver
     // PivotRatio times the largest diagonal entry of the product with g, which is the larger of the largest diagonal
     // entry of J·Jᵀ and g·g. The code uses + - * / and sqrt only.
     internal static (bool Solved, int Freedom, IReadOnlySet<Guid> FixedLengths) Analyse(SketchRecord sketch)
+    {
+        var products = 0L;
+        return Analyse(sketch, ref products);
+    }
+
+    private static (bool Solved, int Freedom, IReadOnlySet<Guid> FixedLengths) Analyse(SketchRecord sketch, ref long products)
     {
         ArgumentNullException.ThrowIfNull(sketch);
         var system = new EquationSystem(sketch, null);
@@ -93,7 +122,7 @@ public static class SketchSolver
         // J·g of each gradient, with the sum in the order of the columns. A gradient has a value at the four columns of the
         // ends of its line at most, and a row of J at a few columns, so the sums and Jᵀ·λ take those columns only, as
         // Product does; each column of a Jacobian with an entry that is not finite.
-        var product = system.Product();
+        var product = system.Product(ref products);
         var largest = 0.0;
         for (var i = 0; i < rows; i++)
             largest = Math.Max(largest, Math.Abs(product[i, i]));
@@ -104,6 +133,7 @@ public static class SketchSolver
         {
             var gradient = open[k].Gradient;
             var values = columns is null ? every : every.Where(column => gradient[column] != 0).ToArray();
+            products += (long)rows * values.Length;
             for (var i = 0; i < rows; i++)
             {
                 var sum = 0.0;
@@ -112,7 +142,7 @@ public static class SketchSolver
                 right[i, k] = sum;
             }
         }
-        var rank = Eliminate(product, right, out var lambda);
+        var rank = Eliminate(product, right, out var lambda, ref products);
 
         var residual = new double[variables];
         for (var k = 0; k < open.Count; k++)
@@ -121,9 +151,12 @@ public static class SketchSolver
             Array.Copy(gradient, residual, variables);
             for (var i = 0; i < rows; i++)
             {
-                foreach (var column in columns is null ? every : columns[i])
+                var row = columns is null ? every : columns[i];
+                products += row.Length;
+                foreach (var column in row)
                     residual[column] -= system.Jacobian[i, column] * lambda[i, k];
             }
+            products += 2L * variables;
             var (square, norm) = (0.0, 0.0);
             for (var column = 0; column < variables; column++)
             {
@@ -152,6 +185,7 @@ public static class SketchSolver
     {
         var system = new EquationSystem(sketch, held);
         var x = system.Start();
+        var products = 0L;
         for (var step = 0; ; step++)
         {
             system.Evaluate(x);
@@ -162,7 +196,7 @@ public static class SketchSolver
             if (step == MaximumSteps)
                 return null;
 
-            Eliminate(system.Product(), system.Residuals(), out var lambda);
+            Eliminate(system.Product(ref products), system.Residuals(), out var lambda, ref products);
             for (var row = 0; row < system.Rows; row++)
             {
                 for (var column = 0; column < system.Variables; column++)
@@ -173,12 +207,12 @@ public static class SketchSolver
 
     // Solves a·λ = b for one right side. The operations on b and λ are those of the form with columns, so the solve gives
     // the same bits as before TASK-0391.
-    private static int Eliminate(double[,] a, double[] b, out double[] lambda)
+    private static int Eliminate(double[,] a, double[] b, out double[] lambda, ref long products)
     {
         var right = new double[b.Length, 1];
         for (var i = 0; i < b.Length; i++)
             right[i, 0] = b[i];
-        var rank = Eliminate(a, right, out var solution);
+        var rank = Eliminate(a, right, out var solution, ref products);
         lambda = new double[b.Length];
         for (var i = 0; i < b.Length; i++)
             lambda[i] = solution[i, 0];
@@ -187,8 +221,9 @@ public static class SketchSolver
 
     // Solves a·λ = b in row echelon form with partial pivoting, for each column of b, and gives the rank. A
     // column with no pivot above the limit gets λ = 0, so a redundant row adds nothing. The
-    // search takes the first row of the largest absolute value, so a tie has one result.
-    private static int Eliminate(double[,] a, double[,] b, out double[,] lambda)
+    // search takes the first row of the largest absolute value, so a tie has one result. The count of the products of a row
+    // operation and of a sum of the back-substitution goes into products (TASK-0435).
+    private static int Eliminate(double[,] a, double[,] b, out double[,] lambda, ref long products)
     {
         var size = a.GetLength(0);
         var sides = b.GetLength(1);
@@ -222,6 +257,7 @@ public static class SketchSolver
                 var factor = a[i, column] / a[row, column];
                 if (factor == 0)
                     continue;
+                products += size - column + sides;
                 for (var j = column; j < size; j++)
                     a[i, j] -= factor * a[row, j];
                 for (var k = 0; k < sides; k++)
@@ -240,6 +276,7 @@ public static class SketchSolver
             {
                 var (pivotRow, pivotColumn) = pivots[p];
                 var sum = b[pivotRow, 0];
+                products += size - pivotColumn - 1;
                 for (var j = pivotColumn + 1; j < size; j++)
                     sum -= a[pivotRow, j] * lambda[j, 0];
                 lambda[pivotColumn, 0] = sum / a[pivotRow, pivotColumn];
@@ -272,6 +309,7 @@ public static class SketchSolver
             {
                 var (pivotRow, pivotColumn) = pivots[p];
                 var sum = b[pivotRow, k];
+                products += entries[p].Length;
                 foreach (var j in entries[p])
                     sum -= a[pivotRow, j] * lambda[j, k];
                 lambda[pivotColumn, k] = sum / a[pivotRow, pivotColumn];
@@ -494,10 +532,11 @@ public static class SketchSolver
         // over each column when each entry is finite: a term with a zero factor is then +0 or −0, and the sum is never −0,
         // because it starts at +0 and x + (−x) is +0, so such a term does not change it. A term 0 · ∞ is NaN, so a Jacobian
         // with an entry that is not finite takes the sum over each column.
-        public double[,] Product()
+        public double[,] Product(ref long products)
         {
             var product = new double[Rows, Rows];
             var columns = NonZeroColumns();
+            var count = 0L;
             for (var i = 0; i < Rows; i++)
             {
                 for (var j = 0; j < Rows; j++)
@@ -505,6 +544,7 @@ public static class SketchSolver
                     var sum = 0.0;
                     if (columns is null)
                     {
+                        count += Variables;
                         for (var k = 0; k < Variables; k++)
                             sum += Jacobian[i, k] * Jacobian[j, k];
                     }
@@ -520,6 +560,7 @@ public static class SketchSolver
                                 q++;
                             else
                             {
+                                count++;
                                 sum += Jacobian[i, a[p]] * Jacobian[j, a[p]];
                                 p++;
                                 q++;
@@ -529,6 +570,7 @@ public static class SketchSolver
                     product[i, j] = sum;
                 }
             }
+            products += count;
             return product;
         }
 

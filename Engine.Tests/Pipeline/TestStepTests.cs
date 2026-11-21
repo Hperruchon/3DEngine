@@ -3,9 +3,11 @@ using Engine.Tests.Governance;
 namespace Engine.Tests.Pipeline;
 
 // Finding T184 of the codebase review of 2026-11-20 (TASK-0426): a crash of the test host gave no cause. In attempt 1 of run
-// 44758589835 the test host of 3DEngine.ImageTests stopped on Windows, and the step "Test" kept no dump. The step now collects
-// a mini dump of a crash on Windows, and a failed job on Windows keeps each dump as an artifact. The test reads the workflow as
-// text, because the pipeline is the only place where the step runs.
+// 44758589835 the test host of 3DEngine.ImageTests stopped on Windows, and the step "Test" kept no dump. The step collected a
+// mini dump of a crash on Windows only. TASK-0435 (phase P0.173): in run 44869058349 the test host of Engine.Tests crashed on
+// Linux, and the run kept no dump. The step now collects a mini dump on each system, and a failed job keeps each dump and each
+// sequence file as an artifact with the name of its system. The test reads the workflow as text, because the pipeline is the
+// only place where the step runs.
 public sealed class TestStepTests
 {
     // The text of one step of the job "gate", from its name to the next step.
@@ -18,23 +20,29 @@ public sealed class TestStepTests
         return string.Join("\n", lines.Skip(start).Take((end < 0 ? lines.Count : end) - start));
     }
 
-    // On Windows the step "Test" adds --blame-crash with a mini dump to the options of the hang; on the other runners it does not.
+    // On each system the step "Test" gives --blame-crash with a mini dump after the options of the hang, with no condition on
+    // the system, and the step runs with no condition.
     [Fact]
-    public void The_Test_Step_Collects_A_Crash_Dump_On_Windows()
+    public void The_Test_Step_Collects_A_Crash_Dump_On_Each_System()
     {
         var test = Step("Test");
-        Assert.Contains("if [ \"$RUNNER_OS\" = \"Windows\" ]; then crash=(--blame-crash --blame-crash-dump-type mini); fi", test, StringComparison.Ordinal);
-        Assert.Contains("--blame-hang-timeout 2m --blame-hang-dump-type none \"${crash[@]}\"", test, StringComparison.Ordinal);
+        Assert.Contains("--blame-hang-timeout 2m --blame-hang-dump-type none --blame-crash --blame-crash-dump-type mini \\", test, StringComparison.Ordinal);
+        Assert.DoesNotContain("RUNNER_OS", test, StringComparison.Ordinal);
+        Assert.DoesNotContain("runner.os", test, StringComparison.Ordinal);
+        Assert.DoesNotContain("if:", test, StringComparison.Ordinal);
     }
 
-    // A failed job on Windows keeps each dump of the results as an artifact, and a job with no dump does not fail for it.
+    // A failed job on each system keeps each dump and each sequence file of the results as an artifact with the name of its
+    // system, so the three jobs of a run do not take one name; a job with no dump does not fail for it.
     [Fact]
-    public void A_Failed_Job_On_Windows_Keeps_The_Dump()
+    public void A_Failed_Job_On_Each_System_Keeps_The_Dump_And_The_Sequence()
     {
         var keep = Step("Keep the crash dump of the test host");
-        Assert.Contains("if: failure() && runner.os == 'Windows'", keep, StringComparison.Ordinal);
+        Assert.Contains("        if: failure()\n", keep + "\n", StringComparison.Ordinal);
         Assert.Contains("uses: actions/upload-artifact@v4", keep, StringComparison.Ordinal);
-        Assert.Contains("path: ${{ runner.temp }}/test-results/**/*.dmp", keep, StringComparison.Ordinal);
+        Assert.Contains("name: test-host-crash-${{ matrix.os }}", keep, StringComparison.Ordinal);
+        Assert.Contains("${{ runner.temp }}/test-results/**/*.dmp", keep, StringComparison.Ordinal);
+        Assert.Contains("${{ runner.temp }}/test-results/**/Sequence_*.xml", keep, StringComparison.Ordinal);
         Assert.Contains("if-no-files-found: ignore", keep, StringComparison.Ordinal);
     }
 }

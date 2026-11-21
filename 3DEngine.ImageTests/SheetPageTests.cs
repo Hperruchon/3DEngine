@@ -137,11 +137,13 @@ public sealed class SheetPageTests
         Assert.True(queue.Busy);
         Assert.Equal(["done 0", "done 1", "done 2"], await queue.Drain());
 
-        // A work that waits does not stop the frame: Poll starts it and returns.
+        // A work that waits does not stop the frame: Poll starts it and returns. TASK-0435 (phase P0.173): the work waits
+        // until the test opens the gate after the Poll, so Poll returns while the work waits, or not at all. Until TASK-0435
+        // Poll had 5 s. 60 s only stops a test that waits for ever (ADR-0173 item 4).
         using var gate = new ManualResetEventSlim();
         queue.Send(() => { gate.Wait(); return "late"; });
         var poll = Task.Run(queue.Poll);
-        var returned = await Task.WhenAny(poll, Task.Delay(TimeSpan.FromSeconds(5))) == poll;
+        var returned = await Task.WhenAny(poll, Task.Delay(TimeSpan.FromSeconds(60))) == poll;
         gate.Set();
         await poll;
         Assert.True(returned, "Poll waited for the work.");

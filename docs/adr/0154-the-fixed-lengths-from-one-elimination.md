@@ -7,7 +7,7 @@ date: 2026-11-15
 supersedes: []
 superseded-by: []
 amends: ['0149']
-amended-by: ['0156', '0164']
+amended-by: ['0156', '0164', '0173']
 affects:
   - Engine.Core/Sketch/SketchSolver.cs
   - Engine.Core/Queries/GetSketchQueryHandler.cs
@@ -46,7 +46,8 @@ On 2026-11-15 the owner ordered TASK-0391 for E206.
    column. The solver uses the same product, so a replay gives the same bits as before this record.
 4. **A test of the time.** The status and the fixed lengths of a stair of 100 lines take less than 1 s. On the computer of the
    owner they take about 9 ms. ADR-0164 item 5: the fixed lengths of a stair of 600 lines take at most six times its status
-   and 100 ms, with a back-substitution on the entries that are not zero.
+   and 100 ms, with a back-substitution on the entries that are not zero. ADR-0173 item 4 (TASK-0435): no time decides the
+   test. For each stair the analysis computes at most six times the products of two numbers of the status.
 5. **No contract change.** The result of `GetSketch` keeps its fields and their meaning.
 
 ## Consequences
@@ -63,3 +64,5 @@ free, as ADR-0149 says of the old test. The test of the time can fail on a very 
 - 2026-11-15 · TASK-0391 · Shipped at v0.376.
 - 2026-11-15 · TASK-0392 · ADR-0156 item 1 amends item 1: the elimination takes the rows of J at unit length.
 - 2026-11-18 · TASK-0400 · Amended by ADR-0164 item 5: the back-substitution of several right sides takes the entries that are not zero (finding E213).
+- 2026-11-21 · TASK-0435 · Amended by ADR-0173 item 4: the test of item 4 compares the products of two numbers of the analysis
+  and of the status, not two times (run 44866049139).

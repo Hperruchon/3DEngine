@@ -310,19 +310,23 @@ public class BodyActionsTests
         using var entered = new ManualResetEventSlim();
         using var release = new ManualResetEventSlim();
         // The read runs its delegate on the thread that calls it, so the hold runs on a thread of the pool.
+        // TASK-0435 (phase P0.173): the hold ends only when the test releases it, so the entry of the face ends while the
+        // read holds the serial section, or not at all. Until TASK-0435 the entry had 2 s, and the hold ended after 10 s.
+        // 60 s only stops a test that waits for ever (ADR-0173 item 4).
+        var hang = TimeSpan.FromSeconds(60);
         var held = Task.Run(() => host.Session.Read((_, _) =>
         {
             entered.Set();
-            release.Wait(TimeSpan.FromSeconds(10));
+            release.Wait();
             return 0;
         }));
-        // P0.104 (TASK-0256): run 42313242154 on the Windows runner did not start the read in 5 seconds; the start is a
-        // condition of the test, not its claim, so it waits 30 seconds.
-        Assert.True(entered.Wait(TimeSpan.FromSeconds(30)), "The read did not start.");
         try
         {
+            // P0.104 (TASK-0256): run 42313242154 on the Windows runner did not start the read in 5 seconds; the start is a
+            // condition of the test, not its claim, so it waits 30 seconds.
+            Assert.True(entered.Wait(TimeSpan.FromSeconds(30)), "The read did not start.");
             var again = Task.Run(() => actions.SelectedFace(key));
-            Assert.Same(again, await Task.WhenAny(again, Task.Delay(TimeSpan.FromSeconds(2))));
+            Assert.Same(again, await Task.WhenAny(again, Task.Delay(hang)));
             Assert.Same(first, await again);
         }
         finally

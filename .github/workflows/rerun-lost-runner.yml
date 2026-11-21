@@ -3,7 +3,8 @@ name: Re-run a lost runner
 # ADR-0173 (TASK-0417): one automatic re-run of a run of "CI" whose only failures are jobs that GitHub gave no runner. On
 # 2026-11-18 three of 44 runs failed only because the job on macOS ended with "The job was not acquired by Runner of type
 # hosted even after multiple attempts"; no step ran, and a person had to start a re-run. eng/lost-runner.js makes the choice:
-# a failed test, a failed step or a second attempt keeps the run red.
+# a failed test, a failed step or a second attempt keeps the run red. TASK-0435: a failed upload or download of an artifact
+# with a known fault of the GitHub service also gets the re-run (run 44831092608, "Failed to CreateArtifact").
 #
 # A run with the trigger workflow_run runs this file from the default branch, with a token that can start a re-run. The job
 # therefore checks out the default branch only, keeps no credentials, and runs no file of the branch of the run. The token
@@ -33,7 +34,10 @@ jobs:
         with:
           ref: ${{ github.event.repository.default_branch }}
           persist-credentials: false
-          sparse-checkout: eng/lost-runner.js
+          # TASK-0435: the script reads the names of the steps of an artifact from ci.yml of the default branch, as text.
+          sparse-checkout: |
+            eng/lost-runner.js
+            .github/workflows/ci.yml
           sparse-checkout-cone-mode: false
 
       # The log names the run and its attempt, so a session can list a failed first attempt for the ledger.
