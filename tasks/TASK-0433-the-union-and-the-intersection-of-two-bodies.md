@@ -171,3 +171,6 @@ Injections 13, 15 and 17 ran again after the steps moved into methods of their o
 
 - 2026-11-21: opened after K15a and P0.172, branch `k16-union-intersect` from `6d78b908` (v0.416), which is not merged
   yet. The two commands, ADR-0181, the kernel, the backend, the probe and 16 tests; 19 injections. Ledger entry v0.417.
+- 2026-11-21: run 44869058349 of `14f93eb` failed on ubuntu-latest in the step "Test": the test host of `Engine.Tests`
+  crashed, and the annotation names no test. Windows and macOS passed. The 150 turns of the bookcase pass on Windows with a
+  stack of 512 KB, so a stack overflow is not shown. This line starts a second run on Linux.
