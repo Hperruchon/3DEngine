@@ -24,6 +24,13 @@ public sealed class FixedLengthsTests
         };
     }
 
+    // TASK-0438 (finding T187 of the second codebase review of 2026-11-21; Q7 A): the ratio of the analysis to the status
+    // passes when the status itself becomes slower, as with the sum of J·Jᵀ over each column. So each stair also holds the
+    // count of the products of its status at 1.5 times the count of today. A count is exact and the same on each runner.
+    private const long StairOf100Status = 31_289;
+
+    private const long StairOf600Status = 1_103_894;
+
     private static readonly (double X, double Y)[] Corners = [(0, 0), (10, 0), (10, 6), (0, 6)];
 
     private static readonly (int, int)[] Rectangle = [(0, 1), (1, 2), (2, 3), (3, 0)];
@@ -94,7 +101,7 @@ public sealed class FixedLengthsTests
         Assert.True(solved);
         Assert.Equal(Enumerable.Range(0, count).Where(n => n % 3 != 2).ToArray(), fixedLines);
         Assert.Equal((2 * (count + 1)) - count - constraints.Count(c => c.Kind == "distance"), freedom);
-        Assert.True(status > 0, "The status computed no product.");
+        Assert.True(status > 0 && status <= StairOf100Status * 3 / 2, $"The status computed {status} products; the bound is 1.5 times {StairOf100Status}.");
         Assert.True(analysis <= 6 * status, $"The analysis computed {analysis} products, and the status {status}.");
     }
 
@@ -127,7 +134,7 @@ public sealed class FixedLengthsTests
 
         Assert.Equal(1_000, record.Constraints.Count);
         Assert.Equal(Enumerable.Range(0, count).Where(n => n % 3 != 2).Select(n => lineIds[n]).ToHashSet(), fixedLines.ToHashSet());
-        Assert.True(status > 0, "The status computed no product.");
+        Assert.True(status > 0 && status <= StairOf600Status * 3 / 2, $"The status computed {status} products; the bound is 1.5 times {StairOf600Status}.");
         Assert.True(analysis <= 6 * status, $"The analysis computed {analysis} products, and the status {status}.");
     }
 

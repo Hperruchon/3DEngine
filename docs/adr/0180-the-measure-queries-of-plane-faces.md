@@ -97,7 +97,10 @@ answer, and `+`, `-`, `*`, `/` and `sqrt` give it on each platform.
    sine. Since K15b a value of the curve (items 10 to 12) is computed in doubles from the values of the commands with `+`,
    `-`, `*`, `/` and `Math.Sqrt`, the constant `Math.PI`, and the angle of an arc of item 13. No transcendental function of
    the framework is called, the gate of the determinism rules scans these files as each file of `Engine.Core`, and a query
-   writes nothing to the log.
+   writes nothing to the log. Three steps of the distance from a curved face (item 11) compare doubles and not exact
+   rationals: the choice of the nearest piece, the test of a point inside the solid, which runs only when the lowest
+   distance is above 0, and the refusal when the bound past an end of a cylinder is below the best distance. Each gives the
+   same bits on each platform, but an exact tie can refuse a case that has an answer (finding E232, TASK-0438).
 9. **The kernel does not change.** The queries read the public members `KernelSolid.Polygons`, `KernelSolid.Volume`,
    `KernelSolid.Box`, `KernelSolid.Translate`, `PlanarBoolean.Subtract`, `Brep.Of`, `PlaneR` and `Vector3R`. K15b reads the
    values of the design through `KernelProjection` of `Engine.Core` (items 10 and 11), and the kernel does not change.
@@ -146,7 +149,10 @@ answer, and `+`, `-`, `*`, `/` and `sqrt` give it on each platform.
    and `Math.Sqrt` only: each step tan(φ / 2) = tan φ / (1 + √(1 + tan² φ)) halves the angle until its tangent is below
    1e-3, a series of four terms gives that angle, and the halvings double it back. `Math.Atan2` is not used, because the
    gate of determinism rule 1 scans each file of `Engine.Core`, and because a measure must give the same bits on each
-   platform as the queries of K15a do.
+   platform as the queries of K15a do. Each halving rounds, so the angle is at most about ten units of the last place from
+   the true angle: 8.8 in the probe of the second codebase review of 2026-11-21 against a reference of 240 bits, and
+   `MeasureQueryTests` holds ten against `Math.Atan`. The angle is in [0, 2π]: a direction just under the axis x, as
+   (1, -1e-17), gives exactly 2π, which the caller takes as a full turn (finding E232, TASK-0438).
 
 ## Consequences
 
@@ -179,3 +185,5 @@ K11 builds its pair check on item 4.
 - 2026-11-21 · TASK-0434 · Items 10 to 13: the volume of the curve of a primitive and of an extrude of arcs, the distance
   from a whole curved face of a cylinder or a sphere, the angle of the side of a cylinder or a cone; items 3, 6, 8 and 9
   say so, and the rest waits for K15c.
+- 2026-11-21 · TASK-0438 · Items 8 and 13: the three steps that compare doubles, the bound of about ten units of the last
+  place of the arctangent with its test, and the range [0, 2π] (finding E232 of the second codebase review of 2026-11-21).

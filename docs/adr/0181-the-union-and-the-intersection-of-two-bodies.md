@@ -81,8 +81,13 @@ most closely, by the standing order of the owner of 2026-11-20.
 5. **The owned kernel.** `PlanarBoolean.Union` and `PlanarBoolean.Intersect` clip the polygons of each solid by a binary
    space partition of the other, in the steps of the union and the intersection of csg.js, with the exact planes of
    ADR-0057 item 5. No part turns, and each part keeps the tag of its face. A result with no volume is null. This amends
-   ADR-0057 item 9, which left the union and the intersection out.
-6. **The names of the faces.** A face of the result keeps the name of the face of either body that made it. A datum on a
+   ADR-0057 item 9, which left the union and the intersection out. `PlanarBoolean.Intersect` also has a form with a
+   cancellation token, which the pair check gives (ADR-0182 item 8, TASK-0438); the token changes no result.
+6. **The names of the faces.** A face of the result keeps the name of the face of either body that made it. So a face of
+   each operand on one plane stays two faces after a union, with an edge between them: the top of a union of two cubes that
+   overlap is "A+z" and "B+z" (`UnionIntersectCommandTests`), and `GetFaces`, a datum, the STEP export and a view of a
+   sheet see that edge (finding E231 of the second codebase review of 2026-11-21). A join of the two faces needs one name
+   for a face of two operands, which changes the names of ADR-0058, so it is a known limit and not a part of this record. A datum on a
    face of an operand that the boolean removes gets `W-DATUM-REFERENCE-FAILED`, as after a `Subtract` (ADR-0059 item 3).
    A `Union` and an `Intersect` are on the chain of a datum with no move and no turn, and the curve of each curved side
    stays. The projection of ADR-0058 item 2 reads both commands; this amends it.
@@ -121,9 +126,18 @@ may not overlap must handle `E-GEOM-NATIVE-OP`. The change of the probe changes 
 edit that makes two bodies of an intersection touch gives a flat body that the kernel cannot build; `GetFaces` then
 refuses it with `E-GEOM-FACES-FAILED`.
 
+A union of two bodies that touch on an edge only keeps its body (finding E230 of the second codebase review of 2026-11-21,
+Q6 A). The steps of csg.js remove no polygon, so the shared edge has two coedges in each direction: four faces, and
+`Brep.Valid` is false (`PlanarUnionIntersectTests`). Manifold gives a valid mesh, so the command is not refused. The STEP
+export refuses the body with `E-EXPORT-BODY-FAILED` ("an edge of its B-Rep has more than two faces"). The pair check reads
+the solid of the kernel, which needs no valid B-Rep, so it gives the gap and the overlap of the body
+(`CheckInterferenceQueryTests`). Two panels that meet on an edge in a part of K10 give this case.
+
 **Next:** a button of the window for the two commands, in a row of the window.
 
 ## History
 
 - 2026-11-21 · TASK-0433 · The record, with each open decision copied from `Subtract`, by the standing order of the owner
   of 2026-11-20.
+- 2026-11-21 · TASK-0438 · Item 5: the form of `Intersect` with a token; item 6: two faces on one plane stay two (finding
+  E231, a known limit); "Consequences": a union of two bodies that touch on an edge keeps its body (finding E230, Q6 A).

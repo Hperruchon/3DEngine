@@ -47,7 +47,9 @@ On 2026-11-15 the owner ordered TASK-0391 for E206.
 4. **A test of the time.** The status and the fixed lengths of a stair of 100 lines take less than 1 s. On the computer of the
    owner they take about 9 ms. ADR-0164 item 5: the fixed lengths of a stair of 600 lines take at most six times its status
    and 100 ms, with a back-substitution on the entries that are not zero. ADR-0173 item 4 (TASK-0435): no time decides the
-   test. For each stair the analysis computes at most six times the products of two numbers of the status.
+   test. For each stair the analysis computes at most six times the products of two numbers of the status. TASK-0438 (finding
+   T187, Q7 A of the second codebase review of 2026-11-21): a slower status keeps that ratio, so the status of each stair
+   also computes at most 1.5 times its count of 2026-11-21, 31,289 products for 100 lines and 1,103,894 for 600 lines.
 5. **No contract change.** The result of `GetSketch` keeps its fields and their meaning.
 
 ## Consequences
@@ -66,3 +68,5 @@ free, as ADR-0149 says of the old test. The test of the time can fail on a very 
 - 2026-11-18 · TASK-0400 · Amended by ADR-0164 item 5: the back-substitution of several right sides takes the entries that are not zero (finding E213).
 - 2026-11-21 · TASK-0435 · Amended by ADR-0173 item 4: the test of item 4 compares the products of two numbers of the analysis
   and of the status, not two times (run 44866049139).
+- 2026-11-21 · TASK-0438 · Item 4: a bound on the count of the products of the status of each stair, beside the ratio
+  (finding T187, Q7 A).

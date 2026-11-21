@@ -148,9 +148,10 @@ internal static class MeasureCurve
         return (new Surface(curve.Kind, curve.Base, curve.Axis, curve.Radius, onFacets), null);
     }
 
-    // Item 13: the angle in [0, 2π) of the direction (x, y), not both zero, counter-clockwise from the axis x. It uses + - *
+    // Item 13: the angle in [0, 2π] of the direction (x, y), not both zero, counter-clockwise from the axis x. It uses + - *
     // / and sqrt only, so it gives the same bits on each platform, and the determinism gate scans Engine.Core for
-    // Math.Atan2 (CLAUDE.md, determinism rule 1).
+    // Math.Atan2 (CLAUDE.md, determinism rule 1). TASK-0438 (finding E232): a direction just under the axis x, as (1, -1e-17),
+    // gives exactly 2π, because 2π less a very small angle rounds up to 2π. The caller takes 2π as a full turn.
     internal static double Angle(double x, double y)
     {
         if (y == 0)
@@ -162,8 +163,10 @@ internal static class MeasureCurve
     }
 
     // The angle in (0, π/2) whose tangent is t > 0. Above 1 it is π/2 less the angle of 1 / t. Each step tan(φ / 2) =
-    // tan φ / (1 + √(1 + tan² φ)) halves the angle with no loss of digits, until the tangent is below 1e-3; there the series
-    // t - t³/3 + t⁵/5 - t⁷/7 has an error below 1e-24 of the angle. The halvings then double the angle back exactly.
+    // tan φ / (1 + √(1 + tan² φ)) halves the angle, until the tangent is below 1e-3; there the series t - t³/3 + t⁵/5 - t⁷/7
+    // has an error below 1e-24 of the angle. The halvings then double the angle back exactly. TASK-0438 (finding E232): each
+    // halving rounds, so the result is at most about ten units of the last place from the true angle (8.8 in the probe of
+    // the review against a reference of 240 bits); MeasureQueryTests holds ten units against Math.Atan.
     private static double Atan(double t)
     {
         if (t > 1)
