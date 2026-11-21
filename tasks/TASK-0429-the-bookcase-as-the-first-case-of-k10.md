@@ -1,7 +1,7 @@
 ---
 id: 0429
 title: The bookcase of the owner is the first case of K10, as a builder of its 19 bodies and a measure of 150 turns of a module
-status: Active
+status: Done
 phase: K10a
 opened: 2026-11-21
 depends-on: [0424]
@@ -78,7 +78,7 @@ R-0070 asks for.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch k10a-bookcase-case) · v0.413
+Status: Done · commit (the merge of the branch k10a-bookcase-case) · v0.413
 
 ## Method
 
@@ -134,3 +134,4 @@ Injections (`inject0429.js` in the scratchpad), each restored byte for byte (sha
 - 2026-11-21: run 44866049139 of the close commit `a21425d` failed on macos-latest in the step "Test":
   `FixedLengthsTests.The_Fixed_Lengths_Of_A_Stair_Of_600_Lines_Take_A_Time_Near_The_Status` gave 0.96 s against 0.12 s. The
   commit changes this file only, so the time of the runner decided the test. The task is Active again for a new run.
+- 2026-11-21: run 44867884480 of `a1a5c7f4` passed on each job. Closed at v0.413.
