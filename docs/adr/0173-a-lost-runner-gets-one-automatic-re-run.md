@@ -86,7 +86,12 @@ a red run with no fault of the code stops the work until the owner sees it.
   Since TASK-0435 the step collects the dump on Linux and macOS too, with createdump of the .NET runtime, and a failed job on
   each system keeps each dump and each sequence file as the artifact `test-host-crash-<system>`. `eng/report-failed-tests.js`
   names each test that was running, the dumps, and the report of the runtime at the end of the error output of the test host
-  (`CrashReportTests`).
+  (`CrashReportTests`). Since TASK-0440 the message of a running test starts with its name, then the dumps or "No dump of the
+  crash.", then the cause. The cause gives the words of the test platform, the lines of createdump and of an exit code, the
+  count of the lines of the tests that it leaves out, and the report of the runtime, with a cut of 1200 characters for each
+  cause; it gives no output of a test (run 44908442870). A crash with no running test in a sequence file or a .trx file says
+  "No sequence file: the crashed test is not known." or "No sequence file names a running test: the crashed test is not
+  known."
 - The choice of a fault of the service depends on the names of the steps of `ci.yml` on the default branch. A branch that
   renames a step of an artifact gets no re-run for it until the merge, so its run stays red.
 
@@ -109,3 +114,5 @@ a red run with no fault of the code stops the work until the owner sees it.
   a count of the work, an order with 60 seconds against a wait for ever, or no limit (phase P0.173). A crash of the test host
   gives a dump and its cause on each system. Item 4 amends ADR-0154 item 4 and ADR-0164 item 5, the tests of the time of the
   fixed lengths.
+- 2026-11-21 · TASK-0440 · Consequences: the message of a crash starts with the running test, its cause leaves out the
+  output of other tests, and a crash with no known running test says so (phase P0.175, run 44908442870).

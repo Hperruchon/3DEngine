@@ -13014,3 +13014,46 @@ failed"), and the commit changed documents only; TASK-0437 records it and a new 
 New tests: 8. The test list holds 3106 (1797 in `Engine.Tests`, 390 in `3DEngine.Tests`, 916 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 1, `E-CHECK-WORK-LIMIT`; `E-MESH-UNSUPPORTED` gets one
 more case. Since the review of v0.420, 1 product milestone and 3 entries followed it.
+
+## v0.424 — The message of a crash of a test host starts with the running test, and its cause leaves out the output of other tests (P0.175, TASK-0440)
+
+The session of 2026-11-21 found the defect in run 44908442870 (windows-latest, step "Test"): the test host of
+`3DEngine.ImageTests` crashed, and the message of the annotation named no test. Its cause was the last 1000 characters of the
+output of other tests ("... es not import bracket.stl", "The file ... did not exist") and the reason "Data collection : Test
+case event channel failed". The title of that annotation named
+`ResponsiveLayoutTests.Each_Size_Of_A_Resize_From_The_Minimum_Keeps_Each_Control_Free` (the public API, read on 2026-11-21);
+the order of the session said that the annotation named no test. The artifact `test-host-crash-windows-latest` held the
+sequence file and no dump. The branch `p0175-crash-names-its-test` starts from `6cea608e` (P0.174, v0.423, not merged yet).
+ADR-0173, "Consequences", records the change. No change of `Engine.Contracts`, `Engine.Kernel`, `Engine.Core` or
+`3DEngine.App`.
+
+**The change.**
+- `eng/report-failed-tests.js`: the message of a running test starts with "<name>: the test did not complete, because the
+  test host stopped while it ran.", then the dumps or "No dump of the crash.", then the cause. The running tests come from the
+  sequence files, then from the message of the blame data collector in a .trx file.
+- The cause gives the words of the test platform ("Test host process crashed"), the lines of createdump and of an exit code,
+  the count of the lines of the tests that it leaves out, and the report of the runtime, or "The error output holds no report
+  of the runtime." Each cause has a cut of 1200 characters, so a second cause stays inside the cut of 2000 characters of the
+  message. The last 1000 characters of TASK-0435 are gone.
+- A crash with no running test says "No sequence file: the crashed test is not known." or "No sequence file names a running
+  test: the crashed test is not known.", in the annotation of the step, or in its own annotation "Test host stopped" beside
+  a failed test.
+- The crashes of a test host of the weekend: attempt 1 of run 44758589835 (windows-latest, `3DEngine.ImageTests`), attempt 1
+  of run 44869058349 (ubuntu-latest, `Engine.Tests`, R-0074) and run 44908442870 (windows-latest, `3DEngine.ImageTests`).
+  The two crashes on Windows ran the same test, `ResponsiveLayoutTests.Each_Size_Of_A_Resize_From_The_Minimum_Keeps_Each_Control_Free`.
+  The register is full, so they get no entry; their cause is outside this task.
+
+**Proof.** Five new tests in `Engine.Tests` and two changed (`CrashReportTests`), with the facts of run 44908442870, a crash
+with a dump and a crash with neither a sequence file nor a dump; each of the seven fails on the script of `6cea608e`. Twelve
+injections, each restored byte for byte (sha256), made a named test fail; TASK-0440 lists them in its section "Method". A
+clean build gives 0 warnings, `dotnet test` passes 3111 tests, and the write-set check and `eng/repo-gates` pass. Only the next
+crash in the pipeline proves the form of a real reason, of the message of the blame data collector in a .trx file, and of the
+lines of createdump.
+The failed runs since the entry v0.423, from the API: none.
+
+Corrections: the order of the session said that the annotation of run 44908442870 named no test; its title named the test,
+and its message did not.
+
+New tests: 5. The test list holds 3111 (1802 in `Engine.Tests`, 390 in `3DEngine.Tests`, 916 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.420, 1 product milestone
+and 4 entries followed it.
