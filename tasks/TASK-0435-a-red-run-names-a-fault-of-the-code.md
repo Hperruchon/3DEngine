@@ -1,7 +1,7 @@
 ---
 id: 0435
 title: No time decides a test, a crash of a test host names its cause on each system, and a known fault of the GitHub service gets one re-run
-status: Active
+status: Done
 phase: P0.173
 opened: 2026-11-21
 depends-on: [0434]
@@ -143,11 +143,11 @@ public API: the first attempts of runs 44831092608 and 44869058349.
 - [x] The step "Test" gives the crash options on each system, and a failed job keeps the dumps and the sequence files.
 - [x] The report gives the cause and the dumps of a crash (`CrashReportTests`).
 - [x] `eng/lost-runner.js` re-runs run 44831092608 and keeps each mixed case red (`LostRunnerTests`).
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0173-red-runs) · v0.419
+Status: Done · commit (the merge of the branch p0173-red-runs) · v0.419
 
 ## Method
 
@@ -196,3 +196,4 @@ The test of E49 of the base commit, with I3, passed in 5 s: the old limit of 5 s
   fault of the artifact service, R-0073, and ledger entry v0.419.
 - 2026-11-21: merged `main` with K16 (v0.417) and K15b (v0.418), which the owner's order "merge k16" put first: the
   test floor of `Engine.Tests` is 1778, and the ledger entry v0.419 counts 3 product milestones and 6 entries since v0.413.
+- 2026-11-21: run 44898787352 of `beb265c9` passed on each job. Closed at v0.419.
