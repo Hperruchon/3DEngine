@@ -55,7 +55,10 @@ public sealed class SessionTurnsTests
         var windows = new List<int>();
         string? Session(int turn, ManualResetEventSlim? waitFor)
         {
-            waitFor?.Wait(TimeSpan.FromSeconds(5));
+            // TASK-0435 (phase P0.173): the first session waits until the second one ended. On a slow runner a wait of 5 s
+            // could end before the second session began, and the first session then took the window. 60 s only stops a test
+            // that waits for ever (ADR-0173 item 4).
+            waitFor?.Wait(TimeSpan.FromSeconds(60));
             if (!turns.IsLast(turn))
                 return "stale";
             using var held = turns.HoldWindow(TimeSpan.FromSeconds(5));

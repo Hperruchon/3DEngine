@@ -71,9 +71,11 @@ public sealed class FixedLengthsTests
     // a length on two lines of three. A length fixes its line only, so the lines with a length are the fixed lines.
     // GetSketch reads the status and the fixed lengths, and the window reads the active sketch in each frame. On the
     // computer of the owner, one full elimination for each line took 5.4 s; after TASK-0391 the status takes about 1 ms
-    // and the analysis of GetSketch about 8 ms. The limit of 1 s leaves room for a slow runner of continuous integration.
+    // and the analysis of GetSketch about 8 ms. TASK-0435 (phase P0.173): no time decides the test. The analysis computes at
+    // most six times the products of two numbers of the status (about 5.0 times today); one elimination for each of the 67
+    // open lines computes about 67 times as many.
     [Fact]
-    public void The_Status_And_The_Fixed_Lengths_Of_A_Stair_Of_100_Lines_Take_Less_Than_One_Second()
+    public void The_Fixed_Lengths_Of_A_Stair_Of_100_Lines_Compute_At_Most_Six_Times_The_Products_Of_The_Status()
     {
         const int count = 100;
         var points = Enumerable.Range(0, count + 1).Select(k => (X: 5.0 * ((k + 1) / 2), Y: 4.0 * (k / 2))).ToArray();
@@ -85,24 +87,26 @@ public sealed class FixedLengthsTests
             .ToArray();
         var record = Record(points, lines, constraints);
 
-        var clock = System.Diagnostics.Stopwatch.StartNew();
         var (solved, freedom) = SketchSolver.Status(record);
         var fixedLines = Fixed(record);
-        clock.Stop();
+        var (status, analysis) = (SketchSolver.StatusWork(record), SketchSolver.AnalysisWork(record));
 
         Assert.True(solved);
         Assert.Equal(Enumerable.Range(0, count).Where(n => n % 3 != 2).ToArray(), fixedLines);
         Assert.Equal((2 * (count + 1)) - count - constraints.Count(c => c.Kind == "distance"), freedom);
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(1), $"The status and the fixed lengths took {clock.Elapsed}.");
+        Assert.True(status > 0, "The status computed no product.");
+        Assert.True(analysis <= 6 * status, $"The analysis computed {analysis} products, and the status {status}.");
     }
 
     // TASK-0400 (finding E213 of the codebase review of 2026-11-17): a stair of 600 lines with 1,000 constraints. Before
     // TASK-0400 the back-substitution of the analysis took each column for each line: on the computer of the owner the
-    // analysis took about 930 ms and the status about 40 ms. Now the analysis takes about 100 ms. The test compares the two
-    // on one computer, so a slow runner does not change the result: the analysis takes at most six times the status and
-    // 100 ms. The points, the lines and the constraints have identifiers from 1, 10,001, 20,001 and 30,001, so 600 lines fit.
+    // analysis took about 930 ms and the status about 40 ms. Now the analysis takes about 100 ms. The points, the lines and
+    // the constraints have identifiers from 1, 10,001, 20,001 and 30,001, so 600 lines fit. TASK-0435 (phase P0.173): the
+    // test compared two times on one runner, and run 44866049139 on macOS gave 0.96 s against 0.12 s for the same code. It
+    // now compares the products of two numbers: the analysis computes at most six times the products of the status (about
+    // 5.1 times today); the back-substitution before TASK-0400 computes about 180 times as many.
     [Fact]
-    public void The_Fixed_Lengths_Of_A_Stair_Of_600_Lines_Take_A_Time_Near_The_Status()
+    public void The_Fixed_Lengths_Of_A_Stair_Of_600_Lines_Compute_At_Most_Six_Times_The_Products_Of_The_Status()
     {
         const int count = 600;
         var record = SketchModel.New(SketchId, Datums.XY.Id, null);
@@ -118,19 +122,13 @@ public sealed class FixedLengthsTests
                     .Select(n => new SketchConstraint(Id(30_001 + n), "distance", [lineIds[n]], [n % 2 == 0 ? 5.0 : 4.0])),
             ],
         };
-        SketchSolver.FixedLengths(record);
-        SketchSolver.Status(record);
-
-        var status = System.Diagnostics.Stopwatch.StartNew();
-        SketchSolver.Status(record);
-        status.Stop();
-        var clock = System.Diagnostics.Stopwatch.StartNew();
         var fixedLines = SketchSolver.FixedLengths(record);
-        clock.Stop();
+        var (status, analysis) = (SketchSolver.StatusWork(record), SketchSolver.AnalysisWork(record));
 
         Assert.Equal(1_000, record.Constraints.Count);
         Assert.Equal(Enumerable.Range(0, count).Where(n => n % 3 != 2).Select(n => lineIds[n]).ToHashSet(), fixedLines.ToHashSet());
-        Assert.True(clock.Elapsed < (6 * status.Elapsed) + TimeSpan.FromMilliseconds(100), $"The fixed lengths took {clock.Elapsed}, and the status {status.Elapsed}.");
+        Assert.True(status > 0, "The status computed no product.");
+        Assert.True(analysis <= 6 * status, $"The analysis computed {analysis} products, and the status {status}.");
     }
 
     // TASK-0392 (finding E207 of the codebase review of 2026-11-15): the freedom and the fixed lengths do not depend on the

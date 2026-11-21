@@ -293,9 +293,10 @@ commit with no parent and a merge of unrelated history. The judge also fails a c
 checked that rule on a range of commits).
 
 `.github/workflows/rerun-lost-runner.yml` runs after each run of `ci.yml`. When the first attempt of a
-run failed only because GitHub gave a job no runner, `eng/lost-runner.js` starts one re-run of the failed
-jobs; a failed step or a second attempt stays red. Its log names each run and its attempt for the ledger
-(ADR-0173, TASK-0417). `LostRunnerTests` checks the choice with three saved runs.
+run failed only because GitHub gave a job no runner, or because a known fault of the GitHub service failed an
+upload or a download of an artifact (TASK-0435), `eng/lost-runner.js` starts one re-run of the failed
+jobs; each other failed step or a second attempt stays red. Its log names each run and its attempt for the ledger
+(ADR-0173, TASK-0417). `LostRunnerTests` checks the choice with five saved runs.
 
 The job `write-set-gate` then runs `eng/repo-gates` from the same checkout of `main` on the judged
 checkout (TASK-0064). When the judged commits change a source of that program, the job builds the
