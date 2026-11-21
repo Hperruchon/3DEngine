@@ -13,6 +13,9 @@ internal sealed unsafe partial class DesktopUi
     public const string BodiesLabel = "Bodies";
     public const string PartImagesLabel = "Images";
 
+    // ADR-0178 item 1 (phase R20e, TASK-0424): the tool of the ring of the part while at least one live body is hidden.
+    public const string ShowHiddenLabel = "Show hidden";
+
     // ADR-0174 item 1: the caption of a landscape ring of the part, after "TOOLS FOR".
     internal const string PartCaption = "the part";
 
@@ -100,6 +103,9 @@ internal sealed unsafe partial class DesktopUi
                     labels.Add(BodiesLabel);
                 if (_imagesAvailable)
                     labels.Add(PartImagesLabel);
+                // ADR-0178 item 1: "Show hidden" while at least one live body is hidden; with no hidden body it does not show.
+                if (bodies.Any(body => !body.Visible))
+                    labels.Add(ShowHiddenLabel);
                 return labels;
         }
     }
@@ -136,6 +142,10 @@ internal sealed unsafe partial class DesktopUi
                 return;
             case SketchOnFaceLabel:
                 _actions.Add(new SketchOnFaceAction());
+                break;
+            // ADR-0178 item 1: the action of the button "Show all", which gives one SetBodyVisibility for each hidden body.
+            case ShowHiddenLabel:
+                _actions.Add(new ShowAllAction());
                 break;
             default:
                 var sketch = NewSketchButtons.FirstOrDefault(button => button.Label == label);

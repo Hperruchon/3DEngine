@@ -160,7 +160,10 @@ internal sealed unsafe partial class DesktopUi
         // ADR-0174 item 4 (phase R31a, TASK-0419): with no selected body, the file name is the last segment, and it opens the
         // file menu; a chevron after it shows that.
         var menu = body is null && document is { Files: true };
-        var texts = PathFit([.. segments.Select(segment => segment.Text)], room - FocusRoom(body) - (menu ? FileMark : 0f), menu ? FileMark : 0f);
+        // ADR-0178 item 2 (phase R20e, TASK-0424): the part of the hidden bodies takes its room first, so the file name is cut
+        // and keeps its chevron.
+        var hiddenRoom = _pathHidden is { } part ? ImGui.CalcTextSize(part).X + PathHiddenGap : 0f;
+        var texts = PathFit([.. segments.Select(segment => segment.Text)], room - FocusRoom(body) - (menu ? FileMark : 0f) - hiddenRoom, menu ? FileMark : 0f);
         var colours = ImGui.GetStyle().Colors;
         var list = ImGui.GetWindowDrawList();
         var quiet = ImGui.GetColorU32(colours[(int)ImGuiCol.TextDisabled]);
@@ -231,7 +234,21 @@ internal sealed unsafe partial class DesktopUi
             list.AddLine(middle + new Vector2(7f, -7f), middle + new Vector2(-7f, 7f), ink, 2f);
         }
 
-        var folderRoom = room - ImGui.CalcTextSize(texts[0]).X - 12f;
+        // ADR-0178 item 2: "N hidden" in the accent colour at the end of the path line, right of the file name when nothing is
+        // selected. A tap on it opens the list of the hidden bodies under the path line, as the part of the status line does.
+        if (_pathHidden is { } hidden)
+        {
+            ImGui.SameLine(0f, PathHiddenGap);
+            if (ImGui.InvisibleButton("##pathHidden", new Vector2(ImGui.CalcTextSize(hidden).X, PathHeight)))
+                _hiddenOpen = !_hiddenOpen;
+            Item(PathHiddenItem);
+            var (low, high) = (ImGui.GetItemRectMin(), ImGui.GetItemRectMax());
+            if (ImGui.IsItemHovered() || _hiddenOpen)
+                list.AddRectFilled(low - new Vector2(4f, 0f), high + new Vector2(4f, 0f), ImGui.GetColorU32(colours[(int)(_hiddenOpen ? ImGuiCol.ButtonActive : ImGuiCol.ButtonHovered)]), 6f);
+            list.AddText(low + new Vector2(0f, pad), Theme.Accent, hidden);
+        }
+
+        var folderRoom = room - hiddenRoom - ImGui.CalcTextSize(texts[0]).X - 12f;
         if (segments.Count == 1 && document?.Folder is { } folder && folderRoom >= 48f)
         {
             ImGui.SameLine(0f, 12f);
@@ -312,6 +329,22 @@ internal sealed unsafe partial class DesktopUi
         return hidden == 0 ? null : $"{hidden} hidden · Show";
     }
 
+    // ADR-0178 item 2 (phase R20e, TASK-0424): the part of the hidden bodies on the path line, with no "· Show", or null when no
+    // live body is hidden.
+    internal static string? PathHiddenText(IReadOnlyList<LiveBody> bodies)
+    {
+        var hidden = bodies.Count(body => !body.Visible);
+        return hidden == 0 ? null : $"{hidden} hidden";
+    }
+
+    // ADR-0178 item 2: the item of the part on the path line, and its text in this frame, or null when the status line shows the
+    // part or no body is hidden.
+    public const string PathHiddenItem = "Path:hidden";
+    private string? _pathHidden;
+
+    // ADR-0178 item 2: the space between the file name, or the last segment, and the part.
+    private const float PathHiddenGap = 12f;
+
     // Finding V146 of the codebase review of 2026-11-08 (c) (TASK-0310): the text of the status line that fits in this room
     // in the mono font: the whole line, else the line with no address, else none. Until TASK-0310 the line grew to the
     // left over Frame and Home on a phone, and took each tap on them.
@@ -340,12 +373,17 @@ internal sealed unsafe partial class DesktopUi
 
     private const string StatusSeparator = " · ";
 
+    // ADR-0178 item 2 (phase R20e, TASK-0424): the top bar comes after the status line, because the path line shows the part
+    // of the hidden bodies when the status line has no room for it in this frame. Until TASK-0424 the top bar came first.
     private void FixedControls(Vector2 displaySize, IReadOnlyList<LiveBody> bodies, DocumentLine? document, LiveBody? body)
     {
-        TopBar(displaySize, document, body);
         // ADR-0172 item 2 (TASK-0418): a low pad takes the row of the anchors and of the status line while it is open.
         if (_padLow)
+        {
+            _pathHidden = null;
+            TopBar(displaySize, document, body);
             return;
+        }
 
         // Undo and Redo at the bottom left (ADR-0031 item 11, amended by ADR-0080). Finding V118 of the codebase review of
         // 2026-11-06 (e) (TASK-0252): inside the safe area of the display, so that the navigation bar of the phone does not
@@ -464,10 +502,16 @@ internal sealed unsafe partial class DesktopUi
             ImGui.End();
         }
 
-        // ADR-0124 item 3: the list closes when no body is hidden, or when the part does not show.
-        if (hidden is null)
-            _hiddenOpen = false;
         ImGui.PopStyleVar();
+
+        // ADR-0178 item 2: where the status line has no room for the part of the hidden bodies, the path line shows it. The
+        // rule is the same on a phone and on the desktop.
+        _pathHidden = hidden is null ? PathHiddenText(bodies) : null;
+        TopBar(displaySize, document, body);
+
+        // ADR-0124 item 3: the list closes when no body is hidden, or when the part shows in neither place.
+        if (hidden is null && _pathHidden is null)
+            _hiddenOpen = false;
     }
 
     // ADR-0127 item 2 (phase R18g, TASK-0354): the item of the text of the step that Undo reverses, its word, and its largest
@@ -509,6 +553,9 @@ internal sealed unsafe partial class DesktopUi
     private bool _hiddenOpen;
     private float _statusRight;
 
+    // ADR-0178 item 2 (TASK-0424): true when the last frame drew the list of the hidden bodies.
+    private bool _hiddenListShown;
+
     // ADR-0127 item 3: the text of the status line in the last frame, or null when it did not show, for a test.
     internal string? StatusShown { get; private set; }
 
@@ -519,25 +566,47 @@ internal sealed unsafe partial class DesktopUi
     private void HiddenList(Vector2 displaySize, IReadOnlyList<LiveBody> bodies)
     {
         if (!_hiddenOpen)
+        {
+            _hiddenListShown = false;
             return;
+        }
+
         var hidden = bodies.Where(body => !body.Visible).ToList();
         var labels = hidden.Select(body => body.Name ?? $"{body.Kind}  {body.Id.ToString()[..8]}").ToList();
         if (hidden.Count > 1)
             labels.Add(ShowAllLabel);
-        var padding = ImGui.GetStyle().FramePadding.X * 2f;
+        var style = ImGui.GetStyle();
+        var padding = style.FramePadding.X * 2f;
         var width = Math.Min(labels.Max(label => ImGui.CalcTextSize(label).X) + padding, displaySize.X - 32f - _inset.X - _inset.Z);
         var bottom = _anchorsTop - 8f;
         var top = 16f + _inset.Y + TopBarHeight;
-        ImGui.SetNextWindowPos(new Vector2(_statusRight, bottom), ImGuiCond.Always, new Vector2(1f, 1f));
+        // ADR-0178 item 2 (phase R20e, TASK-0424): a tap on the part of the path line opens the list under the path line, with its
+        // left edge on the left edge of the part, inside the display.
+        if (_items.TryGetValue(PathHiddenItem, out var part))
+        {
+            top = part.W + 4f;
+            var right = displaySize.X - 16f - _inset.Z - width - (2f * style.WindowPadding.X);
+            ImGui.SetNextWindowPos(new Vector2(Math.Max(16f + _inset.X, Math.Min(part.X, right)), top), ImGuiCond.Always);
+        }
+        else
+        {
+            ImGui.SetNextWindowPos(new Vector2(_statusRight, bottom), ImGuiCond.Always, new Vector2(1f, 1f));
+        }
+
         ImGui.SetNextWindowSizeConstraints(Vector2.Zero, new Vector2(displaySize.X, Math.Max(bottom - top, MinimumControlHeight)));
 
         // Finding V174 of the codebase review of 2026-11-14 (TASK-0356, ADR-0129 item 1): the list has no scroll bar, and a
         // touch does not scroll it, so the rows that do not fit went under the display. When the rows do not fit, "Show all"
         // comes first, then the hidden bodies that fit, then the count of the others; each row shows in the display.
-        var style = ImGui.GetStyle();
         var room = (int)((bottom - top - (2f * style.WindowPadding.Y) + style.ItemSpacing.Y) / (MinimumControlHeight + style.ItemSpacing.Y));
         var fits = hidden.Count + (hidden.Count > 1 ? 1 : 0) <= room;
         var shown = fits ? hidden.Count : Math.Max(room - 2, 0);
+        // ADR-0178 item 2: under the path line the list is over the structure view. A tap brings a window to the front, so the
+        // list takes the focus in its first frame, as the file menu does (finding V211); else, after a tap on the structure
+        // view, the view took the tap on a row of the list.
+        if (!_hiddenListShown)
+            ImGui.SetNextWindowFocus();
+        _hiddenListShown = true;
         if (ImGui.Begin("##HiddenList", FixedFlags & ~ImGuiWindowFlags.NoBackground))
         {
             if (!fits)
@@ -568,9 +637,9 @@ internal sealed unsafe partial class DesktopUi
     }
 
     // ADR-0124 item 3: true when a point of the window is on the list of the hidden bodies or on the part of the status line,
-    // in the last frame. Route closes the list on a release elsewhere.
+    // in the last frame. Route closes the list on a release elsewhere. ADR-0178 item 2 (TASK-0424): or on the part of the path line.
     private bool OverHidden(double x, double y)
-        => new[] { HiddenListItem, HiddenItem }.Any(item => _items.TryGetValue(item, out var r) && x >= r.X && x < r.Z && y >= r.Y && y < r.W);
+        => new[] { HiddenListItem, HiddenItem, PathHiddenItem }.Any(item => _items.TryGetValue(item, out var r) && x >= r.X && x < r.Z && y >= r.Y && y < r.W);
 
     // ADR-0108 item 5: the parts of the status line, and the colour of the part of the state; the other parts keep the text
     // colour of the panels.

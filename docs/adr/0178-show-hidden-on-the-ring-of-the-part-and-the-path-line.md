@@ -9,11 +9,11 @@ superseded-by: []
 amends: ['0124']
 amended-by: []
 affects:
-  - 3DEngine.App/Ui/DesktopUi.cs
   - 3DEngine.App/Ui/DesktopUi.Fixed.cs
+  - 3DEngine.App/Ui/DesktopUi.Orbit.cs
   - 3DEngine.App/Ui/DesktopUi.Part.cs
   - 3DEngine.ImageTests/ShowHiddenTests.cs
-enforced-by: 3DEngine.ImageTests/ShowHiddenTests.cs (TASK-0424 creates it)
+enforced-by: 3DEngine.ImageTests/ShowHiddenTests.cs
 ---
 
 # ADR-0178 — "Show hidden" is on the ring of the part, and the count of the hidden bodies goes on the path line where the status line has no room
@@ -70,3 +70,4 @@ of the hidden bodies, and keeps one ring with nothing selected. The owner can co
 - 2026-11-21 · TASK-0426 · Item 1 says that "Show hidden" sends one command for each hidden body, and item 2 says what the path
   line of a phone shortens and where the list opens (findings V218 and V219, Q1 A and Q2 A of the owner); `affects` names
   `DesktopUi.Part.cs`, where the labels of the ring of the part are.
+- 2026-11-21 · TASK-0424 · Shipped at v0.412.

@@ -502,6 +502,8 @@ Therefore each approved objective must have a track here.
   corrected ADR, and the owner's answers Q1, Q2, Q3 and Q8 are in ADR-0178, ADR-0177 and ADR-0173. v0.410, TASK-0426.
 - R30i — A sheet holds the eleven fields of the title block of ISO 7200, one command SetSheetTitle sets them, and the three
   files and the sheet page draw the block, the symbol of the projection and the centring marks. v0.411, TASK-0428, ADR-0179.
+- R20e — While a body is hidden, the ring of the part has "Show hidden", and where the status line has no room for the
+  count of the hidden bodies, the path line shows "N hidden" and opens their list. v0.412, TASK-0424, ADR-0178.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
