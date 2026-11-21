@@ -85,6 +85,9 @@ public static class HandlerCatalog
         new GetPartReferencesQueryHandler(),
         new GetSheetQueryHandler(),
         new GetViewLinesQueryHandler(),
+        new GetMassPropertiesQueryHandler(),
+        new GetDistanceQueryHandler(),
+        new GetAngleQueryHandler(),
     ];
 
     public static void RegisterAll(CommandRegistry commands, QueryRegistry queries, IAssetSource? assets = null)
