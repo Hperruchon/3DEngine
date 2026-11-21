@@ -116,3 +116,4 @@ summaries and memory, not from the paid standards. R-0068 stays open until a sli
 
 - 2026-11-18 · TASK-0403 · The record, from the answers of the owner of 2026-11-18 to Q1 to Q19 of the design file.
 - 2026-11-18 · TASK-0403 · Shipped at v0.386.
+- 2026-11-21 · TASK-0428 · R30i gives items 15 and 17 with ADR-0179: the fields of ISO 7200, SetSheetTitle, the symbol of the projection and the centring marks.

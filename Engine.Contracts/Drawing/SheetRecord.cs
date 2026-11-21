@@ -3,7 +3,8 @@ namespace Engine.Contracts.Drawing;
 // ADR-0153 items 1 to 5 (phase P10.1, TASK-0389): one drawing sheet of the Document. A record never changes: an edit gives a
 // new record with the same identifier, as a sketch and an image do. Paper is one of Papers (ISO 216); Landscape is the
 // orientation of the paper; ThirdAngle is false for ISO first angle (item 3). The views and the dimensions are in
-// the order of their commands.
+// the order of their commands. ADR-0179 item 1 (phase R30i, TASK-0428): TitleBlock holds the fields of the title block of
+// ISO 7200, null by default, so a log of a sheet before R30i gives the same record; SetSheetTitle gives it.
 public sealed record SheetRecord(
     Guid Id,
     string Name,
@@ -11,7 +12,8 @@ public sealed record SheetRecord(
     bool Landscape,
     bool ThirdAngle,
     IReadOnlyList<SheetView> Views,
-    IReadOnlyList<SheetDimension> Dimensions)
+    IReadOnlyList<SheetDimension> Dimensions,
+    SheetTitleBlock? TitleBlock = null)
 {
     // ADR-0153 item 2 (Q2 A): the papers of a sheet.
     public static readonly IReadOnlyList<string> Papers = ["A4", "A3", "A2", "A1", "A0"];
@@ -43,3 +45,24 @@ public sealed record SheetSection(Guid Parent, IReadOnlyList<double> Point, stri
 // (SourceKind "constraint") or of an extrude for its distance (SourceKind "distance"). X and Y are the place of its line on
 // the paper, in millimetres. The number comes from the design at each read; with no source in the Document it is lost.
 public sealed record SheetDimension(Guid Id, Guid ViewId, Guid Source, string SourceKind, double X, double Y);
+
+// ADR-0179 item 1 (phase R30i, TASK-0428; the answer Q4 A of the owner): the fields of the title block of
+// a sheet, each a text that the client gives. An empty text is an absent field. IssueDate is text: the engine reads no clock,
+// so a replay gives the same record on each platform. The nine fields of the answer D18 A come first, then the approval person
+// and the document type, which ISO 7200 also makes mandatory.
+public sealed record SheetTitleBlock(
+    string Title,
+    string IdentificationNumber,
+    string Revision,
+    string IssueDate,
+    string SheetNumber,
+    string LegalOwner,
+    string Material,
+    string Creator,
+    string GeneralTolerances,
+    string ApprovalPerson,
+    string DocumentType)
+{
+    // ADR-0179 item 1: the block of a sheet with no SetSheetTitle: each field is empty.
+    public static readonly SheetTitleBlock Empty = new("", "", "", "", "", "", "", "", "", "", "");
+}

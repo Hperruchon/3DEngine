@@ -7,7 +7,7 @@ date: 2026-11-15
 supersedes: []
 superseded-by: []
 amends: ['0118']
-amended-by: ['0155', '0158', '0165', '0169']
+amended-by: ['0155', '0158', '0165', '0169', '0179']
 affects:
   - Engine.Contracts/Drawing/SheetRecord.cs
   - Engine.Contracts/Document.cs
@@ -52,6 +52,7 @@ The engine gives the exact lines of a view (ADR-0142 to ADR-0145, ADR-0147) and 
    `sheet.changed` and `sheet.removed` with the whole record, after the events of the references; undo and redo restore the
    record before and after, as for an image. `CommandHandlerResult` gets `CreatedSheets`, `ChangedSheets` and
    `RemovedSheets`.
+   ADR-0179 item 1: `SheetRecord` also holds `TitleBlock`, null by default, and the command SetSheetTitle gives it.
 2. **The paper (Q2 A).** The paper is "A4", "A3", "A2", "A1" or "A0" (ISO 216), with `Landscape` true or false. The frame and
    the title block are presentation.
 3. **The projection (ADR-0118 item 4).** `ThirdAngle` is false by default: ISO first angle.
@@ -90,3 +91,4 @@ The engine gives the exact lines of a view (ADR-0142 to ADR-0145, ADR-0147) and 
   dimension of a source on a sheet, the read of the value or "lost", and three codes of a dimension.
 - 2026-11-18 · TASK-0405 · Amended by ADR-0165 items 1 and 2: the flags of the hidden lines and of the centre lines of a view (R30g).
 - 2026-11-18 · TASK-0411 · Amended by ADR-0169 item 1: the section of a view (R30h).
+- 2026-11-21 · TASK-0428 · Amended by ADR-0179 item 1: the title block of a sheet (R30i).

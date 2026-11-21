@@ -62,12 +62,12 @@ public sealed class SheetPageTests
         using var _ = host;
         var (front, top, right) = (sheet.Views[0], sheet.Views[1], sheet.Views[2]);
 
-        Assert.Equal(front.ViewId, SheetPage.Hit(sheet, (255, 203.5)));
-        Assert.Equal(front.ViewId, SheetPage.Hit(sheet, (255 + 60 + 2.5, 203.5)));
-        Assert.Equal(top.ViewId, SheetPage.Hit(sheet, (255, 143.5)));
-        Assert.Equal(right.ViewId, SheetPage.Hit(sheet, (145, 203.5)));
+        Assert.Equal(front.ViewId, SheetPage.Hit(sheet, (255, 215.5)));
+        Assert.Equal(front.ViewId, SheetPage.Hit(sheet, (255 + 60 + 2.5, 215.5)));
+        Assert.Equal(top.ViewId, SheetPage.Hit(sheet, (255, 155.5)));
+        Assert.Equal(right.ViewId, SheetPage.Hit(sheet, (145, 215.5)));
         Assert.Null(SheetPage.Hit(sheet, (60, 60)));
-        Assert.Equal((195.0, 193.5, 315.0, 213.5), SheetPage.Box(front));
+        Assert.Equal((195.0, 205.5, 315.0, 225.5), SheetPage.Box(front));
     }
 
     // Item 3 (D13 A): the front view, the first view, moves free and takes its aligned views; the top view slides on the vertical
@@ -79,11 +79,11 @@ public sealed class SheetPageTests
         using var _ = host;
         var (front, top, right) = (sheet.Views[0].ViewId, sheet.Views[1].ViewId, sheet.Views[2].ViewId);
 
-        Assert.Equal((265.0, 198.5, true), SheetPage.Drag(sheet, front, 10, -5, keepAligned: true, shift: false));
-        Assert.Equal((255.0, 138.5, false), SheetPage.Drag(sheet, top, 10, -5, keepAligned: true, shift: false));
-        Assert.Equal((155.0, 203.5, false), SheetPage.Drag(sheet, right, 10, -5, keepAligned: true, shift: false));
-        Assert.Equal((265.0, 138.5, false), SheetPage.Drag(sheet, top, 10, -5, keepAligned: true, shift: true));
-        Assert.Equal((265.0, 198.5, false), SheetPage.Drag(sheet, front, 10, -5, keepAligned: false, shift: false));
+        Assert.Equal((265.0, 210.5, true), SheetPage.Drag(sheet, front, 10, -5, keepAligned: true, shift: false));
+        Assert.Equal((255.0, 150.5, false), SheetPage.Drag(sheet, top, 10, -5, keepAligned: true, shift: false));
+        Assert.Equal((155.0, 215.5, false), SheetPage.Drag(sheet, right, 10, -5, keepAligned: true, shift: false));
+        Assert.Equal((265.0, 150.5, false), SheetPage.Drag(sheet, top, 10, -5, keepAligned: true, shift: true));
+        Assert.Equal((265.0, 210.5, false), SheetPage.Drag(sheet, front, 10, -5, keepAligned: false, shift: false));
     }
 
     // Item 2: "Go to" finds the flat view of each standard frame, and no flat view for a pictorial frame.

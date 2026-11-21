@@ -7,7 +7,7 @@ date: 2026-11-16
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0164', '0165', '0169']
+amended-by: ['0164', '0165', '0169', '0179']
 affects:
   - Engine.Core/Export/SvgExport.cs
   - Engine.Core/Queries/GetSheetQueryHandler.cs
@@ -57,6 +57,7 @@ options below, each the smallest one that keeps the exact numbers. The owner can
 4. **The frame and the title block.** A frame 10 mm inside the edge of the paper, and a title block of 120 by 20 mm in the
    lower right corner of the frame, with the name of the sheet, the paper and its orientation, the projection, the scale
    and the unit. The scale is the scale of the views in lowest terms when they have one scale, or "as shown".
+   ADR-0179 items 4 to 7: the block is 180 by 44 mm with the fields of ISO 7200, the symbol of the projection replaces its text, and the frame has the centring marks; the group `frame` holds one path for each line of `TitleBlock.Layout`.
 5. **The dimensions.** Each dimension is a text of 3.5 mm, centred at its place: the value of the design, with the prefix
    "R" for a radius (ISO 129-1), or "lost" when its source is not in the design. The file gives no dimension line and no
    arrow: the ends of the measured edge on the paper and the flag "true length" wait for R22d (answer D7 A of 2026-11-15:
@@ -87,3 +88,4 @@ of the viewer. The read of a curved body takes seconds (R-0069), and the export 
 - 2026-11-18 · TASK-0400 · Amended by ADR-0164 items 2 and 4: a number that is not finite is 0, and a character that XML does not permit is U+FFFD (findings E215 and E217).
 - 2026-11-18 · TASK-0405 · Amended by ADR-0165 items 3 and 4: the centre lines and the sign of a diameter (R30g).
 - 2026-11-18 · TASK-0411 · Amended by ADR-0169 item 6: the hatch, the cut line, the arrows and the texts of a section (R30h).
+- 2026-11-21 · TASK-0428 · Amended by ADR-0179 items 4 to 7: the title block of ISO 7200, the symbol and the centring marks (R30i).

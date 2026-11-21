@@ -9,6 +9,7 @@ using Engine.Contracts.Drawing;
 using Engine.Contracts.Sketch;
 using Engine.Core;
 using Engine.Core.Commands;
+using Engine.Core.Drawing;
 using Engine.Core.Export;
 using Engine.Core.Geometry;
 using Engine.Core.Hosting;
@@ -152,7 +153,11 @@ public sealed class PdfExportTests : IDisposable
         Assert.Contains($"/MediaBox [0 0 {PdfExport.N(297 * PdfExport.PointsPerMillimetre)} {PdfExport.N(210 * PdfExport.PointsPerMillimetre)}]", text, StringComparison.Ordinal);
         Assert.Equal(841.8897637795275, 297 * PdfExport.PointsPerMillimetre, 1e-9);
         Assert.Contains("/BaseFont /Helvetica /Encoding /WinAnsiEncoding", text, StringComparison.Ordinal);
-        Assert.DoesNotContain("Date", text, StringComparison.Ordinal);
+        // ADR-0179 item 4 (TASK-0428): the label "Date of issue" of the title block is text of the page; the file holds no date of
+        // its own, no /CreationDate and no /ModDate.
+        Assert.DoesNotContain("/CreationDate", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("/ModDate", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("Date", text[..text.IndexOf("stream\n", StringComparison.Ordinal)] + text[text.IndexOf("endstream", StringComparison.Ordinal)..], StringComparison.Ordinal);
         var content = Content(text);
         Assert.StartsWith("2.834645669291339 0 0 2.834645669291339 0 0 cm\n", content, StringComparison.Ordinal);
         var paths = Paths(content);
@@ -251,11 +256,30 @@ public sealed class PdfExportTests : IDisposable
             new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "constraint", 180, 30, true, null, null),
         };
 
-        var content = Content(Sheet([], dimensions, "Bracket (A) é"));
+        var sheet = Sheet([], dimensions, "Bracket (A) é") with { TitleBlock = SheetTitleBlock.Empty with { Creator = "H. P.", SheetNumber = "1/2" } };
+        var content = Content(sheet);
 
-        Assert.Contains("10 10 277 190 re S\n167 10 120 20 re S\n", content, StringComparison.Ordinal);
-        Assert.Contains("BT /F1 5 Tf 170 22 Td (Bracket \\(A\\) \\351) Tj ET\n", content, StringComparison.Ordinal);
-        Assert.Contains("BT /F1 3.5 Tf 170 14 Td (A4 landscape \\267 First angle \\267 Scale 1:2 \\267 mm) Tj ET\n", content, StringComparison.Ordinal);
+        // ADR-0179 items 4 to 6 (TASK-0428): before the first view, the content holds each line of TitleBlock.Layout in its order,
+        // with its width and its dashes, then each text of the layout at its place, with the size of the font of its capital
+        // letters. Until TASK-0428 it held two rectangles and two texts.
+        var layout = TitleBlock.Layout(sheet);
+        var block = new StringBuilder();
+        foreach (var line in layout.Lines)
+        {
+            var stroke = SvgExport.Stroke(line);
+            block.Append(CultureInfo.InvariantCulture, $"{PdfExport.N(stroke == SvgExport.LineStroke.Thick ? SvgExport.Thick : SvgExport.Thin)} w [{(stroke == SvgExport.LineStroke.Chain ? SvgExport.CentreDashes : "")}] 0 d\n");
+            block.Append(line.Circle is { } c
+                ? FormattableString.Invariant($"{PdfExport.N(c.X + c.Radius)} {PdfExport.N(c.Y)} m")
+                : FormattableString.Invariant($"{PdfExport.N(line.FromX)} {PdfExport.N(line.FromY)} m {PdfExport.N(line.ToX)} {PdfExport.N(line.ToY)} l S\n"));
+            if (line.Circle is not null)
+                block.Append(content[(content.IndexOf(block.ToString(), StringComparison.Ordinal) + block.Length)..].Split('\n')[0]).Append('\n');
+        }
+
+        foreach (var text in layout.Texts)
+            block.Append(CultureInfo.InvariantCulture, $"BT /F1 {PdfExport.N(SvgExport.FontSize(text.Size))} Tf {PdfExport.N(text.X)} {PdfExport.N(text.Y)} Td {PdfExport.Literal(text.Text)} Tj ET\n");
+        Assert.Contains("0 J 0 j\n" + block + "% View", content, StringComparison.Ordinal);
+        Assert.Contains("Td (Bracket \\(A\\) \\351) Tj ET\n", content, StringComparison.Ordinal);
+        Assert.Contains("Td (1/2) Tj ET\n", content, StringComparison.Ordinal);
         // "12.5": four characters of 556, 556, 278 and 556 thousandths, 1.946 em wide; at 3.5 mm it starts 3.4055 mm left of 120.
         Assert.Equal(1946, PdfExport.Width("12.5"));
         Assert.Contains($"BT /F1 3.5 Tf {PdfExport.N(120 - (1946 * 3.5 / 2000))} 30 Td (12.5) Tj ET\n", content, StringComparison.Ordinal);

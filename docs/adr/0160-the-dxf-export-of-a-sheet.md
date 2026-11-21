@@ -7,7 +7,7 @@ date: 2026-11-17
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0164', '0165', '0169']
+amended-by: ['0164', '0165', '0169', '0179']
 affects:
   - Engine.Core/Export/DxfExport.cs
   - Engine.Core/Export/SvgExport.cs
@@ -67,6 +67,7 @@ smallest one that keeps the numbers of the read. The owner can change each one.
    ends of the line of the read, so the chain meets the lines next to it.
 5. **The frame and the title block.** The frame, the title block and its two texts are those of the SVG file (ADR-0159 item
    4), at the same places, as LINE and TEXT entities. The scale text is the same function as in the SVG file.
+   ADR-0179 item 7: the lines of `TitleBlock.Layout` on the layer FRAME, a centre line of the symbol with the line type CENTER, and its texts on the layer TEXT.
 6. **The dimensions.** Each dimension is a TEXT of 3.5 mm on the layer TEXT, centred at its place on its base line, with the
    text of the SVG file: the value, "R" for a radius, or "lost" (ADR-0159 item 5). There is no dimension line and no arrow
    (R22d).
@@ -99,3 +100,4 @@ its own reader of the pairs.
 - 2026-11-18 · TASK-0400 · Amended by ADR-0164 items 2 and 3: a number that is not finite is 0, and the chain of an ellipse has a stop at each quarter turn (findings E215 and E216).
 - 2026-11-18 · TASK-0405 · Amended by ADR-0165 items 3 and 4: the layer of the centre lines and the code of a diameter (R30g).
 - 2026-11-18 · TASK-0411 · Amended by ADR-0169 item 6: the layers HATCH and CUT, the arrows and the texts of a section (R30h).
+- 2026-11-21 · TASK-0428 · Amended by ADR-0179 item 7: the title block of ISO 7200, the symbol and the centring marks (R30i).
