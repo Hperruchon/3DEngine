@@ -13,6 +13,8 @@ public sealed record GetMassPropertiesQuery : Query
 }
 
 // The volume in cubic millimetres and the centre of the volume in millimetres, each the nearest double to the exact value
-// of the solid. Facets is true when a face of the body is curved: the volume and the centre are then those of the plane
-// facets of the solid, and not those of the curve (answer Q2 A of the codebase review of 2026-11-21).
+// of the solid. ADR-0180 item 10 (phase K15b, TASK-0434): a body of one curved command, moved or turned, gives the volume
+// and the centre of the curve of the design in doubles. Facets is true when a face of the body is curved and no closed
+// form exists: the volume and the centre are then those of the plane facets of the solid, and not those of the curve
+// (answer Q2 A of the codebase review of 2026-11-21).
 public sealed record MassProperties(double Volume, DatumPoint Centre, bool Facets);

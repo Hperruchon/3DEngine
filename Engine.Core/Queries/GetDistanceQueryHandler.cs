@@ -8,8 +8,8 @@ using Engine.Kernel;
 namespace Engine.Core.Queries;
 
 // ADR-0180 items 4 and 6 to 8 (phase K15a, TASK-0432). The query reads the pieces of the two sides in the owned kernel. A
-// name that the body does not have, or a part of a name, gives E-MEASURE-NAME-NOT-FOUND; a side with a curved face gives
-// E-MEASURE-CURVED.
+// name that the body does not have, or a part of a name, gives E-MEASURE-NAME-NOT-FOUND; a side with a curved face that
+// item 11 (phase K15b, TASK-0434) gives no closed form for gives E-MEASURE-CURVED.
 public sealed class GetDistanceQueryHandler : IQueryHandler
 {
     public string QueryName => "GetDistance";
@@ -79,7 +79,10 @@ public sealed class GetDistanceQueryHandler : IQueryHandler
             distance.SecondFeatureIdB, distance.SecondElementB, distance.SecondItemIdB), "B");
         if (b is null)
             return Task.FromResult(QueryHandlerResult.Failure(errorB!));
-        return Task.FromResult(QueryHandlerResult.Success(Between(a, b)));
+
+        // ADR-0180 item 11 (phase K15b, TASK-0434): a whole curved face of the design is measured from its curve.
+        var (info, error) = CurvedDistance.Between(a, b);
+        return Task.FromResult(info is null ? QueryHandlerResult.Failure(error!) : QueryHandlerResult.Success(info));
     }
 
     // Item 4: the nearest pair of the pieces of the two sides. A body is a solid: when the pieces do not touch, a side
