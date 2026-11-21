@@ -175,6 +175,7 @@ internal static class ViewEdges
         // Finding E226 of the codebase review of 2026-11-20 (TASK-0426): the bodies that this read cuts, so the read keeps their
         // cuts and no other cut of the view.
         var cutBodies = new List<Guid>();
+        var plainBodies = new List<Guid>();
         foreach (var record in document.Bodies.OrderBy(body => body.Handle.Id))
         {
             if (record.Kind == Commands.ImportStlCommandHandler.MeshKind)
@@ -207,7 +208,10 @@ internal static class ViewEdges
                 }
                 else
                 {
-                    brep = Brep.Of(solid);
+                    // TASK-0446 (register entry R-0069): the B-Rep comes from the B-Reps that the reads keep, so the views of
+                    // one read and the later reads build it once.
+                    plainBodies.Add(record.Handle.Id);
+                    brep = ViewBreps.Of(document.DocumentId, record.Handle.Id, solid);
                 }
 
                 bodies.Add((record.Handle.Id, brep));
@@ -232,6 +236,8 @@ internal static class ViewEdges
 
         if (cut is { } section)
             SectionCut.Keep(section.View, cutBodies);
+        else
+            ViewBreps.Keep(document.DocumentId, plainBodies);
         return (Of(bodies, frame, curves), skipped, curves, cutFaces);
     }
 
@@ -302,7 +308,9 @@ internal static class ViewEdges
 
                 // 2. ADR-0142 item 4: a piece is hidden when the middle of it is inside a face that looks toward the eye or
                 // on its border, and that face is strictly nearer to the eye there.
-                var hidden = fronts.Any(front => front.Covers(at, point));
+                // TASK-0446 (register entry R-0069): the rounded middle comes once for each piece, not once for each face.
+                var (x, y) = (at.X.ToDouble(), at.Y.ToDouble());
+                var hidden = fronts.Any(front => front.Covers(at, x, y, point));
                 pieces.Add(new Piece(s, t0, t1, segment.At(t0), segment.At(t1), point.Dot(frame.TowardEye), !hidden));
             }
         }
@@ -813,10 +821,10 @@ internal static class ViewEdges
         // than the point of the world p there. A point behind a seam between two facets of a curved side is on the border
         // of each of them and behind both, so the border counts; an edge of the face itself is at the same depth, so it
         // is not covered. The line p + λ e meets the plane n · x = d at λ = (d - n · p) / (n · e), and
-        // n · e > 0, so the face is nearer when n · p < d.
-        public bool Covers(Point at, Vector3R p)
+        // n · e > 0, so the face is nearer when n · p < d. The caller gives x and y, the rounded values of the point.
+        public bool Covers(Point at, double x, double y, Vector3R p)
         {
-            if (_box.Outside(at.X.ToDouble(), at.Y.ToDouble()))
+            if (_box.Outside(x, y))
                 return false;
             if (Where(loops[0], at) < 0)
                 return false;

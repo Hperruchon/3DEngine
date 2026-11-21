@@ -155,7 +155,14 @@ public sealed class KernelSolid
         foreach (var (element, item, vertices) in faces)
         {
             var plane = PlaneOf(vertices) ?? throw new ArgumentException($"The face '{element}' has no plane.");
-            polygons.AddRange(Convex(new KernelPolygon(vertices, plane, new FaceTag(feature, element, item))));
+            var polygon = new KernelPolygon(vertices, plane, new FaceTag(feature, element, item));
+            // TASK-0446 (register entry R-0069): a triangle is convex. Its Newell normal is (b - a) x (c - a), and Canonical
+            // scales it by a positive number, so each turn of Convex is (b - a) x (c - a) · n > 0, and Convex gives the triangle
+            // itself. The test is skipped: it took about 150 ms of the 230 ms of a sphere of 3,968 triangles.
+            if (vertices.Count == 3)
+                polygons.Add(polygon);
+            else
+                polygons.AddRange(Convex(polygon));
         }
 
         var solid = new KernelSolid(polygons);

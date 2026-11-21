@@ -99,3 +99,8 @@ slices. On 2026-11-05 the owner answered four questions:
   csg.js, as the subtract of item 5.
 - 2026-11-21 · TASK-0445 · Item 10: the cut of a solid by a plane with a cap, for finding E222 and the section of
   ADR-0169 item 3; item 9 names it.
+- 2026-11-21 · TASK-0446 · No item changes. For register entry R-0069 the topology of item 6 finds a group, an edge, the
+  regions of a group and the edges of a face by a dictionary or an index, and the split of step 2 reads only the vertices
+  in the x range of an edge; a triangle of item 4 skips the test of convexity, which it always passes. Each list keeps its
+  order (item 8), and 175 solids give the same B-Rep as before. The B-Rep of a sphere of 3,968 triangles takes 0.15 s, not
+  1.0 s.

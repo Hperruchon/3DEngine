@@ -5,6 +5,7 @@ using Engine.Contracts.Drawing;
 using Engine.Contracts.Sketch;
 using Engine.Core;
 using Engine.Core.Commands;
+using Engine.Core.Drawing;
 using Engine.Core.Geometry;
 using Engine.Core.Hosting;
 using Engine.Core.Persistence;
@@ -86,6 +87,10 @@ public sealed class SheetViewTests(ITestOutputHelper output) : IDisposable
         Assert.True(result.Error is null, result.Error?.Message);
         return result.Result!;
     }
+
+    // A read as the JSON of the surface, to compare two reads byte for byte.
+    private static string Json(SheetInfo read)
+        => System.Text.Json.JsonSerializer.Serialize(read, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
 
     // Item 1: AddSheetView gives a view with the identifier of its command, its nine numbers, its scale and its place, and the
     // event sheet.changed carries the views.
@@ -314,16 +319,20 @@ public sealed class SheetViewTests(ITestOutputHelper output) : IDisposable
 
     // Items 5 and 7 (Q7 A): three views of a sphere give its outline as a circle of the radius times the scale, at the place
     // of each view. The test writes the time of the read; ADR-0155 item 7 opens a register entry when it is more than 1 s.
+    // ADR-0155 item 7, amended by TASK-0446 (register entry R-0069): the read builds the B-Rep of the sphere one time for the
+    // three views, and a second read and a read after a move of a view build nothing and give the same result. Until TASK-0446
+    // each view built it, three builds for each read, and a read took 4.5 s.
     [NativeManifoldFact]
     public async Task A_Read_Of_Three_Views_Of_A_Sphere_Gives_Its_Circles()
     {
         using var backend = new ManifoldGeometryBackend();
         var session = new DocumentSession(EngineHosting.CreateDefault(backend));
-        await Applied(session, new CreateSphereCommand { Radius = 10 }, "bodyId");
+        var sphere = await Applied(session, new CreateSphereCommand { Radius = 10 }, "bodyId");
         var sheet = await Applied(session, new CreateSheetCommand { SheetName = "Sheet 1" }, "sheetId");
-        await Applied(session, View(sheet, Front, 1, 2, 60, 150), "viewId");
+        var front = await Applied(session, View(sheet, Front, 1, 2, 60, 150), "viewId");
         await Applied(session, View(sheet, Top, 1, 2, 60, 60), "viewId");
         await Applied(session, View(sheet, Right, 1, 2, 160, 150), "viewId");
+        var document = await session.Read((document, _) => document.DocumentId);
 
         var clock = Stopwatch.StartNew();
         var read = await Read(session, sheet);
@@ -335,6 +344,84 @@ public sealed class SheetViewTests(ITestOutputHelper output) : IDisposable
             var circle = Assert.Single(view.Lines, line => line.Circle is not null).Circle!;
             Assert.Equal((view.X, view.Y, 5.0), (circle.X, circle.Y, circle.Radius));
         }
+
+        Assert.Equal(1, ViewBreps.BuiltOf(document, sphere));
+        clock.Restart();
+        var again = await Read(session, sheet);
+        output.WriteLine($"The second read took {clock.ElapsedMilliseconds} ms.");
+        Assert.Equal(1, ViewBreps.BuiltOf(document, sphere));
+        Assert.Equal(Json(read), Json(again));
+
+        await Applied(session, new MoveSheetViewCommand { SheetId = sheet, ViewId = front, X = 70, Y = 150 }, "viewId");
+        var moved = await Read(session, sheet);
+        Assert.Equal(1, ViewBreps.BuiltOf(document, sphere));
+        var shifted = Assert.Single(moved.Views[0].Lines, line => line.Circle is not null).Circle!;
+        Assert.Equal((70.0, 150.0, 5.0), (shifted.X, shifted.Y, shifted.Radius));
+    }
+
+    // ADR-0155 item 7, amended by TASK-0446: a read builds the B-Rep of a body again when the body changes, and keeps no B-Rep
+    // of a body that is gone. A plate of 60 by 40 by 10 and a box: the first read builds each one time. A SetExtrudeDistance of
+    // 20 keeps the identifier of the plate and changes its solid, so the next read builds it again and the Front view shows a
+    // plate 20 mm high; the box is not built again. After a Subtract of the box from the plate, the read keeps one B-Rep, that of
+    // the result.
+    [NativeManifoldFact]
+    public async Task A_Read_Builds_The_BRep_Again_When_A_Body_Changes_And_Keeps_None_Of_A_Body_That_Is_Gone()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = new DocumentSession(EngineHosting.CreateDefault(backend));
+        var sketch = await Applied(session, new CreateSketchCommand { DatumId = Datums.XY.Id }, "sketchId");
+        var points = new List<Guid>();
+        foreach (var (x, y) in new[] { (0.0, 0.0), (60.0, 0.0), (60.0, 40.0), (0.0, 40.0) })
+            points.Add(await Applied(session, new AddSketchPointCommand { SketchId = sketch, X = x, Y = y }, "pointId"));
+        for (var i = 0; i < 4; i++)
+            await Applied(session, new AddSketchLineCommand { SketchId = sketch, StartPointId = points[i], EndPointId = points[(i + 1) % 4] }, "lineId");
+        var plate = await Applied(session, new ExtrudeCommand { SketchId = sketch, Distance = 10 }, "bodyId");
+        var box = await Applied(session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 }, "bodyId");
+        var sheet = await Applied(session, new CreateSheetCommand { SheetName = "Plate", Paper = "A3" }, "sheetId");
+        await Applied(session, View(sheet, Front, x: 200, y: 200), "viewId");
+        await Applied(session, View(sheet, Top, x: 200, y: 100), "viewId");
+        var document = await session.Read((document, _) => document.DocumentId);
+        static double Height(SheetViewInfo view, Guid body)
+        {
+            var ys = view.Lines.Where(line => line.Body == body && line.Kind != "centre").SelectMany(line => new[] { line.FromY, line.ToY }).ToList();
+            return ys.Max() - ys.Min();
+        }
+
+        var first = await Read(session, sheet);
+        Assert.Equal((1, 1, 2), (ViewBreps.BuiltOf(document, plate), ViewBreps.BuiltOf(document, box), ViewBreps.KeptOf(document)));
+        Assert.Equal(10, Height(first.Views[0], plate));
+
+        await Applied(session, new SetExtrudeDistanceCommand { ExtrudeId = plate, Distance = 20 }, "extrudeId");
+        var changed = await Read(session, sheet);
+        Assert.Equal((2, 1), (ViewBreps.BuiltOf(document, plate), ViewBreps.BuiltOf(document, box)));
+        Assert.Equal(20, Height(changed.Views[0], plate));
+
+        var result = await Applied(session, new SubtractCommand { MinuendBodyId = plate, SubtrahendBodyId = box }, "bodyId");
+        await Read(session, sheet);
+        Assert.Equal(1, ViewBreps.KeptOf(document));
+        Assert.Equal(1, ViewBreps.BuiltOf(document, result));
+    }
+
+    // ADR-0155 item 7, amended by TASK-0446: the reads keep the B-Reps of the last 64 documents. A read of a box in one document,
+    // then a read in each of 64 other documents: the first document keeps no B-Rep, so the kept B-Reps of a process stay bounded.
+    [Fact]
+    public async Task The_Reads_Keep_The_BReps_Of_The_Last_Documents_Only()
+    {
+        async Task<Guid> ReadBox()
+        {
+            var (session, _) = NewSession();
+            await Applied(session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 }, "bodyId");
+            var sheet = await Applied(session, new CreateSheetCommand { SheetName = "Box" }, "sheetId");
+            await Applied(session, View(sheet, Front), "viewId");
+            Assert.NotEmpty(Assert.Single((await Read(session, sheet)).Views).Lines);
+            return await session.Read((document, _) => document.DocumentId);
+        }
+
+        var first = await ReadBox();
+        Assert.Equal(1, ViewBreps.KeptOf(first));
+        for (var i = 0; i < ViewBreps.DocumentLimit; i++)
+            await ReadBox();
+        Assert.Equal(0, ViewBreps.KeptOf(first));
     }
 
     // ADR-0164 item 1 (TASK-0400, findings E211 and E212 of the codebase review of 2026-11-17): a view of an exact frame of
