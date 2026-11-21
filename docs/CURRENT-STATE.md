@@ -12842,3 +12842,49 @@ section 5, said three saved runs of `LostRunnerTests`; there are five.
 New tests: 7. The test list holds 3087 (1778 in `Engine.Tests`, 390 in `3DEngine.Tests`, 916 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 14 of 15 (R-0073 is new). New diagnostic codes: 0. Since the review of v0.413, 3
 product milestones (K15a v0.415, K16 v0.417, K15b v0.418) and 6 entries (v0.414 to v0.419) followed it.
+
+## v0.420 — The pair check gives the contacts, the overlaps and the gaps of the bodies of a part by one query (K11, TASK-0436)
+
+Row K11, after K15a (v0.415), K16 (v0.417), K15b (v0.418) and P0.173 (v0.419). The branch `k11-pair-check` starts from
+`76be5479` (v0.419). ADR-0157 items 5 to 7 give the rules of the owner of 2026-11-15; ADR-0182 records the shape of the query
+and amends ADR-0083 item 4. No change of `Engine.Contracts`, `Engine.Kernel` or `3DEngine.App`.
+
+**The change.**
+- The query `CheckInterference` (the name of card N3 of the design file of 2026-11-15) takes two optional texts:
+  `bodyIds`, two identifiers or more separated by commas, else each live body in the order of the Document; and
+  `intendedPairs`, pairs `a:b` separated by commas. A parameter of a query is flat and the binder refuses the type "array",
+  so each list is one text until P11 and P13 put the intended pairs in the Document.
+- For each pair, A before B in the order of the bodies: `class` (`Apart`, `Touching` or `Overlapping`), `volume` and `box` of
+  the overlap, `gap` with `pointA` and `pointB`, `intended`, `fault` (an overlap that is not intended), `meshOnly` and
+  `basis` (`Guaranteed`, the class of ADR-0157 item 7).
+- Each class is decided on exact rationals: the intersection of the owned kernel (`PlanarBoolean.Intersect`) in memory, only
+  for boxes that share a volume, then the exact nearest pair of ADR-0180 item 4. The query writes nothing to the log and makes
+  no body. Manifold is not used, because it gives a flat solid for a contact on a part of a face.
+- A body with a curved face is checked on its facets, and a closed mesh body of an STL file on the triangles of the backend,
+  each with `meshOnly` true (ADR-0157 item 6). A mesh whose triangles do not close a solid gives `E-MESH-UNSUPPORTED`.
+- The new code `E-CHECK-PAIR-INVALID` (the new token `CHECK`) refuses a list that is not valid. A body that is not live gives
+  `E-GEOM-BODY-NOT-FOUND`, and the other refusals are those of the measure queries.
+- The cost: n (n - 1) / 2 pairs; for each pair one comparison of the boxes, then the intersection or the nearest pair, each at
+  most f_A × f_B steps for f polygons of a body. The bookcase of K10a (19 boxes, 171 pairs) takes 0.22 s here.
+
+**The bookcase.** 171 pairs: 48 pairs touch, none overlaps, and 123 are apart. Each class and each gap equals the result from
+the intervals of the boxes of the table of `BookcaseCase`; among them "Haut" touches "Module 3", "Bas" touches "Module 6"
+and "Fond", the two shelves are 764 mm apart, and the two outer modules 1800 mm.
+
+**Proof.** Eight new tests in `Engine.Tests`: seven in `CheckInterferenceQueryTests` (two boxes that overlap, 350 mm³ in
+the box from (0, -2, -5) to (5, 5, 5), and a box inside a box; touching on a face, on a part of a face, on an edge and on a
+point, and apart by √1300; each pair of the live bodies once with the intended pairs and the one fault, with no change of the
+version, the log or the bodies; a cylinder on its facets; a closed mesh cube on its triangles, and two open meshes refused;
+the refusals; the bookcase) and one in `HttpInterferenceScenarioTests` (the route `/queries` and the schema). The eight tests
+failed against a stub that gave no pair. Nineteen injections, each restored byte for byte (sha256), made a named test fail;
+TASK-0436 lists them in its section "Method". A wrong box test that keeps too many pairs costs time only, and no test sees it.
+The first full run of `dotnet test` failed `SchemaEndpointGateTests.Every_DiagnosticCodes_Constant_Appears_In_Schema_Diagnostics`:
+the new code had no mirror in `SchemaDiagnosticsEndpoint`, which now holds it.
+A clean build gives 0 warnings, the phone project builds with 0 warnings, `dotnet test` passes 3095 tests, and the
+write-set check and `eng/repo-gates` pass. The desktop was not run. The failed runs since the entry v0.419, from the API: none.
+
+New tests: 8. The test list holds 3095 (1786 in `Engine.Tests`, 390 in `3DEngine.Tests`, 916 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 1, `E-CHECK-PAIR-INVALID`; `E-GEOM-BODY-NOT-FOUND`,
+`E-GEOM-BODY-FAULTED`, `E-GEOM-FACES-FAILED`, `E-GEOM-CAP-MISSING`, `E-GEOM-NATIVE-OP` and `E-MESH-UNSUPPORTED` get one more
+place where they are raised. Since the review of v0.413, 4 product milestones and 7 entries followed it, so the codebase
+review is due before the next product milestone.
