@@ -71,3 +71,7 @@ Weakest:    E233 gives estimates of time, not runs; E234 is inferred from the co
 
 - 2026-11-21: opened after K11 (TASK-0436), branch codebase-review-2026-11-21-b from `1e4e345`. The session read the summary,
   the measures, the heading of each finding and the questions. Ledger entry v0.421.
+- 2026-11-21: run 44908442870 of `9073010` failed on windows-latest in the step "Test": a test host crashed ("Test case
+  event channel failed ... forcibly closed by the remote host"). The commit changes documents only. The artifact
+  test-host-crash-windows-latest (20 KB) holds the sequence file and no dump, and the annotation does not name the test. This
+  line starts a new run.
