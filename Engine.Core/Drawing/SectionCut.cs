@@ -62,38 +62,13 @@ internal static class SectionCut
     public static FaceTag Tag(Guid view) => new(view, "cut");
 
     // ADR-0169 item 3: the solid minus the half space on the side of the eye of the plane through the point, or null when no
-    // material stays. The box holds the points P + a R' + b U' + c E' with |a| <= A, |b| <= A and 0 <= c <= A, where A is 1
-    // plus the largest of |a|, |b| and |c| over the vertices of the solid. Each number is exact.
+    // material stays. Each number is exact. Finding E222 (TASK-0445): the cut of the owned kernel by a plane (ADR-0057 item
+    // 10) gives it, with the cap faces of the tag of the view. Until TASK-0445 the read subtracted a box that held the half
+    // space; the cut gives the same faces of the B-Rep, the same lines and the same hatch, with no partition of the solid.
     public static KernelSolid? Apply(KernelSolid solid, Vector3R point, ViewFrame frame, Guid view)
     {
         ArgumentNullException.ThrowIfNull(solid);
-        var (r, u, e) = (frame.Right, frame.Up, frame.TowardEye);
-        var (rr, uu, ee) = (r.Dot(r), u.Dot(u), e.Dot(e));
-        var extent = Rational.Zero;
-        foreach (var vertex in solid.Polygons.SelectMany(polygon => polygon.Vertices))
-        {
-            var d = vertex - point;
-            foreach (var value in new[] { d.Dot(r) / rr, d.Dot(u) / uu, d.Dot(e) / ee })
-            {
-                var size = value.Sign < 0 ? -value : value;
-                if (size > extent)
-                    extent = size;
-            }
-        }
-
-        var a = extent + Rational.One;
-        var corners = new Vector3R[8];
-        for (var i = 0; i < 8; i++)
-        {
-            var (x, y, z) = ((i & 1) != 0 ? a : -a, (i & 2) != 0 ? a : -a, (i & 4) != 0 ? a : Rational.Zero);
-            corners[i] = point + (r * x) + (u * y) + (e * z);
-        }
-
-        // The six faces of KernelSolid.Box, each as two triangles; the corner i has its bits 1, 2 and 4 for +a, +b and +c.
-        int[][] quads = [[1, 3, 7, 5], [0, 4, 6, 2], [2, 6, 7, 3], [0, 1, 5, 4], [4, 5, 7, 6], [0, 2, 3, 1]];
-        var triangles = quads.SelectMany(q => new[] { q[0], q[1], q[2], q[0], q[2], q[3] }).ToArray();
-        var box = KernelSolid.Mesh(Tag(view).Feature, Tag(view).Element, corners, triangles);
-        return PlanarBoolean.Subtract(solid, box);
+        return PlanarBoolean.Cut(solid, point, frame.TowardEye, Tag(view));
     }
 
     // Finding E222 of the codebase review of 2026-11-18 (b) (TASK-0416): the cut of a solid of many facets and its B-Rep take
