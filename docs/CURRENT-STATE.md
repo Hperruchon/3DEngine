@@ -12924,3 +12924,44 @@ run on the branch is in the progress of TASK-0437. The failed runs since the ent
 New tests: 0. The test list holds 3095 (1786 in `Engine.Tests`, 390 in `3DEngine.Tests`, 916 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product
 milestones and 0 entries follow it.
+
+## v0.422 — An agent reads, measures, proposes and checks through a guide whose examples a test sends to a host (P17, TASK-0439)
+
+Row P17, the next product phase after the second codebase review of 2026-11-21 (v0.421). The branch `p17-agent-guide` starts
+from `9073010d` (v0.421). ADR-0157 item 13 asks for the guide. Questions Q1 to Q4 of that review are answered by the standing
+order of the owner of 2026-11-20 (Q1 to Q4 of the second codebase review of 2026-11-21): A to each, so P17 is next, the
+picture is `GetViewLines` and the SVG of a sheet when a sheet exists, a test sends each example, and the guide covers the HTTP
+surface only. No change of `Engine.Contracts`, `Engine.Kernel`, `Engine.Core`, `Engine.Api.Http` or `3DEngine.App`, and no ADR.
+
+**The change.**
+- `docs/guides/agent-loop.md`, with its row in `docs/INDEX.md`: the rules (the person accepts in the window, nothing enters
+  the log before the accept, no `POST /commands` on the Document of a person, a turn is a quaternion, a new `commandId` for
+  each command, the guard `expectedDocumentVersion` on the first envelope only), how to read the examples, the example
+  document, the schema, the steps read, measure, propose and check with the accept of the person, the picture, a table of
+  fourteen refusal codes with what to do, and the limits.
+- The worked example is the bookcase of K10a: the agent reads the five panels of the open case from the snapshot of
+  `/events`, measures the gap of 764 mm between "Bas" and "Haut" with `GetDistance` and the size of "Bas" with
+  `GetMassProperties`, proposes a middle shelf "Milieu" (`CreateBox`, `Translate`, `RenameBody`), reads the accepted
+  proposal, checks the six bodies with `CheckInterference` (the shelf touches the two sides and the back and is 373 mm from
+  each shelf, with no fault), and draws the front view with `GetViewLines` and the SVG of the sheet.
+- `Engine.Tests/Guides/AgentGuideExamplesTests.cs` reads the guide and sends each block `http agent-request` and
+  `http agent-refusal` to a host on 127.0.0.1 in the order of the guide; `GET /events` is a WebSocket. A placeholder `<name>`
+  binds the value of the first answer that gives it. Each answer must have the shape of its block `json agent-result` (a
+  subset: the members of an object, the items of an array in order) or start with its block `text agent-result`. The block
+  `text agent-person` accepts the proposal through `Proposals.Accept`, as the window does. A request of the guide that the
+  host refuses, or a refusal that it accepts, fails the test.
+- Two defects of the surface, in the limits of the guide and not corrected: no query and no field of the snapshot gives the
+  sheets of the Document, so an agent finds a sheet only from the event `sheet.created` while it listens; and no query
+  gives the live bodies with their names, so the snapshot of `/events` is the read of the names.
+
+**Proof.** Three new tests in `Engine.Tests`: each block of the guide is a marked example and the loop has each route; the
+shape refuses a missing member, a wrong value, an order and a changed placeholder; and each example of the guide is
+accepted by a host with the bookcase and gives its shape. The first run failed on the kind of a body ("box" in the guide,
+"Solid" from the host). Fourteen injections, each restored byte for byte (sha256), made a named test fail; TASK-0439 lists
+them in its section "Method". A clean build gives 0 warnings, `dotnet test` passes 3098 tests, and the write-set check and
+`eng/repo-gates` pass. The desktop was not run.
+The failed runs since the entry v0.421, from the API: none.
+
+New tests: 3. The test list holds 3098 (1789 in `Engine.Tests`, 390 in `3DEngine.Tests`, 916 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.420, 1 product milestone and
+2 entries followed it.
