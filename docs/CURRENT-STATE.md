@@ -13198,3 +13198,68 @@ New tests: 9. The test list holds 3137 (1814 in `Engine.Tests`, 390 in `3DEngine
 in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0; `E-GEOM-BODY-NOT-FOUND`, `E-GEOM-BODY-FAULTED`,
 `E-GEOM-FACES-FAILED` and `E-MESH-UNSUPPORTED` get one more place where they are raised. Since the review of v0.420, 2
 product milestones and 7 entries followed it.
+
+## v0.428 — The measure queries give the volume of a plate with holes, and the distance and the angle of the side of a cone, of an arc and of two curved faces (K15c, TASK-0444)
+
+Row K15c, after K15b (v0.418), P0.174 (v0.423) and K17 (v0.427). The branch `k15c-curved-rest` starts from `2a79f573`
+(TASK-0443, v0.427, not merged yet). The answers Q2 A, Q3 A and Q4 A of the codebase review of 2026-11-21 still hold.
+ADR-0180 items 14 to 19 record the decision; items 3, 6 and 8 to 12 say so. No change of `Engine.Contracts`,
+`Engine.Kernel` or `3DEngine.App`, and no new ADR: the shape of the three queries does not change.
+
+**The change.**
+- `GetMassProperties` gives the volume and the centre of the curve, with `facets` false, for a body whose chain is
+  Translate, Rotate and Subtract steps on a first body of plane faces, when the tool of each Subtract that cuts a curve
+  is a cylinder, a cone, a sphere or an extrude of one circle, with only Translate and Rotate steps after it
+  (`CutMass`). The tool is a solid of revolution with the square of its radius R² q(s) along its axis. When each other
+  face in its slab is across the axis or keeps the distance R, and the earlier holes keep the sum of the radii from it,
+  the body holds each part of the axis between two cuts whole or not at all; the test of inside of K15a decides each
+  part, and the exact integral of q gives the removed volume. A plate of 100 by 50 by 10 with a hole of radius 5 gives
+  50000 - 250 π mm³. A notch, a hole at an angle, two holes that meet and a tube keep the volume of their facets with
+  `facets` true.
+- `GetDistance` measures the side of a cone and the part of a piece past an end of a cylinder from the profile of the
+  side, the segment from (R0, 0) to (R1, H) in the half-plane (ρ, z) (`RevolvedDistance`): a piece across the axis, a
+  segment along the axis, and a polygon along the axis whose edges are across or along it have their minimum at a clamp
+  that exact comparisons of squares decide. A slanted piece whose lower bound is below the best distance is refused.
+- Two curved faces: a sphere and the side of a cylinder or a cone (m - s, s - M, or crossing), the sides of two
+  cylinders with parallel axes (the distance of the circles and the gap of the spans), and two spheres as before.
+- The side of an arc is measured when the nearest point of its whole turn is in its sector, an exact test, and its angle
+  to a plane face is to the nearest normal of the sector. `GetConnectors` keeps it `Curved`.
+- `GetAngle` gives the angle of the axes of two sides of a cylinder, a cone or an arc, as lines, from 0 to 90 degrees.
+- `E-MEASURE-CURVED` keeps its meaning and refuses fewer cases; ADR-0180 item 18 lists the rest, and the new row K15d of
+  the roadmap holds them. No query gives a name of a vertex (`GetFaces` and `GetConnectors` give faces, edges and
+  datums), so a vertex is still not a side of `GetDistance`.
+- The guide for an agent gives the new limits of the curved faces.
+
+**Determinism and precision.** Each step that decides a case uses `+`, `-`, `*`, `/` and comparisons on exact rationals,
+except the skip of a piece by its lower bound, the refusal against the best distance and the decisions of a sphere
+against a side, which compare doubles. The values are doubles from `+`, `-`, `*`, `/`, `Math.Sqrt` and `Math.PI`, with
+no transcendental function: a volume has about five roundings for each Subtract, a distance about ten, and a cosine or a
+sine one (ADR-0180 item 19). A query writes nothing to the log.
+
+**Proof.** Eight new tests in `MeasureQueryTests`, on the native backend: a plate of 100 by 50 by 10 with a hole of
+radius 5 (50000 - 250 π mm³), a blind hole (125 π more at the height 2.5) and a hole of an extrude of a circle (40 π
+more), moved and turned; a cone through a plate (its frustum, 875 π / 12) and a sphere (its cap, 17 π / 3), each with
+its centre; the side of a cylinder past its ends against faces, a body, edges across and along the axis (2, √8, and
+√((√98 - 5)² + 4)); the side of a cone against faces beside it (7), over its apex (1), under its base (1), crossing it,
+a box around it, two edges along the axis, and a turned box, which it refuses; two cylinders apart (3), with a gap along
+the axis (√18), one inside the other (2), crossing, on one axis (2), and two axes that are not parallel, which it
+refuses; a sphere against the side of a cylinder (3, √41 - 2, 2, two crossings, 20 - √50) and of a cone (2); the side of
+an arc at 4 from a face, refused for a face on the other side, and its angles to three faces; the angle of the axes of
+two curved faces, and a sphere refused. Each expected value comes from a computation by hand. The eight tests and the
+changed test of K15b failed on the engine files of `2a79f573`. Twenty-four injections, each restored byte for byte
+(sha256), made a named test fail; the first run missed three, because another piece gave the same answer, and the
+stronger tests catch them now. TASK-0444 lists them in its section "Method". A clean build gives 0 warnings, the phone
+project builds with 0 warnings, `dotnet test` passes 3145 tests, and the write-set check and `eng/repo-gates` pass. The
+desktop was not run.
+The failed runs since the entry v0.427, from the API: none.
+
+Corrections: the test of K15b with a plate with a hole is now
+`A_Notch_Gives_The_Volume_Of_Its_Facets_And_Each_Case_With_No_Closed_Form_Is_Refused`, because a plate with a hole has a
+closed form; a notch and two holes that meet keep the facets. The face over the top of a cylinder in
+`The_Distance_From_The_Side_Of_A_Cylinder_To_Faces_Edges_And_Bodies` was refused; it is now 2 mm. The guide for an agent
+told an agent to "Measure the whole body" after `E-MEASURE-CURVED`, but `GetDistance` refuses a body with a curved face;
+it now says to measure a plane face, an edge or a body of plane faces.
+
+New tests: 8. The test list holds 3145 (1822 in `Engine.Tests`, 390 in `3DEngine.Tests`, 930 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0; `E-MEASURE-CURVED` refuses fewer cases.
+Since the review of v0.420, 3 product milestones and 8 entries followed it.

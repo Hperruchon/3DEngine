@@ -416,7 +416,7 @@ status `Rejected`. A request that the surface refuses gives HTTP 4xx with `{ "er
 | `E-CMD-UNKNOWN`, `E-QRY-UNKNOWN` | No command or query has the name and the version. | Read `GET /schema/commands` or `GET /schema/queries`. |
 | `E-GEOM-BODY-NOT-FOUND` | The identifier is not a live body. A command that moves or cuts a body consumes it, and makes a new body. | Read the snapshot or the events again, and use the new identifier. |
 | `E-MEASURE-NAME-NOT-FOUND` | A face or an edge that the body does not have. | Read the faces with `GetFaces`. |
-| `E-MEASURE-CURVED` | A curved face in a case that the measure does not do (see section 12). | Measure the whole body, or a plane face. |
+| `E-MEASURE-CURVED` | A curved face in a case that the measure does not do (see section 12). | Measure a plane face or an edge, or a body of plane faces. |
 | `E-MESH-UNSUPPORTED` | A body of an STL file, in an operation that does not take it, or in a check when its triangles do not close one solid. | Measure or check it as a whole body only. |
 | `E-CHECK-PAIR-INVALID` | A list of `CheckInterference` that is not valid. | Give two bodies or more, each once, and pairs as `a:b`. |
 | `E-CHECK-WORK-LIMIT` | The work of a `CheckInterference` is above its limit (see section 12). | Give fewer bodies with `bodyIds`. |
@@ -483,10 +483,15 @@ DELETE /proposals/<proposal>
 
 - **No preview.** The window shows the commands of a proposal, not their result. A check before the accept is not possible;
   check after the accept. Row P15 adds a preview on a fork of the Document.
-- **Curved faces.** `GetDistance` refuses with `E-MEASURE-CURVED` a body with a curved face that is not whole (a torus, the
-  side of an arc, a face of a body with a `Subtract`), an edge of a curved face, the side of a cone, two curved faces other
-  than two spheres, and a nearest point past an end of the side of a cylinder. `GetAngle` refuses a curved face that is not
-  whole, a sphere and two curved faces. Row K15c adds these cases. `GetMassProperties` does not refuse; it gives `facets`.
+- **Curved faces.** `GetDistance` measures a face of a cylinder, a cone, a sphere or an arc whose body has only `Translate`
+  and `Rotate` after its command. It refuses with `E-MEASURE-CURVED` a body with a curved face as a side, an edge of a
+  curved face, a face of a body with a `Subtract` (the side of a hole), a torus, a slanted face or edge near the side of a
+  cone or past an end of a cylinder, the side of an arc whose nearest point of the whole turn is not on the arc, and two
+  curved faces other than two spheres, a sphere and a cylinder or a cone, and two cylinders with parallel axes. Measure from
+  a plane face or an edge of the other body in place of a body. `GetAngle` gives the angle of the axes for two curved faces,
+  from 0 to 90 degrees, and refuses a sphere, a torus and a face of a body with a `Subtract`. `GetMassProperties` does not
+  refuse: a plate with holes across it gives the volume of its curve, and a body with no closed form, as a hole at an angle
+  or a notch, gives `facets` true. No query names a vertex, so no measure starts at a vertex (ADR-0180 item 18, row K15d).
 - **The cost of a check.** `CheckInterference` holds the session for its whole work, and each command waits for it. The
   work is the sum, over each pair, of the product of the counts of the facets of the two bodies. Above 100,000 the check is
   refused with `E-CHECK-WORK-LIMIT` before its first pair: the 19 boxes of the bookcase need 6,156, a sphere and a plate

@@ -64,13 +64,25 @@ public sealed class GetAngleQueryHandler : IQueryHandler
         if (planeA is { } a && planeB is { } b)
             return Task.FromResult(QueryHandlerResult.Success(Between(a.Normal, b.Normal)));
 
-        // Item 12 (phase K15b, TASK-0434): the side of a cylinder or a cone against a plane face.
+        // Item 12 (phase K15b, TASK-0434): the side of a cylinder or a cone against a plane face. Item 17 (phase K15c,
+        // TASK-0444): two sides of revolution give the angle of their axes.
         var (curve, plane) = curveA is not null ? (curveA, planeB) : (curveB!, planeA);
+        if (curveA?.Kind == Drawing.SideCurveKind.Sphere || curveB?.Kind == Drawing.SideCurveKind.Sphere)
+            return Task.FromResult(QueryHandlerResult.Failure(MeasureTarget.Curved("A sphere has an outward normal in each direction and no axis, so its angle to a face is not one value.")));
         if (plane is not { } other)
-            return Task.FromResult(QueryHandlerResult.Failure(MeasureTarget.Curved("The two faces are curved, and the angle of two curved faces has no closed form in K15b.")));
-        if (curve.Kind == Drawing.SideCurveKind.Sphere)
-            return Task.FromResult(QueryHandlerResult.Failure(MeasureTarget.Curved("A sphere has an outward normal in each direction, so its angle to a face is not one value.")));
+            return Task.FromResult(QueryHandlerResult.Success(Axes(curveA!.Axis, curveB!.Axis)));
         return Task.FromResult(QueryHandlerResult.Success(AboutAxis(curve, other.Normal)));
+    }
+
+    // Item 17 (phase K15c, TASK-0444): the outward normals of two sides of revolution give no one angle: two turns of
+    // normals always share a direction or two. So the angle of two sides is the angle of their axes as lines, from 0 to 90
+    // degrees, because the direction of an axis depends on the order of the commands and not on the part. The cosine is
+    // |a · b| / (|a| |b|) and the sine |a × b| / (|a| |b|), each the root of an exact square, as in item 5.
+    internal static AngleInfo Axes(Vector3R a, Vector3R b)
+    {
+        var lengths = a.Dot(a) * b.Dot(b);
+        var (dot, cross) = (a.Dot(b), a.Cross(b));
+        return new AngleInfo(Math.Sqrt((dot * dot / lengths).ToDouble()), Math.Sqrt((cross.Dot(cross) / lengths).ToDouble()));
     }
 
     private static (PlaneR? Plane, MeasureCurve.Surface? Curve, ErrorDetail? Error) Face(Document document, Guid body, FaceTag tag)
@@ -85,10 +97,21 @@ public sealed class GetAngleQueryHandler : IQueryHandler
     // normals is in the plane of a and m, at the angle |φ - β| to m: the angle between the plane face and the side where
     // the side looks most nearly the same way. So cos = cos φ cos β + sin φ sin β and sin = |sin φ cos β - cos φ sin β|.
     // Each term is the root of an exact square, as in item 5; a sum of two roots is the only other step.
+    //
+    // Item 17 (phase K15c, TASK-0444): the side of an arc has the outward normals of its sector only. When the part of m
+    // across the axis points into the sector, the nearest normal is the one above. Else the nearest normal is at an end of
+    // the arc, and the angle is that of item 5 to the end whose signed square of the cosine is larger, an exact comparison.
     internal static AngleInfo AboutAxis(MeasureCurve.Surface curve, Vector3R m)
     {
         ArgumentNullException.ThrowIfNull(curve);
         var a = curve.Axis;
+        var radial = m - (a * (a.Dot(m) / a.Dot(a)));
+        if (curve.Arc is { } arc && !radial.IsZero && !arc.Holds(radial))
+        {
+            Rational Signed(Vector3R end) => end.Dot(m).Sign * end.Dot(m) * end.Dot(m) / end.Dot(end);
+            return Between(m, Signed(arc.Start) >= Signed(arc.End) ? arc.Start : arc.End);
+        }
+
         var (h2, dot, cross) = (a.Dot(a), a.Dot(m), a.Cross(m));
         var (x2, lengths) = (cross.Dot(cross), a.Dot(a) * m.Dot(m));
         double Root(Rational square) => Math.Sqrt(square.ToDouble());
