@@ -12518,3 +12518,46 @@ TASK-0423 on its branch, failed on macos-latest in the step "Keep the determinis
 New tests: 11. The test list holds 3025 (1726 in `Engine.Tests`, 390 in `3DEngine.Tests`, 906 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.407, 3 product milestones and
 5 entries followed it.
+
+## v0.413 — The bookcase of the owner as the first case of K10, and the measure of 150 turns of a module (K10a, TASK-0429)
+
+Row K10a, the first slice of K10, from the choice of the owner of 2026-11-20 (register entry R-0070): the bookcase
+`Bibliotheque120` is the first case, and the support of the lamp follows when the owner gives its sizes (K10b). The branch
+`k10a-bookcase-case` starts from `040f238a` (R20e, v0.412), which is not merged yet. No change of the engine or of the
+contract, and no ADR.
+
+**The change.**
+- `docs/proposals/2026-11-21-the-bookcase-case-of-k10.md` gives the table of the 19 bodies from the document file of the
+  owner, which stays on the computer of the owner: 14 volumes of modules and the 5 panels of one open case, each a box
+  with its name, its size and its place. The file holds 240 commands, 90 of them `Undo`; 60 commands stay in effect.
+- `Engine.Tests/Assembly/BookcaseCase.cs` sends `CreateBox`, `Translate` and `RenameBody` for each body, 57 commands: the
+  two moves of three panels in the file are one `Translate` here.
+- The gaps: no group of bodies for the five panels (P14 and later), a turn about a hinge is three commands and three new
+  bodies (P11.0), no joint (P11), and no pair check (K11). No shape is missing.
+- The measure for R-0070: Module 1 turns 150 times about the vertical axis through (-1700, -200, 0), by `Translate`,
+  `Rotate` and `Translate`, with the exact turn of the quaternion (115, 0, 0, -1): cos = (1 - t²) / (1 + t²) and
+  sin = 2t / (1 + t²) with t = 1/115, about 0.9965 degree, with no sine function.
+
+**The measure** (Windows, x64, Debug, three runs). 19 bodies stay, and the log holds 507 commands. The 450 commands of the
+turns take 40 to 46 ms, and a replay of the 507 commands takes 17 to 19 ms. The first read of the solid of the owned kernel
+after the turns takes 1953 to 2036 ms, because the kernel reads each turn exactly: the longest numerator of a coordinate has
+2576 digits, about 17 digits more for each turn. The size of the module on z stays 1000 exactly. The largest difference
+between a bound of its box and the exact turn is 1.6e-12 mm, the largest change of the length of an edge from `GetFaces` is
+9.1e-13 mm, and the largest relative change of the square of an edge length in the owned kernel is 2.4e-15. No public
+query gives the size of the exact numbers; the test reads it through the internal `KernelProjection`, as `GetFacesTests`
+does.
+
+**Proof.** `BookcaseCaseTests` (4 tests, native backend): each name and each box of the table, exactly; a save and an open
+give the same records and boxes; the builder gives the bodies and the boxes of a replay of the file of the owner when the
+file is present; the measure asserts 19 bodies, 507 commands, the box of the turned module within 1e-6 mm of the exact turn,
+the 18 other boxes, and a replay with the same bodies and boxes. No time decides a test (ADR-0173 item 4). Without the file
+of the owner, the third test returns early and passes, with a line in its output; it does not skip, because
+`eng/test-floor.txt` gives one exact count for each platform. Seven injections, each restored byte for byte (sha256), made a
+named test fail, and a control without the file passed: TASK-0429 lists them in its section "Method". A clean build gives 0
+warnings, `dotnet test` passes 3029 tests, and the write-set check and `eng/repo-gates` pass. The desktop was not run. The
+failed runs since the entry v0.412, from the API: none.
+
+New tests: 4. The test list holds 3029 (1730 in `Engine.Tests`, 390 in `3DEngine.Tests`, 906 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 12 of 15; R-0070 stays open for the sizes of the lamp and the ADR of P11.0. New
+diagnostic codes: 0. Since the review of v0.407, 4 product milestones and 6 entries followed it, so the codebase review is
+due before the next product milestone.
