@@ -92,6 +92,11 @@ a red run with no fault of the code stops the work until the owner sees it.
   cause; it gives no output of a test (run 44908442870). A crash with no running test in a sequence file or a .trx file says
   "No sequence file: the crashed test is not known." or "No sequence file names a running test: the crashed test is not
   known."
+- A test that runs longer than the hang limit of 2 minutes of the step "Test" stops the test host, and the test platform
+  reports "Test host process crashed" with no dump. Since TASK-0441 the message says "A test ran longer than the hang limit
+  of 2 minutes, so the test platform stopped the test host: a hang, not a crash." from the message of the blame data
+  collector in the .trx file. Each test holds its work below that limit by a count, as item 4 says: one test of
+  `ResponsiveLayoutTests` checks at most 1,000 layouts (runs 44758589835 and 44908442870).
 - The choice of a fault of the service depends on the names of the steps of `ci.yml` on the default branch. A branch that
   renames a step of an artifact gets no re-run for it until the merge, so its run stays red.
 
@@ -116,3 +121,5 @@ a red run with no fault of the code stops the work until the owner sees it.
   fixed lengths.
 - 2026-11-21 · TASK-0440 · Consequences: the message of a crash starts with the running test, its cause leaves out the
   output of other tests, and a crash with no known running test says so (phase P0.175, run 44908442870).
+- 2026-11-21 · TASK-0441 · Consequences: a stop at the hang limit names the limit and not a crash, and the test of the resize
+  of `ResponsiveLayoutTests` is one test for each state, below a count of layouts (phase P0.176).

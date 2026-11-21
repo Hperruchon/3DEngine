@@ -119,6 +119,25 @@ function runningInTrx(file) {
   return names;
 }
 
+// TASK-0441 (phase P0.176): a test that runs longer than the hang limit of the step "Test". The blame data collector stops
+// the test host, and the test platform then gives the reason "Test host process crashed", with no dump when the hang dump
+// type is none. The collector says why in a message of the .trx file with the outcome Warning, which runReasons does not
+// read. The words are those of the SDK 10.0.400; a local run with a limit of 20 seconds gave "The specified inactivity time
+// of 20 seconds has elapsed." Until TASK-0441 the annotation called such a stop a crash (attempt 1 of run 44758589835, run
+// 44908442870), and two tasks looked for a crash of the code.
+const HangLimit = /The specified inactivity time of (.+?) has elapsed/;
+
+function hangLimits(file) {
+  const xml = fs.readFileSync(file, "utf8");
+  const limits = [];
+  const pattern = /<RunInfo\b[^>]*>([\s\S]*?)<\/RunInfo>/g;
+  for (let match; (match = pattern.exec(xml)) !== null; ) {
+    const limit = HangLimit.exec(element(match[1], "Text"));
+    if (limit) limits.push(limit[1]);
+  }
+  return limits;
+}
+
 // The first words of the report of the .NET runtime when a process stops: an exception that no code caught, a stack
 // overflow, a FailFast and an internal error of the runtime (on Windows an access violation is "Fatal error.").
 const CrashMarkers = ["Unhandled exception.", "Unhandled Exception:", "Stack overflow.", "Process terminated.", "Fatal error."];
@@ -188,7 +207,12 @@ const causes = reasons.map(crashCause);
 const crashed = reasons.some(isCrash);
 // The dumps of the step: the job keeps them as the artifact test-host-crash-<system> (TASK-0435). TASK-0440: a crash
 // with no dump says so.
-const dumpText = dumps.length > 0 ? ` Dumps of the crash: ${dumps.join(", ")}.` : crashed ? " No dump of the crash." : "";
+// TASK-0441: the hang limit that the blame data collector names. A stop at that limit is a hang, so it gives no text of a
+// missing dump of a crash.
+const hangs = [...new Set(files.flatMap(hangLimits))];
+const hangText = hangs.length === 0 ? "" :
+  ` A test ran longer than the hang limit of ${hangs.join(", ")}, so the test platform stopped the test host: a hang, not a crash.`;
+const dumpText = dumps.length > 0 ? ` Dumps of the crash: ${dumps.join(", ")}.` : crashed && hangs.length === 0 ? " No dump of the crash." : "";
 const causeText = " Cause: " + (causes.length > 0 ? causes.join(" ") : "no reason was written.");
 // The tests that were running when the test host stopped: first from the sequence files, then from the .trx files.
 const running = [...new Set([...sequences.flatMap(incompleteTests), ...files.flatMap(runningInTrx)])];
@@ -201,7 +225,7 @@ for (const name of running) {
     ` The same run also stopped: ${others.slice(0, 3).join(", ")}${others.length > 3 ? ` and ${others.length - 3} more` : ""}.`;
   failures.push({
     name,
-    message: `${name}: the test did not complete, because the test host stopped while it ran.` + otherText + dumpText + causeText,
+    message: `${name}: the test did not complete, because the test host stopped while it ran.` + hangText + otherText + dumpText + causeText,
     stack: "",
   });
 }
@@ -219,12 +243,12 @@ if (failures.length === 0) {
     `Test step failed on ${runner}`,
     unknownCrash
       ? `The test host stopped, and no .trx file in '${directory}' names a failed test. ${unknownText} ` +
-          `Files read: ${files.length}.` + dumpText + causeText
+          `Files read: ${files.length}.` + hangText + dumpText + causeText
       : `The test step failed, and no .trx file in '${directory}' names a failed test. ` +
           `Files read: ${files.length}. The test host can have stopped before it wrote a result.` + dumpText +
           (causes.length > 0 ? causeText : ""));
 } else {
-  if (unknownCrash) annotate(`Test host stopped on ${runner}`, unknownText + dumpText + causeText);
+  if (unknownCrash) annotate(`Test host stopped on ${runner}`, unknownText + hangText + dumpText + causeText);
   const room = unknownCrash ? MaxAnnotations - 1 : MaxAnnotations;
   const shown = failures.length > room ? failures.slice(0, room - 1) : failures;
   for (const failure of shown) {

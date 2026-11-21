@@ -108,9 +108,13 @@ jobs:
       # with no sign-in can read which test failed (register entry R-0032,
       # TASK-0045). The step still fails with the exit code 1.
       #
-      # A test that runs longer than two minutes is a hang: the slowest test
-      # today has its own limit of 30 seconds. The test platform stops it and
-      # writes a sequence file that names it, and the script reads that file.
+      # A test that runs longer than two minutes is a hang. The test platform
+      # stops it and writes a sequence file that names it, and the script reads
+      # that file. The platform reports the stop as a crash of the test host
+      # with no dump, and the script names the hang limit (TASK-0441). Until
+      # TASK-0441 this comment said that the slowest test had its own limit of
+      # 30 seconds; on two logical processors of the computer of the owner two
+      # tests took 68 and 90 seconds on 2026-11-21.
       # Without the limit a hang held the runner for 360 minutes, and the step
       # never reached the script (codebase review of 2026-10-04, finding T8).
       #

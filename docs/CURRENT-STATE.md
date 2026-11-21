@@ -13057,3 +13057,52 @@ and its message did not.
 New tests: 5. The test list holds 3111 (1802 in `Engine.Tests`, 390 in `3DEngine.Tests`, 916 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.420, 1 product milestone
 and 4 entries followed it.
+
+## v0.425 — The test of the resize is one test for each state, and a stop at the hang limit names the limit and not a crash (P0.176, TASK-0441)
+
+The session of 2026-11-21 looked for the cause of the "crash" of the test host of `3DEngine.ImageTests` on windows-latest
+while `ResponsiveLayoutTests.Each_Size_Of_A_Resize_From_The_Minimum_Keeps_Each_Control_Free` ran: attempt 1 of run
+44758589835 (finding T184 of the codebase review of 2026-11-20) and run 44908442870 (a commit of documents only). The branch
+`p0176-image-test-crash` starts from `391c66a6` (P0.175, v0.424, not merged yet). ADR-0163 and ADR-0173 record the change in
+their history. No change of `Engine.Contracts`, `Engine.Kernel`, `Engine.Core` or `3DEngine.App`.
+
+**The cause.** The hang limit of 2 minutes of the step "Test" (`--blame-hang-timeout 2m --blame-hang-dump-type none`), and
+not a crash of the code. The test checked 496 sizes in 15 states, 7,440 layouts, each with its own Dear ImGui context, font
+atlas and three frames. It took 41 seconds alone on the computer of the owner, 57.5 seconds in the whole step on four
+logical processors and 67.6 seconds on two. ADR-0163 gave four states in about 8 seconds; ADR-0172 to ADR-0178 added eleven
+states to the same test. A local run of the test with a limit of 20 seconds gave the reason "The active test run was
+aborted. Reason: Test host process crashed", the sequence file and no dump, the facts of run 44908442870, which had
+`--blame-crash` and no dump. The .trx file held "Data collector 'Blame' message: The specified inactivity time of 20 seconds
+has elapsed." with the outcome Warning, which `eng/report-failed-tests.js` did not read. The time of the test on the runner is
+not seen: the pipeline keeps no .trx file of a passed job.
+
+**The change.**
+- `ResponsiveLayoutTests`: the test of the resize is a theory with one case for each state, 496 layouts each, about 2.8
+  seconds on the computer of the owner. Each case counts the layouts that `Faults` checks and fails above 1,000
+  (`LayoutsPerTest`) or at 0, a count of the work and not a time (ADR-0173 item 4). The stopped runs took at least 16
+  milliseconds for each layout, so 1,000 layouts take about 16 seconds at that rate.
+- `eng/report-failed-tests.js`: the message of the blame data collector "The specified inactivity time of <limit> has
+  elapsed" gives "A test ran longer than the hang limit of <limit>, so the test platform stopped the test host: a hang, not a
+  crash.", and no text "No dump of the crash.".
+- R-0074 (the stop of `Engine.Tests` on ubuntu-latest in run 44869058349) gets a progress line: it can be the same kind of
+  stop, and the next one names its kind. It stays open. Its test,
+  `TaskGovernanceGateTests.Each_Open_Task_Lists_Exactly_The_Adrs_Whose_Affects_Intersect_Its_Write_Set`, took 100 seconds in
+  the last full run of this task on the computer of the owner, near the hang limit.
+
+**Proof.** One new test in `Engine.Tests` (`CrashReportTests`, the facts of run 44908442870 with the message of the
+collector), and the test of the resize is 15 cases in place of one. The other candidates are out by reading (TASK-0441,
+"Decisions"): each layout makes and disposes its own context on the thread of the test, the collection of Dear ImGui runs
+one test at a time, the atlas belongs to its context, and the smallest display of the test is 360 by 560. Seven injections,
+each restored byte for byte (sha256), made a named test fail; the injection of the form before TASK-0441 failed with "The
+test checked 7936 layouts, and the limit is 1000". The new test of the script fails on the script of `391c66a6`. A clean
+build gives 0 warnings, the phone project builds with 0 warnings, `dotnet test` passes 3126 tests, and the write-set check
+and `eng/repo-gates` pass. Only the next runs on windows-latest prove the cause: no stop of a case of the resize.
+The failed runs since the entry v0.424, from the API: none.
+
+Corrections: the comment of the step "Test" in `.github/workflows/ci.yml` said that the slowest test had its own limit of 30
+seconds; two tests took 68 and 90 seconds on two logical processors of the computer of the owner. The order of the session
+called the stops crashes, as the annotations did.
+
+New tests: 15 (14 cases of the resize and one test of the script). The test list holds 3126 (1803 in `Engine.Tests`, 390 in
+`3DEngine.Tests`, 930 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0.
+Since the review of v0.420, 1 product milestone and 5 entries followed it.
