@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Engine.Contracts;
 using Engine.Contracts.Geometry;
 using Engine.Contracts.Sketch;
@@ -158,17 +157,15 @@ public sealed class CreateSphereAndTorusCommandTests
         var session = NewSession(backend);
         var plate = Output(await Applied(session, new CreateBoxCommand { SizeX = 20, SizeY = 20, SizeZ = 4 }), "bodyId");
         var tool = Output(await Applied(session, new CreateSphereCommand { Radius = 5 }), "bodyId");
-        var clock = Stopwatch.StartNew();
         var cut = Output(await Applied(session, new SubtractCommand { MinuendBodyId = plate, SubtrahendBodyId = tool }), "bodyId");
 
         var faces = await Faces(session, cut);
-        clock.Stop();
 
+        // ADR-0089 item 6: the cut and its faces take about 10 s on the computer of the owner, and took about 3 minutes
+        // before TASK-0289. TASK-0435 (phase P0.173): no time decides the test, so the limit of 300 s of TASK-0300 is gone.
+        // A count of the work of the kernel needs a change of Engine.Kernel, outside the task (R-0073). The hang limit of
+        // 2 minutes of the step "Test" still stops the form before TASK-0289.
         Assert.Equal((1, 1), (faces.Single(f => f.Reference == new DatumReference(plate, "+z", null)).Holes, faces.Single(f => f.Reference == new DatumReference(plate, "-z", null)).Holes));
         Assert.Contains(faces, f => f.Reference == new DatumReference(tool, "surface", null));
-        // ADR-0089 item 6: about 10 s on the computer of the owner, and about 3 minutes before TASK-0289. The runner of macOS
-        // took 64 s in the main run 42445348622, about six times as long, so the form before TASK-0289 would take about 18
-        // minutes there. TASK-0300: the limit of 300 s keeps that difference and leaves room for a slow runner.
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(300), $"The cut and its faces took {clock.Elapsed}.");
     }
 }

@@ -96,6 +96,21 @@ function incompleteTests(file) {
   return names;
 }
 
+// The first words of the report of the .NET runtime when a process stops: an exception that no code caught, a stack
+// overflow, a FailFast and an internal error of the runtime.
+const CrashMarkers = ["Unhandled exception.", "Unhandled Exception:", "Stack overflow.", "Process terminated.", "Fatal error."];
+
+// TASK-0435 (phase P0.173): the cause of a crash from the reason of the test platform. The reason holds the error output of
+// the test host, and the runtime writes its report of the crash at the end. The output of the tests comes first, so a cut of
+// the first characters lost the cause: run 44869058349 gave 2000 characters of "engine-api-http has no document file". The
+// cause is the text from the last marker of the runtime; with no marker, the last characters of the reason.
+function crashCause(reason) {
+  const at = Math.max(...CrashMarkers.map(marker => reason.lastIndexOf(marker)));
+  if (at >= 0) return reason.slice(at);
+  const keep = MaxMessageLength / 2;
+  return reason.length > keep ? "... " + reason.slice(reason.length - keep) : reason;
+}
+
 // The escape rules of a workflow command: a property also escapes ':' and ','.
 function escapeData(text) {
   return text.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
@@ -114,14 +129,18 @@ const directory = process.argv[2];
 const runner = process.env.RUNNER_OS || "this computer";
 const files = directory ? filesIn(directory, name => name.endsWith(".trx")) : [];
 const sequences = directory ? filesIn(directory, name => /^Sequence_.*\.xml$/.test(name)) : [];
+const dumps = directory ? filesIn(directory, name => name.endsWith(".dmp")).map(file => path.basename(file)) : [];
 const reasons = [...new Set(files.flatMap(runReasons))];
+const causes = reasons.map(crashCause);
+// The dumps of the step: the job keeps them as the artifact test-host-crash-<system> (TASK-0435).
+const dumpText = dumps.length > 0 ? ` Dumps of the crash: ${dumps.join(", ")}.` : "";
 const failures = files.flatMap(failedTests);
 for (const name of new Set(sequences.flatMap(incompleteTests))) {
   if (failures.some(f => f.name === name)) continue;
   failures.push({
     name,
-    message: "The test did not complete. The test platform stopped the run: " +
-      (reasons.length > 0 ? reasons.join(" ") : "no reason was written."),
+    message: "The test did not complete: it was running when the test platform stopped the run." + dumpText +
+      " Cause: " + (causes.length > 0 ? causes.join(" ") : "no reason was written."),
     stack: "",
   });
 }
@@ -132,8 +151,8 @@ if (failures.length === 0) {
   annotate(
     `Test step failed on ${runner}`,
     `The test step failed, and no .trx file in '${directory}' names a failed test. ` +
-      `Files read: ${files.length}. The test host can have stopped before it wrote a result.` +
-      (reasons.length > 0 ? ` Reason: ${reasons.join(" ")}` : ""));
+      `Files read: ${files.length}. The test host can have stopped before it wrote a result.` + dumpText +
+      (causes.length > 0 ? ` Cause: ${causes.join(" ")}` : ""));
 } else {
   const shown = failures.length > MaxAnnotations ? failures.slice(0, MaxAnnotations - 1) : failures;
   for (const failure of shown) {

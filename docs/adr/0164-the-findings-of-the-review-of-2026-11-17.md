@@ -1,13 +1,13 @@
 ---
 id: 0164
 title: A view of a frame of any length gives the curves of the design, the files of a sheet guard each number and each name, and the analysis of a sketch keeps its time
-status: Accepted
+status: Amended
 topic: Drawing, sketch
 date: 2026-11-18
 supersedes: []
 superseded-by: []
 amends: ['0143', '0144', '0154', '0155', '0156', '0159', '0160']
-amended-by: []
+amended-by: ['0173']
 affects:
   - Engine.Core/Drawing/ViewEdges.cs
   - Engine.Core/Drawing/SheetLayout.cs
@@ -57,7 +57,9 @@ than 1, and until this record such a view kept the facets of each curved side (E
 5. **The time of the analysis (E213; amends ADR-0154 item 4).** With several right sides, the back-substitution of the
    analysis takes the entries of each pivot row that are not zero, found one time. With one right side, the solve of the
    solver and of a replay, it takes each entry as before, so it keeps its bits. A test compares the fixed lengths of a stair
-   of 600 lines with 1,000 constraints with its status on one computer: at most six times the status and 100 ms.
+   of 600 lines with 1,000 constraints with its status on one computer: at most six times the status and 100 ms. ADR-0173
+   item 4 (TASK-0435): the test compares the products of two numbers, not two times; the analysis computes at most six
+   times the products of the status.
 6. **The limit of joined sizes (E214; amends ADR-0156 item 1).** The scale of the rows gives the right answer for parts of
    a sketch that no constraint joins. When one constraint joins two sizes in a ratio above about 1e5, for example a
    parallel between a line of 1e-6 mm and a line of 1 mm, the freedom of the status can be wrong by one. The fixed lengths
@@ -80,3 +82,5 @@ sketch whose constraint joins sizes in a ratio above about 1e5 can still be wron
 
 - 2026-11-18 · TASK-0400 · The record, for the findings E211 to E217 of the codebase review of 2026-11-17.
 - 2026-11-18 · TASK-0400 · The number is 0164, because P0.164 took 0163 first; shipped at v0.388.
+- 2026-11-21 · TASK-0435 · Amended by ADR-0173 item 4: the test of item 5 compares the products of two numbers of the
+  analysis and of the status, not two times (run 44866049139).

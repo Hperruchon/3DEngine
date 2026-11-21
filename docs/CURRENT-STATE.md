@@ -12739,3 +12739,53 @@ that a cylinder gives the volume of its facets and that its side is refused. K15
 New tests: 6. The test list holds 3064 (1755 in `Engine.Tests`, 390 in `3DEngine.Tests`, 916 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0; `E-MEASURE-CURVED` refuses fewer cases. Since the
 review of v0.413, 2 product milestones and 4 entries followed it.
+
+## v0.419 — No time decides a test, a crash of a test host names its cause on each system, and a known fault of the GitHub service gets one re-run (P0.173, TASK-0435)
+
+The owner ordered "Start P0.173" on 2026-11-21 after four red runs in one night, none for a fault of the code: attempt 1 of
+run 44758589835 (a crash of the test host of `3DEngine.ImageTests` on Windows), run 44831092608 (a time-out of the artifact
+service on macOS in the step "Keep the determinism hash"), run 44866049139 (the time test of the fixed lengths on macOS) and
+attempt 1 of run 44869058349 (a crash of the test host of `Engine.Tests` on Linux). The branch `p0173-red-runs` starts from
+`1b5827fe` (K15b, TASK-0434, v0.418, not merged yet). ADR-0173 items 1, 2 and 4 and its title record the decision; item 4
+amends ADR-0154 item 4 and ADR-0164 item 5, which made a time the result of the tests of the fixed lengths. No change of
+`Engine.Contracts`, `Engine.Kernel` or `3DEngine.App`.
+
+**The change.**
+- No time decides a test. `SketchSolver.StatusWork` and `AnalysisWork` count the products of two numbers of the status and
+  of the analysis of `GetSketch`; the two tests of the fixed lengths hold the analysis at most six times the status (5.0
+  and 5.1 times today), and the count changes no value. In `DesktopSurfaceTests` the host of a subscriber has no stop limit,
+  so only the end of the subscriber lets the stop end, and the host of a partial request keeps the stop limit of the
+  surface, which the test reads. The cut of a plate by a sphere has no limit; a count of the work of the kernel waits for
+  R-0073. `BodyActionsTests`, `SheetPageTests`, `SessionTurnsTests` and `DocumentSessionReentryTests` hold an order, with
+  60 s against a wait for ever. The lower bound of `HttpConcurrencyTests` stays, because it is true on each runner. TASK-0435
+  gives each result of the search and its choice, and the guards of 10 s to 30 s that stay.
+- A crash of a test host. The step "Test" gives `--blame-crash --blame-crash-dump-type mini` on each system: Windows takes
+  the dump with the dump tool of the test platform, Linux and macOS with createdump of the .NET runtime. A failed job keeps
+  each dump and each sequence file as the artifact `test-host-crash-<system>`. `eng/report-failed-tests.js` gives the names
+  of the dumps and the cause from the last report of the runtime in the error output of the test host ("Unhandled
+  exception.", "Stack overflow.", "Process terminated.", "Fatal error."), or its last 1000 characters, before the cut of 2000
+  characters. A crash stays red.
+- The re-run. A failed job also counts as a fault of the service when each failed step is an upload or a download of an
+  artifact of `ci.yml` of the default branch, and each annotation of a failure holds "Failed to CreateArtifact" and "Request
+  timeout". The workflow of the re-run checks out `ci.yml` of the default branch too and reads it as text. A failed test, a
+  crash, each other failed step and each other annotation of a failure keep the run red; a failed set-up of an action has no
+  known text yet.
+
+**Proof.** Seven new tests in `Engine.Tests`: `CrashReportTests` (2), and in `LostRunnerTests` the saved runs 44831092608 and
+44869058349 (first attempts, from the public API), nine mixed cases that stay red, a lost runner with a fault of the
+service, and the steps of the service of `ci.yml`. Eleven tests changed, and six of them their names. Twenty
+injections, each restored byte for byte (sha256), made a named test fail; TASK-0435 lists them in its section "Method". The
+test of E49 of v0.418, with the fault injected, passed in 5 s: the stop limit of 2 s of the surface hid the fault under the
+limit of 5 s of the test. A clean build gives 0 warnings, the phone project builds with 0 warnings, `dotnet test` passes
+3071 tests, and the write-set check and `eng/repo-gates` pass. Only a run of the pipeline proves the dump on Linux and
+macOS, the report of the runtime in the reason of the test platform, and a re-run by the workflow on `main`. The failed runs since the entry v0.418, from the API: none.
+
+Corrections: the entry v0.418 said that the test host of `Engine.Tests` in run 44869058349 crashed "with no test named". Its
+annotation named `TaskGovernanceGateTests.Each_Open_Task_Lists_Exactly_The_Adrs_Whose_Affects_Intersect_Its_Write_Set` as
+the test that did not complete, and gave 2000 characters of the output of other tests and no cause. `docs/templates.md`,
+section 5, said three saved runs of `LostRunnerTests`; there are five.
+
+New tests: 7. The test list holds 3071 (1762 in `Engine.Tests`, 390 in `3DEngine.Tests`, 916 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 14 of 15 (R-0073 is new). New diagnostic codes: 0. Since the review of v0.413, 2
+product milestones (K15a v0.415, K15b v0.418) and 5 entries (v0.414, v0.415, v0.416, v0.418, v0.419) followed it; v0.417
+belongs to K16, which waits for the owner.
