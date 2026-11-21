@@ -46,7 +46,10 @@ public sealed class GetMassPropertiesQueryHandler : IQueryHandler
         var (solid, error) = MeasureTarget.SolidOf(document, mass.BodyId);
         if (solid is null)
             return Task.FromResult(QueryHandlerResult.Failure(error!));
-        return Task.FromResult(QueryHandlerResult.Success(Of(solid)));
+
+        // ADR-0180 item 10 (phase K15b, TASK-0434): the volume of the curve of the design where a closed form exists, else
+        // the exact values of the solid, with the flag of facets when a face is curved.
+        return Task.FromResult(QueryHandlerResult.Success(MeasureCurve.DesignMass(document, mass.BodyId) ?? Of(solid)));
     }
 
     // Item 3: the exact volume of the kernel, and the centre as the sum of the centres of the tetrahedra of a fan of each

@@ -5,7 +5,7 @@ using Engine.Kernel;
 namespace Engine.Core.Queries;
 
 // ADR-0180 items 2, 6 and 7 (phase K15a, TASK-0432): the solid of a body for a measure, the name of a face or an edge in
-// it, and the refusals. The three measure queries read the solid of the owned kernel through KernelProjection, as
+// it, and the refusals. Items 11 and 12 (phase K15b, TASK-0434): a whole curved face resolves to its curve. The three measure queries read the solid of the owned kernel through KernelProjection, as
 // GetFaces does, so the window and an agent measure the same solid by one path.
 internal static class MeasureTarget
 {
@@ -20,8 +20,10 @@ internal static class MeasureTarget
         string? SecondElement,
         Guid? SecondItemId);
 
-    // The pieces of one side, and the solid when the side is a body, which holds the inside of the body too.
-    internal sealed record Resolved(IReadOnlyList<NearestPoints.Piece> Pieces, KernelSolid? Solid);
+    // The pieces of one side, and the solid when the side is a body, which holds the inside of the body too. ADR-0180 item
+    // 11 (phase K15b, TASK-0434): Curve is the whole curved face of the design when the side is one; the pieces are then its
+    // facets.
+    internal sealed record Resolved(IReadOnlyList<NearestPoints.Piece> Pieces, KernelSolid? Solid, MeasureCurve.Surface? Curve = null);
 
     // Item 7: the solid of a live body that the owned kernel builds, or the refusal. The refusals are those of GetFaces
     // (ADR-0058 item 3), and a mesh body is refused as GetFaces refuses it.
@@ -66,15 +68,17 @@ internal static class MeasureTarget
         return solid.Polygons.Select(polygon => polygon.Tag).Distinct().Any(tag => IsCurved(solid, tag));
     }
 
-    // Items 2 and 6: the plane of a face of one plane, or the refusal. GetAngle reads it.
-    public static (PlaneR? Plane, ErrorDetail? Error) PlaneOf(KernelSolid solid, Guid bodyId, FaceTag tag)
+    // Items 2, 6 and 12: the plane of a face of one plane, or the whole curved face of the design (phase K15b, TASK-0434),
+    // or the refusal. GetAngle reads it.
+    public static (PlaneR? Plane, MeasureCurve.Surface? Curve, ErrorDetail? Error) FaceOf(Document document, KernelSolid solid, Guid bodyId, FaceTag tag)
     {
         ArgumentNullException.ThrowIfNull(solid);
         if (solid.Polygons.FirstOrDefault(polygon => polygon.Tag == tag) is not { } polygon)
-            return (null, NotFound($"The body '{bodyId}' has no face '{tag}'."));
-        if (IsCurved(solid, tag))
-            return (null, Curved($"The face '{tag}' of the body '{bodyId}' is curved."));
-        return (polygon.Plane, null);
+            return (null, null, NotFound($"The body '{bodyId}' has no face '{tag}'."));
+        if (!IsCurved(solid, tag))
+            return (polygon.Plane, null, null);
+        var (curve, reason) = MeasureCurve.Whole(document, bodyId, solid, tag);
+        return curve is null ? (null, null, Curved($"The face '{tag}' of the body '{bodyId}' is curved, and {reason}.")) : (null, curve, null);
     }
 
     // Items 2 and 6: the pieces of one side of GetDistance, or the refusal. A body gives each polygon of its solid, a
@@ -102,9 +106,15 @@ internal static class MeasureTarget
             return (null, NotFound($"The body '{side.BodyId}' of side {label} has no face '{tag}'."));
         if (!hasSecond)
         {
+            MeasureCurve.Surface? curve = null;
             if (IsCurved(solid, tag))
-                return (null, Curved($"The face '{tag}' of side {label} is curved."));
-            return (new Resolved([.. solid.Polygons.Where(polygon => polygon.Tag == tag).Select(polygon => new NearestPoints.Piece(polygon.Vertices))], null), null);
+            {
+                (curve, var reason) = MeasureCurve.Whole(document, side.BodyId, solid, tag);
+                if (curve is null)
+                    return (null, Curved($"The face '{tag}' of side {label} is curved, and {reason}."));
+            }
+
+            return (new Resolved([.. solid.Polygons.Where(polygon => polygon.Tag == tag).Select(polygon => new NearestPoints.Piece(polygon.Vertices))], null, curve), null);
         }
 
         if (side.SecondFeatureId is not { } secondFeature || side.SecondElement is not { } secondElement)
@@ -127,6 +137,7 @@ internal static class MeasureTarget
 
     private static ErrorDetail NotFound(string message) => new(DiagnosticCodes.MeasureNameNotFound, message);
 
-    private static ErrorDetail Curved(string message)
-        => new(DiagnosticCodes.MeasureCurved, $"{message} Phase K15a measures plane faces only (ADR-0180 item 6).");
+    // ADR-0180 items 6 and 11 to 12: a curved case that phase K15b gives no closed form for.
+    internal static ErrorDetail Curved(string message)
+        => new(DiagnosticCodes.MeasureCurved, $"{message} Phase K15b measures a whole curved face of a cylinder, a cone or a sphere only, in the cases of ADR-0180 items 6, 11 and 12.");
 }
