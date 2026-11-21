@@ -12690,3 +12690,52 @@ New tests: 18, and one test left the suite (the comparison with the file of the 
 `Engine.Tests`, 390 in `3DEngine.Tests`, 916 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 13 of 15.
 New diagnostic codes: 0; `E-SHEET-TITLE-INVALID` gets one more case. Since the review of v0.413, 1 product milestone and 3
 entries followed it.
+
+## v0.418 — The measure queries give the volume of the curve, and the distance and the angle of whole curved faces from the curve of the design (K15b, TASK-0434)
+
+Row K15b, the second slice of K15, after K15a (v0.415) and P0.172 (v0.416). The branch `k15b-curved-measure` starts from
+`6d78b908` (TASK-0431, v0.416); v0.417 is held by the branch of K16, which waits for the owner. The answers Q2 A, Q3 A and Q4 A
+of the codebase review of 2026-11-21 still hold. ADR-0180 items 10 to 13 record the decision; items 3, 6, 8 and 9 say so.
+No change of `Engine.Contracts` or of `Engine.Kernel`.
+
+**The change.**
+- `GetMassProperties` gives the volume and the centre of the curve of the design, with `facets` false, for a cylinder
+  (π r² h), a cone (π r² h / 3, the centre a quarter of the height over the base), a sphere (4 π r³ / 3), a torus
+  (2 π² R r²), and an extrude of a sketch with arcs or a circle, each with only Translate and Rotate steps after it. The area
+  of a profile is the exact polygon of the first point of each edge, with the signed segment r² (θ - sin θ) / 2 of each arc
+  and its moment c³ / 12 along its bisector. Each other curved body, as a plate with a hole, keeps the exact values of its
+  facets with `facets` true.
+- `GetDistance` measures a whole curved face from its curve (ADR-0143 item 1): the side of a cylinder (a CreateCylinder or an
+  extrude of a circle) and the surface of a sphere, against a body, a face or an edge, and two spheres. The part of a piece in
+  the slab of a cylinder is cut exactly and has a closed form; a part past an end gives a lower bound, and a case whose bound
+  is below the best distance is refused. A curved face inside the solid of a body is at the distance 0.
+- `GetAngle` gives the angle between the side of a cylinder or a cone and a plane face, to the nearest outward normal of the
+  side: a cone of radius 3 and height 4 and its base give the cosine -3/5 and the sine 4/5.
+- `E-MEASURE-CURVED` keeps its meaning and refuses fewer cases: a body with a curved face, an edge of a curved face, a
+  torus, the side of an arc, a face of a body with a Subtract, the side of a cone for a distance, two curved faces except two
+  spheres, a nearest point past an end of a cylinder, a sphere or two curved faces for an angle.
+- `KernelProjection.Placed` gives the command of a body and the exact map of its Translate and Rotate steps, and
+  `KernelProjection.ExtrudeDesign` the sketch, the exact frame and the distance of an extrude, as the walk of the solid reads
+  them.
+- No query gives a name of a vertex (`GetFaces` gives faces and edges, its segments positions only), so no public name is
+  invented. The roadmap splits K15b: K15c holds the vertex and the cases that K15b refuses.
+
+**Determinism.** Each step that decides a case is exact. The values of the curve are doubles from the doubles of the
+commands, with + - * / and `Math.Sqrt`, the constant `Math.PI`, and the sweep of an arc from `MeasureCurve.Angle`, which
+halves the tangent with the square root and sums a series of four terms. `Math.Atan2` is not called: the gate of
+determinism rule 1 scans each file of `Engine.Core`. A query writes nothing to the log.
+
+**Proof.** `MeasureQueryTests` has six new tests, all on the native backend except the test of the angle of an arc: the volume of the curve of a cylinder, a cone, a sphere, a torus, a turned cylinder and a moved cone; an extrude of a square with a half disc as a bulge (100 + 12.5 π mm² by 4) and as a bite, and of a circle (45 π mm³ at (2, 1, 2.5)); a sphere of radius 5 against a face 15 from its centre (10), a box inside it (5 - √3), two faces that cross it, a large box around it (0) and three spheres; the side of a cylinder against a face (10), an edge (√250 - 5), a face past its top, a box inside it (5 - √2), a face that crosses it, a large box around it, and a face over its top and a turned box, which it refuses; the angles of a cylinder and a cone, among them -3/5 and 4/5 for a cone and its base; and `MeasureCurve.Angle` against `Math.Atan2` at 3600 directions. Each expected value comes from a computation by hand. The six tests failed on the code of v0.416. Twenty injections, each restored byte for byte (sha256), made a named test fail; one of them (the crossing at the smaller root) passed the first form of the tests, and a face from y = 3 to y = 13 catches it now. TASK-0434 lists them in its section "Method". A clean build gives 0 warnings, the phone project builds with 0 warnings, `dotnet test` passes
+3064 tests, and the write-set check and `eng/repo-gates` pass. The desktop was not run. The failed runs since the entry v0.416, from the API: run 44866049139 of `a21425d`, the close commit of
+TASK-0429, failed on macos-latest in `FixedLengthsTests.The_Fixed_Lengths_Of_A_Stair_Of_600_Lines_Take_A_Time_Near_The_Status`
+(0.96 s against 0.12 s; the commit changed one task file), and TASK-0429 opened again for a new run; run 44869058349 of
+`14f93eb` on the branch of K16 (TASK-0433) failed on ubuntu-latest, where the test host of `Engine.Tests` crashed with no test
+named, and the next run of that branch passed.
+
+Corrections: the test of K15a `A_Curved_Body_Gives_The_Volume_Of_Its_Facets_And_Is_Refused_Where_A_Plane_Is_Needed` held
+that a cylinder gives the volume of its facets and that its side is refused. K15b changes both, so the test is
+`A_Body_With_A_Hole_Gives_The_Volume_Of_Its_Facets_And_Each_Case_With_No_Closed_Form_Is_Refused`, with a plate with a hole.
+
+New tests: 6. The test list holds 3064 (1755 in `Engine.Tests`, 390 in `3DEngine.Tests`, 916 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0; `E-MEASURE-CURVED` refuses fewer cases. Since the
+review of v0.413, 2 product milestones and 4 entries followed it.

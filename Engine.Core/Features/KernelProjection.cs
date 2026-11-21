@@ -196,6 +196,64 @@ internal static class KernelProjection
         return curves;
     }
 
+    // ADR-0180 item 10 (phase K15b, TASK-0434): the command that creates a live body, and the exact map of the Translate and
+    // Rotate steps after it, as the walk of the solid applies them: a point q of the command is at X q.X + Y q.Y + Z q.Z +
+    // Offset. Null when the chain holds another step, as a Subtract, or a Rotate that gives no turn: the faces of the body are
+    // then not the whole faces of one command.
+    internal sealed record Placement(Command Creator, Vector3R X, Vector3R Y, Vector3R Z, Vector3R Offset)
+    {
+        public Vector3R Direction(Vector3R q) => (X * q.X) + (Y * q.Y) + (Z * q.Z);
+
+        public Vector3R Point(Vector3R q) => Direction(q) + Offset;
+    }
+
+    public static Placement? Placed(Document document, Guid body)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        return PlacedOf(FeatureGraph.Of(document), body);
+    }
+
+    private static Placement? PlacedOf(FeatureGraph graph, Guid handle)
+    {
+        switch (graph.Creator(handle))
+        {
+            case TranslateCommand translate:
+                return PlacedOf(graph, translate.BodyId) is { } moved
+                    ? moved with { Offset = moved.Offset + Vector3R.FromDoubles(translate.Dx, translate.Dy, translate.Dz) }
+                    : null;
+            case RotateCommand rotate when RotateCommandHandler.Turn(rotate) is { } r:
+            {
+                if (PlacedOf(graph, rotate.BodyId) is not { } turned)
+                    return null;
+                var (x, y, z) = (Vector3R.FromDoubles(r.Xx, r.Xy, r.Xz), Vector3R.FromDoubles(r.Yx, r.Yy, r.Yz), Vector3R.FromDoubles(r.Zx, r.Zy, r.Zz));
+                Vector3R Map(Vector3R q) => (x * q.X) + (y * q.Y) + (z * q.Z);
+                return turned with { X = Map(turned.X), Y = Map(turned.Y), Z = Map(turned.Z), Offset = Map(turned.Offset) };
+            }
+            case { } creator and (CreateBoxCommand or CreateCylinderCommand or CreateConeCommand or CreateSphereCommand or CreateTorusCommand or ExtrudeCommand):
+            {
+                var (zero, one) = (Rational.Zero, Rational.One);
+                return new Placement(creator, new(one, zero, zero), new(zero, one, zero), new(zero, zero, one), new(zero, zero, zero));
+            }
+            default:
+                return null;
+        }
+    }
+
+    // ADR-0180 item 10: the sketch in effect of an extrude, the exact frame of its datum and the distance in effect, as the
+    // walk of the solid reads them; null when the kernel cannot build the extrude from them.
+    internal static (SketchRecord Sketch, Vector3R Origin, Vector3R U, Vector3R V, Vector3R Normal, Rational Distance)? ExtrudeDesign(
+        Document document, ExtrudeCommand extrude)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(extrude);
+        var stateOf = Committed(document);
+        var state = stateOf(extrude);
+        if (state.Sketch is not { } sketch || state.Distance == 0 || !double.IsFinite(state.Distance)
+            || ExactFrame(FeatureGraph.Of(document), sketch.DatumId, stateOf, id => DatumResolver.Frame(document, id)) is not var (origin, u, v, n))
+            return null;
+        return (sketch, origin, u, v, n, Rational.FromDouble(state.Distance));
+    }
+
     // The state of the committed Document: the sketch and the distance in effect of an extrude.
     private static Func<ExtrudeCommand, DatumResolver.ExtrudeState> Committed(Document document)
         => extrude => new DatumResolver.ExtrudeState(
