@@ -442,6 +442,13 @@ on the choice of the owner of 2026-11-15, because the register held 14 of its 15
 Exit: the owner gives the sizes and a table of K10 holds them (or the owner chooses another case), and K10 measures 150 turns
 of the arm (the time of a rebuild and of a replay, the size of the numbers, the change of one length), and the ADR of P11.0
 decides the model of a move.
+Progress 2026-11-21: TASK-0429 (K10a, v0.413) gave the measure with the bookcase, not with the arm. Module 1 of the
+bookcase turned 150 times about a vertical axis through the point (-1700, -200, 0), by Translate, Rotate and Translate
+(450 commands, an exact turn of about 0.9965 degree): 19 bodies stay; the 450 commands took 40 to 46 ms; a replay of the
+507 commands took 17 to 19 ms; the first read of the solid of the owned kernel after the turns took about 2 s; a coordinate
+of the owned kernel has a numerator of 2576 digits; each length changed by less than 1e-12 mm (`GetFaces`: 9.1e-13 mm).
+`docs/proposals/2026-11-21-the-bookcase-case-of-k10.md` gives the table and the numbers. The support of the lamp waits for
+its sizes from the owner (K10b), and the ADR of P11.0 is not written, so the entry stays open.
 
 ### R-0071 · On the sheet page the amber value of a proposed dimension is the value of the design, not of the proposal
 - class: debt
