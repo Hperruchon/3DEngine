@@ -1,7 +1,7 @@
 ---
 id: 0434
 title: The measure queries give the volume of the curve and the distance and the angle of whole curved faces from the curve of the design
-status: Active
+status: Done
 phase: K15b
 opened: 2026-11-21
 depends-on: [0432]
@@ -82,7 +82,7 @@ refuse each other curved case with `E-MEASURE-CURVED`.
 - [x] A plate with a hole keeps the volume of its facets with the flag, and each case with no closed form is refused with
   `E-MEASURE-CURVED`.
 - [x] An injection in each part makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
   (Local: each passes. Continuous integration runs after the push.)
 
 ## Decisions
@@ -102,7 +102,7 @@ hold. This task takes these decisions; the owner accepts the change of the secti
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch k15b-curved-measure) · v0.418
+Status: Done · commit (the merge of the branch k15b-curved-measure) · v0.418
 
 ## Method
 
@@ -159,3 +159,4 @@ Injections (`inject0434.js` in `%TEMP%\k15b`), each restored byte for byte (sha2
   with a hole. Ledger entry v0.418.
 - 2026-11-21: merged `main` with K16 (TASK-0433, v0.417), which the owner ordered first ("merge k16"): the ledger
   entry v0.417 comes before v0.418, the test floor of `Engine.Tests` is 1771, and ADR-0181 governs this task too.
+- 2026-11-21: run 44893590618 of `e3c7c136` passed on each job. Closed at v0.418.
