@@ -88,13 +88,13 @@ public sealed class SheetAddTests
     }
 
     // Item 3: the group of the standard views of the plate at 2:1 on A3: the top view 60 mm under the front view, the view from
-    // the right 110 mm left of it, and the box of the group at the centre of the area (10 to 410 across, 30 to 287 up).
+    // the right 110 mm left of it, and the box of the group at the centre of the area (10 to 410 across, 54 to 287 up).
     [Fact]
     public void The_Standard_Views_Are_A_Group_At_The_Centre_Of_The_Area()
     {
         var places = SheetPlacement.Group("A3", true, false, [.. SheetPlacement.Standard.Select(SheetPlacement.FrameOf)], 2, 1, Plate);
 
-        Assert.Equal([(255.0, 203.5), (255.0, 143.5), (145.0, 203.5)], places);
+        Assert.Equal([(255.0, 215.5), (255.0, 155.5), (145.0, 215.5)], places);
     }
 
     private static SheetRecord SheetWith(params SheetView[] views) => new(Guid.NewGuid(), "Sheet 1", "A3", true, false, views, []);
@@ -116,10 +116,10 @@ public sealed class SheetAddTests
         Assert.True(fits);
         foreach (var other in new[] { (X: 255.0, Y: 203.5, W: 60.0, H: 10.0), (X: 255.0, Y: 143.5, W: 60.0, H: 10.0) })
             Assert.True(Math.Abs(x - other.X) >= 60 + other.W || Math.Abs(y - other.Y) >= 40 + other.H, $"The top view at ({x}, {y}) meets a view at ({other.X}, {other.Y}).");
-        Assert.True(x - 60 >= 10 && x + 60 <= 410 && y - 40 >= 30 && y + 40 <= 287, $"The top view at ({x}, {y}) leaves the area.");
+        Assert.True(x - 60 >= 10 && x + 60 <= 410 && y - 40 >= 54 && y + 40 <= 287, $"The top view at ({x}, {y}) leaves the area.");
 
         // A view larger than the area has no free place: it goes to the centre of the area, and the result says so.
-        Assert.Equal(((210.0, 158.5), false), SheetPlacement.Place(SheetWith(), SheetPlacement.FrameOf(FlatView.Front), 10, 1, Plate));
+        Assert.Equal(((210.0, 170.5), false), SheetPlacement.Place(SheetWith(), SheetPlacement.FrameOf(FlatView.Front), 10, 1, Plate));
     }
 
     // Item 5: a free ratio is two whole numbers greater than zero.
@@ -154,14 +154,14 @@ public sealed class SheetAddTests
         Assert.Equal("Added the front view to Sheet 1 at 2:1.", actions.Create("Sheet 1", "A3", true, (2, 1), [FlatView.Front], Plate));
         var sheet = Assert.Single(await Sheets(host));
         var stale = sheet;
-        Assert.Equal((255.0, 203.5, 2L, 1L), (sheet.Views[0].X, sheet.Views[0].Y, sheet.Views[0].ScaleNumerator, sheet.Views[0].ScaleDenominator));
+        Assert.Equal((255.0, 215.5, 2L, 1L), (sheet.Views[0].X, sheet.Views[0].Y, sheet.Views[0].ScaleNumerator, sheet.Views[0].ScaleDenominator));
 
         var before = await host.Session.Read((document, _) => document.Log.Count);
         Assert.Equal("Added the top and the right view to Sheet 1 at 2:1. Sheet 1 has the front view already.", actions.Add(sheet, SheetPlacement.Standard, Plate));
         sheet = Assert.Single(await Sheets(host));
         Assert.Equal(before + 2, await host.Session.Read((document, _) => document.Log.Count));
         Assert.Equal(
-            [(FlatView.Front, 255.0, 203.5), (FlatView.Top, 255.0, 143.5), (FlatView.Right, 145.0, 203.5)],
+            [(FlatView.Front, 255.0, 215.5), (FlatView.Top, 255.0, 155.5), (FlatView.Right, 145.0, 215.5)],
             sheet.Views.Select(view => (SheetPlacement.Standard.Single(standard => SheetPlacement.FrameOf(standard).SequenceEqual(view.Direction)), view.X, view.Y)));
         Assert.All(sheet.Views, view => Assert.Equal((2L, 1L), (view.ScaleNumerator, view.ScaleDenominator)));
 
