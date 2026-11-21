@@ -1,7 +1,7 @@
 ---
 id: 0430
 title: The codebase review of 2026-11-21 is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-21
 depends-on: [0429]
@@ -53,12 +53,12 @@ A review of the code at `92d1c54` (v0.413) is in `docs/reviews/`, and a task hol
 - [x] Each finding of the review has its place and its evidence, and the session read the headings, the measures, the summary
       and the questions.
 - [x] The measures use the method of the last review.
-- [ ] `CodebaseReviewGateTests`, `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on
+- [x] `CodebaseReviewGateTests`, `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on
       the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch codebase-review-2026-11-21) · v0.414
+Status: Done · commit (the merge of the branch codebase-review-2026-11-21) · v0.414
 
 ## Method
 
@@ -71,3 +71,4 @@ Weakest:    V225 and V228 come from a trace of the code and the widths of the fo
 
 - 2026-11-21: opened after K10a (TASK-0429), branch codebase-review-2026-11-21 from `92d1c54`. The session read the summary,
   the measures, the heading of each finding and the questions. Ledger entry v0.414.
+- 2026-11-21: run 44850663962 of `f210f2c8` passed on each job. Closed at v0.414.

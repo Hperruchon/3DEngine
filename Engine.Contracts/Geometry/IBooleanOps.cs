@@ -17,4 +17,14 @@ public interface IBooleanOps
     // backend, if `result` is already taken, or if the difference is
     // empty/degenerate (the subtrahend fully contains the minuend).
     void Subtract(BodyHandle result, BodyHandle minuend, BodyHandle subtrahend);
+
+    // ADR-0181 items 1 and 4 (phase K16, TASK-0433): stores the volume of the two bodies together under `result`. Both
+    // operands stay intact. Two bodies that do not touch give one body of two parts. Throws as Subtract does: an unknown
+    // operand, a `result` that is already taken, or a result that is empty.
+    void Union(BodyHandle result, BodyHandle first, BodyHandle second);
+
+    // ADR-0181 items 3 and 4: stores the volume that the two bodies share under `result`. Both operands stay intact.
+    // Throws as Subtract does. Two bodies apart give an empty result, which throws; two bodies that touch on a face can
+    // give a flat result of no volume, so the handler first asks the owned kernel whether the bodies share a volume.
+    void Intersect(BodyHandle result, BodyHandle first, BodyHandle second);
 }
