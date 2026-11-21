@@ -408,6 +408,50 @@ public sealed class DimensionLabelsTests
         }
     }
 
+    // Finding V228 of the codebase review of 2026-11-21 (TASK-0431): near the lower end of the arc a text goes left of its node,
+    // over the dot of the node above it, and the ground of the text is opaque (R20d). So the frame draws the ground of each text
+    // before the dot of each node: each ground comes before the ring of each node that is not selected. Until TASK-0431 the loop
+    // drew the dot, the ground and the text of one node, then the next node, so a later ground could hide an earlier dot.
+    [Fact]
+    public void Each_Ground_Of_The_History_Arc_Comes_Before_Each_Dot()
+    {
+        var camera = Camera();
+        var strokes = DimensionOverlay.Of(Whole, Board, camera, Display.X, Display.Y, "mm");
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        LiveBody[] bodies = [Panel, new(Guid.Parse("72000000-0000-0000-0000-000000000009"), "Extrude", "Fond", true)];
+        var drawn = UiDrawData.Empty;
+        for (var frame = 0; frame < 3; frame++)
+            drawn = ui.Frame(1f / 60f, Display, Vector2.One, bodies, Panel.Id, dimensions: strokes, ringCentre: Centre(camera, Board), history: Steps);
+
+        var vertices = drawn.Vertices;
+        var (ground, accent) = (Theme.Plate(1f), (Theme.Accent & 0x00FFFFFFu) | 0xFF000000u);
+        var grounds = new List<(string Text, int Last)>();
+        foreach (var step in Steps)
+        {
+            var text = ui.ItemRectangle(DesktopUi.HistoryTextItem(step.Id)) ?? throw new InvalidOperationException($"No text of {step.Text}.");
+            var (left, right) = (text.X - DesktopUi.HistoryGroundPad, text.Z + DesktopUi.HistoryGroundPad);
+            var corners = new[] { new Vector2(left, text.Y), new Vector2(right, text.Y), new Vector2(right, text.W), new Vector2(left, text.W) };
+            var found = Enumerable.Range(0, vertices.Length)
+                .Where(i => vertices[i].Colour == ground && corners.Any(corner => Vector2.Distance(vertices[i].Position, corner) < 0.01f)).ToList();
+            Assert.True(found.Count > 0, $"No ground behind the text {step.Text}.");
+            grounds.Add((step.Text, found.Max()));
+        }
+
+        var rings = 0;
+        foreach (var step in Steps.Where(step => step.Id != Panel.Id))
+        {
+            var node = ui.ItemRectangle(DesktopUi.HistoryItem(step.Id)) ?? throw new InvalidOperationException($"No node of {step.Text}.");
+            var centre = new Vector2((node.X + node.Z) / 2f, (node.Y + node.W) / 2f);
+            var ring = Array.FindLastIndex(vertices, vertex => vertex.Colour == accent && MathF.Abs(Vector2.Distance(vertex.Position, centre) - DesktopUi.HistoryDot) <= 2f);
+            Assert.True(ring >= 0, $"No ring at the node of {step.Text}.");
+            rings++;
+            foreach (var (text, last) in grounds)
+                Assert.True(last < ring, $"The ground of the text {text} comes after the ring of the node of {step.Text}.");
+        }
+
+        Assert.True(rings > 0, "No node that is not selected, so the test proves nothing.");
+    }
+
     // Item 5: a body that is not a board has no thickness line.
     [Fact]
     public void A_Body_That_Is_Not_A_Board_Has_No_Thickness()

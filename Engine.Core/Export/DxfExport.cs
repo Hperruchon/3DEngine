@@ -93,8 +93,10 @@ public static class DxfExport
                 Entity(w, line, FrameLayer);
         }
 
+        // Finding E228 of the codebase review of 2026-11-21 (TASK-0431): "%%" starts a control code of a TEXT, so "50%%d" of a field
+        // showed "50°". Each "%" of a text of the block is "%%%", the code of one "%". The "%%c" of a diameter is not in the block.
         foreach (var text in block.Texts)
-            Label(w, text.Text, text.X, text.Y, text.Size, centred: false);
+            Label(w, text.Text.Replace("%", "%%%", StringComparison.Ordinal), text.X, text.Y, text.Size, centred: false);
 
         // Item 4: the lines of each view, the hidden lines first, as in the SVG file.
         foreach (var view in sheet.Views)

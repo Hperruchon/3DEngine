@@ -1,5 +1,6 @@
 using System.Numerics;
 using Engine.Contracts;
+using Engine.Contracts.Drawing;
 using ThreeDEngine.Core.Input;
 using ThreeDEngine.Desktop;
 using ThreeDEngine.Desktop.Ui;
@@ -168,6 +169,64 @@ public sealed class ShowHiddenTests
         Step(ui, display, Shown);
         Assert.False(ui.HiddenListOpen);
         Assert.Null(ui.ItemRectangle(DesktopUi.PathHiddenItem));
+    }
+
+    // Finding V225 of the codebase review of 2026-11-21 (TASK-0431): while a live sheet exists, a portrait display has "Sheet" right
+    // of "Views" (ADR-0168 item 1), so "Views" is further left. The part, the path line and the top bar end 12 pixels left of
+    // "Views" in that state too (ADR-0138). Until TASK-0431 they kept the room of "Views" only, and "2 hidden" ran under it.
+    // At 360 pixels the file name at its floor of 48 pixels and the part do not fit in the room; register entry R-0072 asks the
+    // owner which rule gives way there.
+    [Theory]
+    [InlineData(390, 844)]
+    [InlineData(412, 915)]
+    public void With_A_Sheet_The_Path_Line_And_The_Top_Bar_End_Left_Of_Views(int width, int height)
+    {
+        var display = new Vector2(width, height);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        ui.ShowSheets([new SheetRecord(Guid.NewGuid(), "Sheet 1", "A4", true, false, [], [])]);
+        // "not saved" makes the text of the top bar long, so it fills its room.
+        ui.ShowStatus(new SessionStatus(null, false, null, false));
+        for (var i = 0; i < 3; i++)
+            Step(ui, display, TwoHidden);
+
+        var views = Box(ui, DesktopUi.ViewsLabel, display);
+        var sheet = Box(ui, DesktopUi.SheetLabel, display);
+        Assert.True(sheet.X >= views.Z, $"Sheet at {sheet} is not right of Views at {views}.");
+        foreach (var item in new[] { DesktopUi.PathHiddenItem, DesktopUi.PathItem, DesktopUi.TitleItem })
+        {
+            var box = Box(ui, item, display);
+            Assert.True(box.Z <= views.X - 12f + 0.5f, $"The item {item} at {box} is not 12 pixels left of Views at {views}.");
+        }
+    }
+
+    // Finding V226 (TASK-0431, Q5 A of the owner): the path line shows "N hidden" only while no body is selected. With a selected
+    // body the part goes, its list closes, and the segments end 12 pixels left of "Views"; with no selection the part comes back.
+    // Until TASK-0431 the part stayed with a selection, and with a selected edge it went past the room of the path line.
+    [Theory]
+    [InlineData(360, 640)]
+    [InlineData(390, 844)]
+    public void With_A_Selected_Body_The_Path_Line_Does_Not_Count_The_Hidden_Bodies(int width, int height)
+    {
+        var display = new Vector2(width, height);
+        using var ui = Started(display, TwoHidden);
+        Tap(ui, display, TwoHidden, DesktopUi.PathHiddenItem);
+        Assert.True(ui.HiddenListOpen);
+
+        for (var i = 0; i < 2; i++)
+        {
+            ui.Route([]);
+            ui.Frame(1f / 60f, display, Vector2.One, TwoHidden, Plate.Id, File);
+        }
+
+        Assert.Null(ui.ItemRectangle(DesktopUi.PathHiddenItem));
+        Assert.False(ui.HiddenListOpen);
+        var path = Box(ui, DesktopUi.PathItem, display);
+        var views = Box(ui, DesktopUi.ViewsLabel, display);
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.PathSegmentItem(PathLevel.Body)));
+        Assert.True(path.Z <= views.X - 12f + 0.5f, $"The path line at {path} is not 12 pixels left of Views at {views}.");
+
+        Step(ui, display, TwoHidden);
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.PathHiddenItem));
     }
 
     // Item 2: where the status line has room for the part, it stays there, and the path line does not repeat it: on the desktop,

@@ -12643,3 +12643,50 @@ New tests: 12. The test list holds 3041 (1742 in `Engine.Tests`, 390 in `3DEngin
 `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 2, `E-MEASURE-NAME-NOT-FOUND` and
 `E-MEASURE-CURVED`; `E-GEOM-BODY-NOT-FOUND`, `E-GEOM-BODY-FAULTED`, `E-GEOM-FACES-FAILED` and `E-MESH-UNSUPPORTED` get the
 three queries. Since the review of v0.413, 1 product milestone and 2 entries followed it.
+
+## v0.416 — The medium and low findings of the codebase review of 2026-11-21 (P0.172, TASK-0431)
+
+TASK-0431 holds the one medium and the ten low findings of the codebase review of 2026-11-21 (TASK-0430), after K15a by
+section 7 of `docs/templates.md`. The questions Q5 to Q7 are answered by the standing order of the owner of 2026-11-20 (Q5 to
+Q7 of the codebase review of 2026-11-21): option A of each.
+
+**The change.**
+- V225: on a portrait display the top bar and the path line end 12 pixels left of "Views", and of "Sheet" beside it while a
+  sheet or a proposed sheet exists (`UpperRightWidth`). At 390 and 412 pixels "2 hidden" is left of "Views" now. At 360
+  pixels the file name at its floor of 48 pixels, its chevron and "2 hidden" do not fit in the room: the part ends at 175 and
+  "Views" starts at 170. Register entry R-0072 asks the owner which rule gives way there.
+- V226 (Q5 A): the path line shows "N hidden" only while no body is selected, and with a selection its list closes. ADR-0178
+  item 2 says so.
+- V227: the room of the folder after the file name is less by the chevron of the file menu, so on a landscape display the
+  folder and the top bar end 12 pixels left of the command line.
+- V228: the history arc draws the ground of each text first, then the dots and the texts, so no ground hides a dot.
+- V223: the window copy of a sheet (`SessionSheets`) reads `titleBlock` of the event. ADR-0179 names the file in `affects`.
+- V224: the sheet page clips each text of the title block to its cell. ADR-0179 item 7 says so.
+- E227 (Q6 A): SetSheetTitle refuses the block that the sheet has already with `E-SHEET-TITLE-INVALID`, with no event and no
+  step of undo, as E225 did for MoveSheetViews. The empty block on a sheet with no block is a change and stays Applied.
+- E228: each "%" of a text of the block is "%%%" in the DXF file, so "50%%d" stays "50%%d" in a CAD program. ADR-0179 "Bad"
+  says that the font of the style STANDARD can put a text of the DXF file into the next cell.
+- E229: a character with no width in the table takes 1015, the width of "@", the widest character of Helvetica. ADR-0179
+  item 4 and "Bad" say that a view in the band goes over the block, because each drawer draws the block first.
+- T185: a request of `HttpConcurrencyTests` stops after 90 s, after the stall limit of 60 s and before the hang limit of 2
+  minutes of the step "Test", so a deadlock fails with its own text. ADR-0173 item 4 says so.
+- T186 (Q7 A): the comparison of the builder of the bookcase with the file of the owner left the test suite. The program
+  `eng/bookcase-compare` compiles the builder of `Engine.Tests`, replays the file and compares the name and the box of each
+  body; its exit code is 0, 1 or 2 (agrees, differs, no file). It is in the solution, so the pipeline builds it;
+  `DependencyDirectionGateTests` classes it as a headless client, and `EventSinkContractTests` reads its source. On the
+  computer of the owner it gave "Each body agrees." with 19 bodies. `docs/INDEX.md` names it.
+
+**Proof.** Each new test failed on the code of v0.415 before its correction, except the test of T186, whose correction is
+the program; its injection shows the failure. Fifteen injections, each restored byte for byte (sha256), made a named test
+fail. The first form of the test of V225 missed the injection of the top bar, because the text "mm" was short; the test sets
+"not saved" now. TASK-0431 lists them in its section "Method". A clean build gives 0 warnings, the phone project builds with
+0 warnings, `dotnet test` passes 3058 tests, and the write-set check and `eng/repo-gates` pass. The desktop was not run.
+The failed runs since the entry v0.415, from the API: none.
+
+Corrections: `docs/proposals/2026-11-21-the-bookcase-case-of-k10.md` said that a test compares the builder with the file of
+the owner; it names the program now.
+
+New tests: 18, and one test left the suite (the comparison with the file of the owner). The test list holds 3058 (1749 in
+`Engine.Tests`, 390 in `3DEngine.Tests`, 916 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 13 of 15.
+New diagnostic codes: 0; `E-SHEET-TITLE-INVALID` gets one more case. Since the review of v0.413, 1 product milestone and 3
+entries followed it.

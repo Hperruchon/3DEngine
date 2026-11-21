@@ -12,6 +12,7 @@ using Engine.Core.Queries;
 using Engine.Geometry.Manifold;
 using Engine.Kernel;
 using Engine.Tests.Geometry;
+using Engine.Tests.Governance;
 using Xunit.Abstractions;
 
 namespace Engine.Tests.Assembly;
@@ -123,43 +124,26 @@ public sealed class BookcaseCaseTests(ITestOutputHelper output) : IDisposable
         }
     }
 
-    // The final document of the builder gives the same bodies and boxes as a replay of the file of the owner. The file is
-    // on the computer of the owner only, and not in the repository (answer Q2 A of the plan of K10). When it is absent,
-    // the test returns early and passes. It does not skip: eng/test-floor.txt gives the exact count of executed tests, and
-    // a skip on one computer only would change that count there. The output line says which case ran.
-    [NativeManifoldFact]
-    public async Task The_Builder_Gives_The_Bodies_Of_The_File_Of_The_Owner_When_The_File_Is_Present()
+    // Finding T186 of the codebase review of 2026-11-21 (TASK-0431, Q7 A of the owner): the comparison of the builder with the
+    // file of the owner is the program eng/bookcase-compare, which the owner runs where the file is (answer Q2 A of the plan
+    // of K10: the file is not in the repository). No test reads the documents folder of the person who runs it, so each test
+    // compares something in each run. The program compiles this builder. Until TASK-0431 a test of this class read the file,
+    // and it passed with no comparison where the file was absent, as in each run of the pipeline.
+    [Fact]
+    public void The_Comparison_With_The_File_Of_The_Owner_Is_A_Program_And_No_Test()
     {
-        var file = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "3DProjects", "Bibliotheque120", "Bibliotheque120" + DocumentFile.Extension);
-        if (!File.Exists(file))
-        {
-            output.WriteLine($"The file of the owner is absent ({file}), so the test compares nothing.");
-            return;
-        }
+        var documents = "Special" + "Folder.MyDocuments";
+        var tests = Directory.EnumerateFiles(RepositoryFiles.Path("Engine.Tests"), "*.cs", SearchOption.AllDirectories)
+            .Select(RepositoryFiles.Relative)
+            .Where(file => !file.Contains("/bin/", StringComparison.Ordinal) && !file.Contains("/obj/", StringComparison.Ordinal))
+            .Where(file => RepositoryFiles.Read(file).Contains(documents, StringComparison.Ordinal))
+            .ToList();
+        Assert.True(tests.Count == 0, $"A test reads the documents folder of the person: {string.Join(", ", tests)}.");
 
-        SortedDictionary<string, Aabb> replayed;
-        using (var backend = new ManifoldGeometryBackend())
-        {
-            var reader = NewSession(backend);
-            await DocumentFile.Read(reader, file);
-            replayed = await Boxes(reader);
-            reader.Close();
-        }
-
-        SortedDictionary<string, Aabb> built;
-        using (var backend = new ManifoldGeometryBackend())
-        {
-            var session = NewSession(backend);
-            await BookcaseCase.Build(session);
-            built = await Boxes(session);
-            session.Close();
-        }
-
-        output.WriteLine($"The file of the owner is present: {replayed.Count} bodies after its replay.");
-        Assert.Equal(replayed.Keys, built.Keys);
-        foreach (var (name, box) in replayed)
-            Assert.True(box == built[name], $"{name}: the builder gives {built[name]}, and the file gives {box}.");
+        var program = RepositoryFiles.Read("eng", "bookcase-compare", "Program.cs");
+        foreach (var call in new[] { documents, "DocumentFile.Read(", "BookcaseCase.Build(", "GetBoundingBoxQuery" })
+            Assert.Contains(call, program, StringComparison.Ordinal);
+        Assert.Contains(@"<Compile Include=""..\..\Engine.Tests\Assembly\BookcaseCase.cs""", RepositoryFiles.Read("eng", "bookcase-compare", "BookcaseCompare.csproj"), StringComparison.Ordinal);
     }
 
     // The measure of register entry R-0070 for the study of P11.0 (ADR-0126 item 3). Module 1 turns 150 times about the

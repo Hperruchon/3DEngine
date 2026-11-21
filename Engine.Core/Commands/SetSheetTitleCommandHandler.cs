@@ -88,6 +88,16 @@ public sealed class SetSheetTitleCommandHandler : ICommandHandler, ICommandEncod
         }
 
         var block = new SheetTitleBlock(values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7], values[8], values[9], values[10]);
+        // Finding E227 of the codebase review of 2026-11-21 (TASK-0431, Q6 A of the owner): the block that the sheet has already
+        // changes nothing, so it is refused and gives no step of undo, as a move of a view to its place is (E225). The record
+        // holds texts only, so == compares the values. A sheet with no block and the empty block differ, so the empty block on a
+        // sheet with no block is Applied. Until TASK-0431 each such command was Applied.
+        if (sheet.TitleBlock == block)
+        {
+            return Task.FromResult(SheetResults.Failure(DiagnosticCodes.SheetTitleInvalid,
+                $"The sheet '{sheet.Id}' has this title block already, so the command changes nothing (ADR-0179 item 2)."));
+        }
+
         var outputs = new Outputs(new Dictionary<string, object?> { ["sheetId"] = sheet.Id });
         return Task.FromResult(CommandHandlerResult.Success(outputs, changedSheets: [sheet with { TitleBlock = block }]));
     }

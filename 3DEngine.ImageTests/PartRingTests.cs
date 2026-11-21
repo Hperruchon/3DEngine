@@ -242,6 +242,33 @@ public sealed class PartRingTests
         Assert.Equal([new PathAction(PathLevel.Document)], ui.TakeActions());
     }
 
+    // Finding V227 of the codebase review of 2026-11-21 (TASK-0431): with no selected body the segment of the file name holds the
+    // chevron of the file menu (item 4), so the room of the folder after it is less by the chevron. On a landscape display a long
+    // folder, and the top bar, end 12 pixels left of the command line (ADR-0138). Until TASK-0431 they ended 20 pixels further.
+    [Theory]
+    [InlineData(1280, 720)]
+    [InlineData(1440, 900)]
+    public void A_Long_Folder_After_The_File_Name_Ends_Left_Of_The_Command_Line(int width, int height)
+    {
+        var display = new Vector2(width, height);
+        var folder = Path.Combine("C:", "Users", "Owner", "Documents", "3DProjects", "Furniture of the living room", "Bookcases", "Second version of the drawings");
+        var line = new DocumentLine("bracket.3de", null, Files: true, Folder: folder);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        for (var frame = 0; frame < 3; frame++)
+        {
+            ui.Route([]);
+            ui.Frame(1f / 60f, display, Vector2.One, [Plate, Post], null, line);
+        }
+
+        var command = ui.ItemRectangle(DesktopUi.CommandItem) ?? throw new InvalidOperationException("No command line.");
+        var shown = ui.ItemRectangle(DesktopUi.TitleFolderItem) ?? throw new InvalidOperationException("No folder in the top bar.");
+        var title = ui.ItemRectangle(DesktopUi.TitleItem) ?? throw new InvalidOperationException("No top bar.");
+        var name = ui.ItemRectangle(DesktopUi.PathSegmentItem(PathLevel.Document)) ?? throw new InvalidOperationException("No file name.");
+        Assert.True(shown.X >= name.Z, $"The folder at {shown} is not right of the file name and its chevron at {name}.");
+        Assert.True(shown.Z <= command.X - 12f + 0.5f, $"The folder at {shown} is not 12 pixels left of the command line at {command.X}.");
+        Assert.True(title.Z <= command.X - 12f + 0.5f, $"The top bar at {title} is not 12 pixels left of the command line at {command.X}.");
+    }
+
     // Finding V211 of the codebase review of 2026-11-20 (TASK-0426): after a tap on the structure view, the file menu still opens
     // over it, so on a phone "Open project..." takes its tap. Until TASK-0426 the menu opened behind the view, which took the tap.
     // A second tap on the file name closes the menu: a first form of the correction gave the menu the focus in each frame,

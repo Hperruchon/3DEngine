@@ -1,8 +1,11 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using System.Net.Http.Json;
 using System.Net.WebSockets;
 using System.Text.Json;
+using System.Text.RegularExpressions;
+using Engine.Tests.Governance;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Engine.Tests.Http;
@@ -17,10 +20,12 @@ namespace Engine.Tests.Http;
 public class HttpConcurrencyTests : IClassFixture<WebApplicationFactory<Program>>
 {
     // Finding T183 of the codebase review of 2026-11-20 (TASK-0426, Q8 A of the owner, ADR-0173 item 4): no time limit decides a
-    // test of this class. A request stops only after 60 s, a limit that only stops a test that waits for ever, and the test of a
+    // test of this class. A request stops only after a long limit that only stops a test that waits for ever, and the test of a
     // deadlock fails only when no operation ends for 60 s. Until TASK-0426 a request stopped after 10 s, and the test of a
     // deadlock failed when the work took more than 11 s, also with progress (run 44814556105: 73 commands and 48 subscriptions).
-    private static readonly TimeSpan OperationLimit = TimeSpan.FromSeconds(60);
+    // Finding T185 of the codebase review of 2026-11-21 (TASK-0431): a request stops only after 90 s, after the stall limit, so a
+    // deadlock fails with its own text and not as a cancel; 90 s is under the hang limit of 2 minutes of the step "Test".
+    private static readonly TimeSpan OperationLimit = TimeSpan.FromSeconds(90);
     private static readonly TimeSpan StallLimit = TimeSpan.FromSeconds(60);
 
     private readonly WebApplicationFactory<Program> _baseFactory;
@@ -245,6 +250,21 @@ public class HttpConcurrencyTests : IClassFixture<WebApplicationFactory<Program>
         Assert.Equal((true, TimeSpan.FromSeconds(100)), await Run(endsAt: 100, stopsAt: int.MaxValue));
         Assert.Equal((false, TimeSpan.FromSeconds(60)), await Run(endsAt: int.MaxValue, stopsAt: 0));
         Assert.Equal((false, TimeSpan.FromSeconds(80)), await Run(endsAt: int.MaxValue, stopsAt: 21));
+    }
+
+    // Finding T185 of the codebase review of 2026-11-21 (TASK-0431): in a deadlock the last ended operation and the first blocked
+    // request start at almost the same time. When the cancel of the request comes before the stall limit, each loop ends with a
+    // fault, and the test fails with a TaskCanceledException and not with the text of a deadlock. So a request stops 30 s or more
+    // after the stall limit, and before the hang limit of the step "Test" of the pipeline. Until TASK-0431 both limits were 60 s.
+    [Fact]
+    public void A_Request_Stops_After_The_Stall_Limit_And_Before_The_Hang_Limit()
+    {
+        var match = Regex.Match(RepositoryFiles.Read(".github", "workflows", "ci.yml"), @"--blame-hang-timeout (\d+)m ");
+        Assert.True(match.Success, "ci.yml gives no hang limit in minutes.");
+        var hang = TimeSpan.FromMinutes(int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture));
+
+        Assert.True(OperationLimit >= StallLimit + TimeSpan.FromSeconds(30), $"A request stops after {OperationLimit.TotalSeconds} s, and the stall limit is {StallLimit.TotalSeconds} s.");
+        Assert.True(OperationLimit < hang, $"A request stops after {OperationLimit.TotalSeconds} s, and the hang limit is {hang.TotalSeconds} s.");
     }
 
     private static async Task<HttpResponseMessage> PostCreateBox(HttpClient http, Guid commandId)
