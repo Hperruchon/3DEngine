@@ -12,6 +12,7 @@ affects:
   - 3DEngine.App/DimensionOverlay.cs
   - 3DEngine.App/Ui/DesktopUi.Overlay.cs
   - 3DEngine.App/Ui/DesktopUi.cs
+  - 3DEngine.App/Ui/DesktopUi.History.cs
   - 3DEngine.ImageTests/DimensionLabelsTests.cs
   - 3DEngine.ImageTests/DimensionOverlayTests.cs
   - 3DEngine.ImageTests/DimensionImageTests.cs
@@ -64,7 +65,10 @@ owner can change them.
    it moves right of the control from its place, else left of it. The plates of the selected body are placed first, so
    they stay nearest to their body. To know those rectangles, the window places the dimensions after the ring and the
    history arc. It draws them on the first of two channels of the background list, so they stay under the outline of the
-   face, the ring, the arc, the chips and the rows.
+   face, the ring, the arc, the chips and the rows. The stroke of the history arc is a cover too, as twelve boxes of its
+   chords, each wider by half the widest stroke of its glow, and so is the amber text of a pending step. Each text of the
+   history arc, with its caption and the text of a pending step, has the ground of the scene behind it, so a dimension
+   line under the arc does not go across the text (TASK-0423).
 5. **The thickness (amends ADR-0056 item 6).** The size of a body shows its thickness only when the body is a board: the
    thickness (ADR-0056, Q1 A) is more than zero and at most a quarter of the middle extent of its box. A panel of 18 by
    400 by 800 is a board. A cube of 400, a bar of 40 by 40 by 800, and an extrude whose distance is its longest extent
@@ -99,3 +103,7 @@ session, not a rule of the trade. No person used the change in the window.
 - 2026-11-12 · TASK-0352 · Shipped at v0.337.
 - 2026-11-14 · TASK-0356 · ADR-0129 item 2 amends item 4: a plate that no move frees stays at its place, and the covers
   hold the windows of the last frame (findings V173 and V176 of the codebase review of 2026-11-14).
+- 2026-11-20 · TASK-0423 · Item 4: the stroke of the history arc and the text of a pending step are covers, and each text
+  of the arc has the ground of the scene. The scenario of R20c in the window on 2026-11-20 found the arc across "Overall · Y
+  400 mm" and a dimension line across "Box" (R-0065); section 4 of the codebase review of 2026-11-20 found the caption and
+  the pending text with no ground.

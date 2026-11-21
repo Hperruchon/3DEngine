@@ -496,6 +496,8 @@ Therefore each approved objective must have a track here.
 - P0.170 — The scenarios of R20a and R20c ran in the window: R20a passes, and R20c finds a label under the history arc
   (R20d). The owner chose the path line for R-0064 (ADR-0178, R20e). v0.407, TASK-0427, ADR-0178.
 - Review — The codebase review of 2026-11-20. v0.408, TASK-0425.
+- R20d — No plate of a dimension lies on the stroke of the history arc, and each text of the arc has the ground of the
+  scene, so no dimension line goes across it. v0.409, TASK-0423, ADR-0125.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -817,7 +819,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R20b1 | "Dimensions" is a segment of the ring of a body, with the state of a tool in use while the dimensions are on (ADR-0122). TASK-0348. | 1 |
 | R20b2 | The selection stays after a Hide, the status line shows "N hidden · Show", and the ring of the document has "Show hidden". After R20b1. TASK-0351 (ADR-0124); the ring of the document waits for the owner (R-0064). | 1 |
 | R20c | Each dimension says what it measures: the selected piece in the colour of the selection with its name, the whole in a neutral colour with "Overall", each label on a plate outside the silhouette, and no label under the status line, the ring or the history arc (improvement C, problems 3 and 4; amends ADR-0056). After R18c. TASK-0352 (ADR-0125). | 1–2 |
-| R20d | No label of a dimension under the history arc, and no line of a dimension over a label of the history arc: the scenario of R20c in the window on 2026-11-20 found the history arc across "Overall · Y 400 mm" and a dimension line across "Box" (R-0065, due 2026-11-26). After P0.170. | 1 |
+| R20d | No label of a dimension under the history arc, and no line of a dimension over a label of the history arc: the scenario of R20c in the window on 2026-11-20 found the history arc across "Overall · Y 400 mm" and a dimension line across "Box" (R-0065, due 2026-11-26). After P0.170 and the codebase review of 2026-11-20. TASK-0423. | 1 |
 | R20e | "Show hidden" on the ring of the part while a body is hidden, and the part "N hidden · Show" on the path line where the status line has no room (ADR-0178, the answer of the owner to R-0064). After R20d. TASK-0424. | 1 |
 | R21 | The flat views in the window: a front, a top, a side and the other three views with no perspective, one tap each, and a return to the 3D view; Frame fills the free part of the scene (ADR-0118 item 2; Q5 A of 2026-11-10; problem 6 of the UX test). After R18. | 2–3 |
 | R21a | The flat views of the camera with no perspective, one source of the axes for the view, the pick, the overlay and the gizmo, and the commands of the views in the command line (ADR-0137). After R18. TASK-0369. | 1 |
