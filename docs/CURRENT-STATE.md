@@ -12595,3 +12595,51 @@ run on the branch is in the progress of TASK-0430. The failed runs since the ent
 New tests: 0. The test list holds 3029 (1730 in `Engine.Tests`, 390 in `3DEngine.Tests`, 906 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product
 milestones and 0 entries follow it.
+
+## v0.415 — The window and an agent measure the volume, the distance and the angle of bodies of plane faces by one path of queries (K15a, TASK-0432)
+
+Row K15a, the first slice of K15, after the codebase review of 2026-11-21. The answers Q1 to Q4 of that review are answered
+by the standing order of the owner of 2026-11-20 (Q1 to Q4 of the codebase review of 2026-11-21): K15 first, in a slice for
+bodies of plane faces (Q1 A); the exact volume of the facets of a curved body, with a flag (Q2 A); a face or an edge named by
+the body and the name of `GetFaces` (Q3 A); doubles in millimetres and the two points of a distance (Q4 A). K15a starts
+before K10b, because the support of the lamp waits for the sizes of the owner (R-0070). The branch `k15a-measure-queries`
+starts from `f210f2c8` (the review, v0.414), which is not merged yet. ADR-0180 records the decision. No change of
+`Engine.Contracts` or of `Engine.Kernel`.
+
+**The change.**
+- `GetMassProperties(bodyId)` gives `volume` (mm³), `centre` (mm) and `facets`. The volume is `KernelSolid.Volume`; the
+  centre is the sum of the centres of the tetrahedra of a fan of each polygon, weighted by their signed volumes, in exact
+  rationals. `facets` is true when a face of the body is curved: the values are then those of the plane facets.
+- `GetDistance(A, B)` gives `distance` (mm), `pointA` and `pointB`. A side is a body, a face (`featureId`, `element`,
+  `itemId`) or an edge (the names of its two faces, in either order), with the suffix A or B. The nearest points of the convex
+  polygons and the segments are exact; a test of the boxes skips far pairs. A body is a solid: a side inside a body is at the
+  distance 0, by the exact subtract of the kernel with a small cube about one vertex.
+- `GetAngle(A, B)` gives `cosine` and `sine` of the angle between the outward normals of two plane faces, from the exact
+  squares (m · n)² / (|m|² |n|²) and |m × n|² / (|m|² |n|²).
+- A face name is curved when its pieces lie on more than one plane. `GetDistance` refuses a body with a curved face, a curved
+  face and an edge of a curved face, and `GetAngle` a curved face, with `E-MEASURE-CURVED`. A name that the body does not
+  have, or a part of a name, gives `E-MEASURE-NAME-NOT-FOUND`. The body gives the codes of `GetFaces`.
+- The queries are in `HandlerCatalog`, so `/queries`, `engine query` and `DocumentSession.Query` reach them with no new route.
+- The roadmap splits K15 into K15a and K15b: the curved faces and a vertex, which has no name in `GetFaces`, wait for K15b.
+
+**Determinism.** Each step uses + - * / and comparisons on exact rationals. The only other call is one `Math.Sqrt` of the
+nearest double to an exact square, for the distance, the cosine and the sine. No transcendental function is called, and a
+query writes nothing to the log.
+
+**Proof.** `MeasureQueryTests` (11 tests, 7 on the native backend) and `HttpMeasureScenarioTests` (1 test, native backend):
+a box, a plate of 100 by 60 by 10 with a pocket (58800 mm³ at (-30/49, -10/49, -1/14)), a box turned a quarter, an extrude
+with a chamfer at 45 degrees (350 mm³ at (95/21, 95/21, 2), cosine and sine the root of 1/2), a cylinder (the volume of its
+facets, below that of the curve), two boxes apart, touching, overlapping and one inside the other, faces and edges of one
+box, the exact steps between pieces, the refusals, and the bookcase of K10a: the shelves 764 mm apart, the outer modules
+1800 mm apart, two modules that touch, the inner width 1164 mm between the sides, the back panel 5587200 mm³ at
+(300, 197, 1000), and a right angle between a side and the back. Each expected value comes from a computation by hand.
+Twenty injections, each restored byte for byte (sha256), made a named test fail; two of them passed the first form of
+the tests (a parameter of a segment clamped to the wrong end), and two cases of parallel segments catch them now. TASK-0432
+lists them in its section "Method". A clean build gives 0 warnings, the phone project builds with 0 warnings, `dotnet test` passes 3041 tests, and the
+write-set check and `eng/repo-gates` pass. The desktop was not run. The failed runs since the entry v0.414, from the API:
+none.
+
+New tests: 12. The test list holds 3041 (1742 in `Engine.Tests`, 390 in `3DEngine.Tests`, 906 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 2, `E-MEASURE-NAME-NOT-FOUND` and
+`E-MEASURE-CURVED`; `E-GEOM-BODY-NOT-FOUND`, `E-GEOM-BODY-FAULTED`, `E-GEOM-FACES-FAILED` and `E-MESH-UNSUPPORTED` get the
+three queries. Since the review of v0.413, 1 product milestone and 2 entries followed it.
