@@ -1,7 +1,7 @@
 ---
 id: 0429
 title: The bookcase of the owner is the first case of K10, as a builder of its 19 bodies and a measure of 150 turns of a module
-status: Active
+status: Done
 phase: K10a
 opened: 2026-11-21
 depends-on: [0424]
@@ -66,7 +66,7 @@ R-0070 asks for.
 - [x] The measure test turns a module 150 times about its hinge, asserts only stable results, and writes the times, the
   change of a length and the size of the numbers to its output.
 - [x] An injection of each part makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
   (Local: each passes. Continuous integration runs after the push.)
 
 ## Decisions
@@ -78,7 +78,7 @@ R-0070 asks for.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch k10a-bookcase-case) · v0.413
+Status: Done · commit (the merge of the branch k10a-bookcase-case) · v0.413
 
 ## Method
 
@@ -130,3 +130,4 @@ Injections (`inject0429.js` in the scratchpad), each restored byte for byte (sha
 
 - 2026-11-21: opened after R20e, branch `k10a-bookcase-case` from `040f238a` (R20e, TASK-0424, v0.412), which is not merged
   yet. The table, the builder, four tests and eight injections. Ledger entry v0.413.
+- 2026-11-21: run 44846510217 of `92d1c54e` passed on each job. Closed at v0.413.
