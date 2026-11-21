@@ -1,7 +1,7 @@
 ---
 id: 0433
 title: A client, the command line or an agent joins two bodies or keeps their shared volume with one command each, in the form of Subtract
-status: Active
+status: Done
 phase: K16
 opened: 2026-11-21
 depends-on: [0432]
@@ -96,7 +96,7 @@ takes: the backend, the owned kernel, the names of the faces, the rebuild, undo,
 - [x] The kernel agrees with Manifold over random models of boxes and L extrudes.
 - [x] The five panels of the open case of the bookcase join into one body of 33,617,376 mm³.
 - [x] An injection in each part makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
   (Local: the clean build, the phone build, the write-set check and `eng/repo-gates` pass. In two full runs of
   `dotnet test`, two or three tests of `HostGuardTests` failed on a time limit while other sessions used the computer;
   the class passed alone. Continuous integration runs after the push.)
@@ -116,7 +116,7 @@ The row, ADR-0126 and ADR-0157 leave these open. Each copies `Subtract` (ADR-018
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch k16-union-intersect) · v0.417
+Status: Done · commit (the merge of the branch k16-union-intersect) · v0.417
 
 ## Method
 
@@ -174,3 +174,5 @@ Injections 13, 15 and 17 ran again after the steps moved into methods of their o
 - 2026-11-21: run 44869058349 of `14f93eb` failed on ubuntu-latest in the step "Test": the test host of `Engine.Tests`
   crashed, and the annotation names no test. Windows and macOS passed. The 150 turns of the bookcase pass on Windows with a
   stack of 512 KB, so a stack overflow is not shown. This line starts a second run on Linux.
+- 2026-11-21: run 44870804816 of `f4d68f56` passed on each job. Closed at v0.417.
+- 2026-11-21: the owner ordered "merge k16" in the chat; the change of `IBooleanOps` in `Engine.Contracts` waited for that answer.
