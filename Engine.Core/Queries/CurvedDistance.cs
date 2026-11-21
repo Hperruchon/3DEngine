@@ -11,12 +11,11 @@ namespace Engine.Core.Queries;
 // three steps compare doubles: the choice of the nearest piece, the test of a point inside the solid, which runs only when
 // the lowest distance is above 0, and the refusal when the bound past an end of a cylinder is below the best distance. Each
 // gives the same bits on each platform, but an exact tie can refuse a case that has an answer. A case with no closed form
-// here gives the reason, and the caller refuses it with E-MEASURE-CURVED.
+// here gives the reason, and the caller refuses it with E-MEASURE-CURVED. Items 15 to 17 (phase K15c, TASK-0444): a part of
+// a piece past an end of the side of a cylinder, each piece against the side of a cone (RevolvedDistance), the side of an
+// arc when the nearest point of the whole turn is on the arc, and two curved faces of RevolvedDistance.
 internal static class CurvedDistance
 {
-    // One pair of points at the distance, on the curve and on the other side.
-    private sealed record Candidate(double Distance, DatumPoint OnCurve, DatumPoint OnOther);
-
     public static (DistanceInfo? Info, ErrorDetail? Error) Between(MeasureTarget.Resolved a, MeasureTarget.Resolved b)
     {
         ArgumentNullException.ThrowIfNull(a);
@@ -24,17 +23,11 @@ internal static class CurvedDistance
         if (a.Curve is null && b.Curve is null)
             return (GetDistanceQueryHandler.Between(a, b), null);
         if (a.Curve is { } first && b.Curve is { } second)
-        {
-            return first.Kind == SideCurveKind.Sphere && second.Kind == SideCurveKind.Sphere
-                ? (Spheres(first, second), null)
-                : (null, MeasureTarget.Curved("The two sides are curved faces, and only two spheres have a closed form."));
-        }
+            return Pair(first, second);
 
         var swap = a.Curve is null;
         var (curve, other) = swap ? (b.Curve!, a) : (a.Curve!, b);
-        if (curve.Kind == SideCurveKind.Cone)
-            return (null, MeasureTarget.Curved("The side of a cone has no closed form for a distance in K15b."));
-        var (best, bound) = curve.Kind == SideCurveKind.Sphere ? (Sphere(curve, other), null) : Cylinder(curve, other);
+        var (best, bound) = curve.Kind == SideCurveKind.Sphere ? (Sphere(curve, other), null) : Revolved(curve, other);
         var onFace = curve.Kind == SideCurveKind.Sphere ? curve.Base + new Vector3R(curve.Radius, Rational.Zero, Rational.Zero) : curve.OnFacets;
 
         // K15a item 4: a body is a solid. When the curved face keeps a distance above 0 from each piece of a body, the face
@@ -50,11 +43,51 @@ internal static class CurvedDistance
                 return (new DistanceInfo(0, Point(onFace), Point(onFace)), null);
         }
 
-        // A part past an end of a cylinder whose bound is below the best distance can be nearer.
+        // A piece with no closed form whose bound is below the best distance can be nearer.
         if (best is null || bound < best.Distance)
-            return (null, MeasureTarget.Curved("The nearest point of the side of the cylinder can be past an end of the side, where K15b has no closed form."));
+            return (null, MeasureTarget.Curved("The nearest point of the side can be on a piece that is neither across nor along its axis, past an end of a cylinder or near a cone, where no closed form exists."));
+
+        // Item 17: the side of an arc is a part of the whole turn, so the minimum of the whole turn is its minimum only when
+        // its point is on the arc.
+        if (curve.Arc is { } arc && !OnArc(curve, arc, Vector3R.FromDoubles(best.OnCurve.X, best.OnCurve.Y, best.OnCurve.Z)))
+            return (null, MeasureTarget.Curved("The nearest point of the whole turn of the side of the arc is not on the arc."));
         var info = new DistanceInfo(best.Distance, best.OnCurve, best.OnOther);
         return (swap ? new DistanceInfo(info.Distance, info.PointB, info.PointA) : info, null);
+    }
+
+    // Item 16: two curved faces. Two spheres, a sphere and the side of a cylinder or a cone, and the sides of two cylinders
+    // with parallel axes have a closed form; the side of an arc, two cones, a cylinder and a cone, and two cylinders whose
+    // axes are not parallel have none.
+    private static (DistanceInfo? Info, ErrorDetail? Error) Pair(MeasureCurve.Surface first, MeasureCurve.Surface second)
+    {
+        if (first.Kind == SideCurveKind.Sphere && second.Kind == SideCurveKind.Sphere)
+            return (Spheres(first, second), null);
+        if (first.Arc is null && second.Arc is null)
+        {
+            if (first.Kind == SideCurveKind.Sphere || second.Kind == SideCurveKind.Sphere)
+            {
+                var (ball, side) = first.Kind == SideCurveKind.Sphere ? (first, second) : (second, first);
+                var info = RevolvedDistance.Sphere(RevolvedDistance.Revolution.Of(side), ball.Base, ball.Radius);
+                return (first.Kind != SideCurveKind.Sphere ? info : new DistanceInfo(info.Distance, info.PointB, info.PointA), null);
+            }
+
+            if (first.Kind == SideCurveKind.Cylinder && second.Kind == SideCurveKind.Cylinder && RevolvedDistance.Cylinders(first, second) is { } between)
+                return (between, null);
+        }
+
+        return (null, MeasureTarget.Curved("The two sides are curved faces with no closed form: only two spheres, a sphere and the side of a cylinder or a cone, and two cylinders with parallel axes have one."));
+    }
+
+    // Item 17: true when the direction from the axis to the point x is in the arc, from its start counter-clockwise about
+    // its normal to its end. Each step is exact on the rationals of x, so a point on an end of the arc within the rounding
+    // of its double can be taken as on it or not on it.
+    internal static bool OnArc(MeasureCurve.Surface side, MeasureCurve.Sector arc, Vector3R x)
+    {
+        ArgumentNullException.ThrowIfNull(side);
+        ArgumentNullException.ThrowIfNull(arc);
+        var a = side.Axis;
+        var w = (x - side.Base) - (a * ((x - side.Base).Dot(a) / a.Dot(a)));
+        return arc.Holds(w);
     }
 
     // The surface of a sphere against each piece P of the other side. With the exact nearest point q of P to the centre and
@@ -93,12 +126,14 @@ internal static class CurvedDistance
     // The side of a cylinder from the base p to p + a, of radius r, against each piece P of the other side. For a point in
     // the slab 0 ≤ (x - p) · a ≤ a · a the nearest point of the side is along the radius, at the distance |ρ - r|, with ρ
     // the distance to the axis. So the part of P in the slab gives a closed form as for a sphere: the nearest point to the
-    // axis, the farthest vertex from it, or a crossing. A part of P past an end has no closed form here; its distance to
-    // the axis less r is a lower bound of its distance to the side. When that bound is below the best distance, the nearest
-    // point can be past an end, and the case is refused.
-    private static (Candidate? Best, double? Bound) Cylinder(MeasureCurve.Surface cylinder, MeasureTarget.Resolved other)
+    // axis, the farthest vertex from it, or a crossing. Item 15 (phase K15c, TASK-0444): a part of P past an end, and each
+    // part of a piece against the side of a cone, cut at the plane of the base, has the closed form of
+    // RevolvedDistance.Nearest when it is across or along the axis. Its distance to the axis less the radius is a lower
+    // bound of its distance to the side, so a part whose bound is not below the best distance is skipped. A part with no
+    // closed form whose bound is below the best distance can be nearer, and the case is refused.
+    private static (Candidate? Best, double? Bound) Revolved(MeasureCurve.Surface curve, MeasureTarget.Resolved other)
     {
-        var (p, a, r) = (cylinder.Base, cylinder.Axis, cylinder.Radius);
+        var (p, a, r) = (curve.Base, curve.Axis, curve.Radius);
         var (length, squared) = (a.Dot(a), r * r);
         var axis = new NearestPoints.Piece([p, p + a]);
         Rational Along(Vector3R x) => (x - p).Dot(a);
@@ -107,8 +142,15 @@ internal static class CurvedDistance
 
         Candidate? best = null;
         double? bound = null;
+        var later = new List<NearestPoints.Piece>();
         foreach (var piece in other.Pieces)
         {
+            if (curve.Kind == SideCurveKind.Cone)
+            {
+                later.AddRange(new[] { Clip(piece.Vertices, Along), Clip(piece.Vertices, x => -Along(x)) }.OfType<NearestPoints.Piece>());
+                continue;
+            }
+
             if (Clip(Clip(piece.Vertices, Along), x => length - Along(x)) is { } inSlab)
             {
                 var near = NearestPoints.Between(axis, inSlab);
@@ -129,12 +171,23 @@ internal static class CurvedDistance
                     best = found;
             }
 
-            foreach (var past in new[] { Clip(piece.Vertices, x => -Along(x)), Clip(piece.Vertices, x => Along(x) - length) })
+            later.AddRange(new[] { Clip(piece.Vertices, x => -Along(x)), Clip(piece.Vertices, x => Along(x) - length) }.OfType<NearestPoints.Piece>());
+        }
+
+        var side = RevolvedDistance.Revolution.Of(curve);
+        foreach (var part in later)
+        {
+            var lower = side.Lower(part);
+            if (best is { } known && lower >= known.Distance)
+                continue;
+            if (RevolvedDistance.Nearest(side, part.Vertices) is { } found)
             {
-                if (past is null)
-                    continue;
-                var lower = Math.Max(0, Math.Sqrt(NearestPoints.Between(axis, past).Squared.ToDouble()) - r.ToDouble());
-                bound = bound is { } known ? Math.Min(known, lower) : lower;
+                if (best is null || found.Distance < best.Distance)
+                    best = found;
+            }
+            else
+            {
+                bound = bound is { } low ? Math.Min(low, lower) : lower;
             }
         }
 
@@ -174,9 +227,12 @@ internal static class CurvedDistance
 
     // The vertex of a piece with the largest value of the exact measure, the first one when several have it.
     private static (Rational Value, Vector3R Vertex) Farthest(NearestPoints.Piece piece, Func<Vector3R, Rational> measure)
+        => Farthest(piece.Vertices, measure);
+
+    internal static (Rational Value, Vector3R Vertex) Farthest(IReadOnlyList<Vector3R> vertices, Func<Vector3R, Rational> measure)
     {
-        var (value, vertex) = (measure(piece.Vertices[0]), piece.Vertices[0]);
-        foreach (var v in piece.Vertices.Skip(1))
+        var (value, vertex) = (measure(vertices[0]), vertices[0]);
+        foreach (var v in vertices.Skip(1))
         {
             var m = measure(v);
             if (m > value)
@@ -190,6 +246,12 @@ internal static class CurvedDistance
     // f(q + λ (v - q)) = A λ² + B λ + C, A is not negative and C is below 0, so the root in (0, 1] is the larger one.
     private static Candidate Crossing(Vector3R q, Vector3R v, Func<Vector3R, Rational> f)
     {
+        var point = CrossingPoint(q, v, f);
+        return new Candidate(0, point, point);
+    }
+
+    internal static DatumPoint CrossingPoint(Vector3R q, Vector3R v, Func<Vector3R, Rational> f)
+    {
         var d = v - q;
         var (low, high, middle) = (f(q), f(v), f(q + (d * new Rational(1, 2))));
         // From three values: C = f(0), A + B + C = f(1), A / 4 + B / 2 + C = f(1/2).
@@ -200,8 +262,7 @@ internal static class CurvedDistance
             : (-bb.ToDouble() + Math.Sqrt(((bb * bb) - (4 * aa * low)).ToDouble())) / (2 * aa.ToDouble());
         var (qx, qy, qz) = q.ToDoubles();
         var (dx, dy, dz) = d.ToDoubles();
-        var point = new DatumPoint(qx + (lambda * dx), qy + (lambda * dy), qz + (lambda * dz));
-        return new Candidate(0, point, point);
+        return new DatumPoint(qx + (lambda * dx), qy + (lambda * dy), qz + (lambda * dz));
     }
 
     // The point at the distance r from the point from, toward the point to, at the exact squared distance between them. When
@@ -222,7 +283,7 @@ internal static class CurvedDistance
     }
 
     // A unit vector at a right angle to a, in doubles: a × e for the axis e along which a is shortest.
-    private static (double X, double Y, double Z) Across(Vector3R a)
+    internal static (double X, double Y, double Z) Across(Vector3R a)
     {
         var (x, y, z) = a.ToDoubles();
         var (ax, ay, az) = (Math.Abs(x), Math.Abs(y), Math.Abs(z));
@@ -233,7 +294,7 @@ internal static class CurvedDistance
 
     // The part of a convex piece where the exact linear measure f is not below 0, as a piece, or null when no part is. A
     // vertex on the boundary is kept once.
-    private static NearestPoints.Piece? Clip(IReadOnlyList<Vector3R> vertices, Func<Vector3R, Rational> f)
+    internal static NearestPoints.Piece? Clip(IReadOnlyList<Vector3R> vertices, Func<Vector3R, Rational> f)
     {
         var kept = new List<Vector3R>();
         Vector3R Cut(Vector3R s, Vector3R e, Rational fs, Rational fe) => s + ((e - s) * (fs / (fs - fe)));
@@ -279,7 +340,7 @@ internal static class CurvedDistance
     private static NearestPoints.Piece? Clip(NearestPoints.Piece? piece, Func<Vector3R, Rational> f)
         => piece is null ? null : Clip(piece.Vertices, f);
 
-    private static DatumPoint Point(Vector3R v)
+    internal static DatumPoint Point(Vector3R v)
     {
         var (x, y, z) = v.ToDoubles();
         return new DatumPoint(x, y, z);

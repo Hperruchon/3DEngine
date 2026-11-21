@@ -17,16 +17,33 @@ internal static class MeasureCurve
 {
     // A whole curved face of the design: the side of a cylinder or a cone, or the surface of a sphere, with the curve of
     // KernelProjection.Curves (the centre of the base, the axis to the other end or to the apex, and the radius) and one
-    // vertex of its facets, which lies on the curve within the rounding of the turn.
-    internal sealed record Surface(SideCurveKind Kind, Vector3R Base, Vector3R Axis, Rational Radius, Vector3R OnFacets);
+    // vertex of its facets, which lies on the curve within the rounding of the turn. Item 17 (phase K15c, TASK-0444): Arc is
+    // the part of the turn of the side of an arc, and null for a whole turn.
+    internal sealed record Surface(SideCurveKind Kind, Vector3R Base, Vector3R Axis, Rational Radius, Vector3R OnFacets, Sector? Arc = null);
+
+    // Item 17: the arc of a side, from the direction Start counter-clockwise about Normal to the direction End, each across
+    // the axis. Holds is exact: the signs of the cross products about the normal.
+    internal sealed record Sector(Vector3R Start, Vector3R End, Vector3R Normal)
+    {
+        public bool Holds(Vector3R w)
+        {
+            var (fromStart, toEnd, sweep) = (Start.Cross(w).Dot(Normal), w.Cross(End).Dot(Normal), Start.Cross(End).Dot(Normal));
+            if (sweep.IsZero && Start.Dot(End).Sign > 0)
+                return true;
+            if (sweep.Sign > 0)
+                return fromStart.Sign >= 0 && toEnd.Sign >= 0;
+            return sweep.IsZero ? fromStart.Sign >= 0 : fromStart.Sign >= 0 || toEnd.Sign >= 0;
+        }
+    }
 
     // Item 10: the volume and the centre of the curve of the design, with no flag of facets, for a cylinder, a cone, a
     // sphere, a torus, or an extrude of a sketch with an arc or a circle, each with only Translate and Rotate steps after
-    // it. Null for each other body: GetMassProperties then gives the exact values of the solid of the kernel.
+    // it. Item 14 (phase K15c, TASK-0444): a body with a Subtract of a curved tool, from CutMass. Null for each other body:
+    // GetMassProperties then gives the exact values of the solid of the kernel.
     public static MassProperties? DesignMass(Document document, Guid body)
     {
         if (KernelProjection.Placed(document, body) is not { } placed)
-            return null;
+            return CutMass.Of(document, body);
         var zero = Rational.Zero;
         var origin = new Vector3R(zero, zero, zero);
         (double Volume, Vector3R Centre)? local = placed.Creator switch
@@ -132,20 +149,43 @@ internal static class MeasureCurve
     // Items 11 and 12: the whole curved face of the design under a face name of a live body, or the reason that K15b has no
     // curve for it. The face is whole when the body has only Translate and Rotate steps after its command, and the command
     // is a CreateCylinder, a CreateCone, a CreateSphere, or an extrude of a circle. A Subtract can leave a part of the curve,
-    // a torus has no curve in KernelProjection.Curves, and the side of an arc is a part of a turn.
-    public static (Surface? Surface, string? Reason) Whole(Document document, Guid body, KernelSolid solid, FaceTag tag)
+    // a torus has no curve in KernelProjection.Curves, and the side of an arc is a part of a turn. Item 17 (phase K15c,
+    // TASK-0444): with arcs true, the side of an arc of an extrude gives its curve and its sector, as the measure queries
+    // read it; GetConnectors calls with arcs false, so it gives no axis for it.
+    public static (Surface? Surface, string? Reason) Whole(Document document, Guid body, KernelSolid solid, FaceTag tag, bool arcs = false)
     {
         ArgumentNullException.ThrowIfNull(solid);
         if (KernelProjection.Placed(document, body) is not { } placed)
             return (null, "its body has a step after its first command that is not a Translate or a Rotate, so the face can be a part of the curve");
         if (placed.Creator is CreateTorusCommand)
             return (null, "it is the surface of a torus, which has no curve of the design");
+        Sector? sector = null;
         if (placed.Creator is ExtrudeCommand extrude && SketchModel.Find(document, extrude.SketchId)?.Circles.Any(circle => circle.Id == tag.Item) != true)
-            return (null, "it is the side of an arc, a part of a turn");
+        {
+            if (!arcs || ArcOf(document, extrude, tag.Item, placed) is not { } arc)
+                return (null, "it is the side of an arc, a part of a turn");
+            sector = arc;
+        }
+
         if (!KernelProjection.Curves(document, body).TryGetValue(tag, out var curve))
             return (null, "it has no curve of the design");
         var onFacets = solid.Polygons.First(polygon => polygon.Tag == tag).Vertices[0];
-        return (new Surface(curve.Kind, curve.Base, curve.Axis, curve.Radius, onFacets), null);
+        return (new Surface(curve.Kind, curve.Base, curve.Axis, curve.Radius, onFacets, sector), null);
+    }
+
+    // Item 17: the sector of the arc of the sketch of an extrude, on the exact frame of the kernel, moved and turned with
+    // the body. The arc of a sketch turns counter-clockwise in the frame (u, v), so its normal is u × v.
+    private static Sector? ArcOf(Document document, ExtrudeCommand extrude, Guid? item, KernelProjection.Placement placed)
+    {
+        if (KernelProjection.ExtrudeDesign(document, extrude) is not var (sketch, _, u, v, _, _)
+            || sketch.Arcs.FirstOrDefault(arc => arc.Id == item) is not { } arc)
+            return null;
+        var position = sketch.Points.ToDictionary(point => point.Id);
+        if (!position.TryGetValue(arc.Center, out var c) || !position.TryGetValue(arc.Start, out var s) || !position.TryGetValue(arc.End, out var e))
+            return null;
+        Vector3R Direction(SketchPoint p)
+            => placed.Direction((u * (Rational.FromDouble(p.X) - Rational.FromDouble(c.X))) + (v * (Rational.FromDouble(p.Y) - Rational.FromDouble(c.Y))));
+        return new Sector(Direction(s), Direction(e), placed.Direction(u).Cross(placed.Direction(v)));
     }
 
     // Item 13: the angle in [0, 2π] of the direction (x, y), not both zero, counter-clockwise from the axis x. It uses + - *

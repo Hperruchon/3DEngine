@@ -5,7 +5,8 @@ using Engine.Kernel;
 namespace Engine.Core.Queries;
 
 // ADR-0180 items 2, 6 and 7 (phase K15a, TASK-0432): the solid of a body for a measure, the name of a face or an edge in
-// it, and the refusals. Items 11 and 12 (phase K15b, TASK-0434): a whole curved face resolves to its curve. The three measure queries read the solid of the owned kernel through KernelProjection, as
+// it, and the refusals. Items 11 and 12 (phase K15b, TASK-0434): a whole curved face resolves to its curve. Item 17 (phase
+// K15c, TASK-0444): the side of an arc resolves to its curve and its sector. The three measure queries read the solid of the owned kernel through KernelProjection, as
 // GetFaces does, so the window and an agent measure the same solid by one path.
 internal static class MeasureTarget
 {
@@ -77,7 +78,7 @@ internal static class MeasureTarget
             return (null, null, NotFound($"The body '{bodyId}' has no face '{tag}'."));
         if (!IsCurved(solid, tag))
             return (polygon.Plane, null, null);
-        var (curve, reason) = MeasureCurve.Whole(document, bodyId, solid, tag);
+        var (curve, reason) = MeasureCurve.Whole(document, bodyId, solid, tag, arcs: true);
         return curve is null ? (null, null, Curved($"The face '{tag}' of the body '{bodyId}' is curved, and {reason}.")) : (null, curve, null);
     }
 
@@ -109,7 +110,7 @@ internal static class MeasureTarget
             MeasureCurve.Surface? curve = null;
             if (IsCurved(solid, tag))
             {
-                (curve, var reason) = MeasureCurve.Whole(document, side.BodyId, solid, tag);
+                (curve, var reason) = MeasureCurve.Whole(document, side.BodyId, solid, tag, arcs: true);
                 if (curve is null)
                     return (null, Curved($"The face '{tag}' of side {label} is curved, and {reason}."));
             }
@@ -137,7 +138,7 @@ internal static class MeasureTarget
 
     private static ErrorDetail NotFound(string message) => new(DiagnosticCodes.MeasureNameNotFound, message);
 
-    // ADR-0180 items 6 and 11 to 12: a curved case that phase K15b gives no closed form for.
+    // ADR-0180 items 6 and 11 to 17: a curved case that phases K15b and K15c give no closed form for.
     internal static ErrorDetail Curved(string message)
-        => new(DiagnosticCodes.MeasureCurved, $"{message} Phase K15b measures a whole curved face of a cylinder, a cone or a sphere only, in the cases of ADR-0180 items 6, 11 and 12.");
+        => new(DiagnosticCodes.MeasureCurved, $"{message} The measure queries measure a whole curved face of a cylinder, a cone or a sphere, or the side of an arc, in the cases of ADR-0180 items 6 and 11 to 17 only.");
 }
