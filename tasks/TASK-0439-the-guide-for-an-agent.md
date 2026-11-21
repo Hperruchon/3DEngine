@@ -1,7 +1,7 @@
 ---
 id: 0439
 title: The guide for an agent gives the loop read, measure, propose and check on the HTTP surface, and a test keeps each example true
-status: Active
+status: Done
 phase: P17
 opened: 2026-11-21
 depends-on: [0437]
@@ -62,7 +62,7 @@ example of the guide and the host disagree.
 - [x] Each fenced block of the guide is a marked example, and the test sends each one; a refused request or a different
       shape fails the test.
 - [x] An injection in the guide and in the code makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Decisions
 
@@ -91,7 +91,7 @@ This task takes these decisions; none changes the Document, the log or a contrac
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p17-agent-guide) · v0.422
+Status: Done · commit (the merge of the branch p17-agent-guide) · v0.422
 
 ## Method
 
@@ -126,3 +126,4 @@ Injections (`inject0439.js` in `%TEMP%\p17`), each restored byte for byte (sha25
 
 - 2026-11-21: opened after the second codebase review of 2026-11-21 (TASK-0437, v0.421), branch `p17-agent-guide` from
   `9073010d`. The guide, three tests, fourteen injections. Ledger entry v0.422.
+- 2026-11-21: run 44910329501 of `31021dba` passed on each job. Closed at v0.422.
