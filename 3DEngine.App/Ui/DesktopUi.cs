@@ -535,7 +535,9 @@ internal sealed unsafe partial class DesktopUi : IDisposable
                         _ => ImGuiMouseSource.Mouse,
                     });
                     io.AddMousePosEvent((float)pointer.X, (float)pointer.Y);
-                    Buttons(io, pointer);
+                    // Finding V213 (TASK-0426): a tap outside the open file menu closes it and reaches no control.
+                    if (!FileMenuTakes(pointer))
+                        Buttons(io, pointer);
                     break;
 
                 case WheelSample wheel:

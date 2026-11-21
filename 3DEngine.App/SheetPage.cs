@@ -231,7 +231,14 @@ internal sealed class SheetCommandQueue
     private readonly Queue<Func<string?>> _waiting = new();
     private Task<string?>? _running;
 
-    public bool Busy => _running is not null || _waiting.Count > 0;
+    // Finding V210 of the codebase review of 2026-11-20 (TASK-0426): true in the frame of the Poll that ended a work.
+    private bool _ended;
+
+    // True while a work waits or runs, and in the frame of the Poll that ended a work. The frame reads the count of the changes
+    // before Poll, so a work that ends after that read raised the count with no new read of the sheet in that frame; the page
+    // gets a pending read, and keeps the values that it sent until the read of the new count (finding V206). Until TASK-0426
+    // the page got the old read as not pending in that frame, and the view went back to its old place until the new read came.
+    public bool Busy => _running is not null || _waiting.Count > 0 || _ended;
 
     public void Send(Func<string?> work)
     {
@@ -243,12 +250,13 @@ internal sealed class SheetCommandQueue
     public IReadOnlyList<string> Poll()
     {
         var texts = new List<string>();
+        _ended = false;
         if (_running is { IsCompleted: true } done)
         {
             var text = done.IsCompletedSuccessfully ? done.Result : $"The command failed: {done.Exception?.GetBaseException().Message}";
             if (text is not null)
                 texts.Add(text);
-            _running = null;
+            (_running, _ended) = (null, true);
         }
 
         if (_running is null && _waiting.TryDequeue(out var next))

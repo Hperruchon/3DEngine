@@ -443,6 +443,20 @@ Exit: the owner gives the sizes and a table of K10 holds them (or the owner choo
 of the arm (the time of a rebuild and of a replay, the size of the numbers, the change of one length), and the ADR of P11.0
 decides the model of a move.
 
+### R-0071 · On the sheet page the amber value of a proposed dimension is the value of the design, not of the proposal
+- class: debt
+- opened: 2026-11-21
+- due: 2027-05-20
+- extended: no
+- refs: `3DEngine.App/ProposedSheet.cs`, `docs/adr/0177-the-proposal-of-the-agent-on-the-sheet-page.md` item 2,
+  `docs/reviews/2026-11-20-codebase-review.md` (V222), TASK-0426
+A proposal can hold PlaceSheetDimension for a value and a command that changes that value, for example SetExtrudeDistance.
+The page shows the amber value as GetBodyInfo gives it now (ADR-0177 item 2), so it is not the value after the accept. The
+review recommended the proposed number from `ProposedValues`; that changes ADR-0177 item 2, and no answer of the owner
+covers it. An agent that proposes both in one proposal is not known today.
+Exit: a task gives the amber value the proposed number, with a test and an amendment of ADR-0177 item 2; or the owner accepts
+the value of the design.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.

@@ -183,6 +183,36 @@ public sealed class ResponsiveLayoutTests
         }
     }
 
+    // Finding V212 of the codebase review of 2026-11-20 (TASK-0426): a pad of a sketch on a phone opens under the window of the
+    // sketch, and it decides "compact" and "low" from that top, so each field, each key and Apply show inside the pad. Until
+    // TASK-0426 the pad decided from the top of the panel and opened lower, so its last keys scrolled out of view.
+    [Theory]
+    [InlineData(390, 844)]
+    [InlineData(412, 915)]
+    public void Each_Key_Of_A_Pad_Of_A_Sketch_Shows_On_A_Phone(int width, int height)
+    {
+        using var ui = new DesktopUi(string.Empty, Document.Millimetre);
+        var display = new Vector2(width, height);
+        var sketch = new Engine.Core.Queries.SketchInfo(Guid.NewGuid(), Engine.Contracts.Sketch.Datums.XY.Id, "Plate", [], [], [], [], [], true, 0);
+        var panel = new SketchPanel([sketch], sketch, ThreeDEngine.Core.Sketching.SketchToolKind.Line, false, [], null);
+        // While the pad is open the ring does not show, so the window of the sketch shows each tool and grows in the first frames
+        // of the pad; the pad reads the window of the last frame, so its place holds from the third frame of the pad.
+        for (var i = 0; i < 5; i++)
+        {
+            if (i == 1)
+                ui.OpenNextPointPad(false);
+            ui.Frame(1f / 60f, display, Vector2.One, [Plate, Rib], null, Shelf, sketchPanel: panel, ringCentre: new Vector2(width / 2f, height * 0.55f), ringBody: 120f);
+        }
+
+        Assert.Equal(DesktopUi.NextPointLabel, ui.Pad?.Title);
+        var pad = ui.PanelRectangles[^1];
+        foreach (var item in DesktopUi.PadRows.SelectMany(row => row).Concat(ui.Pad!.Fields.Select(field => field.Name)))
+        {
+            var box = ui.ItemRectangle(DesktopUi.PadItem(item)) ?? throw new InvalidOperationException($"{width}x{height}: the pad has no {item}.");
+            Assert.True(Holds(pad, box), $"{width}x{height}: {item} at {Text(box)} is not inside the pad at {Text(pad)}.");
+        }
+    }
+
     // The faults of the layout at one size in one state, after three frames.
     internal static IReadOnlyList<string> Faults(int width, int height, State state)
     {
