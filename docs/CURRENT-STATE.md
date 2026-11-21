@@ -12690,3 +12690,57 @@ New tests: 18, and one test left the suite (the comparison with the file of the 
 `Engine.Tests`, 390 in `3DEngine.Tests`, 916 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 13 of 15.
 New diagnostic codes: 0; `E-SHEET-TITLE-INVALID` gets one more case. Since the review of v0.413, 1 product milestone and 3
 entries followed it.
+
+## v0.417 — A client, the command line or an agent joins two bodies or keeps their shared volume with one command each (K16, TASK-0433)
+
+Row K16, after K15a and P0.172. The branch `k16-union-intersect` starts from `6d78b908` (P0.172, v0.416), which is not merged
+yet. ADR-0181 records the decision. The row, ADR-0126 and ADR-0157 leave the names, the parameters, the name of the result,
+an empty result and a button of the window open; by the standing order of the owner of 2026-11-20 each copies `Subtract`,
+and ADR-0181 gives the alternatives. `Engine.Contracts` changes in `IBooleanOps` only (two methods; ADR-0181 amends
+ADR-0012 §1). `Engine.Kernel` gets two public methods (ADR-0181 amends ADR-0057 item 9 and ADR-0058 item 2).
+
+**The change.**
+- `Union(firstBodyId, secondBodyId)` and `Intersect(firstBodyId, secondBodyId)` give `bodyId`. The records are in
+  `Engine.Core/Commands`, as `SubtractCommand` is, and the handlers are in `HandlerCatalog`, so `/commands`, `engine apply`
+  and an agent reach them with no new route. No button of the window.
+- The handlers share the steps of `SubtractCommandHandler` in `BooleanStep`, with its codes: `E-GEOM-BODY-NOT-FOUND`,
+  `E-MESH-UNSUPPORTED`, `E-GEOM-INVALID-PARAM` for one body twice, `E-GEOM-CAP-MISSING` and `E-GEOM-NATIVE-OP`. The result
+  has the handle of the command, the kind `Solid`, and the name and the visibility of the first body; both operands are
+  consumed. The events are the events of a cut.
+- An intersection with no shared volume is refused with `E-GEOM-NATIVE-OP`, and both bodies stay live. The exact kernel
+  decides before the backend: Manifold gives a flat solid of no volume, which it does not call empty, for two bodies that
+  touch on a face (found by the random test of the kernel). A union of two bodies apart is one body of two parts.
+- `ManifoldGeometryBackend` calls `manifold_union` and `manifold_intersection`. `PlanarBoolean.Union` and
+  `PlanarBoolean.Intersect` follow the steps of csg.js on the exact planes; no face turns, and each face keeps its name.
+- The projection, the chain of a datum, the check of a gone face (`W-DATUM-REFERENCE-FAILED`), the curves of a view, the
+  feature list and the regeneration read both commands as they read `Subtract`.
+- The determinism probe holds a union and an intersection of two moved boxes. The hash of the desktop runners and of the
+  phone is now `068ba4a8…`; `docs/android-test-sheet.md` names it.
+
+**Determinism.** The kernel uses + - * / and comparisons on exact rationals. The log holds the two identifiers of each
+command. The new hash on Windows is local; the pipeline compares the four platforms.
+
+**Proof.** `UnionIntersectCommandTests` (9 tests, native backend), `PlanarUnionIntersectTests` (5 tests, one on the native
+backend) and `HttpUnionIntersectScenarioTests` (2 tests): two cubes that overlap (1500 and 500 mm³ at (2.5, 0, 0), with
+their boxes), touch and are apart; each refusal; the names of the faces and a datum on a gone face, with undo and redo;
+undo and redo of each command; the rebuild after a new distance of an extrude (1875, then 2875 mm³); a replay on two new
+backends and a save and an open; the curve of a cylinder; the five panels of the open case of the bookcase joined into one
+body of 33,617,376 mm³ in [-300, 900] × [-200, 200] × [600, 1400], and two modules that touch, refused; and the kernel against
+Manifold over 60 random models. Each expected value comes from a computation by hand. Nineteen injections, each restored
+byte for byte (sha256), made a named test fail; the first form of the test of a touch passed the injection with no check of
+the kernel, because Manifold refuses two cubes that touch on a whole face, and a box that touches a part of a face catches
+it now. TASK-0433 lists them in its section "Method". The first full run stopped on a stack overflow in the 150 turns of
+`BookcaseCaseTests`: the locals of the new case made the frame of the recursive `KernelProjection.Solid` larger, so the
+steps of the union and the intersection are methods of their own. A clean build gives 0 warnings, the phone project builds
+with 0 warnings, and the write-set check and `eng/repo-gates` pass. `dotnet test` ran 3074 tests: in two full runs, two or
+three tests of `HostGuardTests` (a host process with a limit of 12 to 30 s) failed while other sessions used the computer,
+and the class passed alone (48 of 48); each other test passed. The desktop was not run.
+The failed runs since the entry v0.416, from the API: run 44866049139 of `a21425d`, the close commit of
+TASK-0429 on its branch, failed on macos-latest in the step "Test": `FixedLengthsTests.The_Fixed_Lengths_Of_A_Stair_Of_600_Lines_Take_A_Time_Near_The_Status`
+gave 0.96 s against 0.12 s; the commit changed one task file. TASK-0429 opened again for a new run (its progress).
+
+Corrections: `CrossPlatformHashTests` counts 11 bodies, with the union and the intersection.
+
+New tests: 16. The test list holds 3074 (1765 in `Engine.Tests`, 390 in `3DEngine.Tests`, 916 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0; `E-GEOM-NATIVE-OP`, `E-MESH-UNSUPPORTED` and
+`W-DATUM-REFERENCE-FAILED` get the two commands. Since the review of v0.413, 2 product milestones and 4 entries followed it.

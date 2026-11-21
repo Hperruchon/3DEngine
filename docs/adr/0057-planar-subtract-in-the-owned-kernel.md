@@ -7,7 +7,7 @@ date: 2026-11-05
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0058']
+amended-by: ['0058', '0181']
 affects:
   - Engine.Kernel/**
 enforced-by: Engine.Tests/Kernel/PlanarSubtractTests.cs (TASK-0183 creates it)
@@ -68,7 +68,8 @@ slices. On 2026-11-05 the owner answered four questions:
    input. The same input gives the same B-Rep on each platform.
 9. **Out of this record.** The engine reads the kernel (K4b, ADR-0058): a B-Rep of each body as a projection of the feature list,
    a query of the faces and their names. The datums and the references by the identity of a face, and a fault for a
-   face that is gone (K4c). A union and an intersection. Curved surfaces (K5).
+   face that is gone (K4c). A union and an intersection, which ADR-0181 item 5 adds in the form of
+   item 5. Curved surfaces (K5).
 
 ## Consequences
 
@@ -82,3 +83,5 @@ slices. On 2026-11-05 the owner answered four questions:
 
 - 2026-11-05 · TASK-0183 · Accepted with the four answers of the owner of 2026-11-05.
 - 2026-11-05 · TASK-0184 · ADR-0058 item 1 amends item 1: `Engine.Core` references the kernel.
+- 2026-11-21 · TASK-0433 · ADR-0181 item 5 amends item 9: the kernel gives the union and the intersection, in the steps of
+  csg.js, as the subtract of item 5.

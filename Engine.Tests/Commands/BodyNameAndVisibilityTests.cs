@@ -286,6 +286,10 @@ public class BodyNameAndVisibilityTests
         public void Rotate(BodyHandle result, BodyHandle source, Rotation rotation) => _bodies.Add(result.Id);
 
         public void Subtract(BodyHandle result, BodyHandle minuend, BodyHandle subtrahend) => _bodies.Add(result.Id);
+
+        public void Union(BodyHandle result, BodyHandle first, BodyHandle second) => _bodies.Add(result.Id);
+
+        public void Intersect(BodyHandle result, BodyHandle first, BodyHandle second) => _bodies.Add(result.Id);
     }
 
     private sealed record ListsCommand : Command
