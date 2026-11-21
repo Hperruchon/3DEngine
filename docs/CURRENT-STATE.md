@@ -12561,3 +12561,37 @@ New tests: 4. The test list holds 3029 (1730 in `Engine.Tests`, 390 in `3DEngine
 `3DEngine.VisionTests`). Open entries: 12 of 15; R-0070 stays open for the sizes of the lamp and the ADR of P11.0. New
 diagnostic codes: 0. Since the review of v0.407, 4 product milestones and 6 entries followed it, so the codebase review is
 due before the next product milestone.
+
+## v0.414 — The codebase review of 2026-11-21 (governance, TASK-0430)
+
+Four product milestones (R20d, R30i, R20e and K10a) and six entries followed v0.407, the version that the review of 2026-11-20
+examined, so the next product milestone needs a review first.
+
+**The review.** `docs/reviews/2026-11-21-codebase-review.md` examines `92d1c54`, the commit of K10a at v0.413.
+- The fourteen corrections of P0.171 hold in the code. E226, T184, V210, V211, V213 to V217, V220 and V221 are fixed; T183 is
+  fixed for its form; V212 is fixed from the third frame of a pad; V222 is fixed for the lines, and R-0071 holds the amber value.
+- The contract change of R30i holds: an old log or file with no title block replays to null, the date is a text of the command,
+  the layout uses + - * / only, the event and `/schema/events` carry `titleBlock`, and an undo gives null again.
+- No new finding is critical or high.
+- V225 is medium: on a portrait phone with a live sheet, the path line leaves room for "Views" only, so "N hidden" can lie
+  under "Views".
+- E227, E228, E229, T185, T186, V223, V224 and V226 to V228 are low: a SetSheetTitle with no change, the text of the block in
+  DXF and its "%%", two false statements of R30i, a deadlock that fails as a cancel, a test that compares nothing in the
+  pipeline, the window copy of a sheet that loses its block after an event, a label of the block that goes into the next cell,
+  "N hidden" with a selection, the room of the folder name, and the ground of a text of the arc over the next dot.
+- TASK-0431 (P0.172) holds the eleven findings after the next product phase.
+- The next product phase: K15 in a slice for bodies of plane faces (Q1 A); K16 needs an ADR for `IBooleanOps` first, and R26
+  needs a cut by a plane in the kernel. The measure of K10a favours a model of a move that sets one placement of a part from
+  the value of its joint, not one that adds turns as `Rotate` commands; the ADR of P11.0 decides it.
+- Questions Q1 to Q7 each have the recommended option A. Under the order of the owner of 2026-11-20 the session takes A; the
+  first commit of K15 (Q1 to Q4) and of P0.172 (Q5 to Q7) records them.
+- Open findings: 0 critical, 2 high, 8 medium and 26 low.
+
+**Proof.** One agent examined the change from v0.407 to v0.413 in a detached copy of `92d1c54`, with probes in its scratch
+folder. The session read the summary, the measures, the heading of each finding and the questions. A clean build gives 0
+warnings, and `dotnet test` passes 3029 tests. `CodebaseReviewGateTests`, the write-set check and `eng/repo-gates` pass. The
+run on the branch is in the progress of TASK-0430. The failed runs since the entry v0.413, from the API: none.
+
+New tests: 0. The test list holds 3029 (1730 in `Engine.Tests`, 390 in `3DEngine.Tests`, 906 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product
+milestones and 0 entries follow it.
