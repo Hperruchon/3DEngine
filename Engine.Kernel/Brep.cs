@@ -53,6 +53,10 @@ public sealed class Brep
         // ADR-0058 item 5: the rounded value of each vertex, for a filter before each exact test. Rounding to the nearest
         // keeps the order, so a vertex whose rounded value is outside the rounded box of an edge is outside its exact box.
         var rounded = vertices.Select(p => p.ToDoubles()).ToArray();
+        // TASK-0446 (register entry R-0069): the vertices in the order of their rounded x, so the filter of step 2 reads only
+        // the vertices in the x range of an edge. Until TASK-0446 it read each vertex for each edge.
+        var byX = Enumerable.Range(0, vertices.Count).OrderBy(i => rounded[i].X).ToArray();
+        var xs = byX.Select(i => rounded[i].X).ToArray();
 
         // 2. Each edge of each polygon gets each vertex that lies on it exactly, so the pieces of the partition meet at
         // their vertices and no T-junction stays.
@@ -64,21 +68,27 @@ public sealed class Brep
             {
                 var (a, b) = (ring[i], ring[(i + 1) % ring.Count]);
                 split.Add(a);
-                split.AddRange(Between(vertices, rounded, a, b));
+                split.AddRange(Between(vertices, rounded, byX, xs, a, b));
             }
             rings[r] = split;
         }
 
-        // 3. The pieces of one plane and one tag are one face; a pair of opposite edges inside it cancels.
+        // 3. The pieces of one plane and one tag are one face; a pair of opposite edges inside it cancels. TASK-0446: a
+        // dictionary finds the group of a plane and a tag; the groups keep the order of their first polygon.
         var groups = new List<(PlaneR Plane, FaceTag Tag, List<int> Rings)>();
+        var groupOf = new Dictionary<(PlaneR Plane, FaceTag Tag), int>();
         for (var r = 0; r < rings.Count; r++)
         {
             var polygon = solid.Polygons[r];
-            var group = groups.FindIndex(g => g.Plane == polygon.Plane && g.Tag == polygon.Tag);
-            if (group < 0)
+            if (!groupOf.TryGetValue((polygon.Plane, polygon.Tag), out var group))
+            {
+                groupOf[(polygon.Plane, polygon.Tag)] = groups.Count;
                 groups.Add((polygon.Plane, polygon.Tag, [r]));
+            }
             else
+            {
                 groups[group].Rings.Add(r);
+            }
         }
 
         var faces = new List<(PlaneR Plane, FaceTag Tag, List<List<int>> Loops)>();
@@ -151,7 +161,9 @@ public sealed class Brep
         }
 
         // 5. The edges, with the faces of their coedges, and the check that each edge has one coedge in each direction.
+        // TASK-0446: a dictionary finds an edge by its two vertices; the edges keep the order of their first coedge.
         var edges = new List<(int From, int To, List<int> Faces, int Forward, int Backward)>();
+        var edgeOf = new Dictionary<(int Low, int High), int>();
         for (var f = 0; f < faces.Count; f++)
         {
             foreach (var loop in faces[f].Loops)
@@ -160,11 +172,11 @@ public sealed class Brep
                 {
                     var (a, b) = (loop[i], loop[(i + 1) % loop.Count]);
                     var (low, high) = a < b ? (a, b) : (b, a);
-                    var e = edges.FindIndex(edge => edge.From == low && edge.To == high);
-                    if (e < 0)
+                    if (!edgeOf.TryGetValue((low, high), out var e))
                     {
                         edges.Add((low, high, [], 0, 0));
                         e = edges.Count - 1;
+                        edgeOf[(low, high)] = e;
                     }
                     var edge = edges[e];
                     edge.Faces.Add(f);
@@ -195,13 +207,17 @@ public sealed class Brep
             }
         }
 
-        // The faces of an edge and of a shell are the faces after the split: the face whose loops hold the edge.
+        // The faces of an edge and of a shell are the faces after the split: the face whose loops hold the edge. TASK-0446:
+        // the regions of each group, in their order, so a search reads the regions of one group only.
+        var regionsOf = new List<int>[faces.Count];
+        for (var f = 0; f < faces.Count; f++)
+            regionsOf[f] = [];
+        for (var i = 0; i < regions.Count; i++)
+            regionsOf[regions[i].Group].Add(i);
         int FaceOf(int group, int from, int to)
         {
-            for (var i = 0; i < regions.Count; i++)
+            foreach (var i in regionsOf[group])
             {
-                if (regions[i].Group != group)
-                    continue;
                 foreach (var loop in regions[i].Face.Loops)
                 {
                     for (var j = 0; j < loop.Vertices.Count; j++)
@@ -220,6 +236,16 @@ public sealed class Brep
 
         // 7. The shells: the faces after the split that share edges, in the order of their first face. A cut can split a
         // body into two solids, and one face of the input can then lie on both, so the shells come after step 6.
+        // TASK-0446: the edges of each face, in the order of the edges, so a step of the walk reads the edges of one face only.
+        var edgesOf = new List<BrepEdge>[regions.Count];
+        for (var f = 0; f < regions.Count; f++)
+            edgesOf[f] = [];
+        foreach (var edge in finalEdges)
+        {
+            foreach (var face in edge.Faces.Distinct())
+                edgesOf[face].Add(edge);
+        }
+
         var shellOf = new int[regions.Count];
         Array.Fill(shellOf, -1);
         var finalShells = new List<IReadOnlyList<int>>();
@@ -234,7 +260,7 @@ public sealed class Brep
             {
                 var face = stack.Pop();
                 shell.Add(face);
-                foreach (var edge in finalEdges.Where(edge => edge.Faces.Contains(face)))
+                foreach (var edge in edgesOf[face])
                 {
                     foreach (var other in edge.Faces.Where(other => shellOf[other] < 0))
                     {
@@ -293,8 +319,9 @@ public sealed class Brep
     private static Rational Abs(Rational value) => value.Sign < 0 ? -value : value;
 
     // The vertices strictly between a and b on the segment ab, in their order from a. Only a vertex whose rounded value
-    // is inside the rounded box of ab gets the exact test.
-    private static IEnumerable<int> Between(List<Vector3R> vertices, (double X, double Y, double Z)[] rounded, int a, int b)
+    // is inside the rounded box of ab gets the exact test. TASK-0446: byX holds the vertices in the order of their rounded x,
+    // and xs their rounded x, so the search reads only the vertices from the first x that is not less than the box.
+    private static IEnumerable<int> Between(List<Vector3R> vertices, (double X, double Y, double Z)[] rounded, int[] byX, double[] xs, int a, int b)
     {
         var (pa, pb) = (vertices[a], vertices[b]);
         var (ra, rb) = (rounded[a], rounded[b]);
@@ -307,9 +334,23 @@ public sealed class Brep
             return r.X >= lx && r.X <= hx && r.Y >= ly && r.Y <= hy && r.Z >= lz && r.Z <= hz;
         }
 
+        var (low, high) = (0, xs.Length);
+        while (low < high)
+        {
+            var middle = low + ((high - low) / 2);
+            if (xs[middle] < lx)
+                low = middle + 1;
+            else
+                high = middle;
+        }
+
+        var inRange = new List<int>();
+        for (var k = low; k < xs.Length && xs[k] <= hx; k++)
+            inRange.Add(byX[k]);
+
         var d = pb - pa;
         var length = d.Dot(d);
-        return Enumerable.Range(0, vertices.Count)
+        return inRange
             .Where(i => i != a && i != b && InBox(i) && d.Cross(vertices[i] - pa).IsZero)
             .Select(i => (Index: i, T: d.Dot(vertices[i] - pa)))
             .Where(item => item.T.Sign > 0 && item.T < length)

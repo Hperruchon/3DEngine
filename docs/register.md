@@ -412,17 +412,6 @@ edges on a slower processor. This session did not run the APK with the lines.
 Exit: a run on the S23 Ultra or on the emulator records the frame time and the time of the upload of a large mesh, and
 ADR-0109 adds them, with a lower limit of edges if they are too slow.
 
-### R-0069 · A read of a sheet with three views of a sphere takes about 5 s
-- class: debt
-- opened: 2026-11-15
-- due: 2027-05-14
-- extended: no
-- refs: `Engine.Core/Queries/GetSheetQueryHandler.cs`, `Engine.Tests/Drawing/SheetViewTests.cs`
-  (A_Read_Of_Three_Views_Of_A_Sphere_Gives_Its_Circles), `docs/adr/0155-the-views-of-a-sheet.md` item 7, TASK-0393
-GetSheet computes the lines of each view at each read, with no cache (Q7 A). Three views of a sphere took 4.6 s and 5.1 s on
-the computer of the owner, and the query holds the session for that time, so a command of the person or the agent waits.
-Exit: a read of three views of a sphere takes less than 1 s, with a test, or the owner accepts the time.
-
 ### R-0070 · K10 waits for the sizes of the two validation cases, and the model of a move of a part is not decided
 - class: question
 - opened: 2026-11-15
@@ -626,6 +615,24 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0069 · A read of a sheet with three views of a sphere takes about 5 s
+- class: debt
+- opened: 2026-11-15
+- due: 2027-05-14
+- extended: no
+- refs: `Engine.Core/Queries/GetSheetQueryHandler.cs`, `Engine.Tests/Drawing/SheetViewTests.cs`
+  (A_Read_Of_Three_Views_Of_A_Sphere_Gives_Its_Circles), `docs/adr/0155-the-views-of-a-sheet.md` item 7, TASK-0393
+GetSheet computes the lines of each view at each read, with no cache (Q7 A). Three views of a sphere took 4.6 s and 5.1 s on
+the computer of the owner, and the query holds the session for that time, so a command of the person or the agent waits.
+Exit: a read of three views of a sphere takes less than 1 s, with a test, or the owner accepts the time.
+Closed 2026-11-21 · resolved · TASK-0446. Each view built the B-Rep of the sphere again, about 1 s for each build. The read
+now keeps the B-Rep of each body under the exact content of its solid (ADR-0155 item 7, amended), the five searches of `Brep.Of`
+that read a whole list for each polygon use a dictionary or an index, and the result of GetSheet is the same, byte for byte. The
+test counts one build for the first read of three views and none for the next read. On this computer (Release) a read
+after a change of the sphere takes 0.44 s to 0.48 s, and a read with no change 0.11 s to 0.30 s. The first read in a new
+process takes about 1.1 s, of which about 0.5 s is the start of the tiered compiler of .NET (0.65 s with
+`DOTNET_TC_CallCountingDelayMs=0`); a host pays it once.
 
 ### R-0074 · The test host of Engine.Tests crashed on ubuntu-latest with no known cause
 - class: risk

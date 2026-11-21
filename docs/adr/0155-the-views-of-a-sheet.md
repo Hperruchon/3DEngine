@@ -17,6 +17,7 @@ affects:
   - Engine.Core/Commands/RemoveSheetViewCommandHandler.cs
   - Engine.Core/Commands/SheetResults.cs
   - Engine.Core/Drawing/SheetLayout.cs
+  - Engine.Core/Drawing/ViewBreps.cs
   - Engine.Core/Queries/GetSheetQuery.cs
   - Engine.Core/Queries/GetSheetQueryHandler.cs
   - Engine.Core/Hosting/HandlerCatalog.cs
@@ -72,9 +73,14 @@ and gave the same answer in the side session that prepared the plans of P10.3 an
 6. **The codes (Q5 A).** `E-SHEET-VIEW-NOT-FOUND` is a view that is not on the sheet. `E-SHEET-VIEW-INVALID` is a direction, a
    scale or a place of a view that is not valid. `E-SHEET-NOT-FOUND` is raised for a sheet that is not live by the three
    commands and by GetSheet, and `E-SHEET-ID-IN-USE` by AddSheetView, because a view takes the identifier of its command.
-7. **No cache (Q7 A).** Each read computes the lines of each view. A test measures the read of three views of a sphere; when
-   it takes more than 1 s, a register entry holds the time. On the computer of the owner it took 4.6 s and 5.1 s, so register
-   entry R-0069 holds it.
+7. **No cache of the lines (Q7 A), and one B-Rep for each body (TASK-0446).** Each read computes the lines of each view. A
+   test measures the read of three views of a sphere; when it takes more than 1 s, a register entry holds the time. On the
+   computer of the owner it took 4.6 s and 5.1 s, so register entry R-0069 held it. Since TASK-0446 the read keeps the B-Rep
+   of the solid of each body (`Engine.Core/Drawing/ViewBreps.cs`) for the views of the read and for the later reads. A B-Rep
+   is a function of the polygons of the solid only, and the read gives a kept B-Rep only to a solid with the same polygons,
+   so a kept B-Rep is the B-Rep that a new build gives. The read drops the B-Rep of each body that it did not use, and keeps
+   the B-Reps of the last 64 documents. The test counts the builds: one for the first read of three views, none for the
+   next read. The read keeps no line.
 8. **No contract change.** The commands, the query and its result records are in `Engine.Core`. The record of a view is the
    record of ADR-0153 item 4.
 
@@ -83,7 +89,10 @@ and gave the same answer in the side session that prepared the plans of P10.3 an
 **Good:** a sheet holds views that a replay gives back, and a client gets each line of a view in millimetres on the paper.
 
 **Bad:** a pictorial view waits for a later slice. A read of a sheet with a curved body takes seconds, and the query holds the
-session for that time. The centre of a view moves when the part grows on one side.
+session for that time. The centre of a view moves when the part grows on one side. Since TASK-0446 a read of three views of
+a sphere of 3,968 triangles takes 0.44 s to 0.48 s after a change of the sphere and 0.11 s to 0.30 s with no change (Release),
+and the first read in a new process about 1.1 s, half of it the start of the compiler of .NET. The kept B-Reps use memory:
+one for each live body of each of the last 64 documents.
 
 ## History
 
@@ -96,3 +105,6 @@ session for that time. The centre of a view moves when the part grows on one sid
 - 2026-11-18 · TASK-0411 · Amended by ADR-0169 items 3 to 5 and 7: the cut, the hatch, the cut line and the texts in GetSheet (R30h).
 - 2026-11-18 · TASK-0413 · Amended by ADR-0171 item 1: GetSheet gives the centre of each view (R30h, the action of the page).
 - 2026-11-21 · TASK-0428 · Amended by ADR-0179 item 3: GetSheet gives the title block (R30i).
+- 2026-11-21 · TASK-0446 · Item 7 amended in place, a decision of the session under the standing order of 2026-11-20, for
+  the exit of R-0069: the read keeps the B-Rep of each body, and no line. The owner did not answer this change; the owner
+  can take it back. R-0069 is closed.

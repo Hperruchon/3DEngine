@@ -13314,3 +13314,50 @@ The failed runs since the entry v0.428, from the API: none.
 New tests: 10. The test list holds 3155 (1832 in `Engine.Tests`, 390 in `3DEngine.Tests`, 930 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.420, 3 product
 milestones and 9 entries followed it.
+
+## v0.430 — A read of a sheet builds the B-Rep of each body once and keeps it until the body changes (P0.179, TASK-0446)
+
+Register entry R-0069: a read of a sheet with three views of a sphere took 4.6 s and 5.1 s on the computer of the owner,
+under the serial lock of the session. ADR-0155 item 7 (Q7 A) decided "no cache". The branch `p0179-sheet-read` starts from
+`97da5693` (P0.178, TASK-0445, v0.429, not merged yet). No change of `Engine.Contracts`, of a command, of an event or of the
+Document, and no new ADR.
+
+**Where the time went.** A probe test, removed, measured the read of three views of a sphere of radius 10 (3,968
+triangles) in Debug: each view built the B-Rep of the sphere again, 1.0 s to 1.6 s for each build; the solid of the kernel
+took 0.55 s at its first build; the lines of the three views took 0.3 s to 0.4 s. `Brep.Of` had five steps whose work grew
+with the square of the count of the polygons (a search in a list for each polygon, each edge, each region and each face,
+and a test of each vertex for each edge).
+
+**The change.**
+- `ViewBreps` (ADR-0155 item 7, amended in place by this task under the standing order of 2026-11-20): the read keeps the
+  B-Rep of each body for each document, and gives it again only to a solid with the same polygons. The read drops the
+  B-Rep of each body that it did not use, and keeps the B-Reps of the last 64 documents. The read keeps no line.
+- `Brep.Of` finds a group, an edge, the regions of a group and the edges of a face by a dictionary or an index, and the
+  split at the vertices on an edge reads only the vertices in its x range. Each list keeps its order (ADR-0057 item 8).
+- A triangle of a solid of the kernel skips the test of convexity, which it always passes (ADR-0057, History).
+- The hidden-line pass rounds the middle of a piece once, and not once for each face.
+
+**Times and counts.** The test `A_Read_Of_Three_Views_Of_A_Sphere_Gives_Its_Circles`, three runs, each in a new process,
+on this computer while other test processes can run: the first read took 4.36 s to 4.63 s before and 1.11 s to 1.22 s after
+in Debug, and 3.44 s to 3.54 s before and 1.09 s to 1.21 s after in Release. The second read took 0.20 s to 0.34 s
+(Debug) and 0.18 s to 0.30 s (Release), against about 3.0 s before. About 0.5 s of the first read in a new process is the start of the tiered compiler of .NET:
+with `DOTNET_TC_CallCountingDelayMs=0` it took 0.65 s. In a process that ran the code before, the first read of a new
+sphere took 0.44 s to 0.48 s (Release, a probe test). The test counts the builds of the B-Rep (ADR-0173 item 4: a count,
+not a time): one for the first read of three views, none for the second read and for a read after a move of a view;
+before, three for each read.
+
+**Proof.** Two new tests and one changed test in `SheetViewTests`; the three fail with the code of `97da5693`. A change of
+the solid with the same identifier (SetExtrudeDistance) builds again and shows the new height; a Subtract leaves one kept
+B-Rep; 64 more documents remove the B-Reps of the first. A probe test, removed, wrote the JSON of GetSheet, the SVG file
+and the JSON of GetViewLines of three models with fixed command identifiers (the sphere, the bookcase with a slanted view
+and a section, a plate with a hole, a cone and a torus with a section): 15 files, the same byte for byte before and after
+(sha256), and two runs before gave the same files. A second probe compared the old and the new `Brep.Of` on 175 solids (30
+bodies and 150 cuts of them): the same vertices, edges, faces, loops, shells and validity. Twelve injections, each restored
+byte for byte (sha256), made a named test fail; TASK-0446 lists them. A clean build gives 0 warnings, the phone project
+builds with 0 warnings, `dotnet test` passes 3157 tests, and the write-set check and `eng/repo-gates` pass. The
+desktop was not run.
+The failed runs since the entry v0.429, from the API: none.
+
+New tests: 2. The test list holds 3157 (1834 in `Engine.Tests`, 390 in `3DEngine.Tests`, 930 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 13 of 15 (R-0069 closed). New diagnostic codes: 0. Since the review of v0.420, 3
+product milestones and 10 entries followed it.
