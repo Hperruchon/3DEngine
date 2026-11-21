@@ -12888,3 +12888,39 @@ New tests: 8. The test list holds 3095 (1786 in `Engine.Tests`, 390 in `3DEngine
 `E-GEOM-BODY-FAULTED`, `E-GEOM-FACES-FAILED`, `E-GEOM-CAP-MISSING`, `E-GEOM-NATIVE-OP` and `E-MESH-UNSUPPORTED` get one more
 place where they are raised. Since the review of v0.413, 4 product milestones and 7 entries followed it, so the codebase
 review is due before the next product milestone.
+
+## v0.421 — The second codebase review of 2026-11-21 (governance, TASK-0437)
+
+Four product milestones (K15a, K16, K15b and K11) and seven entries followed v0.413, the version that the review of
+2026-11-21 examined, so the next product milestone needs a review first.
+
+**The review.** `docs/reviews/2026-11-21-b-codebase-review.md` examines `1e4e345`, the commit of K11 at v0.420.
+- P0.172 fixed ten of the eleven findings of the last review; E228 is fixed for the escape and closed by its record for the
+  font; V225 is fixed in part, and R-0072 holds the width of 360 pixels.
+- The contract change of K16 holds: ADR-0181 is in the same commit, each implementer of `IBooleanOps` has the two methods, and
+  the exact kernel decides an empty intersection before Manifold, so a replay gives one result.
+- The arctangent of K15b always ends and gives the same bits on each platform, but it is not exact as its text says (E232).
+- The new re-run rule cannot re-run a run with a failed test, a crash or another failed step, by reading. The crash step is
+  right for the three systems; only a real crash in the pipeline proves the dump on Linux and macOS.
+- No new finding is critical or high.
+- E233, E234 and T187 are medium: CheckInterference can hold the serial lock for minutes and a cancel acts only between two
+  pairs; a closed STL mesh whose shells cross each other passes the check of a mesh, and the class can be wrong; the work
+  counters compare the analysis with the status only, so a slower status passes.
+- E230, E231, E232 and T188 are low: a union of two bodies that touch on an edge gives an edge of four faces; two faces on one
+  plane stay two after a union; three statements of K15b are false; no test reaches a pair whose boxes share a volume while
+  the solids only touch or are apart.
+- TASK-0438 (P0.174) holds the seven findings after the next product phase, and the register entry for the crash of the test
+  host of `Engine.Tests` on Linux that the review asks for.
+- The next product phase: P17, the guide for an agent (Q1 A).
+- Questions Q1 to Q7 each have the recommended option A. Under the order of the owner of 2026-11-20 the session takes A; the
+  first commit of P17 (Q1 to Q4) and of P0.174 (Q5 to Q7) records them.
+- Open findings: 0 critical, 2 high, 11 medium and 20 low.
+
+**Proof.** One agent examined the change from v0.413 to v0.420 in a detached copy of `1e4e345`, with probes in its scratch
+folder. The session read the summary, the measures, the heading of each finding and the questions. A clean build gives 0
+warnings, and `dotnet test` passes 3095 tests. `CodebaseReviewGateTests`, the write-set check and `eng/repo-gates` pass. The
+run on the branch is in the progress of TASK-0437. The failed runs since the entry v0.420, from the API: none.
+
+New tests: 0. The test list holds 3095 (1786 in `Engine.Tests`, 390 in `3DEngine.Tests`, 916 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product
+milestones and 0 entries follow it.
