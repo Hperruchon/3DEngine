@@ -76,11 +76,13 @@ field with a default keeps each log valid.
      section of the sheet has, a sheet with no free letter, and a place that is not on the paper (`E-SHEET-VIEW-INVALID`).
    The command lives in `Engine.Core/Commands` (ADR-0016). A section can be the parent of a section. RemoveSheetView of a
    parent keeps its sections; such a section keeps its cut and its label, and no view shows its cut line.
-3. **The cut (D16 A; amends ADR-0155 item 5).** For a section view the read subtracts from each solid one closed box of the
-   owned kernel: the points P + a R' + b U' + c E' with |a| ≤ A, |b| ≤ A and 0 ≤ c ≤ A, where P is the point, (R', U', E')
-   the frame of the section, and A is 1 plus the largest of |a|, |b| and |c| over the vertices of the solid. Each face of
-   the box has the tag (the identifier of the view, "cut"). Each number is exact. The faces of the result with that tag are
-   the cut faces; they look toward the eye. A body that the cut removes fully gives no lines and goes into the skipped bodies
+3. **The cut (D16 A; amends ADR-0155 item 5).** For a section view the read cuts each solid by the plane through P with the
+   normal E' (the cut of the owned kernel, ADR-0057 item 10), and the material on the side of the eye goes. The result is
+   the subtraction from the solid of one closed box of the owned kernel: the points P + a R' + b U' + c E' with |a| ≤ A,
+   |b| ≤ A and 0 ≤ c ≤ A, where P is the point, (R', U', E') the frame of the section, and A is 1 plus the largest of |a|,
+   |b| and |c| over the vertices of the solid. Each cap face of the cut, as each face of the box, has the tag (the
+   identifier of the view, "cut"). Each number is exact. The faces of the result with that tag are the cut faces; they look
+   toward the eye. Until TASK-0445 the read subtracted that box. A body that the cut removes fully gives no lines and goes into the skipped bodies
    with its reason. A body that the plane does not cross keeps its lines. The edges of a cut face are lines of the kind
    "edge", and the circles of ADR-0143 apply to them. An edge between the side of a cylinder or a cone and a face of another
    tag along its axis, as the edge of a cut face, gives the axis of the side as an outline does (amends ADR-0165 item 3).
@@ -91,7 +93,9 @@ field with a default keeps each log valid.
    An edge parallel to the axis, the edge of a cylinder, lies in one plane with it too.
    Finding E222 (TASK-0416): the read keeps the last 16 cuts with their B-Rep, under the exact content of the solid, the
    point, the frame and the view. The cut is a function of that content only, so a read after a command that changes no
-   body makes no new cut and gives the same lines.
+   body makes no new cut and gives the same lines. TASK-0445: the cut of the kernel builds no partition of the solid, so the
+   first read after a change of a body costs less than one more read of the view; it gives the same faces, lines and hatch
+   as the subtract of the box.
 4. **The hatch (D16 A; ADR-0162 item 20 puts it in the scope of ADR-0118 item 7).** GetSheet gives the hatch of the cut faces of each body as lines of the kind
    "hatch": thin, continuous lines on the paper, 2.5 mm apart, at 45° (ISO 128-50). The first body with a cut face has lines
    that go up to the right, the next one lines that go down to the right, and so on, so two parts that touch have different
@@ -131,14 +135,17 @@ field with a default keeps each log valid.
 ## Consequences
 
 **Good:** a part with a hole is clear on a drawing, and the hatch, the cut line and the label follow ISO 128-40, 128-44 and
-128-50. The cut uses the subtraction of the owned kernel, so the section of R26 in the window can use the same cut.
+128-50. The cut uses the cut of the owned kernel by a plane (ADR-0057 item 10; the subtraction until TASK-0445), so the
+section of R26 in the window can use the same cut with its own tag.
 
 **Bad:** each read of a section subtracts one box from each solid, so a section costs more than a view. A hatch line ends on
 the chord of a facet, not on the arc. Finding E222 of the codebase review of 2026-11-18 (b) gives a size: a torus of 4,096
 polygons took 1.8 s with no section and 25.5 s with one, under the serial lock. Since TASK-0416 the read keeps the cut (item
 3), so only the first read after a change of a body pays it; a sphere of radius 20 takes 3.6 s for that read and 1.25 s for
 a read after a move of a view, with 1.1 s for the view alone. A cut of each polygon by the plane with one cap needs a change
-of the owned kernel, which TASK-0416 does not write.
+of the owned kernel, which TASK-0416 does not write. TASK-0445 writes it (ADR-0057 item 10): in a Debug build that read of
+the sphere takes 1.8 s against 3.4 s before on the same computer, and in a Release build the read of a torus of 4,096 polygons with a section takes 1.7 s
+against 33.3 s, with 1.1 s for the view alone. A cap with many edges still costs the square of their count.
 
 **Neutral:** a log before this record gives the same sheets. A section is a view, so MoveSheetView, ScaleSheetView,
 SetSheetViewLines and RemoveSheetView apply to it.
@@ -158,3 +165,5 @@ SetSheetViewLines and RemoveSheetView apply to it.
 - 2026-11-18 · TASK-0413 · Amended by ADR-0171: the action "Section" of the sheet page (item 8).
 - 2026-11-20 · TASK-0416 · Items 3, 5 and 6: the axis of a cone (E223, Q1 A), the kept cut (E222), a cut line that is not
   finite (E221), and the size of a text (E224) (P0.167).
+- 2026-11-21 · TASK-0445 · Item 3: the cut of the owned kernel by a plane gives the cut, with the result of the subtract of
+  the box (E222, P0.178); "Consequences" gives the new times.

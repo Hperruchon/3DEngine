@@ -147,10 +147,8 @@ internal sealed class Bsp
         PlaneR plane, Approximate approximate, KernelPolygon polygon,
         List<KernelPolygon> coplanarFront, List<KernelPolygon> coplanarBack, List<KernelPolygon> front, List<KernelPolygon> back)
     {
-        var doubles = Approximations.GetValue(polygon.Vertices, Approximate.Of);
-        var sides = new int[polygon.Vertices.Count];
-        for (var i = 0; i < sides.Length; i++)
-            sides[i] = approximate.Side(plane, polygon.Vertices[i], doubles[3 * i], doubles[(3 * i) + 1], doubles[(3 * i) + 2]);
+        splits++;
+        var sides = Sides(plane, approximate, polygon.Vertices);
         var hasFront = sides.Any(side => side > 0);
         var hasBack = sides.Any(side => side < 0);
         if (!hasFront && !hasBack)
@@ -196,6 +194,24 @@ internal sealed class Bsp
         if (b.Count >= 3)
             back.Add(polygon with { Vertices = b });
     }
+
+    // The side of each vertex of a list: +1 in front of the plane, -1 behind it, 0 on it. TASK-0445: the cut by a plane of
+    // PlanarBoolean.Cut reads the sides of its kept parts with the same filter.
+    internal static int[] Sides(PlaneR plane, Approximate approximate, IReadOnlyList<Vector3R> vertices)
+    {
+        var doubles = Approximations.GetValue(vertices, Approximate.Of);
+        var sides = new int[vertices.Count];
+        for (var i = 0; i < sides.Length; i++)
+            sides[i] = approximate.Side(plane, vertices[i], doubles[3 * i], doubles[(3 * i) + 1], doubles[(3 * i) + 2]);
+        return sides;
+    }
+
+    // TASK-0445 (finding E222): the count of the splits of a polygon by a plane on this thread, a measure of the work of an
+    // operation for a test. A count of work and not a time, so a test gives the same result on each computer.
+    [ThreadStatic]
+    private static long splits;
+
+    internal static long SplitsOnThisThread => splits;
 
     // ADR-0089 item 6 (K5d, TASK-0289): the doubles of the vertices of each list, made once. A list does not change after
     // its polygon is made, so the table keys it by its reference.

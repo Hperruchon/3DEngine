@@ -13263,3 +13263,54 @@ it now says to measure a plane face, an edge or a body of plane faces.
 New tests: 8. The test list holds 3145 (1822 in `Engine.Tests`, 390 in `3DEngine.Tests`, 930 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0; `E-MEASURE-CURVED` refuses fewer cases.
 Since the review of v0.420, 3 product milestones and 8 entries followed it.
+
+## v0.429 — The section of a sheet cuts each polygon of a solid by its plane in the owned kernel, with one cap (P0.178, TASK-0445)
+
+Finding E222 of the codebase review of 2026-11-18 (b) stayed "fixed in part" in the reviews of 2026-11-20 and of 2026-11-21
+(two): the cache of TASK-0416 and TASK-0426 keeps each cut, but the first read of a section after each change of a body
+subtracted a large box from each solid under the serial lock. Each review gave the correction "a cut of each polygon by the
+plane, with one cap", which needs the kernel. The branch `p0178-plane-cut` starts from `53772dce` (K15c, TASK-0444, v0.428,
+not merged yet). No change of `Engine.Contracts`, of a command, of an event or of the Document, and no new ADR.
+
+**The change.**
+- `PlanarBoolean.Cut(solid, point, normal, cap)` (ADR-0057 item 10) gives the part of a solid of the kernel behind a plane.
+  Each polygon splits with `Bsp.Split`, the split of the subtract, at the exact point of each edge on the plane, and keeps
+  its tag. A polygon on the plane stays when it looks along the normal and goes when it looks away, as in the subtract.
+- The cap is the region that the edges of the kept parts on the plane bound. The edges on one line split at each end of the
+  others, and opposite pieces cancel. A square on the plane is clipped by a partition of the walls of those edges, so each
+  piece is convex and has the tag `cap`. A cap with holes or with several parts needs no other code.
+- `SectionCut.Apply` uses the cut with the tag of the view (ADR-0169 item 3). The cache of the cuts stays. The point and
+  the normal are exact rationals, and the tag is an argument, so row R26 can use the same cut.
+- `Bsp.SplitsOnThisThread` counts the splits of a polygon by a plane on a thread, a measure of the work for a test.
+
+**Times and counts.** A probe program, not a test, read a sheet with the Front view of a sphere of radius 20, then the
+first read after a section of Front with the look "left" through the origin, each round in a new session:
+
+| Object, build | View alone | First read with a section, before | After |
+|---|---|---|---|
+| Sphere of radius 20, Debug | 1.31 s | 3.43 to 3.46 s | 1.81 to 1.83 s |
+| Sphere of radius 20, Release | 0.74 to 0.85 s | 1.98 to 2.01 s | 1.14 to 1.16 s |
+| Torus of radii 30 and 10, Release | 1.06 to 1.18 s | 33.2 to 33.4 s | 1.73 s |
+
+The lines of the two sections are the same before and after, up to the order of the two ends of a line. The cut of the
+sphere splits 10,220 times and gives 2,074 polygons with 28 cap pieces; the subtract of the box split 6,132,711 times and
+gave 3,025 polygons with 37 cap pieces. A test holds the two exact counts (ADR-0173 item 4: a count, not a time).
+
+**Proof.** Ten new tests in `Engine.Tests`, with no native backend. `PlaneCutTests` (4): the side that stays and its cap, the
+exact split points on the plane and on the edges, the volume of the two sides, a face on the plane, a normal of zero, and a
+plate with a square hole (two caps through the hole, a cap with a hole across it). `SectionCutTests` (6): the old cut moves
+into the test as the reference, and on 33 cut planes of a box, a plate with a hole, a sphere, a cone through its axis
+(finding E223) and the five panels of the bookcase, both paths give the same B-Rep faces (plane, tag and loops), the same
+exact volume, the same cap area, the same lines of the view and the same hatch; for each solid but the sphere also the same
+polygons. The subtract splits the facets of the sphere by the partition of the sphere itself, because they are not exactly
+convex, so the sphere gives more polygons on the old path but the same faces. The existing tests of the section pass
+unchanged. Nine injections, each restored byte for byte (sha256), made a named test fail: the wrong side, no cap, a
+crossing polygon kept whole, a split point off the plane, a cap with the tag of a face, a face on the plane kept when it
+looks away, opposite edges that do not cancel, the section on the old path (only the count of the work catches it), and
+the normal away from the eye. TASK-0445 lists them. A clean build gives 0 warnings, the phone project builds with 0
+warnings, `dotnet test` passes 3155 tests, and the write-set check and `eng/repo-gates` pass. The desktop was not run.
+The failed runs since the entry v0.428, from the API: none.
+
+New tests: 10. The test list holds 3155 (1832 in `Engine.Tests`, 390 in `3DEngine.Tests`, 930 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.420, 3 product
+milestones and 9 entries followed it.

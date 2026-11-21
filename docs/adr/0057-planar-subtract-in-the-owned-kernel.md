@@ -69,7 +69,17 @@ slices. On 2026-11-05 the owner answered four questions:
 9. **Out of this record.** The engine reads the kernel (K4b, ADR-0058): a B-Rep of each body as a projection of the feature list,
    a query of the faces and their names. The datums and the references by the identity of a face, and a fault for a
    face that is gone (K4c). A union and an intersection, which ADR-0181 item 5 adds in the form of
-   item 5. Curved surfaces (K5).
+   item 5. Curved surfaces (K5). The cut by a plane, which item 10 adds for the section of a sheet (ADR-0169
+   item 3) and for row R26.
+10. **The cut by a plane (TASK-0445, finding E222).** `Cut(solid, point, normal, cap)` gives the part of the solid behind
+   the plane through the point; the normal points to the side that goes. Each polygon splits as item 5 splits it, at the
+   exact point of each edge on the plane, and each part keeps its tag. A polygon on the plane stays when it looks along the
+   normal and goes when it looks away, as in the subtract. The cap is the region that the edges of the kept parts on the
+   plane bound: the edges on one line split at each end of the others, and two opposite pieces cancel. A square on the plane
+   is clipped by a partition of the walls of those edges, so each piece of the cap is convex; each piece has the tag `cap`
+   and looks along the normal. An empty result is null, as for item 5. The result is the subtract of a box that holds the
+   half space in front of the plane, with the same faces of the topology of item 6, and the work grows with the count of
+   the polygons and the square of the count of the edges of the cap, not with the square of the count of the polygons.
 
 ## Consequences
 
@@ -78,6 +88,8 @@ slices. On 2026-11-05 the owner answered four questions:
   and a filter or a snap to a grid can follow.
 - A binary space partition can cut one face into more pieces than needed; the topology joins them again by their plane
   and their tag.
+- Since TASK-0445 the cut of item 10 builds no partition of the solid. The section of a sphere of 3,968 triangles splits
+  10,220 times, against 6,132,711 for the subtract of a box, and its first read takes 1.15 s against 2.0 s (Release).
 
 ## History
 
@@ -85,3 +97,5 @@ slices. On 2026-11-05 the owner answered four questions:
 - 2026-11-05 · TASK-0184 · ADR-0058 item 1 amends item 1: `Engine.Core` references the kernel.
 - 2026-11-21 · TASK-0433 · ADR-0181 item 5 amends item 9: the kernel gives the union and the intersection, in the steps of
   csg.js, as the subtract of item 5.
+- 2026-11-21 · TASK-0445 · Item 10: the cut of a solid by a plane with a cap, for finding E222 and the section of
+  ADR-0169 item 3; item 9 names it.
