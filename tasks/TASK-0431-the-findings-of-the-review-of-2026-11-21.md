@@ -1,7 +1,7 @@
 ---
 id: 0431
 title: The medium and low findings of the codebase review of 2026-11-21
-status: Active
+status: Done
 phase: P0.172
 opened: 2026-11-21
 depends-on: [0430]
@@ -90,11 +90,11 @@ questions of these findings are answered by the standing order of the owner of 2
 
 - [x] Each finding has a test that fails before its correction, or a register entry.
 - [x] Each injection of a correction makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0172-review-findings) · v0.416
+Status: Done · commit (the merge of the branch p0172-review-findings) · v0.416
 
 The eleven findings have a correction and a test that failed on the code of v0.415; the test of T186 failed by injection,
 because its correction is the new program. V225 is corrected at 390 and 412 pixels; at 360 pixels the rules of the path line
@@ -161,3 +161,4 @@ the real window.
   v0.415). The answers Q5, Q6 and Q7 are in the section "Decisions".
 - 2026-11-21: the work: eleven corrections with 18 new test cases, the program `eng/bookcase-compare`, the text of ADR-0173,
   ADR-0178 and ADR-0179, register entry R-0072, and 15 injections. Ledger entry v0.416.
+- 2026-11-21: run 44859067049 of `6d78b908` passed on each job. Closed at v0.416.
