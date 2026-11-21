@@ -1,7 +1,7 @@
 ---
 id: 0441
 title: The test of the resize is one test for each state, and a stop at the hang limit names the limit and not a crash
-status: Active
+status: Done
 phase: P0.176
 opened: 2026-11-21
 depends-on: [0440]
@@ -87,7 +87,7 @@ an annotation that names the limit.
 - [x] A local run with a hang limit of 20 seconds gives the reason, the sequence file and no dump of the runs on Windows.
 - [x] With the message of the collector, the annotation names the hang limit (`CrashReportTests`).
 - [x] Each injection makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Decisions
 
@@ -122,7 +122,7 @@ an annotation that names the limit.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0176-image-test-crash) · v0.425
+Status: Done · commit (the merge of the branch p0176-image-test-crash) · v0.425
 
 ## Method
 
@@ -172,3 +172,4 @@ keep the parameter and the field in use.
 - 2026-11-21: opened, branch `p0176-image-test-crash` from `391c66a6` (P0.175, TASK-0440, v0.424, not merged yet). The
   cause, the theory of the states with a count of layouts, the text of a hang in the annotation, a test, the comment of the
   step, injections, ADR-0163 and ADR-0173, R-0074, the roadmap and ledger entry v0.425.
+- 2026-11-21: run 44920237330 of `fe1809fd` passed on each job. Closed at v0.425.
