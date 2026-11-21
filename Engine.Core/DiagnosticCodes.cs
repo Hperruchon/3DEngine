@@ -169,4 +169,7 @@ public static class DiagnosticCodes
 
     // ADR-0166 item 1 (phase R30a, TASK-0406): the query of the lines of one frame.
     public const string SheetFrameInvalid = "E-SHEET-FRAME-INVALID";
+
+    // ADR-0179 item 2 (phase R30i, TASK-0428): a field of SetSheetTitle that breaks the rules of a name.
+    public const string SheetTitleInvalid = "E-SHEET-TITLE-INVALID";
 }

@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using Engine.Contracts;
+using Engine.Core.Drawing;
 using Engine.Core.Queries;
 
 namespace Engine.Core.Export;
@@ -80,14 +81,20 @@ public static class DxfExport
 
         w.Pair(0, "SECTION").Pair(2, "ENTITIES");
 
-        // Item 5: the frame and the title block, as in the SVG file.
-        var (fx, fy, fw, fh) = (SvgExport.Margin, SvgExport.Margin, sheet.Width - (2 * SvgExport.Margin), sheet.Height - (2 * SvgExport.Margin));
-        Rectangle(w, fx, fy, fw, fh);
-        var (tx, ty) = (fx + fw - SvgExport.TitleWidth, fy);
-        Rectangle(w, tx, ty, SvgExport.TitleWidth, SvgExport.TitleHeight);
-        Label(w, sheet.Name, tx + 3, ty + 12, 5, centred: false);
-        var projection = sheet.ThirdAngle ? "Third angle" : "First angle";
-        Label(w, $"{sheet.Paper} {(sheet.Landscape ? "landscape" : "portrait")} · {projection} · Scale {SvgExport.Scale(sheet)} · mm", tx + 3, ty + 4, 3.5, centred: false);
+        // Item 5: the frame and the title block, as in the SVG file. ADR-0179 items 4 to 6 (phase R30i, TASK-0428): each line of
+        // TitleBlock.Layout on the layer FRAME; a centre line of the symbol has the line type CENTER of its own (group 6). The
+        // texts are on the layer TEXT with the height of a capital letter.
+        var block = TitleBlock.Layout(sheet);
+        foreach (var line in block.Lines)
+        {
+            if (SvgExport.Stroke(line) == SvgExport.LineStroke.Chain)
+                w.Pair(0, "LINE").Pair(8, FrameLayer).Pair(6, "CENTER").Point(line.FromX, line.FromY).Point(line.ToX, line.ToY, 11);
+            else
+                Entity(w, line, FrameLayer);
+        }
+
+        foreach (var text in block.Texts)
+            Label(w, text.Text, text.X, text.Y, text.Size, centred: false);
 
         // Item 4: the lines of each view, the hidden lines first, as in the SVG file.
         foreach (var view in sheet.Views)
@@ -303,13 +310,6 @@ public static class DxfExport
         }
 
         return Math.Max(From(q1), From(q3));
-    }
-
-    private static void Rectangle(Writer w, double x, double y, double width, double height)
-    {
-        (double, double)[] corners = [(x, y), (x + width, y), (x + width, y + height), (x, y + height)];
-        for (var i = 0; i < 4; i++)
-            w.Pair(0, "LINE").Pair(8, FrameLayer).Point(corners[i].Item1, corners[i].Item2).Point(corners[(i + 1) % 4].Item1, corners[(i + 1) % 4].Item2, 11);
     }
 
     // ADR-0160 item 6: a TEXT on the layer TEXT. A centred text has its middle at the place on its base line, as in the SVG file.

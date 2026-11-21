@@ -8,6 +8,7 @@ using Engine.Contracts.Drawing;
 using Engine.Contracts.Sketch;
 using Engine.Core;
 using Engine.Core.Commands;
+using Engine.Core.Drawing;
 using Engine.Core.Export;
 using Engine.Core.Geometry;
 using Engine.Core.Hosting;
@@ -149,7 +150,7 @@ public sealed class DxfExportTests : IDisposable
 
         var entities = Entities(Sheet([quarter, threeQuarters, half, whole]));
 
-        var round = Assert.Single(entities, entity => entity.Type == "CIRCLE");
+        var round = Assert.Single(entities, entity => entity.Type == "CIRCLE" && entity.Text(8) != DxfExport.FrameLayer);
         Assert.Equal((DxfExport.HiddenLayer, 100.0, 100.0, 10.0), (round.Text(8), round.Number(10), round.Number(20), round.Number(40)));
         var polylines = Polylines(entities);
         Assert.Equal([2, 3, 3], polylines.Select(polyline => polyline.Vertices.Count));
@@ -262,16 +263,37 @@ public sealed class DxfExportTests : IDisposable
             new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "constraint", 180, 30, true, null, null),
         };
 
-        var entities = Entities(Sheet([], dimensions, "Bracket <A&B> é"));
+        var sheet = Sheet([], dimensions, "Bracket <A&B> é") with { TitleBlock = SheetTitleBlock.Empty with { Material = "AlMg3", Revision = "B" } };
+        var entities = Entities(sheet);
 
-        var frame = entities.Where(entity => entity.Type == "LINE" && entity.Text(8) == DxfExport.FrameLayer)
-            .Select(line => string.Create(CultureInfo.InvariantCulture, $"{line.Number(10)},{line.Number(20)}-{line.Number(11)},{line.Number(21)}")).ToArray();
-        Assert.Equal(["10,10-287,10", "287,10-287,200", "287,200-10,200", "10,200-10,10", "167,10-287,10", "287,10-287,30", "287,30-167,30", "167,30-167,10"], frame);
+        // ADR-0179 items 4 to 6 (TASK-0428): each line of TitleBlock.Layout is an entity of the layer FRAME, in its order: a LINE,
+        // a CIRCLE for a circle of the symbol, and a LINE with the line type CENTER for a centre line of the symbol. Until
+        // TASK-0428 the layer held the frame and a block of 120 by 20 mm.
+        var layout = TitleBlock.Layout(sheet);
+        static string Line(SheetLine line) => line.Circle is { } c
+            ? string.Create(CultureInfo.InvariantCulture, $"CIRCLE {c.X},{c.Y} r{c.Radius}")
+            : string.Create(CultureInfo.InvariantCulture, $"LINE{(SvgExport.Stroke(line) == SvgExport.LineStroke.Chain ? " CENTER" : "")} {line.FromX},{line.FromY}-{line.ToX},{line.ToY}");
+        var frame = entities.Where(entity => entity.Text(8) == DxfExport.FrameLayer)
+            .Select(entity => entity.Type == "CIRCLE"
+                ? string.Create(CultureInfo.InvariantCulture, $"CIRCLE {entity.Number(10)},{entity.Number(20)} r{entity.Number(40)}")
+                : string.Create(CultureInfo.InvariantCulture, $"{entity.Type}{(entity.Text(6) is { } type ? " " + type : "")} {entity.Number(10)},{entity.Number(20)}-{entity.Number(11)},{entity.Number(21)}"))
+            .ToArray();
+        Assert.Equal(layout.Lines.Select(Line), frame);
+        Assert.Contains("LINE 10,10-287,10", frame);
+        Assert.Equal(2, frame.Count(line => line.StartsWith("LINE CENTER ", StringComparison.Ordinal)));
+
+        // Each text of the layout is a TEXT of the layer TEXT at its place, with the height of its capital letters and no
+        // justification; then each dimension, centred.
         var texts = entities.Where(entity => entity.Type == "TEXT").ToArray();
         Assert.All(texts, text => Assert.Equal(DxfExport.TextLayer, text.Text(8)));
-        Assert.Equal(["Bracket <A&B> \\U+00E9", "A4 landscape \\U+00B7 First angle \\U+00B7 Scale 1:2 \\U+00B7 mm", "12.5", "R3", "lost"], texts.Select(text => text.Text(1)));
-        Assert.Equal((170.0, 22.0, 5.0, null), (texts[0].Number(10), texts[0].Number(20), texts[0].Number(40), texts[0].Text(72)));
-        Assert.Equal(("1", 120.0, 30.0, 3.5), (texts[2].Text(72), texts[2].Number(11), texts[2].Number(21), texts[2].Number(40)));
+        Assert.Equal(
+            layout.Texts.Select(text => (DxfExport.Escape(text.Text), text.X, text.Y, text.Size, (string?)null)),
+            texts.Take(layout.Texts.Count).Select(text => (text.Text(1)!, text.Number(10), text.Number(20), text.Number(40), text.Text(72))));
+        Assert.Contains(texts, text => text.Text(1) == "Bracket <A&B> \\U+00E9");
+        Assert.Contains(texts, text => text.Text(1) == "AlMg3");
+        Assert.Equal(["12.5", "R3", "lost"], texts.Skip(layout.Texts.Count).Select(text => text.Text(1)));
+        var first = texts[layout.Texts.Count];
+        Assert.Equal(("1", 120.0, 30.0, 3.5), (first.Text(72), first.Number(11), first.Number(21), first.Number(40)));
     }
 
     // Item 7: the text of a name is ASCII, and a number has no exponent.

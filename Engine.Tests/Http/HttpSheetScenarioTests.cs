@@ -45,15 +45,23 @@ public sealed class HttpSheetScenarioTests
             scaleNumerator = 1, scaleDenominator = 2, x = 100.0, y = 80.0,
         }, "viewId", limit.Token);
         var dimensionId = await Output(http, "PlaceSheetDimension", new { sheetId, viewId, source = constraintId, sourceKind = "constraint", x = 110.5, y = 90.0 }, "dimensionId", limit.Token);
+        // ADR-0179 items 2 and 3 (phase R30i, TASK-0428): SetSheetTitle over HTTP, with two fields; the others are empty.
+        Assert.Equal(sheetId, await Output(http, "SetSheetTitle", new { sheetId, identificationNumber = "DWG-0042", issueDate = "2026-11-21" }, "sheetId", limit.Token));
 
-        JsonElement changed = default;
-        var count = 0;
-        while (count < 2)
+        var changes = new List<JsonElement>();
+        while (changes.Count < 3)
         {
             var message = await WebSocketTestClient.ReceiveJsonAsync(socket, limit.Token);
             if (message.GetProperty("kind").GetString() == "sheet.changed")
-                (changed, count) = (message.GetProperty("payload"), count + 1);
+                changes.Add(message.GetProperty("payload"));
         }
+
+        var changed = changes[1];
+        Assert.Equal(JsonValueKind.Null, changed.GetProperty("titleBlock").ValueKind);
+        var block = changes[2].GetProperty("titleBlock");
+        Assert.Equal(("DWG-0042", "2026-11-21", "", ""), (block.GetProperty("identificationNumber").GetString(), block.GetProperty("issueDate").GetString(),
+            block.GetProperty("title").GetString(), block.GetProperty("approvalPerson").GetString()));
+        Assert.Equal(11, block.EnumerateObject().Count());
 
         var view = Assert.Single(changed.GetProperty("views").EnumerateArray());
         Assert.Equal(viewId, view.GetProperty("id").GetGuid());
@@ -67,6 +75,7 @@ public sealed class HttpSheetScenarioTests
         using var query = await http.PostAsJsonAsync("/queries", new { name = "GetSheet", schemaVersion = 1, parameters = new { sheetId } }, limit.Token);
         var body = await query.Content.ReadAsStringAsync(limit.Token);
         Assert.True(query.IsSuccessStatusCode, body);
+        Assert.Equal("DWG-0042", JsonDocument.Parse(body).RootElement.GetProperty("result").GetProperty("titleBlock").GetProperty("identificationNumber").GetString());
         var read = Assert.Single(JsonDocument.Parse(body).RootElement.GetProperty("result").GetProperty("dimensions").EnumerateArray());
         Assert.Equal((dimensionId, viewId, constraintId, "constraint", false, "length", 8.0), (
             read.GetProperty("dimensionId").GetGuid(), read.GetProperty("viewId").GetGuid(), read.GetProperty("source").GetGuid(),

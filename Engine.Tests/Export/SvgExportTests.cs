@@ -9,6 +9,7 @@ using Engine.Contracts.Drawing;
 using Engine.Contracts.Sketch;
 using Engine.Core;
 using Engine.Core.Commands;
+using Engine.Core.Drawing;
 using Engine.Core.Export;
 using Engine.Core.Geometry;
 using Engine.Core.Hosting;
@@ -125,17 +126,48 @@ public sealed class SvgExportTests : IDisposable
             new(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), "constraint", 180, 30, true, null, null),
         };
 
-        var one = XDocument.Parse(SvgExport.Text(Sheet([], dimensions, "Bracket <A&B>", (2, 4), (3, 6))));
+        var sheet = Sheet([], dimensions, "Bracket <A&B>", (2, 4), (3, 6)) with
+        {
+            TitleBlock = SheetTitleBlock.Empty with { IdentificationNumber = "DWG-1 é", IssueDate = "2026-11-21" },
+        };
+        var one = XDocument.Parse(SvgExport.Text(sheet));
         var two = XDocument.Parse(SvgExport.Text(Sheet([], null, "Sheet 1", (1, 2), (2, 1))));
 
-        // A4 landscape: the frame is 10 mm inside the edge, and the title block is 120 by 20 mm in its lower right corner.
-        var rects = one.Descendants(Svg + "g").Single(g => (string?)g.Attribute("id") == "frame").Elements(Svg + "rect")
-            .Select(rect => string.Join(" ", new[] { "x", "y", "width", "height" }.Select(name => (string?)rect.Attribute(name)))).ToArray();
-        Assert.Equal(["10 10 277 190", "167 180 120 20"], rects);
-        var title = one.Descendants(Svg + "g").Single(g => (string?)g.Attribute("id") == "title").Elements(Svg + "text").Select(text => text.Value).ToArray();
-        Assert.Equal(["Bracket <A&B>", "A4 landscape · First angle · Scale 1:2 · mm"], title);
+        // ADR-0179 items 4 to 6 (TASK-0428): the frame group holds one path for each line of TitleBlock.Layout, in its order: a
+        // thick or a thin line, and a centre line with its dashes. The title group holds each text of the layout at its place,
+        // with the size of the font of its capital letters. Until TASK-0428 the group held two rectangles and two texts.
+        var layout = TitleBlock.Layout(sheet);
+        static string Expected(SheetLine line)
+        {
+            var stroke = SvgExport.Stroke(line);
+            var width = SvgExport.N(stroke == SvgExport.LineStroke.Thick ? SvgExport.Thick : SvgExport.Thin);
+            var dashes = stroke == SvgExport.LineStroke.Chain ? SvgExport.CentreDashes : "";
+            var d = line.Circle is { } c
+                ? $"M {SvgExport.N(c.X + c.Radius)} {SvgExport.N(210 - c.Y)} A {SvgExport.N(c.Radius)} {SvgExport.N(c.Radius)} 0 1 0"
+                : $"M {SvgExport.N(line.FromX)} {SvgExport.N(210 - line.FromY)} L {SvgExport.N(line.ToX)} {SvgExport.N(210 - line.ToY)}";
+            return $"{width}|{dashes}|{d}";
+        }
+
+        var paths = one.Descendants(Svg + "g").Single(g => (string?)g.Attribute("id") == "frame").Elements(Svg + "path").ToArray();
+        Assert.Equal(layout.Lines.Count, paths.Length);
+        for (var i = 0; i < paths.Length; i++)
+        {
+            var d = (string)paths[i].Attribute("d")!;
+            var actual = $"{(string?)paths[i].Attribute("stroke-width")}|{(string?)paths[i].Attribute("stroke-dasharray") ?? ""}|{(layout.Lines[i].Circle is null ? d : d[..Expected(layout.Lines[i]).Split('|')[2].Length])}";
+            Assert.Equal(Expected(layout.Lines[i]), actual);
+        }
+
+        // The 14 lines between the rows and the cells are thin and continuous; the frame, the marks and the outlines are thick.
+        Assert.Equal(14, paths.Count(path => (string?)path.Attribute("stroke-width") == "0.25" && path.Attribute("stroke-dasharray") is null));
+        Assert.Equal(4 + 4 + 2 + 6, paths.Count(path => (string?)path.Attribute("stroke-width") == "0.5"));
+        var title = one.Descendants(Svg + "g").Single(g => (string?)g.Attribute("id") == "title").Elements(Svg + "text")
+            .Select(text => $"{text.Value}|{(string?)text.Attribute("x")}|{(string?)text.Attribute("y")}|{(string?)text.Attribute("font-size")}").ToArray();
+        Assert.Equal(layout.Texts.Select(text => $"{text.Text}|{SvgExport.N(text.X)}|{SvgExport.N(210 - text.Y)}|{SvgExport.N(SvgExport.FontSize(text.Size))}"), title);
+        Assert.Contains("Bracket <A&B>|", title[Array.FindIndex(title, text => text.StartsWith("Title|", StringComparison.Ordinal)) + 1], StringComparison.Ordinal);
+        Assert.Contains(title, text => text.StartsWith("DWG-1 é|", StringComparison.Ordinal));
+        Assert.Contains(title, text => text.StartsWith("1:2|", StringComparison.Ordinal));
         Assert.Equal("Bracket <A&B>", one.Root!.Element(Svg + "title")!.Value);
-        Assert.EndsWith("Scale as shown · mm", two.Descendants(Svg + "text").ElementAt(1).Value, StringComparison.Ordinal);
+        Assert.Contains(two.Descendants(Svg + "g").Single(g => (string?)g.Attribute("id") == "title").Elements(Svg + "text"), text => text.Value == "as shown");
         var texts = one.Descendants(Svg + "g").Single(g => (string?)g.Attribute("id") == "dimensions").Elements(Svg + "text").ToArray();
         Assert.Equal(["12.5", "R3", "0.1", "lost"], texts.Select(text => text.Value));
         Assert.Equal(("120", "180"), ((string?)texts[0].Attribute("x"), (string?)texts[0].Attribute("y")));

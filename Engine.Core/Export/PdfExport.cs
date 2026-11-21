@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using Engine.Contracts;
+using Engine.Core.Drawing;
 using Engine.Core.Queries;
 
 namespace Engine.Core.Export;
@@ -86,15 +87,18 @@ public static class PdfExport
         w.Append(CultureInfo.InvariantCulture, $"{N(PointsPerMillimetre)} 0 0 {N(PointsPerMillimetre)} 0 0 cm\n");
         w.Append("0 G 0 g 0 J 0 j\n");
 
-        // Item 5: the frame and the title block, as in the SVG file.
-        var (fx, fy, fw, fh) = (SvgExport.Margin, SvgExport.Margin, sheet.Width - (2 * SvgExport.Margin), sheet.Height - (2 * SvgExport.Margin));
-        var (tx, ty) = (fx + fw - SvgExport.TitleWidth, fy);
-        w.Append(CultureInfo.InvariantCulture, $"{N(SvgExport.Thick)} w\n");
-        w.Append(CultureInfo.InvariantCulture, $"{N(fx)} {N(fy)} {N(fw)} {N(fh)} re S\n");
-        w.Append(CultureInfo.InvariantCulture, $"{N(tx)} {N(ty)} {N(SvgExport.TitleWidth)} {N(SvgExport.TitleHeight)} re S\n");
-        Label(w, sheet.Name, tx + 3, ty + 12, 5, centred: false);
-        var projection = sheet.ThirdAngle ? "Third angle" : "First angle";
-        Label(w, $"{sheet.Paper} {(sheet.Landscape ? "landscape" : "portrait")} · {projection} · Scale {SvgExport.Scale(sheet)} · mm", tx + 3, ty + 4, 3.5, centred: false);
+        // Item 5: the frame and the title block, as in the SVG file. ADR-0179 items 4 to 6 (phase R30i, TASK-0428): the lines of
+        // TitleBlock.Layout with their widths and dashes, and its texts with the size of the font of their capital letters.
+        var block = TitleBlock.Layout(sheet);
+        foreach (var line in block.Lines)
+        {
+            var stroke = SvgExport.Stroke(line);
+            w.Append(CultureInfo.InvariantCulture, $"{N(stroke == SvgExport.LineStroke.Thick ? SvgExport.Thick : SvgExport.Thin)} w [{(stroke == SvgExport.LineStroke.Chain ? SvgExport.CentreDashes : "")}] 0 d\n");
+            Path(w, line);
+        }
+
+        foreach (var text in block.Texts)
+            Label(w, text.Text, text.X, text.Y, SvgExport.FontSize(text.Size), centred: false);
 
         // Item 3: the lines of each view, the hidden lines first, as in the SVG file.
         foreach (var view in sheet.Views)

@@ -7,7 +7,7 @@ date: 2026-11-15
 supersedes: []
 superseded-by: []
 amends: ['0153']
-amended-by: ['0164', '0165', '0167', '0168', '0169', '0171']
+amended-by: ['0164', '0165', '0167', '0168', '0169', '0171', '0179']
 affects:
   - Engine.Core/Commands/AddSheetViewCommand.cs
   - Engine.Core/Commands/AddSheetViewCommandHandler.cs
@@ -68,6 +68,7 @@ and gave the same answer in the side session that prepared the plans of P10.3 an
    ADR-0169 items 3 to 5 and 7: a section view cuts each solid and gives the hatch of its cut faces and its label, and the
    parent of a section gives its cut line, its arrows and its letters; each view gives its section and its texts.
    ADR-0171 item 1: each view also gives `CentreU` and `CentreV`, the centre (cu, cv) of its box in the coordinates of the view.
+   ADR-0179 item 3: GetSheet also gives `titleBlock`, the block of the sheet or the empty block.
 6. **The codes (Q5 A).** `E-SHEET-VIEW-NOT-FOUND` is a view that is not on the sheet. `E-SHEET-VIEW-INVALID` is a direction, a
    scale or a place of a view that is not valid. `E-SHEET-NOT-FOUND` is raised for a sheet that is not live by the three
    commands and by GetSheet, and `E-SHEET-ID-IN-USE` by AddSheetView, because a view takes the identifier of its command.
@@ -94,3 +95,4 @@ session for that time. The centre of a view moves when the part grows on one sid
 - 2026-11-18 · TASK-0408 · ADR-0168 item 3 amends item 6: MoveSheetViews is a command of a view, with the same codes.
 - 2026-11-18 · TASK-0411 · Amended by ADR-0169 items 3 to 5 and 7: the cut, the hatch, the cut line and the texts in GetSheet (R30h).
 - 2026-11-18 · TASK-0413 · Amended by ADR-0171 item 1: GetSheet gives the centre of each view (R30h, the action of the page).
+- 2026-11-21 · TASK-0428 · Amended by ADR-0179 item 3: GetSheet gives the title block (R30i).

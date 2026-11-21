@@ -12441,3 +12441,48 @@ commands, because the arc now keeps the line of a command with no sheet item. `S
 New tests: 32. The test list holds 3004 (1718 in `Engine.Tests`, 390 in `3DEngine.Tests`, 893 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 12 of 15 (R-0071 opens). New diagnostic codes: 0. Since the review of v0.407, 1 product milestone and
 3 entries followed it.
+
+## v0.411 — The title block of ISO 7200 by one command, the symbol of the projection and the centring marks (R30i, TASK-0428)
+
+Row R30i, from ADR-0162 items 15 and 17. The codebase review of 2026-11-20 (v0.408), sections 5 and 6, examined R30i and asked
+Q4 to Q7. These answers come from the standing order of the owner of 2026-11-20 (Q4 to Q7 of the codebase review of
+2026-11-20), the recommended option A of each: Q4 A, the nine fields of ADR-0162 item 15 plus the approval person and the
+document type; Q5 A, one command SetSheetTitle gives each field, an absent field is empty, one step of undo; Q6 A, a block of
+180 mm at most and as high as its fields need, and no view moves; Q7 A, no form on the sheet page in R30i. The branch
+`r30i-title-block` starts from `1045aae2` (P0.171, v0.410), which is not merged yet. The change of `Engine.Contracts` has its
+ADR, ADR-0179, in the same commit; it amends ADR-0153, ADR-0155, ADR-0159, ADR-0160 and ADR-0161.
+
+**The change.**
+- The contract: the record `SheetTitleBlock` of eleven texts (`Title`, `IdentificationNumber`, `Revision`, `IssueDate`,
+  `SheetNumber`, `LegalOwner`, `Material`, `Creator`, `GeneralTolerances`, `ApprovalPerson`, `DocumentType`), and the field
+  `SheetTitleBlock? TitleBlock = null` at the end of `SheetRecord`. No field is required, no name changes, and no event kind
+  is new.
+- The command SetSheetTitle: `sheetId` and eleven optional texts; the whole block in one step of undo. It refuses a sheet that
+  is not live (`E-SHEET-NOT-FOUND`) and a field that breaks the rules of a name (`E-SHEET-TITLE-INVALID`, new). The date is
+  the text of the client; the engine reads no clock.
+- `sheet.created` and `sheet.changed` carry `titleBlock` (an object or null), `/schema/events` lists it, and GetSheet gives
+  `titleBlock`, the empty block for a sheet with no SetSheetTitle.
+- `TitleBlock.Layout` in `Engine.Core/Drawing` gives the frame, a centring mark at the middle of each side, the block of 180 by
+  44 mm in four rows of cells (each with its label and its value; a text wider than its cell gets a smaller size; the title is
+  the name of the sheet when its field is empty), and the symbol of the projection of ISO 5456-2 for first or third angle. The
+  SVG, the DXF and the PDF file and the sheet page draw this one list. The area of a new view starts above the band of 44 mm;
+  a view of an earlier log stays where it is.
+
+**Proof.** Eight new test cases in `Engine.Tests` and two in `3DEngine.ImageTests`. The new tests do not compile on the code
+of v0.410, because the record, the command and the layout do not exist there. Twenty-six injections, each restored byte for
+byte (sha256), made a named test fail: TASK-0428 lists them in its progress. The test of the PDF file takes the Bézier curves of a
+circle of the symbol from the file and checks only the start of that path; it checks the whole text of each other line and
+text. The test of the page finds a triangle of ink on each line of the list and ink in the box of each text. A clean build gives 0 warnings, the phone project builds with 0 warnings, `dotnet test` passes 3014 tests,
+and the write-set check and `eng/repo-gates` pass. No picture of the real window was made, and the files were not opened in a
+reader of SVG, DXF or PDF. The failed runs since the entry v0.410, from the API: none.
+
+Corrections: the tests of the old block of 120 by 20 mm in `SvgExportTests`, `DxfExportTests` and `PdfExportTests` now compare
+each file with `TitleBlock.Layout`. `PdfExportTests.A_Line_Is_A_Path_On_The_Paper_In_Millimetres` looked for no "Date" in the
+whole file; the label "Date of issue" is text of the page, so the test now looks for no `/CreationDate`, no `/ModDate`, and no
+"Date" outside the content. `DxfExportTests.An_Arc_Of_A_Circle_Is_A_Polyline_With_A_Bulge` finds its circle outside the layer
+FRAME, which now holds the circles of the symbol. The band of the block is 24 mm higher, so the standard views of the plate in
+`SheetAddTests` and `SheetPageTests` are 12 mm higher.
+
+New tests: 10. The test list holds 3014 (1726 in `Engine.Tests`, 390 in `3DEngine.Tests`, 895 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 1 (`E-SHEET-TITLE-INVALID`). Since the review of
+v0.407, 2 product milestones and 4 entries followed it.

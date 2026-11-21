@@ -33,6 +33,7 @@ public sealed class GetSheetQueryHandler : IQueryHandler
             ["height"] = new("number"),
             ["views"] = new("array"),
             ["dimensions"] = new("array"),
+            ["titleBlock"] = new("object"),
         };
 
     // Per ADR-0016.
@@ -85,6 +86,10 @@ public sealed class GetSheetQueryHandler : IQueryHandler
         }
 
         var (width, height) = SheetLayout.PaperSize(sheet);
-        return new SheetInfo(sheet.Id, sheet.Name, sheet.Paper, sheet.Landscape, sheet.ThirdAngle, width, height, views, dimensions);
+        // ADR-0179 item 3 (phase R30i, TASK-0428): the title block, or the empty block of a sheet with no SetSheetTitle.
+        return new SheetInfo(sheet.Id, sheet.Name, sheet.Paper, sheet.Landscape, sheet.ThirdAngle, width, height, views, dimensions)
+        {
+            TitleBlock = sheet.TitleBlock ?? SheetTitleBlock.Empty,
+        };
     }
 }

@@ -1,4 +1,5 @@
 using System.Numerics;
+using Engine.Core.Drawing;
 using Engine.Core.Export;
 using Engine.Core.Queries;
 using ImGuiNET;
@@ -555,18 +556,38 @@ internal sealed unsafe partial class DesktopUi
             (_pageDrag, _pageDragLost) = (null, false);
         }
 
-        // The frame and the title block, as the files draw them.
-        var (fx0, fy0, fx1, fy1) = (SvgExport.Margin, SvgExport.Margin, sheet.Width - SvgExport.Margin, sheet.Height - SvgExport.Margin);
-        list.AddRect(paper.Pixel(fx0, fy1), paper.Pixel(fx1, fy0), Theme.Ink, 0f, ImDrawFlags.None, 2f);
-        var (tx, ty) = (fx1 - SvgExport.TitleWidth, fy0);
-        list.AddRect(paper.Pixel(tx, ty + SvgExport.TitleHeight), paper.Pixel(fx1, ty), Theme.Ink, 0f, ImDrawFlags.None, 2f);
+        // ADR-0168 item 1: the frame and the title block, as the files draw them. Since TASK-0428 (R30i): the lines and the texts
+        // of TitleBlock.Layout: a thick line of 2 pixels, a thin line of 1 pixel, a centre line of 1 pixel in long dashes, and each
+        // text at the size of the font of its capital letters.
+        var block = TitleBlock.Layout(sheet);
+        foreach (var line in block.Lines)
+        {
+            var points = SheetPage.Path(line).Select(p => paper.Pixel(p.U, p.V)).ToList();
+            if (points.Count < 2)
+                continue;
+            var stroke = SvgExport.Stroke(line);
+            if (stroke == SvgExport.LineStroke.Chain)
+            {
+                foreach (var (a, b) in ViewLines.Dashes(points, 12f, 4f))
+                    list.AddLine(a, b, Theme.Ink, HiddenLineWidth);
+                continue;
+            }
+
+            var array = points.ToArray();
+            list.AddPolyline(ref array[0], array.Length, Theme.Ink, ImDrawFlags.None, stroke == SvgExport.LineStroke.Thick ? VisibleLineWidth : HiddenLineWidth);
+        }
+
         var font = ImGui.GetFont();
         float Size(double millimetres) => Math.Max(6f, (float)(millimetres * paper.Scale));
         // The texts of the title block stay inside it.
-        list.PushClipRect(paper.Pixel(tx, ty + SvgExport.TitleHeight), paper.Pixel(fx1, ty), true);
-        list.AddText(font, Size(5), paper.Pixel(tx + 3, ty + 17), Theme.Ink, sheet.Name);
-        var projection = sheet.ThirdAngle ? "Third angle" : "First angle";
-        list.AddText(font, Size(3.5), paper.Pixel(tx + 3, ty + 7.5), Theme.Ink, $"{sheet.Paper} {(sheet.Landscape ? "landscape" : "portrait")} · {projection} · Scale {SvgExport.Scale(sheet)} · mm");
+        var (bx0, by0, bx1, by1) = TitleBlock.Box(sheet.Width, sheet.Height);
+        list.PushClipRect(paper.Pixel(bx0, by1), paper.Pixel(bx1, by0), true);
+        foreach (var text in block.Texts)
+        {
+            var size = Size(SvgExport.FontSize(text.Size));
+            list.AddText(font, size, paper.Pixel(text.X, text.Y) - new Vector2(0f, size), Theme.Ink, text.Text);
+        }
+
         list.PopClipRect();
 
         // The views: hidden lines thin and dashed, centre lines thin with a long dash, visible lines thick.
