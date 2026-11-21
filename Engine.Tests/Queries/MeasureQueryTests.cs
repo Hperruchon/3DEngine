@@ -302,7 +302,8 @@ public sealed class MeasureQueryTests
     // have no closed form either (item 14). Each case with no
     // closed form is refused with E-MEASURE-CURVED: a body with a curved face, the side of the notch and an edge of it, a
     // torus, the side of an arc whose nearest point of the whole turn is not on the arc, a sphere for an angle, and two
-    // curved faces that item 15 does not measure. A plane face of a cylinder is measured.
+    // curved faces that items 16 and 22 do not measure: a cone and a cylinder on two parallel axes (phase K15d, TASK-0450:
+    // on one axis they have a closed form). A plane face of a cylinder is measured.
     [NativeManifoldFact]
     public async Task A_Notch_Gives_The_Volume_Of_Its_Facets_And_Each_Case_With_No_Closed_Form_Is_Refused()
     {
@@ -347,7 +348,11 @@ public sealed class MeasureQueryTests
             => new() { BodyIdA = a, FeatureIdA = a, ElementA = elementA, ItemIdA = itemA, BodyIdB = b, FeatureIdB = b, ElementB = elementB };
         Assert.Equal(code, await Refusal<DistanceInfo>(session, Faces(torus, "surface", box, "+x")));
         Assert.Equal(code, await Refusal<AngleInfo>(session, Angle(torus, torus, "surface", box, box, "+x")));
-        Assert.Equal(code, await Refusal<DistanceInfo>(session, Faces(cone, "side", other, "side")));
+        var aside = await Moved(session, Output(await Applied(session, new CreateCylinderCommand { Radius = 1, Height = 2 })), 20, 0, 0);
+        Assert.Equal(code, await Refusal<DistanceInfo>(session, new GetDistanceQuery
+        {
+            BodyIdA = cone, FeatureIdA = cone, ElementA = "side", BodyIdB = aside, FeatureIdB = await Feature(session, aside), ElementB = "side",
+        }));
         Assert.Equal(code, await Refusal<DistanceInfo>(session, Faces(arc, "side", other, "side", arcItem)));
         Assert.Equal(code, await Refusal<DistanceInfo>(session, Faces(arc, "side", box, "-x", arcItem)));
         Assert.Equal(code, await Refusal<AngleInfo>(session, Angle(sphere, sphere, "surface", box, box, "+z")));
@@ -726,7 +731,8 @@ public sealed class MeasureQueryTests
     // sides are D - r - s apart, |r - s| - D one inside the other, or they cross; a gap g between their spans along the axis
     // adds as √(d² + g²). A cylinder of radius 5 from z = -5 to 5 and one of radius 2: at (10, 0) 3, also 10 higher √18, at
     // (1, 0) inside 2, at (6, 0) crossing, and the side of an extrude of a circle of radius 3 on the same axis 2. Two axes
-    // that are not parallel are refused.
+    // that are not parallel are refused when the common perpendicular of the axes is past an end of a side (phase K15d,
+    // TASK-0450: item 22 measures the other case).
     [NativeManifoldFact]
     public async Task The_Distance_Between_The_Sides_Of_Two_Cylinders_With_Parallel_Axes()
     {
@@ -766,7 +772,7 @@ public sealed class MeasureQueryTests
         Assert.Equal(coaxial.PointA.Z, coaxial.PointB.Z);
 
         var across = Output(await Applied(session, new RotateCommand { BodyId = Output(await Applied(session, new CreateCylinderCommand { Radius = 1, Height = 2 })), Qw = 1, Qx = 1, Qy = 0, Qz = 0 }));
-        var moved = await Moved(session, across, 20, 0, 0);
+        var moved = await Moved(session, across, 20, 0, 8);
         Assert.Equal(DiagnosticCodes.MeasureCurved, await Refusal<DistanceInfo>(session, Sides(moved, await Feature(session, moved))));
     }
 
@@ -884,6 +890,228 @@ public sealed class MeasureQueryTests
         AssertNear(1, right.Sine);
         Assert.Equal(new AngleInfo(1, 0), await Turned(0, 1));
         Assert.Equal(DiagnosticCodes.MeasureCurved, await Refusal<AngleInfo>(session, Angle(cylinder, cylinder, "side", sphere, sphere, "surface")));
+    }
+
+    // Item 21 (phase K15d, TASK-0450): the side of a hole is the side of its tool on the parts of the axis that the body
+    // holds. A plate of 100 by 50 by 10 with a hole of radius 5 at (30, 10): the side is 15 from the face +x (x = 50), 10
+    // from the face +y (y = 25), 10 from a box over the plate (z from 15) by its rim, and 40 from the side of a hole at
+    // (-20, 10). Its outward normals point to the axis, so a face +z is at 90 degrees and a face +x at 0 degrees. A clevis,
+    // a box of 20 with a slot from x = -5 and z from -5 to 5, has a hole of radius 2 at (3, 0) in two parts: each is 6 from
+    // the face of the slot at x = -5, at the plane of the slot, and the upper part is 2 from a box over the clevis (z from
+    // 12), at its rim at z = 10.
+    [NativeManifoldFact]
+    public async Task The_Side_Of_A_Hole_Gives_Its_Distance_And_Its_Angle()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        async Task<Guid> Cut(Guid body, Guid tool, double x, double y, double z)
+            => Output(await Applied(session, new SubtractCommand { MinuendBodyId = body, SubtrahendBodyId = await Moved(session, tool, x, y, z) }));
+        async Task<Guid> Drill(double radius, double height) => Output(await Applied(session, new CreateCylinderCommand { Radius = radius, Height = height }));
+
+        var box = await Box(session, 100, 50, 10);
+        var drill = await Drill(5, 20);
+        var plate = await Cut(box, drill, 30, 10, 0);
+        GetDistanceQuery From(Guid body, Guid? feature = null, string? element = null)
+            => new() { BodyIdA = plate, FeatureIdA = drill, ElementA = "side", BodyIdB = body, FeatureIdB = feature, ElementB = element };
+
+        var side = await Answer<DistanceInfo>(session, From(plate, box, "+x"));
+        Assert.Equal((15.0, 35.0, 50.0, 10.0, 10.0), (side.Distance, side.PointA.X, side.PointB.X, side.PointA.Y, side.PointB.Y));
+        Assert.True(side.PointA.Z == side.PointB.Z && side.PointA.Z is >= -5 and <= 5, $"{side.PointA}");
+        var front = await Answer<DistanceInfo>(session, From(plate, box, "+y"));
+        Assert.Equal((10.0, 15.0, 25.0), (front.Distance, front.PointA.Y, front.PointB.Y));
+
+        var over = await Moved(session, await Box(session, 10, 10, 10), 30, 10, 20);
+        var rim = await Answer<DistanceInfo>(session, From(over));
+        AssertNear(10, rim.Distance);
+        Assert.Equal((5.0, 15.0), (rim.PointA.Z, rim.PointB.Z));
+        AssertNear(5, Math.Sqrt(((rim.PointA.X - 30) * (rim.PointA.X - 30)) + ((rim.PointA.Y - 10) * (rim.PointA.Y - 10))));
+
+        Assert.Equal(new AngleInfo(0, 1), await Answer<AngleInfo>(session, Angle(plate, drill, "side", plate, box, "+z")));
+        Assert.Equal(new AngleInfo(1, 0), await Answer<AngleInfo>(session, Angle(plate, box, "+x", plate, drill, "side")));
+
+        var other = await Drill(5, 20);
+        var two = await Cut(plate, other, -20, 10, 0);
+        var holes = await Answer<DistanceInfo>(session, new GetDistanceQuery { BodyIdA = two, FeatureIdA = drill, ElementA = "side", BodyIdB = two, FeatureIdB = other, ElementB = "side" });
+        Assert.Equal((40.0, 25.0, -15.0), (holes.Distance, holes.PointA.X, holes.PointB.X));
+
+        var block = await Box(session, 20, 20, 20);
+        var slot = await Box(session, 25, 30, 10);
+        var through = await Drill(2, 40);
+        var clevis = await Cut(await Cut(block, slot, 7.5, 0, 0), through, 3, 0, 0);
+        var pin = await Answer<DistanceInfo>(session, new GetDistanceQuery
+        {
+            BodyIdA = clevis, FeatureIdA = through, ElementA = "side", BodyIdB = clevis, FeatureIdB = slot, ElementB = "-x",
+        });
+        Assert.Equal((6.0, 1.0, -5.0, 0.0), (pin.Distance, pin.PointA.X, pin.PointB.X, pin.PointA.Y));
+        Assert.Equal((5.0, 5.0), (Math.Abs(pin.PointA.Z), Math.Abs(pin.PointB.Z)));
+        var cap = await Moved(session, await Box(session, 10, 10, 10), 3, 0, 17);
+        var top = await Answer<DistanceInfo>(session, new GetDistanceQuery { BodyIdA = clevis, FeatureIdA = through, ElementA = "side", BodyIdB = cap });
+        AssertNear(2, top.Distance);
+        Assert.Equal((10.0, 12.0), (top.PointA.Z, top.PointB.Z));
+    }
+
+    // Item 21 (phase K15d, TASK-0450): a countersink, a cone of radius 6 and height 6 with its apex down and its base on the
+    // top of a plate of 40 by 40 by 10, over a hole of radius 2. The outward normals of the side of the cone point up and to
+    // the axis, at 45 degrees to the face +z; the tool alone looks the other way, at 135 degrees. A box over the plate (z
+    // from 8) is 3 from the rim of radius 6, and a pin of radius 1 on the axis is 1 from the bottom of the cone, where its
+    // radius is 2 (item 22, two sides on one axis).
+    [NativeManifoldFact]
+    public async Task The_Side_Of_A_Countersink_Gives_Its_Distance_And_Its_Angle()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        var (plate, box, cone) = await Countersink(session);
+        var half = Math.Sqrt(0.5);
+        var angle = await Answer<AngleInfo>(session, Angle(plate, cone, "side", plate, box, "+z"));
+        AssertNear(half, angle.Cosine);
+        AssertNear(half, angle.Sine);
+        var alone = Output(await Applied(session, new CreateConeCommand { Radius = 6, Height = 6 }));
+        var turned = Output(await Applied(session, new RotateCommand { BodyId = alone, Qw = 0, Qx = 1, Qy = 0, Qz = 0 }));
+        var tool = await Answer<AngleInfo>(session, Angle(turned, alone, "side", plate, box, "+z"));
+        AssertNear(-half, tool.Cosine);
+        AssertNear(half, tool.Sine);
+
+        var over = await Moved(session, await Box(session, 20, 20, 20), 0, 0, 18);
+        var rim = await Answer<DistanceInfo>(session, new GetDistanceQuery { BodyIdA = plate, FeatureIdA = cone, ElementA = "side", BodyIdB = over });
+        AssertNear(3, rim.Distance);
+        Assert.Equal((5.0, 8.0), (rim.PointA.Z, rim.PointB.Z));
+        AssertNear(6, Math.Sqrt((rim.PointA.X * rim.PointA.X) + (rim.PointA.Y * rim.PointA.Y)));
+
+        var pin = await Moved(session, Output(await Applied(session, new CreateCylinderCommand { Radius = 1, Height = 10 })), 0, 0, 5);
+        var bottom = await Answer<DistanceInfo>(session, new GetDistanceQuery
+        {
+            BodyIdA = plate, FeatureIdA = cone, ElementA = "side", BodyIdB = pin, FeatureIdB = await Feature(session, pin), ElementB = "side",
+        });
+        AssertNear(1, bottom.Distance);
+        AssertNear(1, bottom.PointA.Z);
+        AssertNear(1, bottom.PointB.Z);
+        AssertNear(2, Math.Sqrt((bottom.PointA.X * bottom.PointA.X) + (bottom.PointA.Y * bottom.PointA.Y)));
+        AssertNear(1, Math.Sqrt((bottom.PointB.X * bottom.PointB.X) + (bottom.PointB.Y * bottom.PointB.Y)));
+    }
+
+    // Item 20 (phase K15d, TASK-0450): tools on one axis join. A plate of 40 by 40 by 10 with a hole of radius 3 and a
+    // counterbore of radius 5 from z = 1 removes 9 π 6 + 25 π 4 = 154 π, with the moment 192 π along z. The countersink
+    // removes 4 π 6 and π ∫ (z + 1)² from z = 1 to 5: 280 π / 3, with the moment 608 π / 3. The clevis keeps 5000 less the
+    // two parts of its hole, 40 π, at x = 3. A tube, a cylinder of radius 10 and height 20 less one of radius 6 on its axis,
+    // keeps 1280 π; a cone of radius 6 and height 12 less a bore of radius 3 keeps 72 π at z = -4.125. The outer side of
+    // the tube is 10 from a face at x = 20, and its inner side 4 from a sphere of radius 2 at its centre.
+    [NativeManifoldFact]
+    public async Task Holes_On_One_Axis_And_A_Tube_Give_The_Volume_Of_The_Curve()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        async Task<Guid> Cut(Guid body, Command tool, double x, double y, double z)
+            => Output(await Applied(session, new SubtractCommand { MinuendBodyId = body, SubtrahendBodyId = await Moved(session, Output(await Applied(session, tool)), x, y, z) }));
+
+        var bored = await Cut(await Cut(await Box(session, 40, 40, 10), new CreateCylinderCommand { Radius = 3, Height = 20 }, 0, 0, 0), new CreateCylinderCommand { Radius = 5, Height = 8 }, 0, 0, 5);
+        var left = 16000 - (154 * Math.PI);
+        AssertMass(left, (0, 0, -192 * Math.PI / left), await Mass(session, bored));
+
+        var (sunk, _, _) = await Countersink(session);
+        left = 16000 - (280 * Math.PI / 3);
+        AssertMass(left, (0, 0, -608 * Math.PI / 3 / left), await Mass(session, sunk));
+
+        var slotted = await Cut(await Box(session, 20, 20, 20), new CreateBoxCommand { SizeX = 25, SizeY = 30, SizeZ = 10 }, 7.5, 0, 0);
+        var clevis = await Cut(slotted, new CreateCylinderCommand { Radius = 2, Height = 40 }, 3, 0, 0);
+        left = 5000 - (40 * Math.PI);
+        AssertMass(left, ((-7500 - (120 * Math.PI)) / left, 0, 0), await Mass(session, clevis));
+
+        var outer = Output(await Applied(session, new CreateCylinderCommand { Radius = 10, Height = 20 }));
+        var tube = await Cut(outer, new CreateCylinderCommand { Radius = 6, Height = 30 }, 0, 0, 0);
+        AssertMass(1280 * Math.PI, (0, 0, 0), await Mass(session, tube));
+        var cone = Output(await Applied(session, new CreateConeCommand { Radius = 6, Height = 12 }));
+        AssertMass(72 * Math.PI, (0, 0, -4.125), await Mass(session, await Cut(cone, new CreateCylinderCommand { Radius = 3, Height = 20 }, 0, 0, 0)));
+
+        var wall = await Moved(session, await Box(session, 10, 10, 10), 25, 0, 0);
+        var outside = await Answer<DistanceInfo>(session, new GetDistanceQuery { BodyIdA = tube, FeatureIdA = outer, ElementA = "side", BodyIdB = wall, FeatureIdB = await Feature(session, wall), ElementB = "-x" });
+        Assert.Equal((10.0, 10.0, 20.0, 0.0), (outside.Distance, outside.PointA.X, outside.PointB.X, outside.PointA.Y));
+        var ball = Output(await Applied(session, new CreateSphereCommand { Radius = 2 }));
+        var bore = (await Answer<FacesInfo>(session, new GetFacesQuery { BodyId = tube })).Faces.Select(face => face.Reference).First(reference => reference.Element == "side" && reference.FeatureId != outer);
+        var inside = await Answer<DistanceInfo>(session, new GetDistanceQuery { BodyIdA = tube, FeatureIdA = bore.FeatureId, ElementA = "side", BodyIdB = ball, FeatureIdB = ball, ElementB = "surface" });
+        AssertNear(4, inside.Distance);
+        AssertNear(6, Length(inside.PointA));
+        AssertNear(2, Length(inside.PointB));
+    }
+
+    // Item 22 (phase K15d, TASK-0450): two sides on one axis are as far apart as their profiles in the half-plane (ρ, z).
+    // The cone of radius 3 and height 4 from z = -2 and a cylinder of radius 5 from z = -1 to 1 are √5 apart, from the rim
+    // (3, -2) to (5, -1); a cone of radius 2 from z = 3 to 7 is 2.2 from the first, from (0.24, 1.68) to its rim (2, 3).
+    // A cone and a cylinder on two parallel axes have no closed form.
+    [NativeManifoldFact]
+    public async Task Two_Sides_On_One_Axis_Are_As_Far_Apart_As_Their_Profiles()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        var cone = Output(await Applied(session, new CreateConeCommand { Radius = 3, Height = 4 }));
+        async Task<DistanceInfo> To(Command command, double z)
+        {
+            var body = await Moved(session, Output(await Applied(session, command)), 0, 0, z);
+            return await Answer<DistanceInfo>(session, new GetDistanceQuery
+            {
+                BodyIdA = cone, FeatureIdA = cone, ElementA = "side", BodyIdB = body, FeatureIdB = await Feature(session, body), ElementB = "side",
+            });
+        }
+
+        AssertDistance(Math.Sqrt(5), (0, 3, -2), (0, 5, -1), await To(new CreateCylinderCommand { Radius = 5, Height = 2 }, 0));
+        AssertDistance(2.2, (0, 0.24, 1.68), (0, 2, 3), await To(new CreateConeCommand { Radius = 2, Height = 4 }, 5));
+    }
+
+    // Item 22 (phase K15d, TASK-0450): two cylinders whose axes are not parallel. Each point of a side is within its radius
+    // of its axis, so D - r - s is a lower bound, and the common perpendicular of the axes reaches it when its two feet are
+    // on the two spans. The cylinder of radius 5 from z = -5 to 5 and one of radius 1 along y at x = 10 and z = 2 are 4
+    // apart. At z = 7 the foot is past the top, and at x = 5 the two cross: both have no closed form.
+    [NativeManifoldFact]
+    public async Task The_Sides_Of_Two_Cylinders_Whose_Axes_Are_Not_Parallel()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        var cylinder = Output(await Applied(session, new CreateCylinderCommand { Radius = 5, Height = 10 }));
+        async Task<GetDistanceQuery> To(double x, double z)
+        {
+            var across = Output(await Applied(session, new RotateCommand { BodyId = Output(await Applied(session, new CreateCylinderCommand { Radius = 1, Height = 20 })), Qw = 1, Qx = 1, Qy = 0, Qz = 0 }));
+            var body = await Moved(session, across, x, 0, z);
+            return new() { BodyIdA = cylinder, FeatureIdA = cylinder, ElementA = "side", BodyIdB = body, FeatureIdB = await Feature(session, body), ElementB = "side" };
+        }
+
+        AssertDistance(4, (5, 0, 2), (9, 0, 2), await Answer<DistanceInfo>(session, await To(10, 2)));
+        Assert.Equal(DiagnosticCodes.MeasureCurved, await Refusal<DistanceInfo>(session, await To(10, 7)));
+        Assert.Equal(DiagnosticCodes.MeasureCurved, await Refusal<DistanceInfo>(session, await To(5, 0)));
+    }
+
+    // Item 22 (phase K15d, TASK-0450): the side of an arc with a curved face is measured as its whole turn when the point of
+    // the turn is on the arc. The arc of radius 5 about (10, 5) that bulges to +x is 4 from a sphere of radius 1 at
+    // (20, 5, 2) and 4 from a cylinder of radius 1 along z at (20, 5); a sphere at (0, 5, 2) is nearest to a point of the
+    // turn that is not on the arc, so it is refused.
+    [NativeManifoldFact]
+    public async Task The_Side_Of_An_Arc_And_A_Curved_Face()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        var (arc, item) = await ArcExtrude(session);
+        async Task<GetDistanceQuery> To(Command command, double x, string element)
+        {
+            var body = await Moved(session, Output(await Applied(session, command)), x, 5, 2);
+            return new() { BodyIdA = arc, FeatureIdA = arc, ElementA = "side", ItemIdA = item, BodyIdB = body, FeatureIdB = await Feature(session, body), ElementB = element };
+        }
+
+        AssertDistance(4, (15, 5, 2), (19, 5, 2), await Answer<DistanceInfo>(session, await To(new CreateSphereCommand { Radius = 1 }, 20, "surface")));
+        var post = await Answer<DistanceInfo>(session, await To(new CreateCylinderCommand { Radius = 1, Height = 4 }, 20, "side"));
+        Assert.Equal((4.0, 15.0, 19.0, 5.0, 5.0), (post.Distance, post.PointA.X, post.PointB.X, post.PointA.Y, post.PointB.Y));
+        Assert.Equal(post.PointA.Z, post.PointB.Z);
+        Assert.Equal(DiagnosticCodes.MeasureCurved, await Refusal<DistanceInfo>(session, await To(new CreateSphereCommand { Radius = 1 }, 0, "surface")));
+    }
+
+    // The plate of 40 by 40 by 10 with a hole of radius 2 and a countersink: a cone of radius 6 and height 6, turned a half
+    // turn about x so that its apex is down, with its base at z = 5. The body, the box of the plate and the cone.
+    private static async Task<(Guid Plate, Guid Box, Guid Cone)> Countersink(DocumentSession session)
+    {
+        var box = await Box(session, 40, 40, 10);
+        var drill = Output(await Applied(session, new CreateCylinderCommand { Radius = 2, Height = 20 }));
+        var holed = Output(await Applied(session, new SubtractCommand { MinuendBodyId = box, SubtrahendBodyId = drill }));
+        var cone = Output(await Applied(session, new CreateConeCommand { Radius = 6, Height = 6 }));
+        var down = Output(await Applied(session, new RotateCommand { BodyId = cone, Qw = 0, Qx = 1, Qy = 0, Qz = 0 }));
+        var plate = Output(await Applied(session, new SubtractCommand { MinuendBodyId = holed, SubtrahendBodyId = await Moved(session, down, 0, 0, 2) }));
+        return (plate, box, cone);
     }
 
     // Item 13 (phase K15b, TASK-0434): the angle of an arc comes from + - * / and the square root only, so it is the same

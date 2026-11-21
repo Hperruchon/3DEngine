@@ -484,14 +484,17 @@ DELETE /proposals/<proposal>
 - **No preview.** The window shows the commands of a proposal, not their result. A check before the accept is not possible;
   check after the accept. Row P15 adds a preview on a fork of the Document.
 - **Curved faces.** `GetDistance` measures a face of a cylinder, a cone, a sphere or an arc whose body has only `Translate`
-  and `Rotate` after its command. It refuses with `E-MEASURE-CURVED` a body with a curved face as a side, an edge of a
-  curved face, a face of a body with a `Subtract` (the side of a hole), a torus, a slanted face or edge near the side of a
-  cone or past an end of a cylinder, the side of an arc whose nearest point of the whole turn is not on the arc, and two
-  curved faces other than two spheres, a sphere and a cylinder or a cone, and two cylinders with parallel axes. Measure from
-  a plane face or an edge of the other body in place of a body. `GetAngle` gives the angle of the axes for two curved faces,
-  from 0 to 90 degrees, and refuses a sphere, a torus and a face of a body with a `Subtract`. `GetMassProperties` does not
-  refuse: a plate with holes across it gives the volume of its curve, and a body with no closed form, as a hole at an angle
-  or a notch, gives `facets` true. No query names a vertex, so no measure starts at a vertex (ADR-0180 item 18, row K15d).
+  and `Rotate` after its command, and the side of a hole or of a tube that a `Subtract` of a cylinder, a cone or an extrude
+  of one circle made, when the faces of the body near the hole are across its axis or far from it. It refuses with
+  `E-MEASURE-CURVED` a body with a curved face as a side, an edge of a curved face, a torus, a slanted face or edge near the
+  side of a cone or near a rim, the side of a notch or of a hole at an angle, the side of an arc whose nearest point of the
+  whole turn is not on the arc, a cone and another side on another axis, and two cylinders that are not parallel when their
+  common perpendicular is past an end or when they cross. Measure from a plane face or an edge of the other body in place of
+  a body. `GetAngle` gives the angle of the axes for two curved faces, from 0 to 90 degrees, and the angle of the side of a
+  hole from its outward normals, which point to the axis; it refuses a sphere and a torus. `GetMassProperties` does not
+  refuse: a plate with holes, a counterbore, a countersink and a tube give the volume of their curve, and a body with no
+  closed form, as a hole at an angle or a notch, gives `facets` true. No query names a vertex, so no measure starts at a
+  vertex (ADR-0180 item 23, row K15d).
 - **The cost of a check.** `CheckInterference` holds the session for its whole work, and each command waits for it. The
   work is the sum, over each pair, of the product of the counts of the facets of the two bodies. Above 100,000 the check is
   refused with `E-CHECK-WORK-LIMIT` before its first pair: the 19 boxes of the bookcase need 6,156, a sphere and a plate

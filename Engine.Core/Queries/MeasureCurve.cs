@@ -18,8 +18,11 @@ internal static class MeasureCurve
     // A whole curved face of the design: the side of a cylinder or a cone, or the surface of a sphere, with the curve of
     // KernelProjection.Curves (the centre of the base, the axis to the other end or to the apex, and the radius) and one
     // vertex of its facets, which lies on the curve within the rounding of the turn. Item 17 (phase K15c, TASK-0444): Arc is
-    // the part of the turn of the side of an arc, and null for a whole turn.
-    internal sealed record Surface(SideCurveKind Kind, Vector3R Base, Vector3R Axis, Rational Radius, Vector3R OnFacets, Sector? Arc = null);
+    // the part of the turn of the side of an arc, and null for a whole turn. Item 21 (phase K15d, TASK-0450): a part of the
+    // side of a hole or of a tube (CutMass.Sides) is the side of a cylinder or of a frustum: Top is the radius at Base + Axis
+    // of a frustum, below Radius, and null for a whole cylinder or cone; Inward is true for the side of a hole, whose outward
+    // normals point to the axis. OnFacets is then a point of the curve in doubles.
+    internal sealed record Surface(SideCurveKind Kind, Vector3R Base, Vector3R Axis, Rational Radius, Vector3R OnFacets, Sector? Arc = null, Rational? Top = null, bool Inward = false);
 
     // Item 17: the arc of a side, from the direction Start counter-clockwise about Normal to the direction End, each across
     // the axis. Holds is exact: the signs of the cross products about the normal.
@@ -38,7 +41,8 @@ internal static class MeasureCurve
 
     // Item 10: the volume and the centre of the curve of the design, with no flag of facets, for a cylinder, a cone, a
     // sphere, a torus, or an extrude of a sketch with an arc or a circle, each with only Translate and Rotate steps after
-    // it. Item 14 (phase K15c, TASK-0444): a body with a Subtract of a curved tool, from CutMass. Null for each other body:
+    // it. Item 14 (phase K15c, TASK-0444): a body with a Subtract of a curved tool, from CutMass; item 20 (phase K15d,
+    // TASK-0450) adds holes on one axis and a tube. Null for each other body:
     // GetMassProperties then gives the exact values of the solid of the kernel.
     public static MassProperties? DesignMass(Document document, Guid body)
     {

@@ -13435,3 +13435,60 @@ run on the branch is in the progress of TASK-0448. The failed runs since the ent
 New tests: 0. The test list holds 3174 (1834 in `Engine.Tests`, 390 in `3DEngine.Tests`, 947 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product
 milestones and 0 entries follow it.
+
+## v0.433 — The measure queries give the side of a hole, holes on one axis, a tube, two sides on one axis, two cylinders that are not parallel and an arc with a curved face (K15d, TASK-0450)
+
+Row K15d, after K15c (v0.428) and the third codebase review of 2026-11-21 (v0.432), whose answer Q1 A puts K15d beside P15.
+The branch `k15d-curved-last` starts from `d7077cf8` (TASK-0448, v0.432, not merged yet). The answers Q2 A, Q3 A and Q4 A of
+the codebase review of 2026-11-21 still hold. ADR-0180 items 20 to 24 record the decision; items 3, 6, 8, 9, 14, 16 and 18
+say so. No change of `Engine.Contracts`, `Engine.Kernel` or `3DEngine.App`, and no new ADR: the shape of the three queries
+does not change.
+
+**The change.** The task file gives the order of the cases by their value for a person who measures a part.
+- The side of a hole: `CutMass` gives the parts of the line of a tool that the body holds, so the side of a hole of a
+  cylinder, a cone or an extrude of one circle is the side of a cylinder or of a frustum on each part. `GetDistance`
+  measures each part with the code of K15b and K15c and gives the lowest; a hole through the two arms of a clevis has two
+  parts. `GetAngle` takes the outward normals of a hole, which point to the axis: a countersink of 90 degrees is at 45
+  degrees to the top face. `GetConnectors` does not change: the side of a hole stays `Curved` there.
+- Holes on one axis and a tube: the tools on one line make one group, whose radius is the largest radius of its tools, a
+  linear function on each part, so a counterbore and a countersink give the volume of their curve with exact integrals. A
+  first body of one cylinder, cone or extrude of one circle with tools on its axis (a tube) gives the lower of the two radii,
+  and its outer side and inner side are measured.
+- Two sides on one axis, as a cylinder and a cone or two cones, are as far apart as their profiles in one half-plane, with
+  the heights as (x - P) · A so that each step is exact.
+- Two cylinders whose axes are not parallel are D - r - s apart when the common perpendicular of the axes reaches both spans
+  and the sides are apart.
+- The side of an arc with a curved face takes the pair of its whole turn when the point of the pair is on the arc.
+- `E-MEASURE-CURVED` keeps its meaning and refuses fewer cases. ADR-0180 item 23 gives each case that stays refused and its
+  reason: a slanted piece near a rim or a cone, a cone and another side on another axis, two cylinders whose common
+  perpendicular is past an end or whose sides cross, a torus, a body with a curved face as a side and an edge of a curved
+  face need the distance from a circle, the roots of a polynomial of degree four, and no iterative solver is added. A notch,
+  a hole at an angle and two holes that meet on two axes keep their facets. No query gives a name of a vertex, so a vertex is
+  still not a side of `GetDistance`. The row K15d says what stays refused.
+- The guide for an agent gives the new limits of the curved faces.
+
+**Determinism and precision.** Each new decision uses `+`, `-`, `*`, `/` and comparisons on exact rationals; a part of a hole
+keeps the decisions of items 11, 15 and 16 that compare doubles. The values are doubles from `+`, `-`, `*`, `/`, `Math.Sqrt`
+and `Math.PI`, with no transcendental function (ADR-0180 item 24). A query writes nothing to the log. The change touches
+`GetAngleQueryHandler.AboutAxis`, the method of E235, for the side of a hole only, and adds one sentence to the header of
+`RevolvedDistance.cs` without a change of the false sentence of E238; P0.180 (TASK-0449) keeps both findings.
+
+**Proof.** Six new tests in `MeasureQueryTests`, on the native backend, each with values from a computation by hand: the side
+of a hole of radius 5 in a plate (15, 10, 10 and 40 mm, 90 and 0 degrees) and of a clevis (6 and 2 mm); a countersink (45
+degrees, its tool at 135 degrees, 3 mm to a box and 1 mm to a pin); a counterbore (16000 - 154 π mm³), a countersink
+(16000 - 280 π / 3), a clevis (5000 - 40 π), a tube (1280 π) and a cone with a bore (72 π at z = -4.125), each with its
+centre, and the two sides of the tube (10 and 4 mm); a cone and a cylinder on one axis (√5) and two cones (2.2); two
+cylinders that cross at a right angle (4) and two refused cases; the side of an arc with a sphere and a cylinder (4) and a
+refused sphere. The six tests failed on the engine files of `d7077cf8`. Sixteen injections, each restored byte for byte (sha256), made a named test fail; TASK-0450 lists them in its section "Method". The first form of four did not build; their second forms fail. A clean build gives 0 warnings, the
+phone project builds with 0 warnings, `dotnet test` passes 3180 tests, and the write-set check and `eng/repo-gates` pass.
+The desktop was not run.
+The failed runs since the entry v0.432, from the API: none.
+
+Corrections: `A_Notch_Gives_The_Volume_Of_Its_Facets_And_Each_Case_With_No_Closed_Form_Is_Refused` refused a cone and a
+cylinder on one axis, which item 22 now measures; the refused pair is now on two parallel axes.
+`The_Distance_Between_The_Sides_Of_Two_Cylinders_With_Parallel_Axes` refused two axes that are not parallel with the common
+perpendicular on both spans, which item 22 now measures; the refused cylinder is now 8 mm higher, past the top.
+
+New tests: 6. The test list holds 3180 (1840 in `Engine.Tests`, 390 in `3DEngine.Tests`, 947 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0; `E-MEASURE-CURVED` refuses fewer cases. Since
+the review of v0.431, 1 product milestone and 2 entries followed it.
