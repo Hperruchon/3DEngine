@@ -13106,3 +13106,48 @@ called the stops crashes, as the annotations did.
 New tests: 15 (14 cases of the resize and one test of the script). The test list holds 3126 (1803 in `Engine.Tests`, 390 in
 `3DEngine.Tests`, 930 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0.
 Since the review of v0.420, 1 product milestone and 5 entries followed it.
+
+## v0.426 — The gate of governed-by builds the expression of each path pattern once, so it ends in less than a second (P0.177, TASK-0442)
+
+The session of 2026-11-21 looked for the cause of R-0074: in attempt 1 of run 44869058349 the test host of `Engine.Tests`
+stopped on ubuntu-latest while
+`TaskGovernanceGateTests.Each_Open_Task_Lists_Exactly_The_Adrs_Whose_Affects_Intersect_Its_Write_Set` ran. The branch
+`p0177-fast-governance-gate` starts from `fe1809fd` (P0.176, v0.425, not merged yet). No rule and no message of a gate
+changes. No change of `Engine.Contracts`, `Engine.Kernel`, `Engine.Core` or `3DEngine.App`.
+
+**The cause.** `TaskFiles.PathPattern` (`eng/write-set-check`) built a new regular expression with `RegexOptions.Compiled`
+at each call, and `PatternsIntersect` called it two times for each pair. The gate of governed-by compares each affects
+pattern of each ADR in force with each path of the write set of each open task: it built 130,999 compiled expressions for
+429 distinct patterns, and took 63 to 76 seconds on the computer of the owner (38 to 100 seconds in TASK-0441).
+`WriteSetGateTests.No_Task_Forbids_A_Path_That_It_Also_Writes` had the same cause (35 seconds). The form before the change,
+with a hang limit of 20 seconds, gave "Test host process crashed", named the gate as the running test and wrote no dump:
+the facts of run 44869058349. So the stop of R-0074 was the hang limit of 2 minutes of the step "Test", and not a crash.
+
+**The change.**
+- `TaskFiles.PathPattern` keeps the expression of each pattern, so a pattern gives one expression for the life of the
+  process. `TaskFiles.PatternsBuiltOnThisThread` counts the expressions that one thread built.
+- `ConstantStrings.Constants` binds each file on a thread of its own and keeps the order of the files and of the
+  constants. `UiLibraryGateTests.Only_The_Ui_Folder_Of_The_Host_Names_The_Library` took 26 seconds alone and 33 to 35
+  seconds in the run of the Governance tests; it now takes 14 and 16 to 19 seconds. A probe gave the same 60,086 constants
+  in the same order on one thread and on more than one thread.
+- R-0074 closes as resolved, with the evidence above.
+
+The times on the computer of the owner, before and after: the gate of governed-by 63 to 76 s and 0.3 to 0.4 s; the class
+`TaskGovernanceGateTests` 64 s and 1.5 s; the Governance tests of `Engine.Tests` 78 s and 23 s; `eng/repo-gates` with no
+build 155 s and 43 s. Other sessions ran tests on this computer at the same time.
+
+**Proof.** Two new tests in `Engine.Tests` (`PathPatternWorkTests`): a pattern gives one expression built once, and the
+gate of governed-by builds at most one expression for each pattern of the ADRs and of the open tasks, a count of the work
+and not a time (ADR-0173 item 4). Three injections of a violation of the rule (an ADR missing from governed-by, an extra
+ADR, and a changed affects field) gave the same failure messages before and after the change. Three injections of the code
+(no cache, no count, a lost file in the parallel loop) made named tests fail, the last one 48 tests of `UiLibraryGateTests`
+and `DiagnosticsRegistryGateTests`. Each file was restored byte for byte (sha256). A clean build gives 0 warnings,
+`dotnet test` passes 3128 tests, and the write-set check and `eng/repo-gates` pass. Only the next runs on ubuntu-latest
+prove the cause: no stop of the step "Test" of `Engine.Tests`.
+The failed runs since the entry v0.425, from the API: none.
+
+Corrections: none.
+
+New tests: 2. The test list holds 3128 (1805 in `Engine.Tests`, 390 in `3DEngine.Tests`, 930 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.420, 1 product milestone
+and 6 entries followed it.
