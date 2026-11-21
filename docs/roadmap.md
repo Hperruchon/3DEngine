@@ -545,6 +545,7 @@ Therefore each approved objective must have a track here.
   sphere read in less than 1 s with the same result (R-0069 closed). v0.430, TASK-0446.
 - R26 — "Section" on the ring of the part cuts each body by an origin plane or a named datum, with a pad for the offset, a
   flip of the side and a hatched cap from the cut of the owned kernel, in the window only. v0.431, TASK-0447, ADR-0184.
+- Review — The third codebase review of 2026-11-21. v0.432, TASK-0448.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -740,6 +741,7 @@ This track removes each condition that blocks other work.
 | P0.177 | The stop of `Engine.Tests` on ubuntu-latest in run 44869058349 (R-0074) is the hang limit of 2 minutes: the gate of governed-by built 130,999 compiled expressions for 429 path patterns and took 38 to 100 seconds. Each pattern gives one expression, a test counts the expressions, and the constants of the repository bind on more than one thread. TASK-0442. | 1 |
 | P0.178 | Finding E222 of the codebase reviews of 2026-11-18 (b), 2026-11-20 and 2026-11-21 (fixed in part): the first read of a section after each change of a body subtracted a box from each solid under the serial lock (a sphere of radius 20: 3.6 s against 1.1 s for the view). The owned kernel cuts a solid by a plane with a cap (ADR-0057 item 10), which R26 can use too, and the section uses it with the same result. TASK-0445. | 1 |
 | P0.179 | Register entry R-0069: a read of a sheet with three views of a sphere took 4.6 s to 5.1 s, because each view built the B-Rep of the sphere again (about 1 s each) under the serial lock. The read keeps the B-Rep of each body under the exact content of its solid (ADR-0155 item 7, amended), the five searches of `Brep.Of` that read a whole list for each polygon use a dictionary or an index, and the result of GetSheet is the same, byte for byte. TASK-0446. | 1 |
+| P0.180 | The medium and low findings of the third codebase review of 2026-11-21 (E235, V229, E236 to E238, V230 to V232, T189 to T191: the angle of an arc that bites into the profile, the edge lines of a cut mesh on the frame thread, a mesh with an island in a void, the bound of work after the resolution of a mesh, three false comments, cuts that pile up, hidden bodies that are cut, the plane of a datum after an undo, a body change during a cut, the gaps of the surface of P17, and the running test last in a long report), after the next product phase. TASK-0449. | 1–2 |
 | P0.173 | A run of the pipeline is red only for a fault of the code, after four red runs of 2026-11-21 with no fault of the code (the order of the owner "Start P0.173"): no time decides a test (a count of the work, an order with 60 s against a wait for ever, or no limit), a crash of a test host gives a dump on each system and the report of the runtime as its cause, and a known fault of the artifact service in an upload or a download gets the one automatic re-run of ADR-0173. TASK-0435. | 1 |
 | P0.168 | A run of the pipeline is red only for a fault of the code: one automatic re-run of a job whose macOS runner GitHub did not give, and no time limit that decides the test of a report that blocks (the question of the owner of 2026-11-18 on the failed runs). It can come at any place in the order. TASK-0417. | 1 |
 | P0.169 | The layout of small windows and of each state (the review of the responsive layout of 2026-11-18 and the answers of the owner, Q1 to Q4 A): the rows beside the ring, the pad and the images as fixed parts of the layout, the rows and the ring of a sketch, the history arc and the home screen inside the display, ten states in the layout test, and the desktop window down to 360 by 560 (ADR-0172). TASK-0418. | 1–2 |
@@ -1074,6 +1076,9 @@ The tracks are not strictly sequential, but three rules hold:
    The second codebase review of 2026-11-21 (TASK-0437) comes after K11 and puts P0.174 (TASK-0438), which holds medium and
    low findings, after the next product phase. Its answer Q1 A (the standing order of 2026-11-20) makes P17, the guide for an
    agent, the next product phase; R26 and K10b stay open.
+   The third codebase review of 2026-11-21 (TASK-0448) comes after R26 and puts P0.180 (TASK-0449), which holds medium and low
+   findings, after the next product phase. Its answer Q1 A (the standing order of 2026-11-20) makes P15 the next product
+   phase with the design answers Q2 to Q5 A, and K15d alongside; the session starts K15d, and the owner starts P15.
    K15a (TASK-0432) starts before K10b: K10a is done, and the support of the lamp waits for the sizes of the owner
    (R-0070).
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.

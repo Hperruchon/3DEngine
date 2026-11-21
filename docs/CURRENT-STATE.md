@@ -13399,3 +13399,39 @@ The failed runs since the entry v0.430, from the API: none.
 New tests: 17. The test list holds 3174 (1834 in `Engine.Tests`, 390 in `3DEngine.Tests`, 947 in
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.420,
 4 product milestones and 11 entries followed it, so the codebase review is due before the next product milestone.
+
+## v0.432 — The third codebase review of 2026-11-21 (governance, TASK-0448)
+
+Four product milestones (P17, K17, K15c and R26) and eleven entries followed v0.420, the version that the second review of
+2026-11-21 examined, so the next product milestone needs a review first.
+
+**The review.** `docs/reviews/2026-11-21-c-codebase-review.md` examines `2aed6d7`, the commit of R26 at v0.431.
+- P0.174 fixed or closed each of the seven findings of the last review: E232, T187 and T188 are fixed; E233 and E234 are fixed
+  for their forms, and E237 and E236 hold the new forms; E230 and E231 are closed by the text of ADR-0181.
+- E222 is fixed: with the cut of the kernel by a plane (P0.178) and the kept B-Reps (P0.179), the first read of a torus with a
+  section went from 33.2 s to 1.73 s.
+- The new caches (`ViewBreps`, `SectionCut`, the cache of the expressions of the write-set check) are safe for threads, and a hit
+  compares the exact content. The cut of the kernel uses exact rationals only. Nothing new reaches the log.
+- The pipeline since v0.420 has one red run, 44908442870, a stop at the hang limit that P0.176 removed.
+- No new finding is critical or high.
+- E235 and V229 are medium: GetAngle gives a wrong angle for the side of an arc that bites into the profile; the section finds
+  the edge lines of a cut mesh on the frame thread, with no limit of triangles, against ADR-0121.
+- E236, E237, E238, V230, V231, V232, T189, T190 and T191 are low: a mesh with an island in a void is refused; the bound of work
+  comes after the resolution of a mesh; three comments claim more than the code; old cuts are not cancelled; hidden bodies are
+  cut; a section on a datum keeps the plane of the tap; no test holds a change of a body during a cut; the gaps of the surface
+  of P17 have no register entry; a long report names the running test last.
+- TASK-0449 (P0.180) holds the eleven findings after the next product phase.
+- The next product phase: P15, the preview of a proposal (Q1 A), with K15d alongside. Q2 to Q5 decide the design of the fork.
+- Questions Q1 to Q6 each have the recommended option A. Under the order of the owner of 2026-11-20 the session takes A; the
+  first commit of P15 (Q1 to Q5) and of P0.180 (Q6) records them. P15 is three to five evenings, so the session starts K15d and
+  leaves the start of P15 to the owner on 2026-11-22.
+- Open findings: 0 critical, 2 high, 9 medium and 25 low.
+
+**Proof.** One agent examined the change from v0.420 to v0.431 in a detached copy of `2aed6d7`, with probes in its scratch
+folder. The session read the summary, the measures, the heading of each finding and the questions. A clean build gives 0
+warnings, and `dotnet test` passes 3174 tests. `CodebaseReviewGateTests`, the write-set check and `eng/repo-gates` pass. The
+run on the branch is in the progress of TASK-0448. The failed runs since the entry v0.431, from the API: none.
+
+New tests: 0. The test list holds 3174 (1834 in `Engine.Tests`, 390 in `3DEngine.Tests`, 947 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product
+milestones and 0 entries follow it.
