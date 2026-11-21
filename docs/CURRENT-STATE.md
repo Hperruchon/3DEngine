@@ -12383,3 +12383,61 @@ none.
 New tests: 3. The test list holds 2972 (1714 in `Engine.Tests`, 390 in `3DEngine.Tests`, 865 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 11 of 15 (R-0065 closes). New diagnostic codes: 0. Since the review of v0.407, 1 product
 milestone and 2 entries followed it.
+
+## v0.410 — The medium and low findings of the codebase review of 2026-11-20 (P0.171, TASK-0426)
+
+The codebase review of 2026-11-20 (v0.408) put its six medium and ten low findings after R20d. Under the standing order of the
+owner of 2026-11-20, the session took the recommended option A of each question; the section "Decisions" of TASK-0426 records
+Q1, Q2, Q3 and Q8. The branch starts from the closed branch of R20d (`9cadf07`, v0.409).
+
+**The change.**
+- E226: the read of a section keeps one cut for each pair of a view and a body, and drops the cut of each body that the last
+  read of the view did not cut (`SectionCut.Keep`); the cuts of the last 64 views stay. Until now one read of 17 cuts missed
+  each cut.
+- T183 (Q8 A): the test of a deadlock in `HttpConcurrencyTests` fails only when no operation ends for 60 s
+  (`Progress.EndsWhileItMoves`), and a request of the class stops only after 60 s. ADR-0173 item 4 says so.
+- T184: on Windows the step "Test" collects a mini dump of a crash of the test host (`--blame-crash --blame-crash-dump-type
+  mini`), and a failed job keeps each dump as the artifact "test-host-crash-dump".
+- V210: the queue of the sheet page is busy in the frame of the Poll that ended a command, so the host gives a pending read in
+  that frame, and the page keeps its sent values until the read of the new count.
+- V211: the file menu takes the focus in its first frame, so it opens over the structure view after a tap on the view.
+- V212: the pad decides "compact" and "low" from the top where it opens (`PadPlace`), also under the window of a sketch.
+- V213: a press outside the open file menu and the file name does not reach the library, and its release closes the menu, so
+  Undo, the structure view and "Views" take no action from it (ADR-0174 item 4).
+- V214: a frame with no ring leaves no boxes of a ring, so the rows take their full width again.
+- V215: a new press on the paper clears the mark of a drag that a read ended.
+- V216: the text of an export to a content URI whose identifier is a number, as "msf:1000018", names no file.
+- V217: the text of "Put on sheet" gives the value of the design and its unit, not the pending text of its chip.
+- V218 and V219 (Q1 A, Q2 A): ADR-0178 item 1 says that "Show hidden" sends one command for each hidden body; item 2 says that
+  the path line of a phone shows "N hidden", cuts the file name but keeps its chevron, and opens the list under the path line.
+  Its `affects` field names `DesktopUi.Part.cs`. ADR-0178 has no code yet; R20e (TASK-0424) gives it.
+- V220: the state of the first row of the structure view is cut with "..." before the mark of the row.
+- V221: while the sheet page shows, the arc of a proposal draws on the foreground list, over the paper, and the paper takes no
+  tap whose press or release is on Reject or Accept.
+- V222 (Q3 A): on the sheet page the arc keeps the line of each command that the page does not show. ADR-0177 item 5 says so.
+  The amber value with the proposed number, which the review also recommended, changes ADR-0177 item 2 and is not done;
+  register entry R-0071 holds it.
+
+**Proof.** Four new tests in `Engine.Tests` and 28 test cases in `3DEngine.ImageTests`. Each new test failed on the code of
+v0.409 in one case at least; for V211, V213 and V214 the final form of the test failed through the injection that gives back
+the old code. The new test of T183 did not compile there, because the rule of the old test had no function. Eighteen
+injections, each restored byte for byte (sha256), made a named test fail. The first form of V211 gave the menu the focus in
+each frame; a probe
+found that the focus ended the press of each other window, so a second tap on the file name did not close the menu, and the
+injection of V213 stayed green. The menu now takes the focus in its first frame, and the test of V211 taps the file name two
+times. The first injection of the guard of the paper of V221 stayed green: at each size of the list Accept lies above the
+paper, so the theory has the size 2560 by 1440, where Accept lies on it. Of the two changes that the review gave for V215, the
+second repairs the same path as the first, so an injection of one alone made no test fail; only the first is in the code. The
+test of T184 reads the workflow as text; a local `dotnet test` with the options of the step attached the dump tool and passed.
+A clean build gives 0 warnings, the phone project builds, `dotnet test` passes 3004 tests, and the write-set check and
+`eng/repo-gates` pass. No picture of the real window was made, and the injection of the opposite order of the locks of T183
+was not run. The failed runs since
+the entry v0.409, from the API: none.
+
+Corrections: `ProposedSheetTests.Accept_And_Reject_Take_A_Tap_Over_The_Page` gives its card the sheet items of its two
+commands, because the arc now keeps the line of a command with no sheet item. `SheetExportTests` no longer expects the name
+"42" for the content URI ".../document/42".
+
+New tests: 32. The test list holds 3004 (1718 in `Engine.Tests`, 390 in `3DEngine.Tests`, 893 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 12 of 15 (R-0071 opens). New diagnostic codes: 0. Since the review of v0.407, 1 product milestone and
+3 entries followed it.

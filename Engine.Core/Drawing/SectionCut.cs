@@ -98,14 +98,18 @@ internal static class SectionCut
 
     // Finding E222 of the codebase review of 2026-11-18 (b) (TASK-0416): the cut of a solid of many facets and its B-Rep take
     // seconds (a torus of 4,096 polygons: 11.7 s and 10.9 s), and the sheet page reads the sheet after each command. The read
-    // keeps the last CacheSize cuts with their B-Rep, under the exact content of the solid, the point, the frame and the view,
+    // keeps the cuts with their B-Rep, under the exact content of the solid, the point, the frame and the view,
     // so a read after a command that changes no body makes no new cut. The cut is a function of that content only, so a kept
     // result is the result that a new cut gives, in each document of the process. A cut that leaves no material is kept as
     // null. A cut that throws is not kept.
-    public const int CacheSize = 16;
+    // Finding E226 of the codebase review of 2026-11-20 (TASK-0426): the read keeps one cut for each pair of a view and a body,
+    // the last one, and Keep drops the pairs of a view that its last read did not use. The cuts of the last ViewLimit views stay.
+    // Until TASK-0426 the read kept the last 16 cuts of each view and body together, so a read that needed more than 16 cuts
+    // removed each kept cut before its next lookup, and missed each one.
+    public const int ViewLimit = 64;
 
     private static readonly object Gate = new();
-    private static readonly LinkedList<(CutKey Key, (KernelSolid Solid, Brep Brep)? Value)> Kept = new();
+    private static readonly LinkedList<(Guid View, Dictionary<Guid, (CutKey Key, (KernelSolid Solid, Brep Brep)? Value)> Bodies)> Kept = new();
     private static readonly Dictionary<Guid, int> Made = [];
 
     // The count of the cuts that the read made for a view, for a test of the cache. The count goes back to 0 for each view
@@ -116,35 +120,66 @@ internal static class SectionCut
             return Made.GetValueOrDefault(view);
     }
 
-    // ADR-0169 item 3: the cut of Apply with its B-Rep, from the kept cuts when one has the same content.
-    public static (KernelSolid Solid, Brep Brep)? Cut(KernelSolid solid, Vector3R point, ViewFrame frame, Guid view)
+    // Finding E226 (TASK-0426): the count of the kept cuts of a view, for a test.
+    internal static int KeptOf(Guid view)
+    {
+        lock (Gate)
+            return Kept.FirstOrDefault(entry => entry.View == view).Bodies?.Count ?? 0;
+    }
+
+    // ADR-0169 item 3: the cut of Apply with its B-Rep, from the kept cut of the view and the body when it has the same content.
+    public static (KernelSolid Solid, Brep Brep)? Cut(KernelSolid solid, Vector3R point, ViewFrame frame, Guid view, Guid body)
     {
         ArgumentNullException.ThrowIfNull(solid);
         var key = new CutKey(solid.Polygons, point, frame, view);
         lock (Gate)
         {
-            for (var node = Kept.First; node is not null; node = node.Next)
-            {
-                if (!node.Value.Key.Equals(key))
-                    continue;
-                Kept.Remove(node);
-                Kept.AddFirst(node);
-                return node.Value.Value;
-            }
+            if (Bodies(view).TryGetValue(body, out var kept) && kept.Key.Equals(key))
+                return kept.Value;
         }
 
-        (KernelSolid Solid, Brep Brep)? value = Apply(solid, point, frame, view) is { } kept ? (kept, Brep.Of(kept)) : null;
+        (KernelSolid Solid, Brep Brep)? value = Apply(solid, point, frame, view) is { } cut ? (cut, Brep.Of(cut)) : null;
         lock (Gate)
         {
             if (Made.Count >= 1024 && !Made.ContainsKey(view))
                 Made.Clear();
             Made[view] = Made.GetValueOrDefault(view) + 1;
-            Kept.AddFirst((key, value));
-            while (Kept.Count > CacheSize)
-                Kept.RemoveLast();
+            Bodies(view)[body] = (key, value);
         }
 
         return value;
+    }
+
+    // Finding E226 (TASK-0426): after a read of a section, the cuts of the bodies that the read did not cut or look up leave.
+    public static void Keep(Guid view, IReadOnlyCollection<Guid> bodies)
+    {
+        ArgumentNullException.ThrowIfNull(bodies);
+        lock (Gate)
+        {
+            var kept = Bodies(view);
+            foreach (var body in kept.Keys.Where(body => !bodies.Contains(body)).ToList())
+                kept.Remove(body);
+        }
+    }
+
+    // The kept cuts of a view, the view first in the list; the view of the oldest use leaves past ViewLimit views. The caller
+    // holds the gate.
+    private static Dictionary<Guid, (CutKey Key, (KernelSolid Solid, Brep Brep)? Value)> Bodies(Guid view)
+    {
+        for (var node = Kept.First; node is not null; node = node.Next)
+        {
+            if (node.Value.View != view)
+                continue;
+            Kept.Remove(node);
+            Kept.AddFirst(node);
+            return node.Value.Bodies;
+        }
+
+        var bodies = new Dictionary<Guid, (CutKey Key, (KernelSolid Solid, Brep Brep)? Value)>();
+        Kept.AddFirst((view, bodies));
+        while (Kept.Count > ViewLimit)
+            Kept.RemoveLast();
+        return bodies;
     }
 
     // The exact content of a cut: each polygon of the solid with its vertices, its plane and its tag, in order; the point; the

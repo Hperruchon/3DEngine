@@ -46,6 +46,27 @@ public sealed class BodyRowsTests
 
     private static KeySample Key(InputKey key, bool down = true) => new(key, down, KeyModifiers.None, 0);
 
+    // Finding V214 of the codebase review of 2026-11-20 (TASK-0426): the rows keep away from the tools of the ring of the last
+    // frame only while a ring shows. With no centre from the host the ring does not show, and the rows come back to their full
+    // width. Until TASK-0426 they kept away from the boxes of the last ring that showed.
+    [Fact]
+    public void The_Rows_Take_Their_Full_Width_Again_When_The_Ring_Goes()
+    {
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
+        var display = new Vector2(640, 560);
+        // The ring at the upper left, which the layout keeps in the display, is beside the first row.
+        for (var i = 0; i < 3; i++)
+            ui.Frame(1f / 60f, display, Vector2.One, [Extrude], Extrude.Id, null, ringCentre: Vector2.Zero, ringBody: 40f, values: Values);
+        var narrow = ui.RowsArea ?? throw new InvalidOperationException("No rows.");
+        Assert.True(narrow.Z - narrow.X < DesktopUi.RowsWidth, $"The rows at {narrow} do not keep away from the ring.");
+
+        for (var i = 0; i < 3; i++)
+            Frame(ui, Extrude, display);
+        Assert.Null(ui.RingLayoutOfFrame);
+        var full = ui.RowsArea ?? throw new InvalidOperationException("No rows.");
+        Assert.Equal(DesktopUi.RowsWidth, full.Z - full.X, 0.5f);
+    }
+
     // ADR-0099 item 1: the rows are at the upper left in the place of the panel, 16 pixels inside the display and under the
     // top bar, 360 pixels wide: the name and the state, then one row for each value, each 44 pixels high, and the rows are a
     // part of the panels for a tap. The panel does not show.

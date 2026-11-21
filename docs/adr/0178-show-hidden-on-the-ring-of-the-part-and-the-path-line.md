@@ -11,6 +11,7 @@ amended-by: []
 affects:
   - 3DEngine.App/Ui/DesktopUi.cs
   - 3DEngine.App/Ui/DesktopUi.Fixed.cs
+  - 3DEngine.App/Ui/DesktopUi.Part.cs
   - 3DEngine.ImageTests/ShowHiddenTests.cs
 enforced-by: 3DEngine.ImageTests/ShowHiddenTests.cs (TASK-0424 creates it)
 ---
@@ -37,12 +38,15 @@ with "New", "Sketch", "Bodies" and "Images". A second ring for the same state wo
 ## Decision
 
 1. **"Show hidden" on the ring of the part (amends ADR-0124 item 4).** The ring of the part of ADR-0174 item 1 is the ring of
-   the document. While at least one live body is hidden, it has one more segment, "Show hidden", which sends the command "Show
-   all" (one step of undo, as the button of ADR-0124 item 3). With no hidden body the segment does not show.
+   the document. While at least one live body is hidden, it has one more segment, "Show hidden", which sends the commands of
+   the button "Show all" of ADR-0124 item 3: one SetBodyVisibility for each hidden body, so each body is one step of undo (Q1 A
+   of the owner, 2026-11-20). With no hidden body the segment does not show.
 2. **The count on the path line (amends ADR-0124 item 2).** Where the status line has no room for the part "N hidden · Show"
    (a portrait phone of 390 pixels), the part shows on the path line, right of the file name, with the same tap as in the
    status line (the list of ADR-0124 item 3). Where the status line has room, the part stays there, and the path line does not
-   repeat it. The phone and the desktop use the same rule.
+   repeat it. The phone and the desktop use the same rule. On the path line the part is "N hidden", with no "· Show", and the
+   file name is cut with "..." but keeps its chevron, the target of the file menu (ADR-0174 item 4). A tap on the part opens
+   the list of ADR-0124 item 3 under the path line (Q2 A of the owner, 2026-11-20).
 3. **No contract change, no engine change.** The ring, the segment and the part are states of the client (ADR-0007).
 4. **No code in this record.** Roadmap row R20e (TASK-0424) gives items 1 and 2, with the tests in `ShowHiddenTests` and the
    layout test of ADR-0172.
@@ -63,3 +67,6 @@ of the hidden bodies, and keeps one ring with nothing selected. The owner can co
 ## History
 
 - 2026-11-20 · TASK-0427 · The record, from the answer of the owner of 2026-11-20 to R-0064.
+- 2026-11-21 · TASK-0426 · Item 1 says that "Show hidden" sends one command for each hidden body, and item 2 says what the path
+  line of a phone shortens and where the list opens (findings V218 and V219, Q1 A and Q2 A of the owner); `affects` names
+  `DesktopUi.Part.cs`, where the labels of the ring of the part are.

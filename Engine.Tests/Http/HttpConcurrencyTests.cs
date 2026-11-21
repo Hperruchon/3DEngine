@@ -16,7 +16,12 @@ namespace Engine.Tests.Http;
 // Document.
 public class HttpConcurrencyTests : IClassFixture<WebApplicationFactory<Program>>
 {
-    private static readonly TimeSpan OperationLimit = TimeSpan.FromSeconds(10);
+    // Finding T183 of the codebase review of 2026-11-20 (TASK-0426, Q8 A of the owner, ADR-0173 item 4): no time limit decides a
+    // test of this class. A request stops only after 60 s, a limit that only stops a test that waits for ever, and the test of a
+    // deadlock fails only when no operation ends for 60 s. Until TASK-0426 a request stopped after 10 s, and the test of a
+    // deadlock failed when the work took more than 11 s, also with progress (run 44814556105: 73 commands and 48 subscriptions).
+    private static readonly TimeSpan OperationLimit = TimeSpan.FromSeconds(60);
+    private static readonly TimeSpan StallLimit = TimeSpan.FromSeconds(60);
 
     private readonly WebApplicationFactory<Program> _baseFactory;
 
@@ -152,14 +157,16 @@ public class HttpConcurrencyTests : IClassFixture<WebApplicationFactory<Program>
     // each wait for the other.
     //
     // A thread that waits for a lock does not see a cancellation token, so the
-    // test sets one time limit for all the work. With the opposite order injected
-    // into the handshake, the test stopped at that limit. On a deadlock the test
+    // test watches the count of the ended operations. A deadlock stops the count,
+    // and the test fails when the count does not change for 60 s. A slow runner
+    // only makes the work slower (finding T183, TASK-0426). On a deadlock the test
     // does not dispose the host, because a host with blocked requests does not stop.
     [Fact]
     public async Task Subscriptions_And_Commands_In_Parallel_For_One_Second_Do_Not_Deadlock()
     {
         var factory = _baseFactory.WithWebHostBuilder(_ => { });
         var http = factory.CreateClient();
+        var watch = Stopwatch.StartNew();
 
         // The clock starts after the host is up, and each loop runs at least one
         // time (finding T12 of the codebase review of 2026-10-04). Until TASK-0059
@@ -197,10 +204,10 @@ public class HttpConcurrencyTests : IClassFixture<WebApplicationFactory<Program>
         }));
 
         var all = Task.WhenAll(writers.Concat(subscribers));
-        var limit = TimeSpan.FromSeconds(1) + OperationLimit;
-        var first = await Task.WhenAny(all, Task.Delay(limit));
-        Assert.True(first == all,
-            $"The work did not end in {limit.TotalSeconds} s: {commands} commands and " +
+        var ended = await Progress.EndsWhileItMoves(all, () => Volatile.Read(ref commands) + Volatile.Read(ref subscriptions), StallLimit,
+            () => Task.Delay(TimeSpan.FromMilliseconds(100)), () => watch.Elapsed);
+        Assert.True(ended,
+            $"No operation ended in {StallLimit.TotalSeconds} s: {commands} commands and " +
             $"{subscriptions} subscriptions completed. Two threads wait for each other.");
         await all;
         factory.Dispose();
@@ -208,6 +215,36 @@ public class HttpConcurrencyTests : IClassFixture<WebApplicationFactory<Program>
         Assert.True(clock.Elapsed >= TimeSpan.FromSeconds(1));
         Assert.True(commands > 0, "No command completed.");
         Assert.True(subscriptions > 0, "No subscription completed.");
+    }
+
+    // Finding T183 (TASK-0426, Q8 A): the rule of the test of a deadlock, on a clock of the test. A work that ends an operation
+    // each 5 s and takes 100 s ends; a work that ends no operation fails after 60 s; a work that stops after 20 s fails 60 s
+    // later. Until TASK-0426 the test failed each work that took more than 11 s.
+    [Fact]
+    public async Task A_Work_That_Ends_Operations_Is_No_Deadlock_And_A_Work_That_Stops_Is()
+    {
+        async Task<(bool Ended, TimeSpan At)> Run(int endsAt, int stopsAt)
+        {
+            var (now, count) = (TimeSpan.Zero, 0L);
+            var work = new TaskCompletionSource();
+            Task Tick()
+            {
+                now += TimeSpan.FromSeconds(1);
+                var second = (int)now.TotalSeconds;
+                if (second < stopsAt && second % 5 == 0)
+                    count++;
+                if (second == endsAt)
+                    work.SetResult();
+                return Task.CompletedTask;
+            }
+
+            var ended = await Progress.EndsWhileItMoves(work.Task, () => count, StallLimit, Tick, () => now);
+            return (ended, now);
+        }
+
+        Assert.Equal((true, TimeSpan.FromSeconds(100)), await Run(endsAt: 100, stopsAt: int.MaxValue));
+        Assert.Equal((false, TimeSpan.FromSeconds(60)), await Run(endsAt: int.MaxValue, stopsAt: 0));
+        Assert.Equal((false, TimeSpan.FromSeconds(80)), await Run(endsAt: int.MaxValue, stopsAt: 21));
     }
 
     private static async Task<HttpResponseMessage> PostCreateBox(HttpClient http, Guid commandId)
@@ -249,5 +286,30 @@ public class HttpConcurrencyTests : IClassFixture<WebApplicationFactory<Program>
             if (message.TryGetProperty("seq", out var seq) && seq.ValueKind == JsonValueKind.Number)
                 return seq.GetInt64();
         }
+    }
+}
+
+// Finding T183 of the codebase review of 2026-11-20 (TASK-0426, Q8 A of the owner): a deadlock is a work that ends no
+// operation for the stall time; the time of the whole work is not a result.
+internal static class Progress
+{
+    // True when the work ends; false when the count of the ended operations does not change for the stall time. Each tick waits
+    // a short time, and the clock gives the time.
+    public static async Task<bool> EndsWhileItMoves(Task work, Func<long> count, TimeSpan stall, Func<Task> tick, Func<TimeSpan> clock)
+    {
+        var (last, since) = (count(), clock());
+        while (!work.IsCompleted)
+        {
+            await Task.WhenAny(work, tick()).ConfigureAwait(false);
+            if (work.IsCompleted)
+                break;
+            var now = count();
+            if (now != last)
+                (last, since) = (now, clock());
+            else if (clock() - since >= stall)
+                return false;
+        }
+
+        return true;
     }
 }

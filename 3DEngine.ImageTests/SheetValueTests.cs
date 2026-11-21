@@ -98,6 +98,23 @@ public sealed class SheetValueTests
         Assert.Contains(placed[1].X, new[] { 85.0, 115.0 });
     }
 
+    // Finding V217 of the codebase review of 2026-11-20 (TASK-0426): while a proposal changes a value, its chip has the pending
+    // text, as "10.000 -> 12.000 mm". The text of "Put on sheet" gives the value of the design and its unit, because the sheet
+    // gets that value. Until TASK-0426 the text was "Put 10.000 -> 12.000 mm on the front view of Sheet 1.".
+    [Fact]
+    public async Task The_Text_Of_Put_On_Sheet_Gives_The_Value_Of_The_Design()
+    {
+        var (host, body, length, _, _) = await Plate();
+        using var _host = host;
+        var values = await FrontValues(host, body);
+        var lengthValue = values.Single(candidate => candidate.Constraint == length);
+        var distanceValue = values.Single(candidate => candidate.Key == EdgeValues.DistanceKey(body));
+        var actions = new SheetActions(host.Session);
+
+        Assert.Equal("Put 10.000 mm on the front view of Sheet 1.", actions.PutOnSheet(FlatView.Front, lengthValue with { Text = DesktopUi.PendingText(lengthValue.Text, 12) }));
+        Assert.Equal("Put 3.000 mm on the front view of Sheet 1.", actions.PutOnSheet(FlatView.Front, distanceValue with { Text = DesktopUi.PendingText(distanceValue.Text, 4) }));
+    }
+
     // Item 5: a value that the sheet shows already gives a text and no command.
     [Fact]
     public async Task A_Value_That_The_Sheet_Shows_Gives_No_Command()

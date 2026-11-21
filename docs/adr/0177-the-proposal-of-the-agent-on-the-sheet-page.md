@@ -63,9 +63,12 @@ proposed dimension names the proposed view.
    it has no "Export", and a tap or a drag on its paper does nothing. The page reads no GetSheet for it. After the accept, the
    sheet is live with the same identifier, and the page stays on it.
 5. **The arc on the page (amends ADR-0092 item 5).** While the page shows the sheet of the proposal, the arc keeps its
-   caption, Reject, Accept and the count of the commands, and it does not show the command lines; the boxes and the values on
-   the paper show those commands, and the lines covered the paper. The window of the page lies under the arc, so it does not
-   stop a tap on Accept or Reject. Before this record the page took each tap on the arc.
+   caption, Reject, Accept and the count of the commands. It does not show the line of a command whose sheet item is on that
+   sheet; the boxes and the values on the paper show those commands, and the lines covered the paper. It keeps the line of
+   each other command, which the page does not show (Q3 A of the owner, 2026-11-20). While the page shows, the arc draws over
+   the paper. The window of the page lies under the arc, so it does not stop a tap on Accept or Reject, and a tap whose press
+   or release is on Accept or Reject is the tap of the arc only, also over the paper. Before this record the page took each
+   tap on the arc.
 6. **No contract change.** `Engine.Core`, `Engine.Api.Http` and `Engine.Contracts` do not change.
 7. **The test.** `ProposedSheetTests` holds items 1 to 5. A proposal of a sheet, three views and two values is posted to the
    desktop over HTTP; before the accept the log does not change, and after the accept each box is the box of GetSheet for
@@ -96,3 +99,5 @@ preview of a proposal on a fork (R25).
 
 - 2026-11-20 · TASK-0422 · The record, from the answer D8 A of the owner of 2026-11-18 and the order "Yes, start R30f" of
   2026-11-20.
+- 2026-11-21 · TASK-0426 · Item 5: the arc keeps the line of each command that the page does not show (finding V222, Q3 A of
+  the owner), draws over the paper, and a tap on Accept or Reject over the paper is the tap of the arc only (finding V221).

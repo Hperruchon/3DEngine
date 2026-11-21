@@ -172,6 +172,9 @@ internal static class ViewEdges
         var bodies = new List<(Guid Body, Brep Brep)>();
         var skipped = new List<(Guid Body, string Reason)>();
         var curves = new Dictionary<FaceTag, SideCurve>();
+        // Finding E226 of the codebase review of 2026-11-20 (TASK-0426): the bodies that this read cuts, so the read keeps their
+        // cuts and no other cut of the view.
+        var cutBodies = new List<Guid>();
         foreach (var record in document.Bodies.OrderBy(body => body.Handle.Id))
         {
             if (record.Kind == Commands.ImportStlCommandHandler.MeshKind)
@@ -193,7 +196,8 @@ internal static class ViewEdges
                 if (cut is { } plane)
                 {
                     // Finding E222 (TASK-0416): the cut and its B-Rep come from the cuts that the read keeps.
-                    if (SectionCut.Cut(solid, plane.Point, frame, plane.View) is not { } kept)
+                    cutBodies.Add(record.Handle.Id);
+                    if (SectionCut.Cut(solid, plane.Point, frame, plane.View, record.Handle.Id) is not { } kept)
                     {
                         skipped.Add((record.Handle.Id, "The cut plane of the section leaves no material of the body (ADR-0169 item 3)."));
                         continue;
@@ -226,6 +230,8 @@ internal static class ViewEdges
             }
         }
 
+        if (cut is { } section)
+            SectionCut.Keep(section.View, cutBodies);
         return (Of(bodies, frame, curves), skipped, curves, cutFaces);
     }
 

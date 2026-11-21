@@ -104,6 +104,26 @@ public sealed class RowDensityTests
         Assert.True(Math.Abs(ui.PanelRectangles[0].W - first.W - 14f) <= 0.5f, $"The folded view at {ui.PanelRectangles[0]} does not end 14 pixels under its row at {first}.");
     }
 
+    // Finding V220 of the codebase review of 2026-11-20 (TASK-0426): in the narrowest structure view (560 by 560, a row of 288
+    // pixels), the state of the first row of an assembly of 1,000 failed bodies is cut to the width of the row less its mark, in
+    // each density. Until TASK-0426 the text ran under the mark (to 322 and 336 pixels) and the edge of the window cut it.
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void The_First_Row_Ends_Before_Its_Mark_In_A_Narrow_Structure_View(bool compact)
+    {
+        var display = new Vector2(560, 560);
+        LiveBody[] bodies = [.. Enumerable.Range(1, 1000).Select(i => new LiveBody(Guid.Parse($"75000000-0000-0000-0002-{i:D12}"), "Box", $"Box {i}", true, new BodyFault("E-FEATURE-REBUILD", "The profile is open.")))];
+        var assembly = new DocumentLine("bracket.3de", null, Kind: Document.Assembly);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre) { Density = compact ? DesktopUi.RowDensity.Compact : DesktopUi.RowDensity.ForTouch };
+        for (var i = 0; i < 3; i++)
+            ui.Frame(1f / 60f, display, Vector2.One, bodies, null, assembly, ringCentre: display / 2f, ringBody: 80f);
+
+        var first = Rectangle(ui, DesktopUi.DocumentRowItem);
+        Assert.True(ui.StructureTextEnd <= first.Z - 18f, $"The text of the first row ends at {ui.StructureTextEnd}, on the mark of the row at {first}.");
+        Assert.True(ui.StructureTextEnd > first.X + 40f, $"The first row at {first} shows no state.");
+    }
+
     // Item 1: in the density "Compact" each control that is not a row of the structure view keeps 44 pixels: the filter, Clear,
     // "Show all", the path line, Undo, Redo, the tools of the ring and the cells of the net of the views.
     [Fact]

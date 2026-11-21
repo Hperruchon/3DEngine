@@ -107,28 +107,14 @@ internal sealed unsafe partial class DesktopUi
             var centre = min.Y + ((rowHeight - ImGui.GetTextLineHeight()) / 2f);
             var kind = DocumentKind(document) + "  ";
             list.AddText(new Vector2(min.X, centre), text, kind);
-            var at = min.X + ImGui.CalcTextSize(kind).X;
-            foreach (var (part, red) in DocumentState(bodies))
-            {
-                list.AddText(new Vector2(at, centre), red ? FailedColour : quiet, part);
-                at += ImGui.CalcTextSize(part).X;
-            }
-
-            _structureTextEnd = at;
+            _structureTextEnd = StateText(list, DocumentState(bodies), new Vector2(min.X + ImGui.CalcTextSize(kind).X, centre), max.X - MarkRoom, quiet);
             ImGui.PopFont();
         }
         else
         {
             var first = min.Y + ((firstHeight - (2f * lineHeight)) / 2f);
             list.AddText(new Vector2(min.X, first), text, DocumentKind(document));
-            var x = min.X;
-            foreach (var (part, red) in DocumentState(bodies))
-            {
-                list.AddText(new Vector2(x, first + lineHeight), red ? FailedColour : quiet, part);
-                x += ImGui.CalcTextSize(part).X;
-            }
-
-            _structureTextEnd = x;
+            _structureTextEnd = StateText(list, DocumentState(bodies), new Vector2(min.X, first + lineHeight), max.X - MarkRoom, quiet);
         }
 
         // The mark: a chevron down while folded, up while open.
@@ -209,6 +195,31 @@ internal sealed unsafe partial class DesktopUi
         if (ImGui.Button(ClearLabel))
             _filter = string.Empty;
         Item(ClearLabel);
+    }
+
+    // Finding V220 of the codebase review of 2026-11-20 (TASK-0426): the room of the mark at the right of the first row: the mark
+    // is 12 pixels left of the right end of the row, and 6 pixels wide on each side.
+    private const float MarkRoom = 18f;
+
+    // Finding V220: the parts of the state of the first row from a point to the left side of the mark, in the font of the row.
+    // The part that does not fit is cut with "...", and no part follows it. The result is the right end of the text. Until
+    // TASK-0426 the parts were not cut, and in a narrow structure view the text ran under the mark to the edge of the window.
+    private static float StateText(ImDrawListPtr list, IReadOnlyList<(string Text, bool Red)> parts, Vector2 at, float end, uint quiet)
+    {
+        var x = at.X;
+        foreach (var (part, red) in parts)
+        {
+            var shown = Fit(part, end - x);
+            var width = ImGui.CalcTextSize(shown).X;
+            if (x + width > end)
+                break;
+            list.AddText(new Vector2(x, at.Y), red ? FailedColour : quiet, shown);
+            x += width;
+            if (shown != part)
+                break;
+        }
+
+        return x;
     }
 
     // ADR-0100 item 4: the item of the first row of the document.

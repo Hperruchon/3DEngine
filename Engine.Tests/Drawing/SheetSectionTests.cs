@@ -460,6 +460,38 @@ public sealed class SheetSectionTests : IDisposable
         Assert.NotEqual(Cut(first), Cut(changed));
     }
 
+    // Finding E226 of the codebase review of 2026-11-20 (TASK-0426): the read keeps the cut of each body of a section, also when
+    // one read needs more than 16 cuts. A plate and 16 boxes that the plane of the section cuts: the second read makes no new
+    // cut. Until TASK-0426 the read kept the last 16 cuts only, so each of the 17 lookups of the second read missed. A read
+    // keeps no cut of a body that is gone: after a subtract of a box from the plate, the view keeps one cut for each live body.
+    [NativeManifoldFact]
+    public async Task A_Read_Keeps_The_Cut_Of_Each_Body_Also_Past_Sixteen_Bodies()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var (session, sheet, top, plate) = await Plate(backend);
+        var boxes = new List<Guid>();
+        for (var i = 0; i < 16; i++)
+        {
+            var box = await Applied(session, new CreateBoxCommand { SizeX = 2, SizeY = 40, SizeZ = 2 }, "bodyId");
+            boxes.Add(await Applied(session, new TranslateCommand { BodyId = box, Dx = 70 + (3 * i), Dy = 20, Dz = 1 }, "bodyId"));
+        }
+
+        var section = await Applied(session, Section(sheet, top, "up", 30, 20, 0, 200, 100), "viewId");
+
+        await Read(session, sheet);
+        var first = SectionCut.CutsOf(section);
+        Assert.Equal(17, first);
+        await Read(session, sheet);
+        Assert.Equal(first, SectionCut.CutsOf(section));
+        Assert.Equal(17, SectionCut.KeptOf(section));
+
+        await Applied(session, new SubtractCommand { MinuendBodyId = plate, SubtrahendBodyId = boxes[0] }, "bodyId");
+        await Read(session, sheet);
+        var live = await session.Read((document, _) => document.Bodies.Count);
+        Assert.Equal(16, live);
+        Assert.Equal(live, SectionCut.KeptOf(section));
+    }
+
     // Finding E223 of the codebase review of 2026-11-18 (b) (TASK-0416, Q1 A of the owner): a section through the axis of a cone
     // shows the axis in each look. A cone of radius 10 and height 20 at the origin: a section of Front with the look "left" and
     // a section of Top with the look "up", each through (0, 0, 0), give one centre line along the axis, 20 mm long plus 3 mm at

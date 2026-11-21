@@ -164,8 +164,13 @@ internal sealed class SheetActions(DocumentSession session)
             return $"GetSheet gives no view '{target.Id}' of {sheet.Name}.";
         var (x, y) = SheetValuePlace.Place(shownView, model.A, model.B);
         return Apply(new PlaceSheetDimensionCommand { SheetId = sheet.Id, ViewId = target.Id, Source = source, SourceKind = kind, X = x, Y = y })
-            ?? $"Put {value.Text} on the {Name(view)} view of {sheet.Name}.";
+            ?? $"Put {ValueText(value)} on the {Name(view)} view of {sheet.Name}.";
     }
+
+    // Finding V217 of the codebase review of 2026-11-20 (TASK-0426): the value of the design and its unit, the last word of the
+    // text of the chip, as "10.000 mm". While a proposal changes the value, the text of its chip is "10.000 -> 12.000 mm", and the
+    // sheet gets the value of the design. Until TASK-0426 the text of "Put on sheet" was the text of the chip.
+    private static string ValueText(EdgeValues.Value value) => $"{EdgeValues.Exact(value.Number)} {value.Text[(value.Text.LastIndexOf(' ') + 1)..]}";
 
     // The word of a flat view in a text, as "front".
     public static string Name(FlatView view) => view.ToString().ToLowerInvariant();
