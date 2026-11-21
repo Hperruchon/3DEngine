@@ -1,7 +1,7 @@
 ---
 id: 0428
 title: A sheet holds the fields of the title block of ISO 7200, SetSheetTitle gives them, and the files and the page draw the block, the symbol of the projection and the centring marks
-status: Active
+status: Done
 phase: R30i
 opened: 2026-11-21
 depends-on: [0426]
@@ -104,11 +104,11 @@ the symbol, and a band across the paper for the area of the views.
 - [x] Each rule has a test, and each rule has an injection that a named test catches, with the file restored byte for byte.
 - [x] A clean build (`--no-incremental`) gives zero warnings, and the phone project builds with zero warnings.
 - [x] `dotnet test`, the write-set check and `eng/repo-gates` pass locally.
-- [ ] Continuous integration passes on the branch and on `main` after the merge.
+- [x] Continuous integration passes on the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch r30i-title-block) · v0.411
+Status: Done · commit (the merge of the branch r30i-title-block) · v0.411
 
 ## Method
 
@@ -141,3 +141,4 @@ proportions of the symbol and the centring marks come from memory of the standar
   - no lines or no texts of the block on the page: `SheetTitlePageTests`; the band of the area at 20 mm: `SheetAddTests`.
   The first run of the injection of the cell lines stayed green, because the test of the SVG file took the width from
   `SvgExport.Stroke`; the test now counts the thin and the thick paths of the file.
+- 2026-11-21: run 44841449189 of `d403db9d` passed on each job. Closed at v0.411.

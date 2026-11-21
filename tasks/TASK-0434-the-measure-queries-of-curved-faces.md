@@ -5,7 +5,7 @@ status: Active
 phase: K15b
 opened: 2026-11-21
 depends-on: [0432]
-governed-by: [0004, 0016, 0018, 0028, 0033, 0037, 0054, 0058, 0059, 0060, 0076, 0083, 0089, 0112, 0143, 0180]
+governed-by: [0004, 0016, 0018, 0028, 0033, 0037, 0054, 0058, 0059, 0060, 0076, 0083, 0089, 0112, 0143, 0180, 0181]
 writes:
   create:
     - tasks/TASK-0434-the-measure-queries-of-curved-faces.md
@@ -157,3 +157,5 @@ Injections (`inject0434.js` in `%TEMP%\k15b`), each restored byte for byte (sha2
   `A_Curved_Body_Gives_The_Volume_Of_Its_Facets_And_Is_Refused_Where_A_Plane_Is_Needed` now gives the volume of its curve, so
   the test is `A_Body_With_A_Hole_Gives_The_Volume_Of_Its_Facets_And_Each_Case_With_No_Closed_Form_Is_Refused`, with a plate
   with a hole. Ledger entry v0.418.
+- 2026-11-21: merged `main` with K16 (TASK-0433, v0.417), which the owner ordered first ("merge k16"): the ledger
+  entry v0.417 comes before v0.418, the test floor of `Engine.Tests` is 1771, and ADR-0181 governs this task too.
