@@ -523,6 +523,8 @@ Therefore each approved objective must have a track here.
   kernel, the volume and the box of an overlap, the minimum gap, the marks of an intended pair and of a fault, and the mark
   of a result for the mesh or the facets only. v0.420, TASK-0436, ADR-0182.
 - Review — The second codebase review of 2026-11-21. v0.421, TASK-0437.
+- P17 — The guide for an agent gives the loop read, measure, propose and check on the HTTP surface, and a test sends each
+  example of the guide to a host. v0.422, TASK-0439.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -754,7 +756,7 @@ This track removes each condition that blocks other work.
 | P14 | The role of a body (to print, context, excluded from an envelope) and the print export: one STL for each chosen part, in millimetres, with a check that its mesh is closed and has no degenerate triangle; 3MF later (ADR-0126 items 6 and 7). After P11. | 1–2 |
 | P15 | The preview of a proposal (S11 of `docs/proposals/2026-11-10-gaps-to-the-render.md`): the host runs the commands of a proposal on a fork of the Document, with no change of the first Document or of its log, and gives the outcome of each command and four differences: the bodies, the state of the solver, the measures (K15) and the checks (K11). Its ADR gives the design of the second Document (R-0055, ADR-0157 item 8). After K11. | 3–5 |
 | P16 | The accept after a preview: the accept runs the dry run again; it applies when the result equals the result that the person saw, shows the new preview when it differs, and applies each command or none; one proposal is one step of undo. Its ADR amends ADR-0092 items 4 and 6, ADR-0130 item 4 and ADR-0031 (ADR-0157 items 9 and 10). After P15. | 2–3 |
-| P17 | The guide for an agent in `docs/`: the loop read, measure, propose and check, with the SVG of a view (P10a) as its picture (ADR-0157 item 13). After K11 and P10a. | 1 |
+| P17 | The guide for an agent in `docs/`: the loop read, measure, propose and check, with the SVG of a view (P10a) as its picture (ADR-0157 item 13). After K11 and P10a. TASK-0439. | 1 |
 | P18 | Groups of bodies in the Document: a named set of parts by identity, which can hold groups, rigid by default (ADR-0157 item 1). Its ADR gives the record. After P11. | 1–2 |
 | P19 | A screw as data in the Document: a standard, a size, a pitch, a length and a head, on an axis (ADR-0157). Its ADR gives the record and the tables. After P13. | 2 |
 | P20 | Instances of a body inside one Document: a source and its instances, each with a place and no geometry of its own, and a copy as a new source (ADR-0157 item 1, the second stage). Its ADR decides the model with the result of P11.0. After R24. | to estimate |
