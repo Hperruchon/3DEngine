@@ -61,7 +61,7 @@ internal sealed unsafe partial class DesktopUi
 
     // The labels that RingIcon draws an icon for. A kind of a constraint has none, so it keeps the plate of a wide label.
     private static readonly HashSet<string> RingIconLabels =
-        [EditSketchLabel, RenameLabel, DimensionsLabel, NextPointLabel, ExtrudeLabel, MoveLabel, SetDistanceLabel, HideLabel, ShowLabel, SketchOnFaceButtonLabel, LineToolLabel, SelectToolLabel, CircleToolLabel, ArcToolLabel, ConstrainLabel, FinishLabel, BackLabel, NewLabel, PartSketchLabel, BodiesLabel, PartImagesLabel];
+        [EditSketchLabel, RenameLabel, DimensionsLabel, NextPointLabel, ExtrudeLabel, MoveLabel, SetDistanceLabel, HideLabel, ShowLabel, SketchOnFaceButtonLabel, LineToolLabel, SelectToolLabel, CircleToolLabel, ArcToolLabel, ConstrainLabel, FinishLabel, BackLabel, NewLabel, PartSketchLabel, BodiesLabel, PartImagesLabel, ShowHiddenLabel];
 
     // The icon of a segment, drawn with the draw list at its centre: none for a label with no icon.
     private static bool RingIcon(ImDrawListPtr list, string label, Vector2 c, uint ink)
@@ -89,6 +89,8 @@ internal sealed unsafe partial class DesktopUi
                 return true;
             case HideLabel:
             case ShowLabel:
+            // ADR-0178 item 1 (phase R20e, TASK-0424): the open eye of "Show" for "Show hidden" of the ring of the part.
+            case ShowHiddenLabel:
                 list.PathArcTo(c + new Vector2(0f, h * 1.1f), h * 1.5f, -MathF.PI * 0.8f, -MathF.PI * 0.2f);
                 list.PathArcTo(c - new Vector2(0f, h * 1.1f), h * 1.5f, MathF.PI * 0.2f, MathF.PI * 0.8f);
                 list.PathStroke(ink, ImDrawFlags.Closed, w);
