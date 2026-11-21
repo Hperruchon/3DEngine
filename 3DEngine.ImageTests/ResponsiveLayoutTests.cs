@@ -74,11 +74,18 @@ public sealed class ResponsiveLayoutTests
         Assert.True(faults.Count == 0, string.Join(Environment.NewLine, faults));
     }
 
-    // ADR-0163 item 4 (TASK-0404): a person resizes the window of the desktop to each size from its minimum. The rule of
-    // ADR-0113 item 1 holds at each step of 8 pixels on three lines of a resize: the smallest height from the smallest width
-    // to 2560, the smallest width up to a height of 1440, and the width of a maximized window of 1920 up to 1440.
-    [Fact]
-    public void Each_Size_Of_A_Resize_From_The_Minimum_Keeps_Each_Control_Free()
+    // TASK-0441 (phase P0.176): the most layouts that one test checks. The hang limit of the step "Test" of the pipeline (2
+    // minutes) holds for each test, and the test platform reports a test that passes it as a crash of the test host. Until
+    // TASK-0441 one test checked the resize in each state: 496 sizes in 15 states, 7,440 layouts, about 41 seconds on the
+    // computer of the owner. On windows-latest it passed the hang limit in attempt 1 of run 44758589835 and in run 44908442870,
+    // so those runs took at least 16 milliseconds for each layout. At that rate 1,000 layouts take about 16 seconds.
+    internal const int LayoutsPerTest = 1000;
+
+    // The count of the layouts that Faults checked. The tests of the collection of Dear ImGui run one after the other.
+    private static int _layouts;
+
+    // The sizes of ADR-0163 item 4: each step of 8 pixels on three lines of a resize.
+    internal static IReadOnlyList<(int Width, int Height)> ResizeSizes()
     {
         const int Step = 8;
         int minimumWidth = DesktopUi.MinimumWindowWidth, minimumHeight = DesktopUi.MinimumWindowHeight;
@@ -91,12 +98,27 @@ public sealed class ResponsiveLayoutTests
             sizes.Add((1920, height));
         }
 
+        return sizes;
+    }
+
+    public static TheoryData<State> States => new(Enum.GetValues<State>());
+
+    // ADR-0163 item 4 (TASK-0404): a person resizes the window of the desktop to each size from its minimum. The rule of
+    // ADR-0113 item 1 holds at each step of 8 pixels on three lines of a resize: the smallest height from the smallest width
+    // to 2560, the smallest width up to a height of 1440, and the width of a maximized window of 1920 up to 1440.
+    // TASK-0441: one test for each state, so that one test checks 496 layouts and not 7,440.
+    [Theory]
+    [MemberData(nameof(States))]
+    public void Each_Size_Of_A_Resize_From_The_Minimum_Keeps_Each_Control_Free(State state)
+    {
+        var before = _layouts;
         var faults = new List<string>();
-        foreach (var (width, height) in sizes)
-        {
-            foreach (var state in Enum.GetValues<State>())
-                faults.AddRange(Faults(width, height, state).Take(1).Select(fault => $"{width}x{height} {state}: {fault}"));
-        }
+        foreach (var (width, height) in ResizeSizes())
+            faults.AddRange(Faults(width, height, state).Take(1).Select(fault => $"{width}x{height} {state}: {fault}"));
+
+        var layouts = _layouts - before;
+        Assert.True(layouts is > 0 and <= LayoutsPerTest,
+            $"The test checked {layouts} layouts, and the limit is {LayoutsPerTest}: a slow runner can pass the hang limit of the pipeline (TASK-0441).");
         Assert.True(faults.Count == 0, $"{faults.Count} faults:{Environment.NewLine}{string.Join(Environment.NewLine, faults.Take(20))}");
     }
 
@@ -220,6 +242,7 @@ public sealed class ResponsiveLayoutTests
     // The faults of the layout at one size in one state, after three frames.
     internal static IReadOnlyList<string> Faults(int width, int height, State state)
     {
+        Interlocked.Increment(ref _layouts);
         using var ui = new DesktopUi(string.Empty, Document.Millimetre);
         var display = new Vector2(width, height);
         Guid? selection = state is State.Nothing or State.Hidden or State.Images or State.StructureOpen or State.StructureForTouch or State.FileMenu or State.ViewsOpen ? null : A;

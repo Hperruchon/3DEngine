@@ -507,6 +507,10 @@ the image tests on the computer of the owner; no entry held this one. On 2026-11
 Exit: a crash dump of the step "Test" on Linux names the cause and a task fixes it; or thirty runs of continuous
 integration on ubuntu-latest after 2026-11-21 end with no crash of the test host of `Engine.Tests`, and the entry closes
 with their numbers.
+Progress 2026-11-21 (TASK-0441): the two stops on Windows of the weekend were the hang limit of 2 minutes, and not a crash.
+This stop can be the same: the test that did not complete took 38 to 100 seconds in four runs of the whole step on the
+computer of the owner (100 seconds with each processor), and the step took 247 seconds against 115 to 123 seconds in the
+other runs of ubuntu-latest of TASK-0441. Since TASK-0441 the annotation of a stop at the hang limit names the limit, so the next stop gives its kind.
 
 ## Accepted compromises
 

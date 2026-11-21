@@ -128,6 +128,28 @@ public sealed class CrashReportTests
         Assert.DoesNotContain("did not exist", line, StringComparison.Ordinal);
     }
 
+    // TASK-0441 (phase P0.176): the stop of attempt 1 of run 44758589835 and of run 44908442870 was the hang limit of 2 minutes
+    // of the step "Test", and not a crash. The blame data collector says so in a message with the outcome Warning. A local run
+    // of the test with a limit of 20 seconds gave the same reason, the sequence file, no dump, and that message. The annotation
+    // names the hang limit, and it does not say that a dump of a crash is missing.
+    [Fact]
+    public void A_Stop_At_The_Hang_Limit_Names_The_Limit_And_Not_A_Crash()
+    {
+        var reason = Head + string.Concat(Enumerable.Repeat(ImageOutput, 20));
+        var hang = "Data collector 'Blame' message: The specified inactivity time of 2 minutes has elapsed. Collecting hang dumps " +
+            "from testhost and its child processes.";
+        var sequence = $"  <Test Name=\"{ImageTest}\" Source=\"3DEngine.ImageTests.dll\" Completed=\"False\" />\n";
+
+        var report = ReportWith(RunInfo("Error", reason) + RunInfo("Error", ChannelFailed) + RunInfo("Warning", hang), "", sequence);
+
+        var line = Assert.Single(Errors(report));
+        Assert.StartsWith($"::error title=Failed test on Linux%3A {ImageTest}::{ImageTest}: the test did not complete, because the " +
+            "test host stopped while it ran. A test ran longer than the hang limit of 2 minutes, so the test platform stopped the " +
+            "test host: a hang, not a crash. Cause: The active test run was aborted. Reason: Test host process crashed.", line,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("No dump of the crash", line, StringComparison.Ordinal);
+    }
+
     // A crash with no sequence file and no dump: the annotation of the step says that the crashed test is not known, and the
     // cause leaves out the output of the tests.
     [Fact]

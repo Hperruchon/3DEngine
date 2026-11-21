@@ -84,3 +84,6 @@ events of the queue only after the drag.
 - 2026-11-18 · TASK-0404 · The record, from the question of the owner of 2026-11-18 and the probe of TASK-0404.
 - 2026-11-18 · TASK-0418 · ADR-0172 items 4 and 5 amend items 2 and 5: the minimum size is 360 by 560, and the images are
   a fixed part of the layout. The title no longer gives the number.
+- 2026-11-21 · TASK-0441 · Item 4: the test of the resize is one test for each state. The states of ADR-0172 to ADR-0178
+  made one test of 496 sizes in 15 states, about 41 seconds on the computer of the owner and more than the hang limit of 2
+  minutes on windows-latest (runs 44758589835 and 44908442870). One test checks at most 1,000 layouts (ADR-0173 item 4).
