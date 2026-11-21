@@ -12486,3 +12486,35 @@ FRAME, which now holds the circles of the symbol. The band of the block is 24 mm
 New tests: 10. The test list holds 3014 (1726 in `Engine.Tests`, 390 in `3DEngine.Tests`, 895 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 1 (`E-SHEET-TITLE-INVALID`). Since the review of
 v0.407, 2 product milestones and 4 entries followed it.
+
+## v0.412 — "Show hidden" on the ring of the part, and the count of the hidden bodies on the path line of a phone (R20e, TASK-0424)
+
+Row R20e, from ADR-0178 as TASK-0426 amended it (Q1 A and Q2 A of the owner, 2026-11-20). The branch `r20e-show-hidden`
+starts from `d403db9d` (R30i, v0.411), which is not merged yet. No change of the engine or of the contract.
+
+**The change.**
+- While at least one live body is hidden, the ring of the part has one more segment, "Show hidden", after its other tools,
+  with the open eye of "Show". A tap gives the action of the button "Show all", which the host turns into one
+  SetBodyVisibility for each hidden body. With no hidden body the segment does not show.
+- Where the status line has no room for the part "N hidden · Show" (a portrait phone), the path line shows "N hidden" in the
+  accent colour, 12 pixels right of the file name, 44 pixels high. The file name is cut first and keeps its chevron. A tap on
+  the part opens the list of ADR-0124 item 3 under the path line; the list takes the focus in its first frame, so it opens
+  over the folded structure view. Where the status line has room, the path line does not repeat the part. The rule is the
+  same on each display.
+- The top bar now comes after the anchors and the status line in a frame, because the path line reads the decision of the
+  status line of the same frame. With a selected body the part goes at the end of the path line. TASK-0424 gives these
+  decisions, which ADR-0178 does not settle, in its section "Method".
+
+**Proof.** `ShowHiddenTests` (11 cases) does not compile on the code of v0.411, because the label and the item do not exist
+there. The layout test of ADR-0172 has a state Hidden: a hidden body and no selection, at each size and at each step of the
+resize. Eleven injections, each restored byte for byte (sha256), made a named test fail: TASK-0424 lists them in its section
+"Method". The first form of the test of the phone missed the injection of the place of the list; the test now requires the
+top of the list at most 8 pixels under the part. A clean build gives 0 warnings, the phone project builds with 0 warnings,
+`dotnet test` passes 3025 tests, and the write-set check and `eng/repo-gates` pass. No picture of the real window or of the
+phone was made. The failed runs since the entry v0.411, from the API: run 44831092608 of `9cadf07`, the close commit of
+TASK-0423 on its branch, failed on macos-latest in the step "Keep the determinism hash": the artifact service of GitHub gave
+"Failed to CreateArtifact ... Request timeout", and each test passed. TASK-0423 opened again for a new run (its progress).
+
+New tests: 11. The test list holds 3025 (1726 in `Engine.Tests`, 390 in `3DEngine.Tests`, 906 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.407, 3 product milestones and
+5 entries followed it.
