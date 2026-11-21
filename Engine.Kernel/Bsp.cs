@@ -13,7 +13,7 @@ internal sealed class Bsp
     private Bsp? _back;
     private readonly List<KernelPolygon> _polygons = [];
 
-    public Bsp(IEnumerable<KernelPolygon> polygons) => Build([.. polygons]);
+    public Bsp(IEnumerable<KernelPolygon> polygons, CancellationToken cancel = default) => Build([.. polygons], cancel);
 
     private Bsp()
     {
@@ -22,6 +22,8 @@ internal sealed class Bsp
     // ADR-0089 item 6 (TASK-0289): each walk of the tree uses a stack of its own and no recursion. The tree of a convex
     // solid is a chain with one node for each polygon, so a sphere of 3968 triangles gave a recursion as deep, and the
     // stack of the thread overflowed. Each walk keeps the order of the recursive form: a node, then its front, then its back.
+    // TASK-0438 (finding E233 of the second codebase review of 2026-11-21): a walk that splits polygons reads the token at
+    // each node, so a cancel of the pair check stops an intersection in its work. The token changes no side and no result.
 
     // Each node turns inside out: each polygon and each plane flips, and the two sides swap.
     public void Invert()
@@ -47,12 +49,13 @@ internal sealed class Bsp
 
     // The parts of the polygons that are outside this solid. A part behind a plane with no back node is inside. The parts
     // come in the order of the recursive form: the parts of the front branch before the parts of the back branch.
-    public List<KernelPolygon> Clip(List<KernelPolygon> polygons)
+    public List<KernelPolygon> Clip(List<KernelPolygon> polygons, CancellationToken cancel = default)
     {
         var result = new List<KernelPolygon>();
         var stack = new Stack<(Bsp? Node, List<KernelPolygon> Polygons, bool Keep)>([(this, polygons, true)]);
         while (stack.Count > 0)
         {
+            cancel.ThrowIfCancellationRequested();
             var (node, parts, keep) = stack.Pop();
             if (node is null)
             {
@@ -80,13 +83,14 @@ internal sealed class Bsp
     }
 
     // The polygons of this tree that are outside the other tree.
-    public void ClipTo(Bsp other)
+    public void ClipTo(Bsp other, CancellationToken cancel = default)
     {
         var stack = new Stack<Bsp>([this]);
         while (stack.Count > 0)
         {
+            cancel.ThrowIfCancellationRequested();
             var node = stack.Pop();
-            var kept = other.Clip(node._polygons);
+            var kept = other.Clip(node._polygons, cancel);
             node._polygons.Clear();
             node._polygons.AddRange(kept);
             if (node._back is not null)
@@ -114,11 +118,12 @@ internal sealed class Bsp
     }
 
     // Adds polygons to the tree: the first polygon of a new node gives its plane.
-    public void Build(List<KernelPolygon> polygons)
+    public void Build(List<KernelPolygon> polygons, CancellationToken cancel = default)
     {
         var stack = new Stack<(Bsp Node, List<KernelPolygon> Polygons)>([(this, polygons)]);
         while (stack.Count > 0)
         {
+            cancel.ThrowIfCancellationRequested();
             var (node, parts) = stack.Pop();
             if (parts.Count == 0)
                 continue;

@@ -181,4 +181,8 @@ public static class DiagnosticCodes
     // Phase K11 (TASK-0436): a list of the pair check CheckInterference that is not valid: a text that is not an identifier,
     // a body twice, fewer than two bodies, or an intended pair that is not two bodies of the check.
     public const string CheckPairInvalid = "E-CHECK-PAIR-INVALID";
+
+    // Phase P0.174 (TASK-0438, finding E233): a pair check whose work, the sum of the products of the pieces of its pairs,
+    // is above its limit, so that it does not hold the session for minutes.
+    public const string CheckWorkLimit = "E-CHECK-WORK-LIMIT";
 }

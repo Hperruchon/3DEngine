@@ -67,6 +67,29 @@ public sealed class PlanarUnionIntersectTests
         Assert.Null(PlanarBoolean.Intersect(Cube(A), Cube(B, 10)));
     }
 
+    // TASK-0438 (finding E230 of the second codebase review of 2026-11-21; Q6 A): two cubes that touch on an edge only, at the
+    // origin and at (10, 10, 0). The steps of csg.js remove no polygon, so the union keeps the twelve faces and has the volume
+    // 2000; the edge from (5, 5, -5) to (5, 5, 5) has two coedges in each direction, so it has four faces and the B-Rep is not
+    // valid. ADR-0181 ("Consequences") keeps the body, as Manifold gives a valid mesh. The intersection has no volume.
+    [Fact]
+    public void Two_Cubes_That_Touch_On_An_Edge_Join_In_A_Solid_With_An_Edge_Of_Four_Faces()
+    {
+        var other = KernelSolid.Box(B, 10, 10, 10).Translate(V(10, 10, 0));
+        var union = PlanarBoolean.Union(Cube(A), other)!;
+        var brep = Brep.Of(union);
+
+        Assert.Equal((Rational)2000, union.Volume());
+        Assert.False(brep.Valid);
+        Assert.Equal(12, brep.Faces.Count);
+        var edge = Assert.Single(brep.Edges, edge => edge.Faces.Count > 2);
+        Assert.Equal(4, edge.Faces.Count);
+        Assert.Equal(
+            [(5.0, 5.0, -5.0), (5.0, 5.0, 5.0)],
+            new[] { brep.Vertices[edge.From].ToDoubles(), brep.Vertices[edge.To].ToDoubles() }.Order());
+
+        Assert.Null(PlanarBoolean.Intersect(Cube(A), other));
+    }
+
     // Two cubes apart: the union is one solid of two shells, each a cube with its six faces; the intersection is empty.
     [Fact]
     public void Two_Cubes_Apart_Give_Two_Shells_And_No_Intersection()

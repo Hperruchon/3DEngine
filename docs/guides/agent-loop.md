@@ -388,8 +388,9 @@ status `Rejected`. A request that the surface refuses gives HTTP 4xx with `{ "er
 | `E-GEOM-BODY-NOT-FOUND` | The identifier is not a live body. A command that moves or cuts a body consumes it, and makes a new body. | Read the snapshot or the events again, and use the new identifier. |
 | `E-MEASURE-NAME-NOT-FOUND` | A face or an edge that the body does not have. | Read the faces with `GetFaces`. |
 | `E-MEASURE-CURVED` | A curved face in a case that the measure does not do (see section 12). | Measure the whole body, or a plane face. |
-| `E-MESH-UNSUPPORTED` | A body of an STL file, in an operation that does not take it. | Measure or check it as a whole body only. |
+| `E-MESH-UNSUPPORTED` | A body of an STL file, in an operation that does not take it, or in a check when its triangles do not close one solid. | Measure or check it as a whole body only. |
 | `E-CHECK-PAIR-INVALID` | A list of `CheckInterference` that is not valid. | Give two bodies or more, each once, and pairs as `a:b`. |
+| `E-CHECK-WORK-LIMIT` | The work of a `CheckInterference` is above its limit (see section 12). | Give fewer bodies with `bodyIds`. |
 | `E-CMD-VERSION-STALE` | The Document changed after you read its version. | Read again, measure again, and propose again. |
 | `E-API-PROPOSAL-QUEUE-FULL` | 8 proposals are open (HTTP 409). | Wait for the person, or withdraw a proposal. |
 | `E-API-PROPOSAL-NOT-FOUND` | No open or kept proposal has the identifier (HTTP 404). | Post the proposal again if you need it. |
@@ -458,11 +459,13 @@ DELETE /proposals/<proposal>
   than two spheres, and a nearest point past an end of the side of a cylinder. `GetAngle` refuses a curved face that is not
   whole, a sphere and two curved faces. Row K15c adds these cases. `GetMassProperties` does not refuse; it gives `facets`.
 - **The cost of a check.** `CheckInterference` holds the session for its whole work, and each command waits for it. The
-  work grows as the product of the facets of the two bodies of each pair. The 19 boxes of the bookcase take less than one
-  second; two spheres or two large STL bodies can take minutes, and a cancel acts only between two pairs (finding E233 of
-  the codebase review of 2026-11-21 (b)). Check the bodies near your change, not each body.
+  work is the sum, over each pair, of the product of the counts of the facets of the two bodies. Above 100,000 the check is
+  refused with `E-CHECK-WORK-LIMIT` before its first pair: the 19 boxes of the bookcase need 6,156, a sphere and a plate
+  23,808, and two spheres 15,745,024. Below the limit a check can still hold the session for some seconds, and a cancel
+  stops it inside a pair (ADR-0182 item 8). Check the bodies near your change, not each body.
 - **Curved and mesh bodies in a check.** A body with a curved face, or a body of an STL file, is checked on its facets or its
-  triangles, with `meshOnly` true. A closed mesh whose shells cross each other can give a wrong class (finding E234).
+  triangles, with `meshOnly` true. A closed mesh with two shells that share a volume is refused with `E-MESH-UNSUPPORTED`
+  (ADR-0182 item 7).
 - **No list of the sheets.** No query and no field of the snapshot gives the sheets of the Document. The event
   `sheet.created` gives the identifier of a new sheet while you listen; for an earlier sheet, ask the person.
 - **No list of the bodies by a query.** The snapshot of `/events` gives each live body with its name. `GetFeatures` gives

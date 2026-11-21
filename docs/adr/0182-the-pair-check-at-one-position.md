@@ -53,7 +53,8 @@ the contract for a parameter that P11 and P13 replace.
    `/queries` of HTTP, the command `engine query` and `DocumentSession.Query` reach it through the registry, with no new route.
    The query reads the solids of the owned kernel and computes each overlap with `PlanarBoolean.Intersect` in memory: it
    writes nothing to the log, makes no body and changes no version. No record of `Engine.Contracts` changes: the result uses
-   `Aabb` and `DatumPoint`, as `GetBoundingBox` and `GetDistance` do. `Engine.Kernel` does not change.
+   `Aabb` and `DatumPoint`, as `GetBoundingBox` and `GetDistance` do. In `Engine.Kernel` only `PlanarBoolean.Intersect` gets
+   a form with a cancellation token (item 8, TASK-0438).
 2. **The parameters.** Two optional strings:
    - `bodyIds`: the identifiers of the bodies to check, separated by commas, two or more, each once. With no value, each live
      body of the Document is checked, in the order of the Document.
@@ -91,12 +92,30 @@ the contract for a parameter that P11 and P13 replace.
    with a fault, or that the kernel cannot build, gives `E-GEOM-BODY-FAULTED` or `E-GEOM-FACES-FAILED`, as for the measure
    queries (ADR-0180 item 7). A mesh body whose triangles do not close a solid (each edge with one coedge in each direction,
    `Brep.Valid`, and a volume above zero) gives `E-MESH-UNSUPPORTED`; a backend with no `ITessellationOps` gives
-   `E-GEOM-CAP-MISSING`, and a tessellation that fails `E-GEOM-NATIVE-OP`.
+   `E-GEOM-CAP-MISSING`, and a tessellation that fails `E-GEOM-NATIVE-OP`. A closed mesh with two outer shells that share a
+   volume also gives `E-MESH-UNSUPPORTED` (TASK-0438, finding E234): the tree of the kernel takes a solid that does not cross
+   itself, and with two shells that overlap a box inside the mesh was "apart". Two triangles with a common edge of two points
+   are in one shell; a shell whose signed volume has the sign of the whole mesh is an outer shell, and the other shells are
+   voids. Each pair of outer shells whose exact boxes share a volume runs the exact intersection of the kernel, before the
+   first pair of bodies. This test is the smallest correct option of the review: a mark "not exact" needs the same test to
+   find the mesh, and a new value of `basis` that ADR-0157 item 7 does not give.
 8. **The cost.** For n bodies the check has n (n - 1) / 2 pairs. Each body gives its solid, its exact box and its pieces
    once. For each pair: one comparison of the boxes; the intersection only for boxes that share a volume, which partitions the
    f_A polygons of one solid by the f_B polygons of the other (O(f_A × f_B) splits in the worst case); else the nearest pair,
    at most f_A × f_B pairs of pieces, pruned by the boxes of the pieces (ADR-0180 item 4). The worst case is
    O(n² × f_A × f_B). The bookcase of K10a (19 boxes, 171 pairs) takes 0.2 s on the computer of the owner.
+
+   **The bound of work (TASK-0438, finding E233, Q5 A of the second codebase review of 2026-11-21).** A query holds the
+   serial lock of the session for its whole work. So, after it resolves the bodies and before its first pair, the check
+   adds the product f_A × f_B of the counts of the pieces of each pair of bodies, and the product of the counts of the
+   polygons of each pair of outer shells of item 7 whose boxes share a volume. Above 100,000 it is refused with
+   `E-CHECK-WORK-LIMIT` (new), and the message gives the sum. The measures on the computer of the owner set the limit: the
+   intersection of a sphere of 3,968 triangles and a plate (23,808 products) took 3.2 s, and the gap of two spheres apart
+   (15,745,024 products) took 101 s. At the limit an intersection takes about 13 s and a gap about 0.6 s; the bookcase needs
+   6,156. The cancellation token of the query is read before each body, before each pair, for each piece of the first side
+   of the nearest pair, and at each node of each walk of the tree of the kernel that splits polygons
+   (`PlanarBoolean.Intersect` with a token). The token changes no result. The review also proposed to sort the pieces by the
+   gap of their boxes; that changes which pair of points comes first when several pairs give the minimum, so it is not done.
 9. **Determinism.** Each step that decides a class uses `+`, `-`, `*`, `/` and comparisons on exact rationals. A double of
    the triangles of a mesh body enters exactly. The gap is one `Math.Sqrt` of the nearest double to an exact square; each other
    value is the nearest double to an exact value. No transcendental function is called.
@@ -122,7 +141,10 @@ answer on each platform. The bookcase gives its 48 contacts and no overlap. The 
 fork at each sample.
 
 **Bad:** the exact intersection and the exact nearest pair have a cost: a body of many facets, as a sphere, gives many
-polygons, and each pair of two such bodies whose boxes share a volume partitions both. A curved body is checked on its facets,
+polygons, and each pair of two such bodies whose boxes share a volume partitions both. The bound of item 8 refuses such a
+check, also two spheres apart, and a part of many bodies with one curved body; a client then gives fewer bodies. Below the
+bound a check can still hold the session for about 13 s. The test of the shells of item 7 does not test a void shell, nor a
+shell that crosses itself, so such a mesh can still give a wrong class. A curved body is checked on its facets,
 so a gap below the size of the facets is not the gap of the curve, and the mark says so. One faulted body refuses the whole
 check. The two lists are text, which a client must build; a typo gives a refusal and not a wrong answer.
 
@@ -132,3 +154,5 @@ check. The two lists are text, which a client must build; a typo gives a refusal
 
 - 2026-11-21 · TASK-0436 · The record: the query `CheckInterference`, the code `E-CHECK-PAIR-INVALID`, and the amendment of
   ADR-0083 item 4, from the answers A5 to A7 of the owner of 2026-11-15 (ADR-0157 items 5 to 7).
+- 2026-11-21 · TASK-0438 · Items 1, 7 and 8 and "Bad": the bound of work with `E-CHECK-WORK-LIMIT` and the token in the
+  inner loops (finding E233, Q5 A), and the refusal of a mesh with two outer shells that share a volume (finding E234).

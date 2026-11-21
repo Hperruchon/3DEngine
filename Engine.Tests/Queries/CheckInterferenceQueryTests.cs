@@ -11,6 +11,7 @@ using Engine.Core.Features;
 using Engine.Core.Hosting;
 using Engine.Core.Queries;
 using Engine.Geometry.Manifold;
+using Engine.Kernel;
 using Engine.Tests.Assembly;
 using Engine.Tests.Geometry;
 using Xunit.Abstractions;
@@ -235,6 +236,158 @@ public sealed class CheckInterferenceQueryTests(ITestOutputHelper output)
         PairCheck Of(string x, string y) => pairs.Single(pair => (names[pair.BodyIdA], names[pair.BodyIdB]) == (x, y));
         Assert.Equal((PairClass.Apart, 764.0), (Of("Bas", "Haut").Class, Of("Bas", "Haut").Gap));
         Assert.Equal(1800, Of("Module 1 - volume indicatif", "Module 2 - volume indicatif").Gap);
+    }
+
+    // TASK-0438 (finding T188 of the second codebase review of 2026-11-21): the boxes of two bodies share a volume while the
+    // solids only touch or are apart, so the intersection of the kernel gives no solid and the nearest pair decides. The plate
+    // of 40 by 40 by 10 at the origin has a pocket of 10 by 10 by 5 from z 0 to 5. A box of the size of the pocket at its place
+    // touches the floor and the four walls. A box of 4 by 4 by 2 at (0, 0, 2) is from z 1 to 3, so it is 1 above the floor
+    // and 3 from each wall: the gap is 1, from a point of the floor at z 0 to the point above it at z 1. The box of the plate
+    // holds both boxes.
+    [NativeManifoldFact]
+    public async Task A_Box_In_A_Pocket_Touches_Or_Is_Apart_While_The_Boxes_Of_The_Bodies_Share_A_Volume()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = new DocumentSession(EngineHosting.CreateDefault(backend));
+        var plate = Output(await Applied(session, new CreateBoxCommand { SizeX = 40, SizeY = 40, SizeZ = 10 }));
+        var pocket = Output(await Applied(session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 5 }));
+        pocket = Output(await Applied(session, new TranslateCommand { BodyId = pocket, Dx = 0, Dy = 0, Dz = 2.5 }));
+        plate = Output(await Applied(session, new SubtractCommand { MinuendBodyId = plate, SubtrahendBodyId = pocket }));
+        var fit = Output(await Applied(session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 5 }));
+        fit = Output(await Applied(session, new TranslateCommand { BodyId = fit, Dx = 0, Dy = 0, Dz = 2.5 }));
+        var small = Output(await Applied(session, new CreateBoxCommand { SizeX = 4, SizeY = 4, SizeZ = 2 }));
+        small = Output(await Applied(session, new TranslateCommand { BodyId = small, Dx = 0, Dy = 0, Dz = 2 }));
+
+        var touch = await Pair(session, plate, fit);
+        Assert.Equal((PairClass.Touching, 0.0, 0.0, (Aabb?)null, false), (touch.Class, touch.Gap, touch.Volume, touch.Box, touch.Fault));
+        Assert.Equal(touch.PointA, touch.PointB);
+
+        var apart = await Pair(session, plate, small);
+        Assert.Equal((PairClass.Apart, 1.0, 0.0, (Aabb?)null, false), (apart.Class, apart.Gap, apart.Volume, apart.Box, apart.Fault));
+        Assert.Equal((0.0, 1.0), (apart.PointA!.Z, apart.PointB!.Z));
+        Assert.Equal((apart.PointA.X, apart.PointA.Y), (apart.PointB.X, apart.PointB.Y));
+    }
+
+    // TASK-0438 (finding E233; Q5 A of the second codebase review of 2026-11-21): ADR-0182 item 8. A sphere has 3968
+    // triangles, so two spheres need 3968² = 15,745,024 products of pieces, above the limit of 100,000: the check is refused
+    // before its first pair, and the message gives the work. Before TASK-0438 it took 101 s on the computer of the owner. A
+    // sphere and a plate need 3968 × 6 = 23,808, under the limit, and the check gives the overlap.
+    [NativeManifoldFact]
+    public async Task A_Check_Whose_Work_Is_Above_The_Limit_Is_Refused_Before_Its_First_Pair()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = new DocumentSession(EngineHosting.CreateDefault(backend));
+        var sphere = Output(await Applied(session, new CreateSphereCommand { Radius = 10 }));
+        var far = Output(await Applied(session, new CreateSphereCommand { Radius = 10 }));
+        far = Output(await Applied(session, new TranslateCommand { BodyId = far, Dx = 50, Dy = 0, Dz = 0 }));
+        var plate = Output(await Applied(session, new CreateBoxCommand { SizeX = 40, SizeY = 40, SizeZ = 2 }));
+        var pieces = await session.Read((document, _) => KernelProjection.OfRecord(document, document.Bodies.Single(body => body.Handle.Id == sphere)).Solid!.Polygons.Count);
+        Assert.Equal(3968, pieces);
+
+        var refused = await session.Query<InterferenceInfo>(new CheckInterferenceQuery { BodyIds = Ids(sphere, far) });
+        Assert.Equal(DiagnosticCodes.CheckWorkLimit, refused.Error?.Code);
+        Assert.Contains("15745024 products", refused.Error!.Message, StringComparison.Ordinal);
+        Assert.Equal(DiagnosticCodes.CheckWorkLimit, await Refusal(session, null));
+
+        var overlap = await Pair(session, sphere, plate);
+        Assert.Equal((PairClass.Overlapping, true), (overlap.Class, overlap.MeshOnly));
+    }
+
+    // TASK-0438 (finding E233; Q5 A): a cancel acts inside a pair. The nearest pair reads the token for each piece of its
+    // first side, and the intersection of the kernel at each node of each walk that splits, so a cancelled token stops each
+    // of them at its first step. The query reads it before each body.
+    [NativeManifoldFact]
+    public async Task A_Cancel_Stops_The_Gap_And_The_Intersection_Inside_One_Pair()
+    {
+        using var cancelled = new CancellationTokenSource();
+        await cancelled.CancelAsync();
+        var a = KernelSolid.Box(Guid.NewGuid(), 10, 10, 10);
+        var b = KernelSolid.Box(Guid.NewGuid(), 10, 10, 10).Translate(Vector3R.FromDoubles(5, 0, 0));
+        var pieces = a.Polygons.Select(polygon => new NearestPoints.Piece(polygon.Vertices)).ToList();
+
+        Assert.NotNull(PlanarBoolean.Intersect(a, b, CancellationToken.None));
+        Assert.NotNull(NearestPoints.Nearest(pieces, pieces, CancellationToken.None));
+        Assert.Throws<OperationCanceledException>(() => PlanarBoolean.Intersect(a, b, cancelled.Token));
+        Assert.Throws<OperationCanceledException>(() => NearestPoints.Nearest(pieces, pieces, cancelled.Token));
+
+        using var backend = new ManifoldGeometryBackend();
+        var session = new DocumentSession(EngineHosting.CreateDefault(backend));
+        var (x, y) = (await Box(session, 10), await Box(session, 10, 5, 0, 0));
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => session.Query<InterferenceInfo>(new CheckInterferenceQuery { BodyIds = Ids(x, y) }, cancelled.Token));
+    }
+
+    // TASK-0438 (finding E234; ADR-0182 item 7): a closed mesh whose two shells share a volume is refused. The cubes [0, 10]³
+    // and [5, 15]³ in one file: before TASK-0438 a box of 2 at (2, 2, 2), inside the first cube, was "apart" with a gap of 1.
+    // Two cubes apart in one file are checked: a box of 2 at (22, 22, 22) shares 8 mm³ with the second cube. A cube with a
+    // void, [0, 10]³ less [3, 7]³ as an inner shell turned inward, is checked: a box of 2 at (5, 5, 5) is in the void, 1 from
+    // each wall, and a box of 1 at (1.5, 1.5, 1.5) shares its 1 mm³ with the wall.
+    [NativeManifoldFact]
+    public async Task A_Mesh_Whose_Shells_Share_A_Volume_Is_Refused_And_Shells_Apart_Or_A_Void_Are_Checked()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var assets = new AssetBytes();
+        var session = new DocumentSession(EngineHosting.CreateDefault(backend, assets: assets));
+        static float[][] Moved(float[][] triangles, float by) => [.. triangles.Select(t => t.Select(v => v + by).ToArray())];
+        static float[][] Scaled(float[][] triangles, float scale, float by) => [.. triangles.Select(t => t.Select(v => (v * scale) + by).ToArray())];
+        static float[][] Turned(float[][] triangles) => [.. triangles.Select(t => (float[])[t[0], t[1], t[2], t[6], t[7], t[8], t[3], t[4], t[5]])];
+
+        var crossing = Output(await Applied(session, new ImportStlCommand { Asset = assets.Add(Stl([.. Cube, .. Moved(Cube, 5)])) }));
+        var inFirst = await Box(session, 2, 2, 2, 2);
+        Assert.Equal(DiagnosticCodes.MeshUnsupported, await Refusal(session, Ids(crossing, inFirst)));
+
+        var apart = Output(await Applied(session, new ImportStlCommand { Asset = assets.Add(Stl([.. Cube, .. Moved(Cube, 20)])) }));
+        var inSecond = await Box(session, 2, 22, 22, 22);
+        var second = await Pair(session, apart, inSecond);
+        Assert.Equal((PairClass.Overlapping, 8.0, true), (second.Class, second.Volume, second.MeshOnly));
+
+        var hollow = Output(await Applied(session, new ImportStlCommand { Asset = assets.Add(Stl([.. Cube, .. Turned(Scaled(Cube, 0.4f, 3))])) }));
+        var inVoid = await Box(session, 2, 5, 5, 5);
+        var inWall = await Box(session, 1, 1.5, 1.5, 1.5);
+        var empty = await Pair(session, hollow, inVoid);
+        Assert.Equal((PairClass.Apart, 1.0), (empty.Class, empty.Gap));
+        var wall = await Pair(session, hollow, inWall);
+        Assert.Equal((PairClass.Overlapping, 1.0), (wall.Class, wall.Volume));
+    }
+
+    // TASK-0438 (finding E233; ADR-0182 item 8): the test of the shells of a mesh counts in the work. Forty cubes of 12
+    // triangles, each moved by 0.1 from the last, in one file: each pair of the 780 pairs of shells shares a volume, so the
+    // test of the shells needs 780 × 12 × 12 = 112,320 products, and the pair with a box 480 × 6 = 2,880. The sum, 115,200, is
+    // above the limit, so the check is refused before it tests a shell.
+    [NativeManifoldFact]
+    public async Task The_Test_Of_The_Shells_Of_A_Mesh_Counts_In_The_Work_Of_The_Check()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var assets = new AssetBytes();
+        var session = new DocumentSession(EngineHosting.CreateDefault(backend, assets: assets));
+        float[][] cubes = [.. Enumerable.Range(0, 40).SelectMany(k => Cube.Select(t => t.Select(v => v + (0.1f * k)).ToArray()))];
+        var mesh = Output(await Applied(session, new ImportStlCommand { Asset = assets.Add(Stl(cubes)) }));
+        var box = await Box(session, 2, 30, 0, 0);
+
+        var refused = await session.Query<InterferenceInfo>(new CheckInterferenceQuery { BodyIds = Ids(mesh, box) });
+        Assert.Equal(DiagnosticCodes.CheckWorkLimit, refused.Error?.Code);
+        Assert.Contains("115200 products", refused.Error!.Message, StringComparison.Ordinal);
+    }
+
+    // TASK-0438 (finding E230; Q6 A; ADR-0181, "Consequences"): a union of two boxes of 10 that touch on an edge, at the origin
+    // and at (10, 10, 0), keeps its body, with a B-Rep whose shared edge has four faces. The pair check reads the solid of the
+    // kernel and needs no valid B-Rep: a box of 2 at (0, 0, 20) is apart by 14, and a box of 2 at (5, 5, 0) on the shared edge
+    // shares 4 mm³ with it, 2 with each box. The STEP export refuses the body with E-EXPORT-BODY-FAILED.
+    [NativeManifoldFact]
+    public async Task A_Union_Of_Two_Boxes_That_Touch_On_An_Edge_Is_Checked_And_Not_Written_To_Step()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = new DocumentSession(EngineHosting.CreateDefault(backend));
+        var (a, b) = (await Box(session, 10), await Box(session, 10, 10, 10, 0));
+        var union = Output(await Applied(session, new UnionCommand { FirstBodyId = a, SecondBodyId = b }));
+        var (above, on) = (await Box(session, 2, 0, 0, 20), await Box(session, 2, 5, 5, 0));
+
+        var apart = await Pair(session, union, above);
+        Assert.Equal((PairClass.Apart, 14.0), (apart.Class, apart.Gap));
+        var overlap = await Pair(session, union, on);
+        Assert.Equal((PairClass.Overlapping, 4.0), (overlap.Class, overlap.Volume));
+        var (_, error) = await session.Read((document, _) => Engine.Core.Export.StepExport.Write(document));
+        Assert.Equal(DiagnosticCodes.ExportBodyFailed, error?.Code);
+        Assert.Contains("more than two faces", error!.Message, StringComparison.Ordinal);
     }
 
     // The class and the gap of two boxes of the table, from their intervals on each axis.

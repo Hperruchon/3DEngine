@@ -12965,3 +12965,52 @@ The failed runs since the entry v0.421, from the API: none.
 New tests: 3. The test list holds 3098 (1789 in `Engine.Tests`, 390 in `3DEngine.Tests`, 916 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 14 of 15. New diagnostic codes: 0. Since the review of v0.420, 1 product milestone and
 2 entries followed it.
+
+## v0.423 — The medium and low findings of the second codebase review of 2026-11-21 (P0.174, TASK-0438)
+
+TASK-0438 holds the three medium and four low findings of the second codebase review of 2026-11-21 (v0.421), after the
+product phase P17 by section 7 of `docs/templates.md`. The branch `p0174-review-findings` starts from `31021dba` (v0.422), which
+is not merged yet. Questions Q5 to Q7 of that review are answered by the standing order of the owner of 2026-11-20 (Q5 to Q7
+of the second codebase review of 2026-11-21): A to each.
+
+**The change.**
+- E233 (Q5 A): before its first pair, `CheckInterference` adds the product of the counts of the pieces of each pair of
+  bodies, and the work of the test of the shells of E234. Above 100,000 it is refused with the new code `E-CHECK-WORK-LIMIT`,
+  and the message gives the sum. On the computer of the owner the intersection of a sphere of 3,968 triangles and a plate
+  (23,808 products) took 3.2 s, and the gap of two spheres apart (15,745,024 products) took 101 s; the bookcase needs 6,156.
+  The token of the query is read before each body, for each piece of the first side of `NearestPoints.Nearest`, and at each
+  node of each walk of the tree of the kernel that splits, through a new form `PlanarBoolean.Intersect(a, b, token)`. The
+  token changes no result. ADR-0182 items 1 and 8 and "Bad" record it.
+- E234: a closed mesh body with two outer shells that share a volume is refused with `E-MESH-UNSUPPORTED`. Two triangles with
+  a common edge of two points are in one shell; a shell of the sign of the whole mesh is an outer shell, and each pair of outer
+  shells whose boxes share a volume runs the exact intersection. Before the change, a box of 2 inside the first of two
+  overlapping cubes in one file was "apart" with a gap of 1. A void and a shell that crosses itself are not tested (ADR-0182
+  item 7 and "Bad").
+- T187 (Q7 A): the status of each stair of `FixedLengthsTests` computes at most 1.5 times its count of today, 31,289 products
+  for 100 lines and 1,103,894 for 600 lines, beside the ratio (ADR-0154 item 4).
+- E230 (Q6 A): a union of two bodies that touch on an edge keeps its body; its B-Rep has an edge of four faces, the STEP export
+  refuses it, and the pair check gives its gap and its overlap (ADR-0181, "Consequences").
+- E231: two faces of the operands on one plane stay two faces after a union, a known limit in ADR-0181 item 6, because a join
+  changes the names of ADR-0058. The test that exists holds it. The register is full, so the limit has no entry.
+- E232: the comments of `MeasureCurve` and `CurvedDistance` and ADR-0180 items 8 and 13 say [0, 2π], at most about ten units
+  of the last place for the arctangent, and the three steps of the distance from a curved face that compare doubles.
+- T188: a plate with a pocket, with a box that fills the pocket (touching) and a smaller box in it (apart by 1); the boxes of
+  the bodies share a volume.
+- The guide for an agent (`docs/guides/agent-loop.md`) said that a check can take minutes, that a cancel acts only between two
+  pairs, and that crossing shells can give a wrong class. It now gives the bound, the refusal of the shells and the row of
+  `E-CHECK-WORK-LIMIT`.
+- Register entry R-0074 (risk): the crash of the test host of `Engine.Tests` on ubuntu-latest in attempt 1 of run
+  44869058349, with no known cause. No finding of this task closes an entry with evidence.
+
+**Proof.** Eight new tests in `Engine.Tests`. On `31021dba` a probe test (removed) showed the wrong class of E234 and the 101 s
+of two spheres. Sixteen injections, each restored byte for byte (sha256), made a named test fail; TASK-0438 lists them in its
+section "Method". The pass of the token from the handler into a pair has no test, because a cancel inside a pair needs a time.
+A clean build gives 0 warnings, the phone project builds with 0 warnings, `dotnet test` passes 3106 tests, and the
+write-set check and `eng/repo-gates` pass. The desktop was not run.
+The failed runs since the entry v0.422, from the API: run 44908442870 of `9073010`, the record of the second
+review of 2026-11-21 on its branch, failed on windows-latest in the step "Test": a test host crashed ("Test case event channel
+failed"), and the commit changed documents only; TASK-0437 records it and a new run.
+
+New tests: 8. The test list holds 3106 (1797 in `Engine.Tests`, 390 in `3DEngine.Tests`, 916 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 1, `E-CHECK-WORK-LIMIT`; `E-MESH-UNSUPPORTED` gets one
+more case. Since the review of v0.420, 1 product milestone and 3 entries followed it.

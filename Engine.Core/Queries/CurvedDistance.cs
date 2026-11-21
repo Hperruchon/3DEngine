@@ -6,9 +6,12 @@ using Engine.Kernel;
 namespace Engine.Core.Queries;
 
 // ADR-0180 item 11 (phase K15b, TASK-0434): the minimum distance when a side of GetDistance is a whole curved face of the
-// design (MeasureCurve.Whole). Each step that decides a case uses + - * / and comparisons on exact rationals, from the
-// exact nearest points of K15a; the distance and the points then leave as doubles from + - * / and sqrt. A case with no
-// closed form here gives the reason, and the caller refuses it with E-MEASURE-CURVED.
+// design (MeasureCurve.Whole). The nearest points of K15a and the test of the side of each piece use + - * / and comparisons
+// on exact rationals; the distance and the points then leave as doubles from + - * / and sqrt. TASK-0438 (finding E232):
+// three steps compare doubles: the choice of the nearest piece, the test of a point inside the solid, which runs only when
+// the lowest distance is above 0, and the refusal when the bound past an end of a cylinder is below the best distance. Each
+// gives the same bits on each platform, but an exact tie can refuse a case that has an answer. A case with no closed form
+// here gives the reason, and the caller refuses it with E-MEASURE-CURVED.
 internal static class CurvedDistance
 {
     // One pair of points at the distance, on the curve and on the other side.

@@ -45,19 +45,22 @@ public static class PlanarBoolean
 
     // ADR-0181 item 5: the volume that a and b share, in the steps of the intersection of csg.js: the parts of a inside b,
     // and the parts of b inside a. No part turns, and each part keeps the tag of its face. Two solids that only touch, or
-    // that are apart, share no volume, so the result is null, which the caller refuses, as an empty subtract is.
-    public static KernelSolid? Intersect(KernelSolid a, KernelSolid b)
+    // that are apart, share no volume, so the result is null, which the caller refuses, as an empty subtract is. TASK-0438
+    // (finding E233): the pair check gives its token, and each walk that splits reads it at each node.
+    public static KernelSolid? Intersect(KernelSolid a, KernelSolid b) => Intersect(a, b, CancellationToken.None);
+
+    public static KernelSolid? Intersect(KernelSolid a, KernelSolid b, CancellationToken cancel)
     {
         ArgumentNullException.ThrowIfNull(a);
         ArgumentNullException.ThrowIfNull(b);
-        var left = new Bsp(a.Polygons);
-        var right = new Bsp(b.Polygons);
+        var left = new Bsp(a.Polygons, cancel);
+        var right = new Bsp(b.Polygons, cancel);
         left.Invert();
-        right.ClipTo(left);
+        right.ClipTo(left, cancel);
         right.Invert();
-        left.ClipTo(right);
-        right.ClipTo(left);
-        left.Build(right.AllPolygons());
+        left.ClipTo(right, cancel);
+        right.ClipTo(left, cancel);
+        left.Build(right.AllPolygons(), cancel);
         left.Invert();
         return Solid(left.AllPolygons());
     }

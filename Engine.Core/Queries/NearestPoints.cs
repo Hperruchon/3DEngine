@@ -56,13 +56,16 @@ internal static class NearestPoints
 
     // The nearest pair of points between a piece of a and a piece of b, the first in the order of a, then of b, when
     // several pairs give the minimum. A pair whose boxes are not nearer than the best pair cannot give a nearer pair.
-    public static Pair? Nearest(IReadOnlyList<Piece> a, IReadOnlyList<Piece> b)
+    // TASK-0438 (finding E233 of the second codebase review of 2026-11-21): the pair check gives its token, and the outer
+    // loop reads it for each piece.
+    public static Pair? Nearest(IReadOnlyList<Piece> a, IReadOnlyList<Piece> b, CancellationToken cancel = default)
     {
         ArgumentNullException.ThrowIfNull(a);
         ArgumentNullException.ThrowIfNull(b);
         Pair? best = null;
         foreach (var x in a)
         {
+            cancel.ThrowIfCancellationRequested();
             foreach (var y in b)
             {
                 if (best is { } known && BoxGap(x, y) >= known.Squared)

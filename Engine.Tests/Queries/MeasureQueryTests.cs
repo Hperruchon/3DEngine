@@ -565,6 +565,29 @@ public sealed class MeasureQueryTests
         Assert.Equal((0.0, Math.PI / 2, Math.PI, 3 * Math.PI / 2), (MeasureCurve.Angle(1, 0), MeasureCurve.Angle(0, 2), MeasureCurve.Angle(-3, 0), MeasureCurve.Angle(0, -1)));
     }
 
+    // TASK-0438 (finding E232 of the second codebase review of 2026-11-21): each halving of the arctangent rounds, so item 13
+    // gives at most about ten units of the last place, not an exact angle. Angle(1, t) is the arctangent of t, with no
+    // rounding of a quotient. Against Math.Atan, which the test may call, the error stays at most ten units of the last place
+    // of the result at 100,000 tangents from 1e-6 to 1e6 (7 at most today; the review found 8.8 against 240 bits). A
+    // direction just under the axis x gives exactly 2π, so the range is [0, 2π], with 2π as a full turn.
+    [Fact]
+    public void The_Arctangent_Is_At_Most_Ten_Units_Of_The_Last_Place_From_The_Angle_And_The_Range_Ends_At_Two_Pi()
+    {
+        var random = new Random(438);
+        var worst = (Units: 0.0, Tangent: 0.0);
+        for (var i = 0; i < 100_000; i++)
+        {
+            var t = Math.Pow(10, (random.NextDouble() * 12) - 6);
+            var expected = Math.Atan(t);
+            var units = Math.Abs(MeasureCurve.Angle(1, t) - expected) / (Math.BitIncrement(expected) - expected);
+            if (units > worst.Units)
+                worst = (units, t);
+        }
+
+        Assert.True(worst.Units <= 10, $"{worst.Units} units of the last place at the tangent {worst.Tangent:R}.");
+        Assert.Equal(2 * Math.PI, MeasureCurve.Angle(1, -1e-17));
+    }
+
     // The extrude by 4 of the square (0, 0), (10, 0), (10, 10), (0, 10) whose right side is a half circle about (10, 5): a
     // bulge when the arc goes from (10, 0) to (10, 10) counter-clockwise, and a bite when it goes from (10, 10) to (10, 0).
     // The body and the item of the side of the arc.

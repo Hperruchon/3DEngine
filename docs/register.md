@@ -492,6 +492,22 @@ time stood for, and it needs a change of `Engine.Kernel`, which the write set of
 Exit: a task of the kernel gives the count of the exact signs of a cut in a form that a test reads, and the test of the cut
 holds that count below a bound; or the owner accepts the hang limit as the only guard.
 
+### R-0074 · The test host of Engine.Tests crashed on ubuntu-latest with no known cause
+- class: risk
+- opened: 2026-11-21
+- due: 2026-12-21
+- extended: no
+- refs: `.github/workflows/ci.yml` (step "Test", `--blame-crash`), `docs/adr/0173-a-lost-runner-gets-one-automatic-re-run.md`,
+  `docs/reviews/2026-11-21-b-codebase-review.md` (the failed runs of the weekend), TASK-0433, TASK-0435, TASK-0438
+In attempt 1 of run 44869058349 (commit `14f93eb`) the test host of `Engine.Tests` crashed on ubuntu-latest in the step
+"Test". The annotation named `TaskGovernanceGateTests.Each_Open_Task_Lists_Exactly_The_Adrs_Whose_Affects_Intersect_Its_Write_Set`
+as the test that did not complete, and gave no cause; Linux kept no dump. The next run of the same code passed. A crash
+stays red by ADR-0173, so a second crash stops a merge with no known repair. R-0062, closed on 2026-11-14, held crashes of
+the image tests on the computer of the owner; no entry held this one. On 2026-11-21 the register holds 15 of its 15 open entries with this entry.
+Exit: a crash dump of the step "Test" on Linux names the cause and a task fixes it; or thirty runs of continuous
+integration on ubuntu-latest after 2026-11-21 end with no crash of the test host of `Engine.Tests`, and the entry closes
+with their numbers.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.

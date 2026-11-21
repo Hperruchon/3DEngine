@@ -525,6 +525,9 @@ Therefore each approved objective must have a track here.
 - Review — The second codebase review of 2026-11-21. v0.421, TASK-0437.
 - P17 — The guide for an agent gives the loop read, measure, propose and check on the HTTP surface, and a test sends each
   example of the guide to a host. v0.422, TASK-0439.
+- P0.174 — A pair check above a bound of work is refused and a cancel acts inside a pair, a mesh with two shells that share
+  a volume is refused, the status of each stair has a bound of work, and four low findings have a test or a record. v0.423,
+  TASK-0438.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.

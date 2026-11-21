@@ -114,6 +114,7 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.MeasureNameNotFound,   "Error",   "MEASURE"), // phase K15a, TASK-0432
         new(DiagnosticCodes.MeasureCurved,         "Error",   "MEASURE"), // phase K15a, TASK-0432
         new(DiagnosticCodes.CheckPairInvalid,      "Error",   "CHECK"), // phase K11, TASK-0436
+        new(DiagnosticCodes.CheckWorkLimit,        "Error",   "CHECK"), // phase P0.174, TASK-0438
     };
 
     public static IResult Handle() => Results.Json(Codes, ApiJson.Options);
