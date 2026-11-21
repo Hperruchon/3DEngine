@@ -1,7 +1,7 @@
 ---
 id: 0445
 title: The section of a sheet cuts each polygon of a solid by its plane in the owned kernel, with one cap
-status: Active
+status: Done
 phase: P0.178
 opened: 2026-11-21
 depends-on: [0444]
@@ -79,7 +79,7 @@ that cut with the same result as the subtract of the box.
   polygons.
 - [x] The cut of the sphere of radius 20 splits 10,220 times against 6,132,711, an exact count in a test.
 - [x] An injection in each part makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
   (Local: each passes. Continuous integration runs after the push.)
 
 ## Decisions
@@ -105,7 +105,7 @@ that cut with the same result as the subtract of the box.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0178-plane-cut) · v0.429
+Status: Done · commit (the merge of the branch p0178-plane-cut) · v0.429
 
 ## Method
 
@@ -162,3 +162,4 @@ runs `PlaneCutTests` only.
 - 2026-11-21: opened after K15c (TASK-0444, v0.428, not merged yet), branch `p0178-plane-cut` from `53772dce`. The cut of the
   kernel, `SectionCut.Apply` on it, ten new tests, ADR-0057 item 10, ADR-0169 item 3, the roadmap row P0.178 and the ledger
   entry v0.429.
+- 2026-11-21: run 44937178947 of `97da5693` passed on each job. Closed at v0.429.
