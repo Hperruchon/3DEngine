@@ -1,7 +1,7 @@
 ---
 id: 0446
 title: A read of a sheet builds the B-Rep of each body once and keeps it until the body changes
-status: Active
+status: Done
 phase: P0.179
 opened: 2026-11-21
 depends-on: [0445]
@@ -73,7 +73,7 @@ A read of a sheet with three views of a sphere takes less than 1 s, and a test c
 - [x] A read of three views of a sphere takes less than 1 s in a process that ran its code before, and a second read
   takes less than 0.4 s (times in Method, not in a test).
 - [x] An injection in each part makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
   (Local: each passes. Continuous integration runs after the push.)
 
 ## Decisions
@@ -101,7 +101,7 @@ A read of a sheet with three views of a sphere takes less than 1 s, and a test c
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0179-sheet-read) · v0.430
+Status: Done · commit (the merge of the branch p0179-sheet-read) · v0.430
 
 ## Method
 
@@ -182,3 +182,4 @@ measured the first two rows of the table of times, with the sources of `97da5693
   read the count. The six injections of `ViewBreps` ran again and each made its named test fail. Local: a clean build
   with 0 warnings, the phone project with 0 warnings, `dotnet test` 3157 passed, the write-set check and `eng/repo-gates`
   pass.
+- 2026-11-21: run 44940565233 of `13965c54` passed on each job. Closed at v0.430.
