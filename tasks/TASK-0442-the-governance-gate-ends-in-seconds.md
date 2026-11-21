@@ -1,7 +1,7 @@
 ---
 id: 0442
 title: The gate of governed-by builds the expression of each path pattern once, so it ends in less than a second
-status: Active
+status: Done
 phase: P0.177
 opened: 2026-11-21
 depends-on: [0441]
@@ -70,7 +70,7 @@ limit, and each gate keeps its rule and its messages.
 - [x] The constants of `ConstantStrings` are the same, in the same order, on one thread and on more than one thread.
 - [x] Each injection makes a named test fail, and each file is restored byte for byte (sha256).
 - [x] R-0074 is closed with the evidence.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Decisions
 
@@ -106,7 +106,7 @@ limit, and each gate keeps its rule and its messages.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0177-fast-governance-gate) · v0.426
+Status: Done · commit (the merge of the branch p0177-fast-governance-gate) · v0.426
 
 ## Method
 
@@ -152,3 +152,4 @@ expressions for 429 patterns.
 - 2026-11-21: opened, branch `p0177-fast-governance-gate` from `fe1809fd` (P0.176, TASK-0441, v0.425, not merged yet).
   The cause, the cache of the expressions with a count, the binding on more than one thread, the injections, R-0074
   closed, the roadmap and ledger entry v0.426.
+- 2026-11-21: run 44923430533 of `e8112673` passed on each job. Closed at v0.426.
