@@ -91,6 +91,7 @@ public static class HandlerCatalog
         new GetMassPropertiesQueryHandler(),
         new GetDistanceQueryHandler(),
         new GetAngleQueryHandler(),
+        new CheckInterferenceQueryHandler(),
     ];
 
     public static void RegisterAll(CommandRegistry commands, QueryRegistry queries, IAssetSource? assets = null)

@@ -88,7 +88,7 @@ names. Do not read all of them.
 | [0080](0080-the-fixed-controls-of-the-redesign.md) | The title of the document, Undo, Redo and the status line are fixed controls of the redesign | Amended | Clients, rendering | 0030, 0031 | 0093 |
 | [0081](0081-the-tool-ring-of-the-redesign.md) | The tools of the selected body are the segments of a ring that follows it | Amended | Clients, rendering | — | 0084, 0086, 0095, 0101, 0108, 0113, 0116, 0119, 0132, 0174 |
 | [0082](0082-the-values-on-the-edges-of-the-redesign.md) | A value that a command changes sits on the edge of the selected body that it measures | Amended | Clients, rendering | — | 0084, 0115, 0146 |
-| [0083](0083-the-mesh-body-and-the-stl-import.md) | An STL file opens as a mesh body of a new part, through one import command | Amended | Geometry, contract, clients | 0044, 0045, 0048 | 0102, 0127 |
+| [0083](0083-the-mesh-body-and-the-stl-import.md) | An STL file opens as a mesh body of a new part, through one import command | Amended | Geometry, contract, clients | 0044, 0045, 0048 | 0102, 0127, 0182 |
 | [0084](0084-the-rows-of-the-selected-body.md) | The data of the selected body is in rows with no panel at the upper right | Amended | Clients, rendering | 0034, 0081, 0082 | 0098, 0099, 0117, 0131 |
 | [0085](0085-the-sketch-under-its-body.md) | The active sketch of a live extrude moves out of its body, and the camera stays | Amended | Clients, rendering | 0034 | 0120 |
 | [0086](0086-the-tools-of-the-sketch-on-the-ring.md) | While a sketch is active, the ring holds the tools of the sketch | Amended | Clients, rendering | 0081 | 0087, 0095, 0097, 0120 |
@@ -187,6 +187,7 @@ names. Do not read all of them.
 | [0179](0179-the-title-block-of-a-sheet.md) | A sheet holds the fields of the title block of ISO 7200, SetSheetTitle gives them, and the frame shows the block, the symbol of the projection and the centring marks | Accepted | Contracts, drawing | 0153, 0155, 0159, 0160, 0161 | — |
 | [0180](0180-the-measure-queries-of-plane-faces.md) | The measure queries GetMassProperties, GetDistance and GetAngle read the exact solid of the owned kernel and the curve of the design | Accepted | Kernel, queries | — | — |
 | [0181](0181-the-union-and-the-intersection-of-two-bodies.md) | The union and the intersection of two bodies, in the form of the subtract | Accepted | Kernel, geometry, commands | 0012, 0057, 0058 | — |
+| [0182](0182-the-pair-check-at-one-position.md) | The pair check CheckInterference at one position, from the exact solids of the owned kernel | Accepted | Kernel, queries, assembly | 0083 | — |
 
 ## Topics
 

@@ -519,6 +519,9 @@ Therefore each approved objective must have a track here.
   v0.418, TASK-0434, ADR-0180.
 - P0.173 — No time decides a test, a crash of a test host gives a dump and its cause on each system, and a known fault of
   the artifact service gets the one automatic re-run. v0.419, TASK-0435, ADR-0173.
+- K11 — The query `CheckInterference` gives for each pair of bodies the class apart, touching or overlapping from the exact
+  kernel, the volume and the box of an overlap, the minimum gap, the marks of an intended pair and of a fault, and the mark
+  of a result for the mesh or the facets only. v0.420, TASK-0436, ADR-0182.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -922,7 +925,7 @@ boundary and each refused rung.
 | K10 | The reference case in the engine: the crossbar with its two fixing points, the bracket, the arm and the knob, and the volumes of the lamp, the housing and the cable, with the commands that exist, as a builder in `Engine.Tests`; each missing feature (a revolve, the size of a primitive, a hole) gets its row; a test measures 150 turns of the arm for register entry R-0070; the bookcase of the owner is a second builder (ADR-0126, ADR-0157 items 2 and 12). After P10c. | 2–3 |
 | K10a | The bookcase of the owner as the first case of K10: the table of its 19 bodies from the file of the owner in `docs/proposals/2026-11-21-the-bookcase-case-of-k10.md`, a builder in `Engine.Tests` with the commands that exist, and the measure of 150 turns of a module about a hinge for register entry R-0070 (the choice of the owner of 2026-11-20). TASK-0429. | 1 |
 | K10b | The support of the lamp as the second case of K10: the table of its sizes, its builder, and the rows of its gaps, as row K10 gives them. After the owner gives the sizes (R-0070). | 1–2 |
-| K11 | The pair check at one position: for each pair of bodies a query gives the class (apart, touching or overlapping), the volume and the box of the overlap, the minimum gap, a mark for an intended contact, and a mark when the answer is exact for a mesh only (ADR-0157 items 5 to 7). The intended pairs are a parameter of the query until P11 and P13 put them in the Document. After K15 and K16. | 2–3 |
+| K11 | The pair check at one position: for each pair of bodies a query gives the class (apart, touching or overlapping), the volume and the box of the overlap, the minimum gap, a mark for an intended contact, and a mark when the answer is exact for a mesh only (ADR-0157 items 5 to 7). The intended pairs are a parameter of the query until P11 and P13 put them in the Document. After K15 and K16. TASK-0436, ADR-0182. | 2–3 |
 | K12 | The travel: a query checks a pivot from one limit to the other on a fork of the Document, sampled with a margin so that no contact between two samples is missed, with the intended contacts exempt, and gives the first contact angle to a stated tolerance; a slider gets one exact sweep (ADR-0126 item 4, ADR-0157 items 5 and 8). After K11, P11 and P15. | 2–3 |
 | K13 | The envelope: a query gives the extent below a reference face over the travel, and names the bodies that the roles exclude. After K12 and P14. | 1–2 |
 | K14 | The load check of a printed part (ADR-0126 item 1). Its own ADR decides the method. After R24. | to estimate |

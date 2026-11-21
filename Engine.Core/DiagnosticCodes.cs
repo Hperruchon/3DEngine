@@ -177,4 +177,8 @@ public static class DiagnosticCodes
     // measures plane faces only. MeasureTarget gives the decision.
     public const string MeasureNameNotFound = "E-MEASURE-NAME-NOT-FOUND";
     public const string MeasureCurved = "E-MEASURE-CURVED";
+
+    // Phase K11 (TASK-0436): a list of the pair check CheckInterference that is not valid: a text that is not an identifier,
+    // a body twice, fewer than two bodies, or an intended pair that is not two bodies of the check.
+    public const string CheckPairInvalid = "E-CHECK-PAIR-INVALID";
 }

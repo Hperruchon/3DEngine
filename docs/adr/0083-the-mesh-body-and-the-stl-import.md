@@ -7,7 +7,7 @@ date: 2026-11-07
 supersedes: []
 superseded-by: []
 amends: ['0044', '0045', '0048']
-amended-by: ['0102', '0127']
+amended-by: ['0102', '0127', '0182']
 affects:
   - Engine.Contracts/Geometry/IMeshImportOps.cs
   - Engine.Core/Commands/ImportStlCommand.cs
@@ -133,7 +133,9 @@ So the handler of the import reads the bytes of its asset.
    camera, and the STL export (ADR-0048 amended: the export holds the triangles of a mesh body as they are). The
    visibility and the name are a part of the view and stay permitted. Each other operation refuses a mesh body with
    `E-MESH-UNSUPPORTED`: `Translate`, `Subtract` (as the body and as the tool), a datum and a reference of a sketch on its
-   faces, `GetFaces`, `GetFaceAt`, and the STEP export. No silent result and no conversion.
+   faces, `GetFaces`, `GetFaceAt`, and the STEP export. No silent result and no conversion. Since K11 (ADR-0182 item 10)
+   the pair check `CheckInterference` reads the triangles of a closed mesh body, and its result says that it is exact for
+   the mesh only (ADR-0157 item 6).
 5. **The unit (D4).** The coordinates are millimetres. Each Document of the engine has the length unit millimetres
    (ADR-0015 item 7), so the import needs no check of the unit, and no conversion multiplies the floats. The client shows
    the size with "mm (assumed)".
@@ -216,3 +218,5 @@ desktop row P9c, the phone row P9d, and the test sheet P9e.
   and the recent rows are the projects that this desktop opened or saved, in each folder.
 - 2026-11-12 · TASK-0354 · ADR-0127 item 4 amends the desktop part of TASK-0259: on a landscape display "Frame" and
   "Home" leave the row of the anchors; the command line holds them, and the key F frames. A portrait display keeps them.
+- 2026-11-21 · TASK-0436 · ADR-0182 item 10 amends item 4: the pair check `CheckInterference` reads the triangles of a
+  closed mesh body, with the mark `meshOnly` (ADR-0157 item 6).
