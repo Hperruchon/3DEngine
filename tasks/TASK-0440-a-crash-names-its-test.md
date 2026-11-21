@@ -1,7 +1,7 @@
 ---
 id: 0440
 title: The message of a crash of a test host starts with the running test, and its cause leaves out the output of other tests
-status: Active
+status: Done
 phase: P0.175
 opened: 2026-11-21
 depends-on: [0438]
@@ -83,7 +83,7 @@ The message of each crash of a test host starts with the running test, or says t
 - [x] A crash with a dump gives the dump, the lines of createdump and the report of the runtime after the name.
 - [x] A crash with no sequence file says "No sequence file: the crashed test is not known."
 - [x] Each new test fails on the script of `6cea608e`, and each injection makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Decisions
 
@@ -112,7 +112,7 @@ The message of each crash of a test host starts with the running test, or says t
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0175-crash-names-its-test) · v0.424
+Status: Done · commit (the merge of the branch p0175-crash-names-its-test) · v0.424
 
 ## Method
 
@@ -150,3 +150,4 @@ in `%TEMP%\p0175`), each restored byte for byte (sha256), each with the named te
 - 2026-11-21: opened, branch `p0175-crash-names-its-test` from `6cea608e` (P0.174, TASK-0438, v0.423, not merged yet). The
   script, seven tests, twelve injections, ADR-0173 (the consequence of a crash and its history), the roadmap and ledger
   entry v0.424.
+- 2026-11-21: run 44916936570 of `391c66a6` passed on each job. Closed at v0.424.
