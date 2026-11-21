@@ -188,6 +188,7 @@ names. Do not read all of them.
 | [0180](0180-the-measure-queries-of-plane-faces.md) | The measure queries GetMassProperties, GetDistance and GetAngle read the exact solid of the owned kernel and the curve of the design | Accepted | Kernel, queries | — | — |
 | [0181](0181-the-union-and-the-intersection-of-two-bodies.md) | The union and the intersection of two bodies, in the form of the subtract | Accepted | Kernel, geometry, commands | 0012, 0057, 0058 | — |
 | [0182](0182-the-pair-check-at-one-position.md) | The pair check CheckInterference at one position, from the exact solids of the owned kernel | Accepted | Kernel, queries, assembly | 0083 | — |
+| [0183](0183-the-connectors-of-a-body.md) | The query GetConnectors gives the named datums of a body and the implicit frames of its faces | Accepted | Kernel, queries, assembly | — | — |
 
 ## Topics
 

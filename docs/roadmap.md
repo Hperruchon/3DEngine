@@ -534,6 +534,8 @@ Therefore each approved objective must have a track here.
   of the pipeline, and a stop at the hang limit names the limit and not a crash. v0.425, TASK-0441.
 - P0.177 — The gate of governed-by builds the expression of each path pattern once and ends in less than a second, so the
   stop of R-0074 at the hang limit cannot come again. v0.426, TASK-0442.
+- K17 — The query `GetConnectors` gives the named datums of a body, the exact centre and the outward normal of each plane
+  face, and the axis and the radius of the whole side of a cylinder. v0.427, TASK-0443, ADR-0183.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -950,7 +952,7 @@ boundary and each refused rung.
 | K15b | The curved faces: `GetMassProperties` gives the volume and the centre of the curve of a cylinder, a cone, a sphere, a torus and an extrude of arcs or of a circle, each moved or turned; `GetDistance` gives the distance from the whole side of a cylinder or the whole surface of a sphere, from the curve of its side (ADR-0143); `GetAngle` gives the angle between the side of a cylinder or a cone and a plane face. No query gives a name of a vertex, so a vertex waits for K15c. After K15a. ADR-0180 items 10 to 13. TASK-0434. | 1–2 |
 | K15c | The rest of the curved faces and the vertices: the volume of the curve of a body with a Subtract, as a plate with a hole; the distance from the side of a cone and of an arc, between two curved faces other than two spheres, and past an end of the side of a cylinder; the angle of two curved faces; a vertex as a side of `GetDistance` when a name of a vertex exists. After K15b. | 2–3 |
 | K16 | `Union` and `Intersect`, in the form of `Subtract`: each consumes two bodies and makes one. The union gives the knob with a collar of K10; the intersection gives the overlap volume of K11 (kernel boundary: boolean). After K10. TASK-0433, ADR-0181. | 2 |
-| K17 | The connectors of a body: a query gives each named datum of the body, and the implicit frames of its faces: the centre and the normal of a plane face, and the axis of a cylinder face (ADR-0157 item 4). After K10. | 1 |
+| K17 | The connectors of a body: a query gives each named datum of the body, and the implicit frames of its faces: the centre and the normal of a plane face, and the axis of a cylinder face (ADR-0157 item 4). After K10. TASK-0443, ADR-0183. | 1 |
 | K18 | The check of a screw: for a screw of P19 a query gives each body that its axis crosses, the class of each hole from a table (clearance, tapped or overlap), the length of engagement, the seat of the head, and a tip that reaches the end of a blind hole. After P19 and K11. | 2 |
 | K19 | The order of assembly along the axes: a query moves a part or a group along each of the six axis directions and each screw axis on a fork, and gives an order in which each part can leave, or says that this family of moves has none (ADR-0157 item 14). After K12. | to estimate |
 | K20 | The access of a tool: a query checks that a cylinder on the axis of a screw is free at a stated state of the assembly (ADR-0157 item 14). After K18. | to estimate |

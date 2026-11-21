@@ -185,6 +185,35 @@ Content-Type: application/json
 So "Bas" is 1164 by 394 by 18 mm, with its centre at x = 300 and y = -3. The new shelf gets the same size, with its centre
 at (300, -3, 1000). `GetAngle` gives the cosine and the sine between two plane faces, when you need an angle.
 
+`GetConnectors` gives the places on a body that a later step can name: each named datum of the body, and one entry for
+each face, with the name that `GetFaces` gives. A plane face gives `point`, the centre of its area, and `direction`, its
+outward unit normal. The whole side of a cylinder gives a point of its axis, the direction of the axis, and `radius`.
+Another curved face gives its `kind` only. "Bas" has no datum, and its top face `+z` is at z = 618:
+
+```http agent-request
+POST /queries
+Content-Type: application/json
+
+{ "name": "GetConnectors", "schemaVersion": 1, "parameters": { "bodyId": "<Bas>" } }
+```
+
+```json agent-result
+{
+  "result": {
+    "datums": [],
+    "faces": [
+      {
+        "reference": { "element": "+z" },
+        "kind": "Plane",
+        "point": { "x": 300, "y": -3, "z": 618 },
+        "direction": { "x": 0, "y": 0, "z": 1 }
+      }
+    ]
+  },
+  "error": null
+}
+```
+
 ## 7 Propose
 
 A proposal has a summary of at most 120 characters, and from 1 to 16 envelopes. An envelope is the body of
@@ -466,6 +495,10 @@ DELETE /proposals/<proposal>
 - **Curved and mesh bodies in a check.** A body with a curved face, or a body of an STL file, is checked on its facets or its
   triangles, with `meshOnly` true. A closed mesh with two shells that share a volume is refused with `E-MESH-UNSUPPORTED`
   (ADR-0182 item 7).
+- **Connectors.** `GetConnectors` gives the axis of the side of a cylinder only when the body has no step after the
+  cylinder or the extrude of a circle other than `Translate` and `Rotate`. The side of a hole that a `Subtract` made is
+  `Curved`, with no axis. A datum keeps the frame of the place where it was made: a later `Translate` or `Rotate` of its
+  body does not move it, so compare its frame with the face of its `reference` (ADR-0183 item 3).
 - **No list of the sheets.** No query and no field of the snapshot gives the sheets of the Document. The event
   `sheet.created` gives the identifier of a new sheet while you listen; for an earlier sheet, ask the person.
 - **No list of the bodies by a query.** The snapshot of `/events` gives each live body with its name. `GetFeatures` gives

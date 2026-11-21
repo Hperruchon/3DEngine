@@ -113,7 +113,8 @@ public sealed class AgentGuideExamplesTests
             Assert.True(requests.Any(line => line.StartsWith(route, StringComparison.Ordinal)), $"{GuidePath} has no request that starts with \"{route}\".");
         Assert.Contains(steps, step => step.Block.Marker == "agent-person" && step.Block.Text.StartsWith("accept ", StringComparison.Ordinal));
         Assert.Contains(steps, step => step.Block.Marker == "agent-refusal");
-        foreach (var query in new[] { "GetBodyInfo", "GetDistance", "GetMassProperties", "CheckInterference", "GetViewLines" })
+        // Row K17 (TASK-0443): the connectors of a body are a step of the measure.
+        foreach (var query in new[] { "GetBodyInfo", "GetDistance", "GetMassProperties", "GetConnectors", "CheckInterference", "GetViewLines" })
             Assert.Contains(steps, step => step.Block.Marker == "agent-request" && step.Block.Text.Contains($"\"name\": \"{query}\"", StringComparison.Ordinal));
     }
 
