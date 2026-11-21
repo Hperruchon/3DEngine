@@ -507,6 +507,8 @@ Therefore each approved objective must have a track here.
 - K10a — The bookcase of the owner is a builder of its 19 bodies in `Engine.Tests`, and a test measures 150 turns of a
   module about its hinge for R-0070. v0.413, TASK-0429.
 - Review — The codebase review of 2026-11-21. v0.414, TASK-0430.
+- K15a — Three queries give the exact volume and centre of a body, the minimum distance between two bodies, faces or
+  edges with its two points, and the cosine and the sine between two plane faces. v0.415, TASK-0432, ADR-0180.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -914,6 +916,8 @@ boundary and each refused rung.
 | K13 | The envelope: a query gives the extent below a reference face over the travel, and names the bodies that the roles exclude. After K12 and P14. | 1–2 |
 | K14 | The load check of a printed part (ADR-0126 item 1). Its own ADR decides the method. After R24. | to estimate |
 | K15 | Measure queries in the engine, so that the window and an agent measure by one path: `GetMassProperties` gives the exact volume and the centre of a body; `GetDistance` gives the minimum distance between two bodies, faces, edges or vertices, with its two points; `GetAngle` gives the cosine and the sine between two faces (ADR-0157). First the bodies of plane faces, then the curved faces. After K10. | 2–3 |
+| K15a | The measure queries for bodies of plane faces: `GetMassProperties` gives the exact volume and centre, and the volume of the facets of a curved body with a flag; `GetDistance` gives the minimum distance between two bodies, faces or edges, with its two points; `GetAngle` gives the cosine and the sine between two plane faces. A face or an edge is named as `GetFaces` names it. It comes before K10b, because the lamp waits for the sizes of the owner (R-0070). TASK-0432, ADR-0180. | 2 |
+| K15b | The curved faces and the vertices: the volume of the curve, and the distance and the angle of a curved face from the curve of its side (ADR-0143); a vertex as a side of `GetDistance` when a name of a vertex exists. After K15a. | 1–2 |
 | K16 | `Union` and `Intersect`, in the form of `Subtract`: each consumes two bodies and makes one. The union gives the knob with a collar of K10; the intersection gives the overlap volume of K11 (kernel boundary: boolean). After K10. | 2 |
 | K17 | The connectors of a body: a query gives each named datum of the body, and the implicit frames of its faces: the centre and the normal of a plane face, and the axis of a cylinder face (ADR-0157 item 4). After K10. | 1 |
 | K18 | The check of a screw: for a screw of P19 a query gives each body that its axis crosses, the class of each hole from a table (clearance, tapped or overlap), the length of engagement, the seat of the head, and a tip that reaches the end of a blind hole. After P19 and K11. | 2 |
@@ -1022,6 +1026,8 @@ The tracks are not strictly sequential, but three rules hold:
    The codebase review of 2026-11-21 (TASK-0430) comes after K10a and puts P0.172 (TASK-0431), which holds medium and low
    findings, after the next product phase. Its answer Q1 A (the standing order of 2026-11-20) makes K15 the next product
    phase, in a first slice for bodies of plane faces; K16 and R26 follow.
+   K15a (TASK-0432) starts before K10b: K10a is done, and the support of the lamp waits for the sizes of the owner
+   (R-0070).
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase

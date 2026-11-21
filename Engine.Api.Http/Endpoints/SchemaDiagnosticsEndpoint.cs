@@ -111,6 +111,8 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.SheetSourceNotFound,   "Error",   "SHEET"), // ADR-0158 item 5, TASK-0395
         new(DiagnosticCodes.SheetFrameInvalid,     "Error",   "SHEET"), // ADR-0166 item 1, TASK-0406
         new(DiagnosticCodes.SheetTitleInvalid,     "Error",   "SHEET"), // ADR-0179 item 2, TASK-0428
+        new(DiagnosticCodes.MeasureNameNotFound,   "Error",   "MEASURE"), // phase K15a, TASK-0432
+        new(DiagnosticCodes.MeasureCurved,         "Error",   "MEASURE"), // phase K15a, TASK-0432
     };
 
     public static IResult Handle() => Results.Json(Codes, ApiJson.Options);
