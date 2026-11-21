@@ -50,6 +50,21 @@ internal sealed unsafe class SceneRenderer : IDisposable
     // The images of the scene, each on a quad (ADR-0043, phase V1a).
     private readonly ImageRenderer _images;
 
+    // ADR-0184 (phase R26, TASK-0447): the meshes of the section view, and the colour of the hatch of a cap: the accent of the
+    // theme, the colour of a tool in use.
+    private readonly SectionView _section = new();
+    private readonly List<DrawRecord> _caps = new();
+    // Theme.Accent is packed as Dear ImGui packs a colour: alpha, blue, green, red from the high byte.
+    internal static readonly System.Numerics.Vector4 HatchColour = new(
+        (Ui.Theme.Accent & 0xFF) / 255f, ((Ui.Theme.Accent >> 8) & 0xFF) / 255f, ((Ui.Theme.Accent >> 16) & 0xFF) / 255f, 1f);
+    internal const float HatchHalfWidth = 0.75f;
+
+    // ADR-0184 item 1: the plane of the section view that the window gives before each frame, or null with no section.
+    public SectionCut? Section { get; set; }
+
+    // ADR-0184 items 3 and 4: the section view, for a test.
+    internal SectionView SectionMeshes => _section;
+
     public SceneRenderer(GraphicsDevice device, VkRenderPass renderPass, ISessionHost host)
     {
         _device = device;
@@ -137,6 +152,8 @@ internal sealed unsafe class SceneRenderer : IDisposable
     {
         var before = _bodies.VisibleCount;
         var changed = _bodies.Apply(scene, _meshes, _device);
+        // ADR-0184 items 3 and 4: the cut of each body for the plane of the section, after the meshes of this frame.
+        _section.Follow(Section, Section is null ? [] : _bodies.SectionBodies, _bodies.Bounds, _meshes, _device);
         if (SceneBox(_bodies.Bounds, images) is not { } box)
             return;
 
@@ -207,14 +224,33 @@ internal sealed unsafe class SceneRenderer : IDisposable
         var projection = camera.Projection((float)extent.width / extent.height);
         _selected.Clear();
         _others.Clear();
+        _caps.Clear();
         var selectedMesh = selected?.ToString();
         foreach (var record in _drawList.Records)
-            (record.MeshId == selectedMesh ? _selected : _others).Add(record);
+        {
+            var list = record.MeshId == selectedMesh ? _selected : _others;
+            // ADR-0184 item 4: while a section lasts, a cut body draws its kept part in the place of its mesh, and its cap with
+            // the same model-view matrix; a body on the side that goes draws nothing.
+            if (Section is not null && Guid.TryParse(record.MeshId, out var body) && _section.Draws(body) is { } cut)
+            {
+                if (cut.Kept is { } kept)
+                    list.Add(record with { MeshId = kept });
+                if (cut.Cap is { } cap)
+                    _caps.Add(record with { MeshId = cap });
+                continue;
+            }
+
+            list.Add(record);
+        }
 
         _executor.Execute(commandBuffer, extent, _others, _meshes, projection);
+        // ADR-0184 item 5: each cap is opaque with the shading of a body, also the cap of the selected body, and its hatch is in
+        // the accent colour.
+        _executor.Execute(commandBuffer, extent, _caps, _meshes, projection);
         if (images is { Count: > 0 })
             _images.Record(commandBuffer, extent, images.Select(quad => (quad.ImageId, quad.ModelView(camera))), projection);
         _edges.Execute(commandBuffer, extent, _others, _meshes, projection, EdgeColour, EdgeHalfWidth, 0f);
+        _edges.Execute(commandBuffer, extent, _caps, _meshes, projection, HatchColour, HatchHalfWidth, 0f);
 
         if (_selected.Count > 0)
         {

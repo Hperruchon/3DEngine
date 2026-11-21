@@ -179,7 +179,7 @@ names. Do not read all of them.
 | [0171](0171-the-section-action-of-the-sheet-page.md) | On the sheet page a person cuts a view with "Section", a look and two taps, and the page draws the section as the files do | Accepted | Drawing, window | 0155, 0168, 0169 | — |
 | [0172](0172-the-layout-of-small-windows-and-of-each-state.md) | The layout of small windows and of each state, down to 360 by 560 | Amended | Clients, layout | 0097, 0099, 0104, 0113, 0163 | 0174 |
 | [0173](0173-a-lost-runner-gets-one-automatic-re-run.md) | A run of CI whose only failures are faults of the GitHub service gets one automatic re-run, and no time limit decides a test that passes | Accepted | Pipeline | 0154, 0164 | — |
-| [0174](0174-the-tools-of-the-part-on-the-ring-and-a-structure-view.md) | The tools of the part on the ring, a file menu, and a structure view in the place of the panel | Amended | Clients, layout | 0056, 0076, 0081, 0093, 0100, 0102, 0172 | 0175 |
+| [0174](0174-the-tools-of-the-part-on-the-ring-and-a-structure-view.md) | The tools of the part on the ring, a file menu, and a structure view in the place of the panel | Amended | Clients, layout | 0056, 0076, 0081, 0093, 0100, 0102, 0172 | 0175, 0184 |
 | [0175](0175-compact-rows-of-the-structure-view.md) | Compact rows of the structure view for a mouse or a pen, and the setting "Compact" or "For touch" | Accepted | Clients, layout | 0027, 0091, 0174 | — |
 | [0176](0176-put-a-value-on-a-sheet-from-the-window.md) | "Put on sheet" in the pad of a value of a flat view places that value on the view of the sheet with the same frame | Accepted | Drawing, window | — | — |
 | [0177](0177-the-proposal-of-the-agent-on-the-sheet-page.md) | The sheet page shows a proposal of the agent as amber boxes of views and amber values before the accept | Accepted | Drawing, window | 0092, 0168 | — |
@@ -189,6 +189,7 @@ names. Do not read all of them.
 | [0181](0181-the-union-and-the-intersection-of-two-bodies.md) | The union and the intersection of two bodies, in the form of the subtract | Accepted | Kernel, geometry, commands | 0012, 0057, 0058 | — |
 | [0182](0182-the-pair-check-at-one-position.md) | The pair check CheckInterference at one position, from the exact solids of the owned kernel | Accepted | Kernel, queries, assembly | 0083 | — |
 | [0183](0183-the-connectors-of-a-body.md) | The query GetConnectors gives the named datums of a body and the implicit frames of its faces | Accepted | Kernel, queries, assembly | — | — |
+| [0184](0184-the-section-view.md) | The section view of the window, a cut of each body by a plane with a cap | Accepted | Clients, rendering | 0174 | — |
 
 ## Topics
 

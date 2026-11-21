@@ -502,6 +502,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
                 _quietViewKeys--;
             else
                 WatchViewKeys(samples);
+            // ADR-0184 item 6 (phase R26, TASK-0447): Escape at the level of the document ends a section.
+            WatchSectionKeys(samples);
         }
 
         // ADR-0032 item 6: while the pad is open, it takes each key and each text of the frame.
@@ -631,6 +633,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         _items.Clear();
         _shown.Clear();
         FollowSelection(bodies, selection, sketchPanel);
+        // ADR-0184 item 6 (phase R26, TASK-0447): no live body and the home screen end a section.
+        FollowSection(bodies);
         // ADR-0092 item 7 (TASK-0326): the waiting proposals of an agent; none on the home screen.
         BeginProposal(proposals);
 

@@ -91,6 +91,9 @@ internal sealed unsafe partial class DesktopUi
     // ADR-0174 items 1 and 2: the labels of the ring of the part at its level.
     private List<string> PartRingLabels(IReadOnlyList<LiveBody> bodies)
     {
+        // ADR-0184 item 1 (phase R26, TASK-0447): while a section lasts, the ring of the part holds the tools of the section.
+        if (_section is not null)
+            return SectionRingLabels();
         switch (_partLevel)
         {
             case PartLevel.New:
@@ -101,6 +104,9 @@ internal sealed unsafe partial class DesktopUi
                 var labels = new List<string> { NewLabel, PartSketchLabel };
                 if (bodies.Count > 0)
                     labels.Add(BodiesLabel);
+                // ADR-0184 item 1: "Section" after "Bodies", while the part has a live body.
+                if (bodies.Count > 0)
+                    labels.Add(SectionLabel);
                 if (_imagesAvailable)
                     labels.Add(PartImagesLabel);
                 // ADR-0178 item 1: "Show hidden" while at least one live body is hidden; with no hidden body it does not show.
@@ -123,6 +129,9 @@ internal sealed unsafe partial class DesktopUi
     // of the panel did before R31a, and the ring goes back to the first level.
     private void UsePart(string label)
     {
+        // ADR-0184 items 1 to 3: a tool of the section changes the section of the window only.
+        if (UseSection(label))
+            return;
         switch (label)
         {
             case NewLabel:

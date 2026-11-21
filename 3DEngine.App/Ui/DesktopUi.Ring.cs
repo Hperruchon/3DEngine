@@ -248,7 +248,7 @@ internal sealed unsafe partial class DesktopUi
     private (Vector2 Text, float Size) RingTextSize(RingLayout ring, RingSegmentLayout segment, Vector2 displaySize, IReadOnlyList<string> labels)
     {
         var size = ImGui.GetFontSize();
-        var text = ImGui.CalcTextSize(RingText(segment.Label));
+        var text = ImGui.CalcTextSize(SegmentText(segment.Label));
         if (!Portrait(displaySize) || text.X <= 0f)
             return (text, size);
         var segments = ring.Segments(labels);
@@ -511,7 +511,9 @@ internal sealed unsafe partial class DesktopUi
             var inUse = (_sketchActive && SketchRingTools.FirstOrDefault(tool => tool.Label == segment.Label).Kind is { } kind && kind == _sketchTool)
                 || (!_sketchActive && segment.Label == FocusLabel && Focus is not null)
                 // ADR-0122 item 2: while the dimensions are on, "Dimensions" has the colour of an active control too.
-                || (!_sketchActive && segment.Label == DimensionsLabel && _dimensions);
+                || (!_sketchActive && segment.Label == DimensionsLabel && _dimensions)
+                // ADR-0184 item 1 (phase R26, TASK-0447): "Section" while a section lasts, and "Flip" while its side is flipped.
+                || SectionInUse(segment.Label);
             if (inUse)
                 _ringInUse.Add(segment.Label);
             // ADR-0108 item 2 (phase R18a, TASK-0332): no fill at rest, and the light fill of the theme under the pointer and
@@ -533,7 +535,8 @@ internal sealed unsafe partial class DesktopUi
 
             var middle = ring.Middle(segment);
             // ADR-0095 item 3: the short label of the render, and a drawn icon above it. SegmentFace gives their places.
-            var caption = RingText(segment.Label);
+            // ADR-0184 items 2 and 3: "Plane" and "Offset" of a section show the plane and the offset.
+            var caption = SegmentText(segment.Label);
             var (text, captionSize) = RingTextSize(ring, segment, displaySize, _ringLabels);
             var place = face.Place;
             var ink = ImGui.GetColorU32(colours[(int)ImGuiCol.Text]);

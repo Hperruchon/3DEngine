@@ -35,6 +35,8 @@ public sealed class ResponsiveLayoutTests
     // (TASK-0420): the state StructureOpen has the density of the device ("Compact" on each runner), and StructureForTouch is
     // the open structure view with the density "For touch". ADR-0178 item 2 (TASK-0424): the state Hidden has a hidden body
     // and no selection, so the ring of the part has "Show hidden", and on a portrait phone the path line counts the hidden body.
+    // ADR-0184 item 1 (TASK-0447): the state Section has a section and no selection, so the ring of the part holds the tools of
+    // the section, with the name of the plane and the offset on their segments.
     public enum State
     {
         Nothing,
@@ -52,6 +54,7 @@ public sealed class ResponsiveLayoutTests
         FileMenu,
         ViewsOpen,
         Hidden,
+        Section,
     }
 
     // The sizes of ADR-0113 item 1: the phones in portrait and in landscape, a tablet in both, and two windows.
@@ -245,7 +248,7 @@ public sealed class ResponsiveLayoutTests
         Interlocked.Increment(ref _layouts);
         using var ui = new DesktopUi(string.Empty, Document.Millimetre);
         var display = new Vector2(width, height);
-        Guid? selection = state is State.Nothing or State.Hidden or State.Images or State.StructureOpen or State.StructureForTouch or State.FileMenu or State.ViewsOpen ? null : A;
+        Guid? selection = state is State.Nothing or State.Hidden or State.Images or State.StructureOpen or State.StructureForTouch or State.FileMenu or State.ViewsOpen or State.Section ? null : A;
         var face = state == State.Face ? new FaceLine("Face +z: 100 square mm", true, [], null, null, "Face +z", null) : null;
         IReadOnlyList<ProposalCard>? cards = state == State.Proposal
             ? [new ProposalCard(Guid.NewGuid(), "Widen the plate to 75 mm", ["SetExtrudeDistance 1", "SetExtrudeDistance 2"])]
@@ -276,6 +279,12 @@ public sealed class ResponsiveLayoutTests
                 ui.Density = DesktopUi.RowDensity.ForTouch;
             if (state == State.FileMenu && i == 1)
                 ui.OpenFileMenu();
+            // A box of the bodies with a long offset of the plane, so the segment of the offset has its widest text.
+            if (state == State.Section && i == 1)
+            {
+                ui.SectionBox = ((-1000, -12345.5, 0), (1000, 0, 300));
+                ui.StartSection();
+            }
             // The structure view is open too, so the state holds that the net takes its place.
             if (state == State.ViewsOpen && i == 0)
             {

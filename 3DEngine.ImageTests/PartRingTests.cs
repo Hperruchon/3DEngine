@@ -64,10 +64,11 @@ public sealed class PartRingTests
     {
         var display = new Vector2(width, height);
         using var ui = Started(display);
-        Assert.Equal([DesktopUi.NewLabel, DesktopUi.PartSketchLabel, DesktopUi.BodiesLabel], ui.RingLabels);
+        // ADR-0184 item 1 (TASK-0447): "Section" after "Bodies" while the part has a live body.
+        Assert.Equal([DesktopUi.NewLabel, DesktopUi.PartSketchLabel, DesktopUi.BodiesLabel, DesktopUi.SectionLabel], ui.RingLabels);
 
         using var images = Started(display, images: NoImages);
-        Assert.Equal([DesktopUi.NewLabel, DesktopUi.PartSketchLabel, DesktopUi.BodiesLabel, DesktopUi.PartImagesLabel], images.RingLabels);
+        Assert.Equal([DesktopUi.NewLabel, DesktopUi.PartSketchLabel, DesktopUi.BodiesLabel, DesktopUi.SectionLabel, DesktopUi.PartImagesLabel], images.RingLabels);
 
         using var empty = Started(display, bodies: []);
         Assert.Equal([DesktopUi.NewLabel, DesktopUi.PartSketchLabel], empty.RingLabels);
