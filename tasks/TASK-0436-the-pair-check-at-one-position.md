@@ -1,7 +1,7 @@
 ---
 id: 0436
 title: The pair check CheckInterference gives the class, the overlap, the gap and the marks of each pair of bodies at one position
-status: Active
+status: Done
 phase: K11
 opened: 2026-11-21
 depends-on: [0434, 0433]
@@ -74,7 +74,7 @@ the Document.
 - [x] The bookcase of K10a gives 171 pairs, no overlap, and the class and the gap of each pair from the boxes of its table.
 - [x] An agent reaches the query through `/queries` of HTTP.
 - [x] An injection in each part makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Decisions
 
@@ -91,7 +91,7 @@ ADR-0182 records each decision; ADR-0157 items 5 to 7 give the rules of the owne
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch k11-pair-check) · v0.420
+Status: Done · commit (the merge of the branch k11-pair-check) · v0.420
 
 ## Method
 
@@ -135,3 +135,4 @@ Injections (`inject0436.js` in `%TEMP%\k11`), each restored byte for byte (sha25
 - 2026-11-21: the first full run of `dotnet test` failed `SchemaEndpointGateTests.Every_DiagnosticCodes_Constant_Appears_In_Schema_Diagnostics`:
   the new code had no mirror in `SchemaDiagnosticsEndpoint`. The write set gets that file, and the governed-by list gets
   ADR-0013 and ADR-0019, whose affects name it.
+- 2026-11-21: run 44906185794 of `1e4e3453` passed on each job. Closed at v0.420.
