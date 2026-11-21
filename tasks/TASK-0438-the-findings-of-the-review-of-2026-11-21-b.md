@@ -1,7 +1,7 @@
 ---
 id: 0438
 title: The medium and low findings of the second codebase review of 2026-11-21
-status: Active
+status: Done
 phase: P0.174
 opened: 2026-11-21
 depends-on: [0437]
@@ -71,7 +71,7 @@ Each finding has a correction and a test, or a register entry with its reason.
 
 - [x] Each finding has a test that fails before its correction, or a register entry.
 - [x] Each injection of a correction makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Decisions
 
@@ -106,7 +106,7 @@ This task takes these decisions:
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0174-review-findings) · v0.423
+Status: Done · commit (the merge of the branch p0174-review-findings) · v0.423
 
 ## Method
 
@@ -158,3 +158,4 @@ named test fail:
 - 2026-11-21: opened after P17 (TASK-0439, v0.422), branch `p0174-review-findings` from `31021dba`, which is not merged yet.
   The bound of work and the token of the pair check, the test of the shells of a mesh, the bound of the status, the records of
   E230 and E231, the text of E232, register entry R-0074, eight new tests and sixteen injections. Ledger entry v0.423.
+- 2026-11-21: run 44915298330 of `6cea608e` passed on each job. Closed at v0.423.
