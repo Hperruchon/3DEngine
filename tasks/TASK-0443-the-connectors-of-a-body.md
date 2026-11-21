@@ -1,7 +1,7 @@
 ---
 id: 0443
 title: The query GetConnectors gives the named datums of a body, the centre and the normal of each plane face, and the axis of a whole cylinder
-status: Active
+status: Done
 phase: K17
 opened: 2026-11-21
 depends-on: [0436]
@@ -78,7 +78,7 @@ normal of a plane face, or the axis and the radius of the whole side of a cylind
 - [x] A body that is not live, a mesh body and a body with a fault are refused with the codes of the measure queries.
 - [x] An agent reaches the query through `/queries` of HTTP, and the guide for an agent has one example that a host answers.
 - [x] An injection in each part makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Decisions
 
@@ -97,7 +97,7 @@ ADR-0183 records each decision; ADR-0157 item 4 gives the rule of the owner. Thi
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch k17-connectors) · v0.427
+Status: Done · commit (the merge of the branch k17-connectors) · v0.427
 
 ## Method
 
@@ -147,3 +147,4 @@ cannot reach; the second form made the tests fail.
 
 - 2026-11-21: opened after K11 (TASK-0436, v0.420), P17 (TASK-0439, v0.422) and P0.177 (TASK-0442, v0.426), branch
   `k17-connectors` from `e8112673`. ADR-0183, the query, nine tests, the example of the guide. Ledger entry v0.427.
+- 2026-11-21: run 44926892053 of `2a79f573` passed on each job. Closed at v0.427.
