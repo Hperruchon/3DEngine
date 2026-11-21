@@ -1,7 +1,7 @@
 ---
 id: 0432
 title: The window and an agent measure the volume, the distance and the angle of bodies of plane faces by one path of queries
-status: Active
+status: Done
 phase: K15a
 opened: 2026-11-21
 depends-on: [0430]
@@ -83,7 +83,7 @@ two points, and the cosine and the sine between two faces, for bodies of plane f
   codes.
 - [x] The three queries answer through the route `/queries` of HTTP.
 - [x] An injection in each part makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
   (Local: each passes. Continuous integration runs after the push.)
 
 ## Decisions
@@ -100,7 +100,7 @@ The answers Q1 to Q4 are answered by the standing order of the owner of 2026-11-
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch k15a-measure-queries) · v0.415
+Status: Done · commit (the merge of the branch k15a-measure-queries) · v0.415
 
 ## Method
 
@@ -154,3 +154,4 @@ that affects them would need a change of the open TASK-0428, which is outside th
 
 - 2026-11-21: opened after the codebase review of 2026-11-21, branch `k15a-measure-queries` from `f210f2c8` (TASK-0430,
   v0.414), which is not merged yet. The three queries, two codes, ADR-0180, twelve tests. Ledger entry v0.415.
+- 2026-11-21: run 44853829471 of `878f7a87` passed on each job. Closed at v0.415.
