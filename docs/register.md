@@ -412,23 +412,6 @@ edges on a slower processor. This session did not run the APK with the lines.
 Exit: a run on the S23 Ultra or on the emulator records the frame time and the time of the upload of a large mesh, and
 ADR-0109 adds them, with a lower limit of edges if they are too slow.
 
-### R-0065 · The scenario of R20c in the window was not done, and a far plate has long lines
-- class: risk
-- opened: 2026-11-12
-- due: 2026-11-26
-- extended: no
-- refs: `3DEngine.App/Ui/DesktopUi.Overlay.cs` (Dimensions), `docs/adr/0125-each-dimension-says-what-it-measures.md`,
-  `docs/proposals/2026-11-10-ux-test-of-a-multi-part-project.md` (problems 3 and 4), TASK-0352
-The scenario of improvement C is a person at 1280 by 720 with Dimensions on and "Cote gauche" selected: each label can
-be read, no element covers it, and the person says in less than two seconds which value is of the panel and which is of
-the whole. No person ran it; the tests drive the library, and a picture of a niche of nine boxes shows the plates. In
-that picture "X 18 mm" of the panel moves about 150 pixels down to leave the other plates, so its extension lines cross
-the model.
-Exit: the scenario runs in the window and passes; or it fails, or the long lines confuse the person, and a task
-corrects it.
-On 2026-11-20 the session ran the scenario in the window (TASK-0427). The labels name what they measure ("Cote gauche · Z
-800 mm" in the colour of the selection, "Overall · Z 2350 mm" in grey), but the history arc crosses the plate "Overall · Y
-400 mm", and a dimension line crosses the label "Box" of the history arc. R20d corrects both.
 ### R-0069 · A read of a sheet with three views of a sphere takes about 5 s
 - class: debt
 - opened: 2026-11-15
@@ -594,6 +577,28 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0065 · The scenario of R20c in the window was not done, and a far plate has long lines
+- class: risk
+- opened: 2026-11-12
+- due: 2026-11-26
+- extended: no
+- refs: `3DEngine.App/Ui/DesktopUi.Overlay.cs` (Dimensions), `docs/adr/0125-each-dimension-says-what-it-measures.md`,
+  `docs/proposals/2026-11-10-ux-test-of-a-multi-part-project.md` (problems 3 and 4), TASK-0352
+The scenario of improvement C is a person at 1280 by 720 with Dimensions on and "Cote gauche" selected: each label can
+be read, no element covers it, and the person says in less than two seconds which value is of the panel and which is of
+the whole. No person ran it; the tests drive the library, and a picture of a niche of nine boxes shows the plates. In
+that picture "X 18 mm" of the panel moves about 150 pixels down to leave the other plates, so its extension lines cross
+the model.
+Exit: the scenario runs in the window and passes; or it fails, or the long lines confuse the person, and a task
+corrects it.
+On 2026-11-20 the session ran the scenario in the window (TASK-0427). The labels name what they measure ("Cote gauche · Z
+800 mm" in the colour of the selection, "Overall · Z 2350 mm" in grey), but the history arc crosses the plate "Overall · Y
+400 mm", and a dimension line crosses the label "Box" of the history arc. R20d corrects both.
+Closed 2026-11-20 · resolved · TASK-0423 · ADR-0125. The stroke of the history arc is a cover for a plate, and each
+text of the arc has the ground of the scene. `DimensionLabelsTests.No_Plate_Lies_On_The_Stroke_Of_The_History_Arc` measures
+each plate from the arc in 96 views, and `Each_Text_Of_The_History_Arc_Has_The_Ground_Of_The_Scene_Behind_It` reads the
+ground in the drawn vertices. The long extension lines of a far plate stay: the person reads each value (TASK-0427).
 
 ### R-0063 · The scenario of R20a in the window was not done
 - class: risk
