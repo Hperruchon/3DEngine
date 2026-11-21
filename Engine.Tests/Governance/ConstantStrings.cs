@@ -80,19 +80,35 @@ internal static class ConstantStrings
             return compilation;
         }
 
-        foreach (var (project, own) in byProject.OrderBy(pair => pair.Key, StringComparer.Ordinal))
-        {
-            var compilation = CompilationOf(project);
-            foreach (var tree in own)
+        var work = byProject.OrderBy(pair => pair.Key, StringComparer.Ordinal)
+            .SelectMany(pair =>
             {
-                var model = compilation.GetSemanticModel(tree);
-                foreach (var expression in tree.GetRoot().DescendantNodes().OfType<ExpressionSyntax>())
-                {
-                    if (model.GetConstantValue(expression) is { HasValue: true, Value: { } value })
-                        yield return (tree.FilePath, expression.GetLocation().GetLineSpan().StartLinePosition.Line + 1, value, expression);
-                }
+                var compilation = CompilationOf(pair.Key);
+                return pair.Value.Select(tree => (Compilation: compilation, Tree: tree));
+            })
+            .ToArray();
+
+        // TASK-0442: the compiler binds about 570,000 expressions of the repository, and one thread
+        // took 26 seconds for UiLibraryGateTests alone on the computer of the owner. A compilation
+        // and its semantic models are safe on more than one thread, so each file binds on a thread
+        // of its own. The constants of each file keep their order, and the files keep their order.
+        var found = new List<(string Path, int Line, object Value, ExpressionSyntax Expression)>[work.Length];
+        Parallel.For(0, work.Length, index =>
+        {
+            var (compilation, tree) = work[index];
+            var model = compilation.GetSemanticModel(tree);
+            var constants = new List<(string Path, int Line, object Value, ExpressionSyntax Expression)>();
+            foreach (var expression in tree.GetRoot().DescendantNodes().OfType<ExpressionSyntax>())
+            {
+                if (model.GetConstantValue(expression) is { HasValue: true, Value: { } value })
+                    constants.Add((tree.FilePath, expression.GetLocation().GetLineSpan().StartLinePosition.Line + 1, value, expression));
             }
-        }
+
+            found[index] = constants;
+        });
+
+        foreach (var constant in found.SelectMany(constants => constants))
+            yield return constant;
     }
 
     private static string Project(SyntaxTree tree) => tree.FilePath.Split('/')[0];

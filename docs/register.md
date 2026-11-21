@@ -492,26 +492,6 @@ time stood for, and it needs a change of `Engine.Kernel`, which the write set of
 Exit: a task of the kernel gives the count of the exact signs of a cut in a form that a test reads, and the test of the cut
 holds that count below a bound; or the owner accepts the hang limit as the only guard.
 
-### R-0074 · The test host of Engine.Tests crashed on ubuntu-latest with no known cause
-- class: risk
-- opened: 2026-11-21
-- due: 2026-12-21
-- extended: no
-- refs: `.github/workflows/ci.yml` (step "Test", `--blame-crash`), `docs/adr/0173-a-lost-runner-gets-one-automatic-re-run.md`,
-  `docs/reviews/2026-11-21-b-codebase-review.md` (the failed runs of the weekend), TASK-0433, TASK-0435, TASK-0438
-In attempt 1 of run 44869058349 (commit `14f93eb`) the test host of `Engine.Tests` crashed on ubuntu-latest in the step
-"Test". The annotation named `TaskGovernanceGateTests.Each_Open_Task_Lists_Exactly_The_Adrs_Whose_Affects_Intersect_Its_Write_Set`
-as the test that did not complete, and gave no cause; Linux kept no dump. The next run of the same code passed. A crash
-stays red by ADR-0173, so a second crash stops a merge with no known repair. R-0062, closed on 2026-11-14, held crashes of
-the image tests on the computer of the owner; no entry held this one. On 2026-11-21 the register holds 15 of its 15 open entries with this entry.
-Exit: a crash dump of the step "Test" on Linux names the cause and a task fixes it; or thirty runs of continuous
-integration on ubuntu-latest after 2026-11-21 end with no crash of the test host of `Engine.Tests`, and the entry closes
-with their numbers.
-Progress 2026-11-21 (TASK-0441): the two stops on Windows of the weekend were the hang limit of 2 minutes, and not a crash.
-This stop can be the same: the test that did not complete took 38 to 100 seconds in four runs of the whole step on the
-computer of the owner (100 seconds with each processor), and the step took 247 seconds against 115 to 123 seconds in the
-other runs of ubuntu-latest of TASK-0441. Since TASK-0441 the annotation of a stop at the hang limit names the limit, so the next stop gives its kind.
-
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
@@ -646,6 +626,31 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0074 · The test host of Engine.Tests crashed on ubuntu-latest with no known cause
+- class: risk
+- opened: 2026-11-21
+- due: 2026-12-21
+- extended: no
+- refs: `.github/workflows/ci.yml` (step "Test", `--blame-crash`), `docs/adr/0173-a-lost-runner-gets-one-automatic-re-run.md`,
+  `docs/reviews/2026-11-21-b-codebase-review.md` (the failed runs of the weekend), TASK-0433, TASK-0435, TASK-0438
+In attempt 1 of run 44869058349 (commit `14f93eb`) the test host of `Engine.Tests` crashed on ubuntu-latest in the step
+"Test". The annotation named `TaskGovernanceGateTests.Each_Open_Task_Lists_Exactly_The_Adrs_Whose_Affects_Intersect_Its_Write_Set`
+as the test that did not complete, and gave no cause; Linux kept no dump. The next run of the same code passed. A crash
+stays red by ADR-0173, so a second crash stops a merge with no known repair. R-0062, closed on 2026-11-14, held crashes of
+the image tests on the computer of the owner; no entry held this one. On 2026-11-21 the register holds 15 of its 15 open entries with this entry.
+Exit: a crash dump of the step "Test" on Linux names the cause and a task fixes it; or thirty runs of continuous
+integration on ubuntu-latest after 2026-11-21 end with no crash of the test host of `Engine.Tests`, and the entry closes
+with their numbers.
+Progress 2026-11-21 (TASK-0441): the two stops on Windows of the weekend were the hang limit of 2 minutes, and not a crash.
+This stop can be the same: the test that did not complete took 38 to 100 seconds in four runs of the whole step on the
+computer of the owner (100 seconds with each processor), and the step took 247 seconds against 115 to 123 seconds in the
+other runs of ubuntu-latest of TASK-0441. Since TASK-0441 the annotation of a stop at the hang limit names the limit, so the next stop gives its kind.
+Closed 2026-11-21 · resolved · TASK-0442. The stop was the hang limit of 2 minutes, and not a crash. The gate built a new
+compiled regular expression at each comparison of a path pattern: 130,999 expressions for 429 patterns, 38 to 100 seconds
+on the computer of the owner. That form, with a hang limit of 20 seconds, gave "Test host process crashed", named this
+test as the running test, and wrote no dump. `TaskFiles.PathPattern` now builds each expression once, the gate takes
+less than one second, and `PathPatternWorkTests` counts the expressions that the gate builds.
 
 ### R-0065 · The scenario of R20c in the window was not done, and a far plate has long lines
 - class: risk

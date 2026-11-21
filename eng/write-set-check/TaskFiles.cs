@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -169,10 +170,28 @@ public static class TaskFiles
         return (create, modify, forbid);
     }
 
+    // The expression of each pattern, built once (TASK-0442, R-0074). Until TASK-0442 each
+    // call compiled a new expression, and PatternsIntersect compiled two for each pair. The
+    // gate of governed-by compiled tens of thousands of expressions and took 38 to 100
+    // seconds, near the hang limit of 2 minutes of the step "Test". The text of a pattern
+    // gives its expression, so a kept expression gives the same result. The patterns come
+    // from the files of the repository, so the number of kept expressions has a limit.
+    private static readonly ConcurrentDictionary<string, Regex> Patterns = new(StringComparer.Ordinal);
+
+    [ThreadStatic]
+    private static int built;
+
+    // The number of expressions that this thread built. A test counts the work of a gate
+    // with it, and not its time.
+    public static int PatternsBuiltOnThisThread => built;
+
     // A path pattern, in the form that docs/templates.md uses. Two stars match
     // each character. One star matches each character except the separator.
-    public static Regex PathPattern(string pattern)
+    public static Regex PathPattern(string pattern) => Patterns.GetOrAdd(pattern, Build);
+
+    private static Regex Build(string pattern)
     {
+        built++;
         var expression = new StringBuilder("^");
 
         for (var i = 0; i < pattern.Length; i++)
