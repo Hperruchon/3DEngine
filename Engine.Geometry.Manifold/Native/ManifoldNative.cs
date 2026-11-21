@@ -35,6 +35,10 @@ internal static partial class ManifoldNative
     [LibraryImport(Lib)] internal static partial nint manifold_translate(nint mem, nint manifold, double x, double y, double z);
     [LibraryImport(Lib)] internal static partial nint manifold_difference(nint mem, nint a, nint b);
 
+    // ADR-0181 item 4 (phase K16, TASK-0433): the union and the intersection, in the form of the difference.
+    [LibraryImport(Lib)] internal static partial nint manifold_union(nint mem, nint a, nint b);
+    [LibraryImport(Lib)] internal static partial nint manifold_intersection(nint mem, nint a, nint b);
+
     [LibraryImport(Lib)] internal static partial nint manifold_bounding_box(nint mem, nint manifold);
     [LibraryImport(Lib)] internal static partial ManifoldVec3 manifold_box_min(nint box);
     [LibraryImport(Lib)] internal static partial ManifoldVec3 manifold_box_max(nint box);

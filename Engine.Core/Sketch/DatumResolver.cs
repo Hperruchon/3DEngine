@@ -576,21 +576,23 @@ public static class DatumResolver
     }
 
     // The Translate and Rotate steps in effect before the place, on the chain of consumers of the body of the feature,
-    // in the order of the chain. A Subtract passes with no step; another consumer ends the chain.
+    // in the order of the chain. A Subtract passes with no step; another consumer ends the chain. ADR-0181 item 6 (phase
+    // K16, TASK-0433): a Union and an Intersect pass with no step too, as a Subtract does.
     private static IEnumerable<Command> Chain(FeatureGraph graph, Guid handle, int place)
     {
         while (graph.Consumer(handle) is { } consumer && graph.Order(consumer.CommandId) < place)
         {
             if (consumer is TranslateCommand or RotateCommand)
                 yield return consumer;
-            else if (consumer is not SubtractCommand)
+            else if (consumer is not (SubtractCommand or UnionCommand or IntersectCommand))
                 yield break;
             handle = consumer.CommandId;
         }
     }
 
     // ADR-0059 item 4: true when an odd count of the Subtract steps in effect before the place, on the chain of consumers
-    // of the body of the feature, takes the body of the chain as the subtrahend.
+    // of the body of the feature, takes the body of the chain as the subtrahend. ADR-0181 item 6: a Union and an Intersect
+    // turn no face, so each passes.
     private static bool Turned(FeatureGraph graph, Guid handle, int place)
     {
         var turned = false;
@@ -598,7 +600,7 @@ public static class DatumResolver
         {
             if (consumer is SubtractCommand subtract && subtract.SubtrahendBodyId == handle)
                 turned = !turned;
-            else if (consumer is not (TranslateCommand or RotateCommand or SubtractCommand))
+            else if (consumer is not (TranslateCommand or RotateCommand or SubtractCommand or UnionCommand or IntersectCommand))
                 break;
             handle = consumer.CommandId;
         }
