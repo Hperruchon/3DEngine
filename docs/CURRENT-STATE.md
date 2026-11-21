@@ -13547,3 +13547,34 @@ Corrections: `The_Planes_Of_The_Datums_Are_The_Named_Datums_With_No_Fault` expec
 New tests: 10. The test list holds 3190 (1845 in `Engine.Tests`, 390 in `3DEngine.Tests`, 952 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.431,
 1 product milestone and 3 entries followed it.
+
+## v0.435 — Each injected violation of the second and the third codebase reviews fails its gate (P0.181, TASK-0451)
+
+Register entry R-0031 ("A gate can pass while its rule is broken") is due on 2026-12-24, and its exit is "each injected
+violation of the second review and of the third review fails its gate". TASK-0451 made the list of each form that the reviews
+of 2026-09-30 and 2026-10-04 injected, or read in the code of a gate, and ran each one again on the gates of today. The branch
+`p0181-gates-hold-their-rules` starts from `28dcc1c9` (P0.180, TASK-0449, v0.434, not merged yet).
+
+**The change.**
+- The dispatch gate (`DispatchSurfaceGateTests`, ADR-0016) reads each host of the classes of `DependencyDirectionGateTests`
+  (`DispatchHosts`: each headless client, the surface library and each host that draws), so it now reads the desktop host
+  `3DEngine`, the phone host `3DEngine.Android` and `BookcaseCompare`. Until TASK-0451 it read three projects by name (finding
+  T4). The application `3DEngine.App` is the client of the person and not a host, so it is not read.
+- The marker gate reads each tracked script, shader source and MSBuild file (`.js`, `.sh`, `.ps1`, `.csproj`, `.props`,
+  `.targets`, `.vert`, `.frag` and some more), from the list of git. Until TASK-0451 it read C#, three configuration files and
+  the workflows only, so a TODO with no identifier in a script of `eng/` or in a project file passed (finding T13).
+- The review gate requires a value in each required measure row. Until TASK-0451 a row with the name of the measure and an
+  empty value passed (finding T7).
+- R-0031 is closed (resolved). `docs/templates.md`, section 5, gives the new reads of the three gates.
+
+**Proof.** A script (`inject0451.js` in `%TEMP%\p0181`, not in the repository) applied 35 forms, one at a time, to a clone of
+`28dcc1c9`, or for the dispatch gate to the worktree, ran `eng/repo-gates`, `eng/write-set-check` or the dispatch test with no
+shell, and restored each file byte for byte (sha256). On the gates of `28dcc1c9`, 30 forms failed their gate and 5 passed: two
+hosts that name a command, a TODO in a script and in a project file, and an empty measure value. On the gates of the branch, 35
+of 35 fail. The table is in the section "Method" of TASK-0451. A clean build gives 0 warnings, `dotnet test` passes 3206 tests,
+and the write-set check and `eng/repo-gates` pass. The run on the branch is not done yet.
+The failed runs since the entry v0.434, from the API: none.
+
+New tests: 16 (two of the dispatch gate, nine of the marker gate and five of the review gate). The test list holds 3206 (1861 in
+`Engine.Tests`, 390 in `3DEngine.Tests`, 952 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 14 of 15. New
+diagnostic codes: 0. Since the review of v0.431, 1 product milestone and 4 entries followed it.

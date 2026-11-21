@@ -130,3 +130,7 @@ and call `Create`. No host holds the name of a command.
 
 - 2026-10-27 · TASK-0040 · ADR-0013 item 7 now holds the construction step, so this record no longer
   amends ADR-0013. This record keeps the context, the reasons and the methods that the project refused.
+- 2026-11-21 · TASK-0451 · The gate reads each host of the classes of `DependencyDirectionGateTests` (each headless client,
+  the surface library and each host that draws, so also `3DEngine` and `3DEngine.Android`), and not a list of three projects
+  (finding T4 of the codebase review of 2026-09-30, R-0031). The application `3DEngine.App` is the client of the person and
+  not a host, so it may name the command that a control sends.

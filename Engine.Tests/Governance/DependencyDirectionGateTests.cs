@@ -356,8 +356,8 @@ public class DependencyDirectionGateTests
 
     // The files that git tracks, from the git of PATH outside the checkout, as the judge of the
     // write set finds it (finding T29). No git, or a git that fails, fails the gate: an empty
-    // list is not evidence.
-    private static List<string> TrackedFiles()
+    // list is not evidence. MarkerGateTests reads the scripts and the build files of this list (TASK-0451).
+    internal static List<string> TrackedFiles()
     {
         var git = WriteSetCheck.Judge.FindGit(RepositoryFiles.Root, Environment.GetEnvironmentVariable("PATH"));
         Assert.True(git is not null, "The gate finds no git in a folder of PATH outside the checkout.");
@@ -1300,6 +1300,14 @@ public class DependencyDirectionGateTests
     // and the actions. A host that draws references it. It references the kernel of design truth and the render side
     // only, so that a host with no surface, the phone, can reference it (The_Application_References_No_Surface).
     private static readonly string[] Applications = ["3DEngine.App"];
+
+    // Finding T4 of the codebase review of 2026-09-30 (R-0031, TASK-0451): the projects that the dispatch gate
+    // (DispatchSurfaceGateTests, ADR-0016) reads. Each headless client, the surface library and each host that draws is a
+    // host, and a host names no command. A new project must be in one class (Each_Project_Is_In_One_Class), so the dispatch
+    // gate reads a new host with no list of its own. Until TASK-0451 the dispatch gate held a list of three projects, and the
+    // desktop host 3DEngine and the phone host 3DEngine.Android were not read. The application 3DEngine.App is not a host: it
+    // is the client of the person, and it names the command that a control of the window sends.
+    internal static IReadOnlyList<string> DispatchHosts => [.. HeadlessClients, .. Surfaces, .. HostsThatDraw];
 
     [Fact]
     public void A_Host_With_No_Surface_References_No_Surface()

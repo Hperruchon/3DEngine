@@ -153,5 +153,40 @@ public class MarkerGateTests
             foreach (var file in Directory.EnumerateFiles(workflows, "*.yml"))
                 yield return file;
         }
+
+        // Each tracked script, shader source and MSBuild file. Finding T13 of the codebase
+        // review of 2026-10-04 (R-0031, TASK-0451): the gate read C#, three configuration
+        // files and the workflows only, so a TODO with no identifier in a script of eng/, in
+        // a project file or in a shader passed. The list of git is the list of the
+        // repository, so a folder that git ignores is not read.
+        foreach (var relative in DependencyDirectionGateTests.TrackedFiles().Where(IsScriptOrBuildFile))
+        {
+            var file = RepositoryFiles.Path(relative.Split('/'));
+            if (File.Exists(file))
+                yield return file;
+        }
+    }
+
+    private static readonly string[] ScriptAndBuildExtensions =
+        [".js", ".mjs", ".cjs", ".sh", ".ps1", ".cmd", ".bat", ".csproj", ".props", ".targets", ".vert", ".frag", ".comp"];
+
+    internal static bool IsScriptOrBuildFile(string relative)
+        => !relative.StartsWith(".claude/", StringComparison.Ordinal)
+        && ScriptAndBuildExtensions.Contains(System.IO.Path.GetExtension(relative), StringComparer.OrdinalIgnoreCase);
+
+    // TASK-0451: the files of the forms of T13 are read, and a document is not.
+    [Theory]
+    [InlineData("eng/report-failed-tests.js", true)]
+    [InlineData("eng/manifold-native/build.sh", true)]
+    [InlineData("eng/manifold-native/build.ps1", true)]
+    [InlineData("Engine.Core/Engine.Core.csproj", true)]
+    [InlineData("Engine.Core/Directory.Build.props", true)]
+    [InlineData("3DEngine.Vulkan/Shaders/mesh.frag", true)]
+    [InlineData("docs/register.md", false)]
+    [InlineData("Engine.Core/CommandBus.cs", false)]
+    [InlineData(".claude/worktrees/a/eng/count-tests.js", false)]
+    public void The_Gate_Reads_Each_Script_Shader_And_Build_File(string relative, bool read)
+    {
+        Assert.Equal(read, IsScriptOrBuildFile(relative));
     }
 }

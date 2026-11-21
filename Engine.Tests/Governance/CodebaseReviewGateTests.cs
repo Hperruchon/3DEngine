@@ -98,7 +98,7 @@ public class CodebaseReviewGateTests
             }
 
             foreach (var measure in MissingMeasures(review.Fields.GetValueOrDefault("ledger", string.Empty), measures))
-                problems.Add($"{review.Name}: the measures table has no row \"{measure}\"");
+                problems.Add($"{review.Name}: the measures table has no row \"{measure}\" with a value");
         }
 
         Assert.True(
@@ -126,7 +126,29 @@ public class CodebaseReviewGateTests
         var required = ParseVersion(ledger) is { } version && version.CompareTo(RuleMeasuresFrom) >= 0
             ? RequiredMeasures.Concat(RuleMeasures)
             : RequiredMeasures;
-        return required.Where(measure => !measures.Contains($"| {measure} |", StringComparison.Ordinal));
+        return required.Where(measure => !HasValue(measures, measure));
+    }
+
+    // Finding T7 of the codebase review of 2026-09-30 and of the review of 2026-10-04 (R-0031, TASK-0451):
+    // a row with the name of a measure and an empty value passed, because the gate looked for the name only.
+    // A row of a measure must now give a value in its second column.
+    private static bool HasValue(string measures, string measure)
+    {
+        var name = $"| {measure} |";
+        return measures.Replace("\r", string.Empty, StringComparison.Ordinal).Split('\n')
+            .Select(line => line.IndexOf(name, StringComparison.Ordinal) is var at and >= 0 ? line[(at + name.Length)..] : null)
+            .Any(rest => rest is not null && rest.Split('|')[0].Trim().Length > 0);
+    }
+
+    [Theory]
+    [InlineData("| Tests | 3,174 | `dotnet test`. |", true)]
+    [InlineData("| Tests |  | `dotnet test`. |", false)]
+    [InlineData("| Tests || `dotnet test`. |", false)]
+    [InlineData("| Tests |", false)]
+    [InlineData("| Gate classes | 21 | A count. |", false)]
+    public void A_Measure_Row_With_An_Empty_Value_Is_Missing(string row, bool given)
+    {
+        Assert.Equal(given, HasValue($"| Measure | Value | Method |\n|---|---|---|\n{row}\n", "Tests"));
     }
 
     [Theory]
