@@ -172,4 +172,9 @@ public static class DiagnosticCodes
 
     // ADR-0179 item 2 (phase R30i, TASK-0428): a field of SetSheetTitle that breaks the rules of a name.
     public const string SheetTitleInvalid = "E-SHEET-TITLE-INVALID";
+
+    // Phase K15a (TASK-0432): a name of a measure query that the body does not have, and a curved face where the slice
+    // measures plane faces only. MeasureTarget gives the decision.
+    public const string MeasureNameNotFound = "E-MEASURE-NAME-NOT-FOUND";
+    public const string MeasureCurved = "E-MEASURE-CURVED";
 }

@@ -185,6 +185,7 @@ names. Do not read all of them.
 | [0177](0177-the-proposal-of-the-agent-on-the-sheet-page.md) | The sheet page shows a proposal of the agent as amber boxes of views and amber values before the accept | Accepted | Drawing, window | 0092, 0168 | — |
 | [0178](0178-show-hidden-on-the-ring-of-the-part-and-the-path-line.md) | "Show hidden" is on the ring of the part, and the count of the hidden bodies goes on the path line where the status line has no room | Accepted | Clients, rendering | 0124 | — |
 | [0179](0179-the-title-block-of-a-sheet.md) | A sheet holds the fields of the title block of ISO 7200, SetSheetTitle gives them, and the frame shows the block, the symbol of the projection and the centring marks | Accepted | Contracts, drawing | 0153, 0155, 0159, 0160, 0161 | — |
+| [0180](0180-the-measure-queries-of-plane-faces.md) | The measure queries GetMassProperties, GetDistance and GetAngle read the exact solid of the owned kernel, first for plane faces | Accepted | Kernel, queries | — | — |
 
 ## Topics
 
