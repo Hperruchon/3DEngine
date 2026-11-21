@@ -839,6 +839,8 @@ public sealed class CommandBus
         ["thirdAngle"] = sheet.ThirdAngle,
         ["views"] = sheet.Views,
         ["dimensions"] = sheet.Dimensions,
+        // ADR-0179 item 3 (phase R30i, TASK-0428): the title block, null for a sheet with no SetSheetTitle.
+        ["titleBlock"] = sheet.TitleBlock,
     };
 
     private static Dictionary<string, object?> ImageFields(ImageRecord image) => new()

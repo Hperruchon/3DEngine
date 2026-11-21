@@ -500,6 +500,8 @@ Therefore each approved objective must have a track here.
   scene, so no dimension line goes across it. v0.409, TASK-0423, ADR-0125.
 - P0.171 — The sixteen medium and low findings of the codebase review of 2026-11-20 each have a correction and a test, or a
   corrected ADR, and the owner's answers Q1, Q2, Q3 and Q8 are in ADR-0178, ADR-0177 and ADR-0173. v0.410, TASK-0426.
+- R30i — A sheet holds the eleven fields of the title block of ISO 7200, one command SetSheetTitle sets them, and the three
+  files and the sheet page draw the block, the symbol of the projection and the centring marks. v0.411, TASK-0428, ADR-0179.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -847,7 +849,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R30f | The proposal of the agent on the sheet page: amber boxes and amber values, Accept and Reject on the arc (ADR-0162 item 8). After R30h. TASK-0422, ADR-0177. | 1–2 |
 | R30g | The flag of the hidden lines and the centre lines of each view, the centre lines and centre marks in GetSheet and the three files, and ⌀ for a whole circle; a contract change with its ADR (ADR-0162 items 11, 12, 14 and 17). After P0.162; it can run beside R30a to R30c. TASK-0405, ADR-0165. | 1–2 |
 | R30h | The section view of a sheet: the cut line, the cut plane and its letter, the hatch and the label "A–A", in GetSheet, the files and the sheet page; a contract change with its ADR (ADR-0162 items 13 and 17). After R30c and R30g. TASK-0411 gives the engine, GetSheet and the files (ADR-0169); the action "Section" of the sheet page follows R30d (ADR-0169 item 8), as TASK-0413 (ADR-0171). | 2–3 |
-| R30i | The title block of ISO 7200 by one command, the symbol of the projection and the centring marks; a contract change with its ADR (ADR-0162 items 15 and 17). After R30h. | 1 |
+| R30i | The title block of ISO 7200 by one command, the symbol of the projection and the centring marks; a contract change with its ADR (ADR-0162 items 15 and 17). After R30h. TASK-0428, ADR-0179. | 1 |
 | R31a | The left panel leaves (the study of the left panel of 2026-11-18, the choice of the owner "B plus C"): with no selection the ring gives the tools of the part ("New", "Sketch", "Bodies", "Images") with a second level for "New" and "Sketch"; the file name of the path line opens a menu of the four file actions; "Dimensions" and "Hidden too" go to the net of the views; a structure view, folded to one row and with a ground when open, takes the place of the panel (ADR-0174). TASK-0419. | 2–3 |
 | R31b | The rows of the structure view are 30 pixels high for a mouse or a pen and 44 pixels on a phone, with the setting "Compact" or "For touch" (the choice of the owner "B, 30 px" of 2026-11-18); a record that amends ADR-0027 item 6 for lists. After R31a. ADR-0175, TASK-0420. | 1–2 |
 

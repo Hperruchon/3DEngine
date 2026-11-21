@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text;
 using Engine.Contracts;
+using Engine.Core.Drawing;
 using Engine.Core.Queries;
 
 namespace Engine.Core.Export;
@@ -33,11 +34,9 @@ public static class SvgExport
 
     public static double FontSize(double capital) => capital / CapHeight;
 
-    // ADR-0159 item 4: the frame is 10 mm inside the edge of the paper, and the title block is 120 by 20 mm in the lower right
-    // corner of the frame.
+    // ADR-0159 item 4: the frame is 10 mm inside the edge of the paper. ADR-0179 item 4 (phase R30i, TASK-0428): the title block
+    // is TitleBlock.Width by TitleBlock.Height in the lower right corner of the frame; until TASK-0428 it was 120 by 20 mm.
     public const double Margin = 10;
-    public const double TitleWidth = 120;
-    public const double TitleHeight = 20;
 
     // The file of the live sheet with the identifier, with each body that gives no lines, or E-SHEET-NOT-FOUND.
     public static (byte[]? Content, IReadOnlyList<SheetSkippedBody> Skipped, ErrorDetail? Error) Write(Document document, Guid sheetId, CancellationToken ct = default)
@@ -61,17 +60,21 @@ public static class SvgExport
         w.Append($"<title>{Escape(sheet.Name)}</title>\n");
         w.Append($"<desc>3DEngine SVG export of a sheet, millimetres. Sheet {sheet.SheetId}.</desc>\n");
 
-        // Item 4: the frame and the title block.
-        var (fx, fy, fw, fh) = (Margin, Margin, sheet.Width - (2 * Margin), sheet.Height - (2 * Margin));
-        w.Append($"<g id=\"frame\" fill=\"none\" stroke=\"black\" stroke-width=\"{N(Thick)}\">\n");
-        w.Append($"<rect x=\"{N(fx)}\" y=\"{N(svg.Y(fy + fh))}\" width=\"{N(fw)}\" height=\"{N(fh)}\"/>\n");
-        var (tx, ty) = (fx + fw - TitleWidth, fy);
-        w.Append($"<rect x=\"{N(tx)}\" y=\"{N(svg.Y(ty + TitleHeight))}\" width=\"{N(TitleWidth)}\" height=\"{N(TitleHeight)}\"/>\n");
+        // Item 4: the frame and the title block. ADR-0179 items 4 to 6 (phase R30i, TASK-0428): the frame, the centring marks,
+        // the block with its fields and the symbol of the projection, from the one list of TitleBlock.Layout.
+        var block = TitleBlock.Layout(sheet);
+        w.Append("<g id=\"frame\" fill=\"none\" stroke=\"black\">\n");
+        foreach (var line in block.Lines)
+        {
+            var stroke = Stroke(line);
+            var dashes = stroke == LineStroke.Chain ? $" stroke-dasharray=\"{CentreDashes}\"" : "";
+            w.Append($"<path stroke-width=\"{N(stroke == LineStroke.Thick ? Thick : Thin)}\"{dashes} {svg.Path(line)}/>\n");
+        }
+
         w.Append("</g>\n");
         w.Append("<g id=\"title\" font-family=\"sans-serif\" fill=\"black\">\n");
-        w.Append($"<text x=\"{N(tx + 3)}\" y=\"{N(svg.Y(ty + 12))}\" font-size=\"5\">{Escape(sheet.Name)}</text>\n");
-        var projection = sheet.ThirdAngle ? "Third angle" : "First angle";
-        w.Append($"<text x=\"{N(tx + 3)}\" y=\"{N(svg.Y(ty + 4))}\" font-size=\"3.5\">{Escape($"{sheet.Paper} {(sheet.Landscape ? "landscape" : "portrait")} · {projection} · Scale {Scale(sheet)} · mm")}</text>\n");
+        foreach (var text in block.Texts)
+            w.Append($"<text x=\"{N(text.X)}\" y=\"{N(svg.Y(text.Y))}\" font-size=\"{N(FontSize(text.Size))}\">{Escape(text.Text)}</text>\n");
         w.Append("</g>\n");
 
         // Items 2 and 3: the lines of each view, the hidden lines first, so a visible line covers a hidden line.
@@ -135,7 +138,8 @@ public static class SvgExport
         return line.Kind switch
         {
             "centre" or "cut" => LineStroke.Chain,
-            "hatch" => LineStroke.Thin,
+            // ADR-0179 item 4 (TASK-0428): a line between the cells of the title block is thin, as a hatch line.
+            "hatch" or "block" => LineStroke.Thin,
             "arrow" => LineStroke.Arrow,
             "cut-end" => LineStroke.Thick,
             _ => line.Visible ? LineStroke.Thick : LineStroke.Hidden,

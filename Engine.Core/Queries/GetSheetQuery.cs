@@ -24,7 +24,12 @@ public sealed record SheetInfo(
     double Width,
     double Height,
     IReadOnlyList<SheetViewInfo> Views,
-    IReadOnlyList<SheetDimensionInfo> Dimensions);
+    IReadOnlyList<SheetDimensionInfo> Dimensions)
+{
+    // ADR-0179 item 3 (phase R30i, TASK-0428): the fields of the title block; each field is empty for a sheet with no
+    // SetSheetTitle.
+    public SheetTitleBlock TitleBlock { get; init; } = SheetTitleBlock.Empty;
+}
 
 // One view: its record, its lines on the paper in the order of ViewEdges, and each body that gives no lines with
 // its reason (ADR-0155 item 5). ADR-0169 item 7 (phase R30h, TASK-0411): the section of a section view, null for each other

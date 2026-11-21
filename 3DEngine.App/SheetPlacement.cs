@@ -1,4 +1,5 @@
 using Engine.Contracts.Drawing;
+using Engine.Core.Drawing;
 using Engine.Core.Export;
 using ThreeDEngine.Core.Models;
 
@@ -73,9 +74,10 @@ internal static class SheetPlacement
     }
 
     // ADR-0167 item 3: the part of the paper for the views: inside the frame of the files (SvgExport), above the band of
-    // the title block. Left, bottom, right, top in millimetres.
+    // the title block. Left, bottom, right, top in millimetres. ADR-0179 item 4 (phase R30i, TASK-0428): the band has the height
+    // of the block of ISO 7200; a view that a log put in the band stays where it is.
     public static (double X0, double Y0, double X1, double Y1) Area(double width, double height)
-        => (SvgExport.Margin, SvgExport.Margin + SvgExport.TitleHeight, width - SvgExport.Margin, height - SvgExport.Margin);
+        => (SvgExport.Margin, SvgExport.Margin + TitleBlock.Height, width - SvgExport.Margin, height - SvgExport.Margin);
 
     // The size of the box along the right and along the up of a frame of length 1, in units of the design.
     public static (double Across, double Up) Extent(IReadOnlyList<double> frame, Box box)

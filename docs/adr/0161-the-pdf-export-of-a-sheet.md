@@ -7,7 +7,7 @@ date: 2026-11-17
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0165', '0169']
+amended-by: ['0165', '0169', '0179']
 affects:
   - Engine.Core/Export/PdfExport.cs
   - Engine.Api.Http/Endpoints/ExportEndpoint.cs
@@ -67,6 +67,7 @@ keeps the numbers of the read. The owner can change each one.
    each curve: each is within 0.001 mm of the curve of the design.
 5. **The frame and the title block.** The frame, the title block and its two texts are those of the SVG file (ADR-0159 item
    4), at the same places, as rectangles and texts of Helvetica.
+   ADR-0179 item 7: the lines of `TitleBlock.Layout` with their widths and dashes, and its texts in Helvetica.
 6. **The dimensions.** Each dimension is a text of 3.5 mm, centred at its place on its base line, with the text of the SVG
    file (ADR-0159 item 5). The width of the text comes from the widths of Helvetica in its metrics for the characters of a
    value (the digits, the point, the signs, R and the letters of "lost"); each other character takes the width of a digit.
@@ -97,3 +98,4 @@ WinAnsiEncoding shows "?". The centre of a text with a character outside the lis
 - 2026-11-17 · TASK-0401 · Shipped at v0.385.
 - 2026-11-18 · TASK-0405 · Amended by ADR-0165 items 3 and 4: the centre lines and the sign of a diameter (R30g).
 - 2026-11-18 · TASK-0411 · Amended by ADR-0169 item 6: the hatch, the cut line, the arrows and the texts of a section (R30h).
+- 2026-11-21 · TASK-0428 · Amended by ADR-0179 item 7: the title block of ISO 7200, the symbol and the centring marks (R30i).

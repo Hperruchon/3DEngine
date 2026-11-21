@@ -60,10 +60,14 @@ internal static class SchemaEventsEndpoint
         ("imageId", "guid"), ("asset", "string"), ("datumId", "guid"), ("originU", "number"), ("originV", "number"),
         ("width", "integer"), ("height", "integer"), ("scale", "number"));
 
-    // ADR-0153 item 1 (phase P10.1, TASK-0389): sheet.created and sheet.changed carry the whole record of the sheet.
-    private static readonly IReadOnlyDictionary<string, FieldSchema> SheetFields = Fields(
+    // ADR-0153 item 1 (phase P10.1, TASK-0389): sheet.created and sheet.changed carry the whole record of the sheet. ADR-0179
+    // item 3 (phase R30i, TASK-0428): the title block is an object, or null for a sheet with no SetSheetTitle.
+    private static readonly IReadOnlyDictionary<string, FieldSchema> SheetFields = new Dictionary<string, FieldSchema>(Fields(
         ("sheetId", "guid"), ("name", "string"), ("paper", "string"), ("landscape", "boolean"), ("thirdAngle", "boolean"),
-        ("views", "array"), ("dimensions", "array"));
+        ("views", "array"), ("dimensions", "array")), StringComparer.Ordinal)
+    {
+        ["titleBlock"] = new FieldSchema("object", Required: false),
+    };
 
     // ADR-0051 item 9: a datum can have no name, so the name can be null.
     private static readonly IReadOnlyDictionary<string, FieldSchema> DatumCreatedFields = new Dictionary<string, FieldSchema>(Fields(("datumId", "guid")), StringComparer.Ordinal)
