@@ -21,7 +21,9 @@ commands are in effect: 19 `CreateBox`, 22 `Translate` and 19 `RenameBody`. The 
 `CreateBox` makes a box with its centre at the origin of the Document. Each body is one box, moved by one `Translate` and
 named by one `RenameBody`. Three bodies have a second `Translate`, a correction on y: "Fond" by -197 then +394, "Bas" and
 "Haut" by +3 then -6. The builder sends one `Translate` for each body, the sum of the moves, so it sends 57 commands. The
-final bodies are the same: a test compares them with a replay of the file when the file is present.
+final bodies are the same: a test compared them with a replay of the file when the file was present. Since TASK-0431 (finding
+T186, Q7 A of the codebase review of 2026-11-21) the program `eng/bookcase-compare` makes that comparison, and the owner runs
+it where the file is.
 
 ## 2 The 19 bodies
 
@@ -124,7 +126,7 @@ than 1e-9 mm) and far below a size that a person can make or measure.
 
 - The times come from one computer and a Debug build. Continuous integration on the three operating systems runs the test,
   but its output is not read by a gate.
-- The replay of the file of the owner in the test uses the backend of this repository, not the backend version 3.5.2 of the
+- The replay of the file of the owner (since TASK-0431 in `eng/bookcase-compare`) uses the backend of this repository, not the backend version 3.5.2 of the
   header. The boxes agree exactly.
 - No picture of the bookcase in the window was made. The desktop was not run.
 - The sizes of the support of the lamp are not known. The second case of K10 (K10b) waits for them.

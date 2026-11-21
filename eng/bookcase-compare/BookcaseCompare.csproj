@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Finding T186 of the codebase review of 2026-11-21 (TASK-0431, Q7 A of the owner): the comparison of the builder of the
+       bookcase (row K10a, TASK-0429) with the document file of the owner, as a program that the owner runs where the file is.
+       The pipeline builds it with the solution and does not run it. The program compiles the builder of Engine.Tests, so the
+       tool and the tests use one builder. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <AssemblyName>bookcase-compare</AssemblyName>
+    <RootNamespace>BookcaseCompare</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\Engine.Tests\Assembly\BookcaseCase.cs" Link="BookcaseCase.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The builder checks each command with Assert of xUnit, with no test platform. -->
+    <PackageReference Include="xunit.assert" Version="2.9.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Engine.Contracts\Engine.Contracts.csproj" />
+    <ProjectReference Include="..\..\Engine.Core\Engine.Core.csproj" />
+    <!-- The composition root of a program: the native backend, as the file of the owner uses it (ADR-0014 section 4). -->
+    <ProjectReference Include="..\..\Engine.Geometry.Manifold\Engine.Geometry.Manifold.csproj" />
+  </ItemGroup>
+
+</Project>

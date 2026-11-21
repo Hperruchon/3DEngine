@@ -37,7 +37,27 @@ public sealed class EventSinkContractTests
         ["3DEngine.App"] = "3DEngine.ImageTests/DesktopSinkContractTests.cs",
         // Phase R14e2 (TASK-0226): the Android program is not built in a test run, so this file reads its source.
         ["3DEngine.Android"] = "Engine.Tests/EventSinkContractTests.cs",
+        // Finding T186 of the codebase review of 2026-11-21 (TASK-0431): the program of the owner that compares the bookcase. This
+        // project does not reference it, so this file reads its source.
+        ["bookcase-compare"] = "Engine.Tests/EventSinkContractTests.cs",
     };
+
+    // Finding T186 (TASK-0431): eng/bookcase-compare runs a session with the sink of the engine, and no file of it names
+    // IEventSink.
+    [Fact]
+    public void The_Program_That_Compares_The_Bookcase_Holds_No_Sink()
+    {
+        var folder = Engine.Tests.Governance.RepositoryFiles.Path("eng", "bookcase-compare");
+        Assert.True(Directory.Exists(folder), "eng/bookcase-compare does not exist.");
+        var offences = Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories)
+            .Where(file => !file.Contains(Path.DirectorySeparatorChar + "obj" + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+                && !file.Contains(Path.DirectorySeparatorChar + "bin" + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+            .Where(file => File.ReadAllText(file).Contains("IEventSink", StringComparison.Ordinal))
+            .Select(Engine.Tests.Governance.RepositoryFiles.Relative)
+            .ToArray();
+
+        Assert.True(offences.Length == 0, "A file of eng/bookcase-compare names IEventSink, and no test reads it:\n  " + string.Join("\n  ", offences));
+    }
 
     // Phase R14e2 (TASK-0226): the pipeline does not build the Android program, so no test reads its assembly. Its sink
     // is FanOutSink of 3DEngine.App, which DesktopSinkContractTests reads; no file of the program names IEventSink.
