@@ -109,6 +109,19 @@ public static class CrossPlatformProbe
             new RotateCommand { CommandId = Id(101), BodyId = Id(100), Qw = 1, Qx = 2, Qy = 3, Qz = 4 },
             new CreateDatumCommand { CommandId = Id(102), FeatureId = Id(100), Element = "+z" },
             new TranslateCommand { CommandId = Id(103), BodyId = Id(101), Dx = 180.5, Dy = 2.25, Dz = 1.5 },
+
+            // ADR-0181 item 9 (phase K16, TASK-0433): a union and an intersection of two boxes that overlap after a move, so
+            // the four platforms compare the bits of the meshes of manifold_union and manifold_intersection.
+            new CreateBoxCommand { CommandId = Id(110), SizeX = 8.5, SizeY = 6.25, SizeZ = 4.75 },
+            new CreateBoxCommand { CommandId = Id(111), SizeX = 5.125, SizeY = 9.5, SizeZ = 3.25 },
+            new TranslateCommand { CommandId = Id(112), BodyId = Id(111), Dx = 2.375, Dy = 1.5, Dz = 1.125 },
+            new UnionCommand { CommandId = Id(113), FirstBodyId = Id(110), SecondBodyId = Id(112) },
+            new TranslateCommand { CommandId = Id(114), BodyId = Id(113), Dx = 200.5, Dy = -3.25, Dz = 2.5 },
+            new CreateBoxCommand { CommandId = Id(115), SizeX = 7.25, SizeY = 5.5, SizeZ = 6.125 },
+            new CreateBoxCommand { CommandId = Id(116), SizeX = 4.5, SizeY = 8.75, SizeZ = 2.375 },
+            new TranslateCommand { CommandId = Id(117), BodyId = Id(116), Dx = -1.625, Dy = 0.75, Dz = 1.5 },
+            new IntersectCommand { CommandId = Id(118), FirstBodyId = Id(115), SecondBodyId = Id(117) },
+            new TranslateCommand { CommandId = Id(119), BodyId = Id(118), Dx = 220.25, Dy = 4.5, Dz = 1.25 },
         ];
     }
 
