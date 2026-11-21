@@ -23,6 +23,8 @@ public sealed class ResponsiveLayoutTests
     private static readonly Guid B = Guid.Parse("bbbbbbbb-0000-0000-0000-000000000000");
     private static readonly LiveBody Plate = new(A, "Extrude", "Plate", true);
     private static readonly LiveBody Rib = new(B, "Extrude", "Rib", true, new BodyFault("E-KERNEL-EXTRUDE-OPEN", "The profile is not closed."));
+    // ADR-0178 item 2 (TASK-0424): a hidden body for the state Hidden.
+    private static readonly LiveBody Back = new(Guid.Parse("cccccccc-0000-0000-0000-000000000000"), "Extrude", "Back", false);
     private static readonly DocumentLine Shelf = new("entry-hall-shelf.3de", null, Kind: Document.Part);
 
     // The states of the probe of TASK-0336. ADR-0172 item 5 (TASK-0418): and the home screen, an active sketch, an open pad,
@@ -31,7 +33,8 @@ public sealed class ResponsiveLayoutTests
     // are two more states. The state of the open structure view has a centre of the part from the host, the other states with
     // no selection have none. The open net of the views is a state too, because it holds "Dimensions" now. ADR-0175 item 5
     // (TASK-0420): the state StructureOpen has the density of the device ("Compact" on each runner), and StructureForTouch is
-    // the open structure view with the density "For touch".
+    // the open structure view with the density "For touch". ADR-0178 item 2 (TASK-0424): the state Hidden has a hidden body
+    // and no selection, so the ring of the part has "Show hidden", and on a portrait phone the path line counts the hidden body.
     public enum State
     {
         Nothing,
@@ -48,6 +51,7 @@ public sealed class ResponsiveLayoutTests
         StructureForTouch,
         FileMenu,
         ViewsOpen,
+        Hidden,
     }
 
     // The sizes of ADR-0113 item 1: the phones in portrait and in landscape, a tablet in both, and two windows.
@@ -218,7 +222,7 @@ public sealed class ResponsiveLayoutTests
     {
         using var ui = new DesktopUi(string.Empty, Document.Millimetre);
         var display = new Vector2(width, height);
-        Guid? selection = state is State.Nothing or State.Images or State.StructureOpen or State.StructureForTouch or State.FileMenu or State.ViewsOpen ? null : A;
+        Guid? selection = state is State.Nothing or State.Hidden or State.Images or State.StructureOpen or State.StructureForTouch or State.FileMenu or State.ViewsOpen ? null : A;
         var face = state == State.Face ? new FaceLine("Face +z: 100 square mm", true, [], null, null, "Face +z", null) : null;
         IReadOnlyList<ProposalCard>? cards = state == State.Proposal
             ? [new ProposalCard(Guid.NewGuid(), "Widen the plate to 75 mm", ["SetExtrudeDistance 1", "SetExtrudeDistance 2"])]
@@ -236,6 +240,7 @@ public sealed class ResponsiveLayoutTests
             ? [new HistoryStep(A, "Extrude", "Plate", "correct", null, HistoryTap.SelectBody), new HistoryStep(B, "CreateSketch", "Plate on XY", "correct", null, HistoryTap.EditSketch, MadeFrom: true)]
             : null;
         var images = state is State.Images or State.ImagesOpen ? new ImagePanel([], null, 0, null) : null;
+        IReadOnlyList<LiveBody> bodies = state == State.Hidden ? [Plate, Rib, Back] : [Plate, Rib];
         for (var i = 0; i < 3; i++)
         {
             if (state == State.Pad && i == 1)
@@ -254,7 +259,7 @@ public sealed class ResponsiveLayoutTests
                 ui.OpenStructure();
                 ui.OpenViews();
             }
-            ui.Frame(1f / 60f, display, Vector2.One, [Plate, Rib], selection, Shelf, sketchPanel: sketchPanel, imagePanel: images, face: face, ringCentre: selection is null && sketchPanel is null && state is not (State.StructureOpen or State.StructureForTouch) ? null : new Vector2(width / 2f, height * 0.55f), ringBody: 120f, history: history, proposals: cards);
+            ui.Frame(1f / 60f, display, Vector2.One, bodies, selection, Shelf, sketchPanel: sketchPanel, imagePanel: images, face: face, ringCentre: selection is null && sketchPanel is null && state is not (State.StructureOpen or State.StructureForTouch) ? null : new Vector2(width / 2f, height * 0.55f), ringBody: 120f, history: history, proposals: cards);
         }
 
         var panels = ui.PanelRectangles.ToList();
