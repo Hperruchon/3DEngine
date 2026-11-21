@@ -1,7 +1,7 @@
 ---
 id: 0437
 title: The second codebase review of 2026-11-21 is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-21
 depends-on: [0436]
@@ -53,12 +53,12 @@ A review of the code at `1e4e345` (v0.420) is in `docs/reviews/`, and a task hol
 - [x] Each finding of the review has its place and its evidence, and the session read the headings, the measures, the summary
       and the questions.
 - [x] The measures use the method of the last review.
-- [ ] `CodebaseReviewGateTests`, `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on
+- [x] `CodebaseReviewGateTests`, `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on
       the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch codebase-review-2026-11-21-b) · v0.421
+Status: Done · commit (the merge of the branch codebase-review-2026-11-21-b) · v0.421
 
 ## Method
 
@@ -75,3 +75,4 @@ Weakest:    E233 gives estimates of time, not runs; E234 is inferred from the co
   event channel failed ... forcibly closed by the remote host"). The commit changes documents only. The artifact
   test-host-crash-windows-latest (20 KB) holds the sequence file and no dump, and the annotation does not name the test. This
   line starts a new run.
+- 2026-11-21: run 44913417834 of `cece2e25` passed on each job. Closed at v0.421.
