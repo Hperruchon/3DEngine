@@ -239,6 +239,53 @@ public sealed class ManifoldGeometryBackend
         _solids[result.Id] = new ManifoldSolidHandle(solid, buffer);
     }
 
+    // ADR-0181 item 4 (phase K16, TASK-0433): IBooleanOps. Stores (first ∪ second) under `result`, in the form of
+    // Subtract: both operands stay intact, and a duplicate result, an unknown operand or an empty result throws.
+    public void Union(BodyHandle result, BodyHandle first, BodyHandle second)
+        => Combine(result, first, second, ManifoldNative.manifold_union, "manifold_union", "The union produced an empty solid");
+
+    // ADR-0181 item 4: stores (first ∩ second) under `result`. Two bodies apart give an empty result, which throws as an
+    // empty difference does. Two bodies that touch on a face can give a flat solid of no volume, which is not empty for
+    // Manifold; the handler refuses that case with the owned kernel first (ADR-0181 item 3).
+    public void Intersect(BodyHandle result, BodyHandle first, BodyHandle second)
+        => Combine(result, first, second, ManifoldNative.manifold_intersection, "manifold_intersection", "The intersection produced an empty solid (the two bodies share no volume)");
+
+    // The steps of Subtract for another boolean of Manifold.
+    private void Combine(BodyHandle result, BodyHandle first, BodyHandle second, Func<nint, nint, nint, nint> operation, string name, string text)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_solids.ContainsKey(result.Id))
+            throw new InvalidOperationException(
+                $"Backend already holds a body under handle '{result.Id}'.");
+        if (!_solids.TryGetValue(first.Id, out var a))
+            throw new KeyNotFoundException(
+                $"Backend has no body under handle '{first.Id}'.");
+        if (!_solids.TryGetValue(second.Id, out var b))
+            throw new KeyNotFoundException(
+                $"Backend has no body under handle '{second.Id}'.");
+
+        nint buffer = Marshal.AllocHGlobal((nint)ManifoldNative.manifold_manifold_size());
+        // Both operands are rooted in _solids for the call, so their raw handles stay alive.
+        nint solid = operation(buffer, a.DangerousGetHandle(), b.DangerousGetHandle());
+
+        int status = ManifoldNative.manifold_status(solid);
+        if (status != 0)
+        {
+            Release(solid, buffer);
+            throw new ManifoldNativeException(
+                $"{name} failed with status {status} for handle '{result.Id}'.");
+        }
+
+        if (ManifoldNative.manifold_is_empty(solid) != 0)
+        {
+            Release(solid, buffer);
+            throw new ManifoldNativeException(
+                $"{text} for handle '{result.Id}'.");
+        }
+
+        _solids[result.Id] = new ManifoldSolidHandle(solid, buffer);
+    }
+
     // IExtrudeOps (ADR-0036 item 6). One simple polygon of the loop, extruded along +Z
     // with no slice, no twist and the scale 1, then moved into the frame by the matrix
     // of the columns U, V and N and the move Origin. Each entry of a frame of an origin

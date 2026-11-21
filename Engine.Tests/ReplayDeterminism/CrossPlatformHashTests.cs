@@ -48,7 +48,9 @@ public class CrossPlatformHashTests
         // Finding E161 (TASK-0242): the ring of a circle extrude cut by a moved cylinder is the fifth body and its sketch the fifth.
         // ADR-0089 item 5 (TASK-0299): the cone cut by a cylinder, the torus and the sphere are the sixth to the eighth body.
         // ADR-0112 item 8 (TASK-0335): the turned box is the ninth body.
-        Assert.Equal(9, one.Document.Bodies.Count);
+        // ADR-0181 item 9 (TASK-0433): the moved union and the moved intersection are the tenth and the eleventh body.
+        Assert.Equal(11, one.Document.Bodies.Count);
+        Assert.Equal(2, one.Document.Bodies.Count(body => body.Handle.Id == Id(114) || body.Handle.Id == Id(119)));
         Assert.Equal(3, one.Document.Bodies.Count(body => body.Handle.Id == Id(94) || body.Handle.Id == Id(96) || body.Handle.Id == Id(98)));
         Assert.Equal(5, one.Document.Sketches.Count);
         Assert.All(one.Document.Sketches.SelectMany(sketch => sketch.References), reference => Assert.Null(reference.Fault));

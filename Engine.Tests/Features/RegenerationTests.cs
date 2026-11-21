@@ -328,6 +328,18 @@ public sealed class RegenerationTests
             inner.TryGet<IBooleanOps>()!.Subtract(result, minuend, subtrahend);
         }
 
+        public void Union(BodyHandle result, BodyHandle first, BodyHandle second)
+        {
+            Count("Union");
+            inner.TryGet<IBooleanOps>()!.Union(result, first, second);
+        }
+
+        public void Intersect(BodyHandle result, BodyHandle first, BodyHandle second)
+        {
+            Count("Intersect");
+            inner.TryGet<IBooleanOps>()!.Intersect(result, first, second);
+        }
+
         private void Count(string operation) => Counts[operation] = Counts.GetValueOrDefault(operation) + 1;
     }
 }
