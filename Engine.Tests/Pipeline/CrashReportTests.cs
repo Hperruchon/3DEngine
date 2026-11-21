@@ -210,6 +210,25 @@ public sealed class CrashReportTests
         Assert.StartsWith("::error title=Failed test on Linux%3A Engine.Tests.Other.Fails::expected 1", lines[1], StringComparison.Ordinal);
     }
 
+    // TASK-0449 (finding T191 of the third codebase review of 2026-11-21): with ten failed tests or more, the test that was
+    // running at the stop is the first failure, so its message has the first annotation and does not go into "N more" as a
+    // bare name.
+    [Fact]
+    public void With_Ten_Failed_Tests_The_Running_Test_Of_A_Stop_Has_The_First_Annotation()
+    {
+        var failed = string.Concat(Enumerable.Range(0, 10).Select(i =>
+            $"<UnitTestResult testName=\"Engine.Tests.Other.Fails{i}\" outcome=\"Failed\"><Output><ErrorInfo>" +
+            "<Message>expected 1</Message></ErrorInfo></Output></UnitTestResult>"));
+
+        var report = ReportWith(RunInfo("Error", Crash), failed, ProbeRunning, Dump);
+
+        var lines = Errors(report);
+        Assert.Equal(10, lines.Length);
+        Assert.StartsWith("::error title=Failed test on Linux%3A Engine.Tests.Probe.Run::Engine.Tests.Probe.Run: the test did not " +
+            "complete, because the test host stopped while it ran.", lines[0], StringComparison.Ordinal);
+        Assert.StartsWith("::error title=2 more failed tests on Linux::Engine.Tests.Other.Fails8%0AEngine.Tests.Other.Fails9", lines[^1], StringComparison.Ordinal);
+    }
+
     // A long report of the runtime is cut, so that the reason of the data collection after it stays inside the cut of the
     // message.
     [Fact]

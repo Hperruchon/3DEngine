@@ -52,32 +52,45 @@ public sealed class CheckInterferenceQueryHandler : IQueryHandler
         if (intended is null)
             return Failure(pairError!);
 
-        var bodies = new List<Body>(ids.Count);
+        var parts = new List<Part>(ids.Count);
         foreach (var id in ids)
         {
             ct.ThrowIfCancellationRequested();
-            var (body, error) = Resolve(document, backend, id);
-            if (body is null)
+            var (part, error) = Prepare(document, backend, id);
+            if (part is null)
                 return Failure(error!);
-            bodies.Add(body);
+            parts.Add(part);
         }
 
         // Item 8 (TASK-0438, finding E233): the work of the check before its first step that splits or measures. Each pair
         // of bodies costs the product of the counts of their pieces, and each pair of outer shells of a mesh body whose boxes
         // share a volume the product of the counts of their polygons. Above the limit the check is refused, so it cannot
-        // hold the session for minutes.
-        var work = bodies.Sum(body => body.ShellWork);
-        for (var i = 0; i < bodies.Count; i++)
+        // hold the session for minutes. TASK-0449 (finding E237 of the third codebase review of 2026-11-21): the work of the
+        // pairs comes first, from the count of the triangles of a mesh body, so a large STL file is refused before its exact
+        // volume, its B-Rep and its shells; the work of the shells follows the solid of each mesh body.
+        var work = 0L;
+        for (var i = 0; i < parts.Count; i++)
         {
-            for (var j = i + 1; j < bodies.Count; j++)
-                work += (long)bodies[i].Pieces.Count * bodies[j].Pieces.Count;
+            for (var j = i + 1; j < parts.Count; j++)
+                work += parts[i].Pieces * parts[j].Pieces;
         }
 
         if (work > WorkLimit)
+            return Failure(Limit(work));
+
+        var bodies = new List<Body>(parts.Count);
+        foreach (var part in parts)
         {
-            return Failure(new ErrorDetail(DiagnosticCodes.CheckWorkLimit,
-                $"The check needs {work} products of the pieces of its bodies, above the limit of {WorkLimit}. Give fewer bodies with bodyIds, or bodies with fewer facets."));
+            ct.ThrowIfCancellationRequested();
+            var (body, error) = Resolve(part);
+            if (body is null)
+                return Failure(error!);
+            bodies.Add(body);
         }
+
+        work += bodies.Sum(body => body.ShellWork);
+        if (work > WorkLimit)
+            return Failure(Limit(work));
 
         foreach (var body in bodies)
         {
@@ -105,11 +118,22 @@ public sealed class CheckInterferenceQueryHandler : IQueryHandler
     // about 0.6 s. The 171 pairs of the bookcase of K10a need 6,156 products.
     internal const long WorkLimit = 100_000;
 
+    private static ErrorDetail Limit(long work) => new(DiagnosticCodes.CheckWorkLimit,
+        $"The check needs {work} products of the pieces of its bodies, above the limit of {WorkLimit}. Give fewer bodies with bodyIds, or bodies with fewer facets.");
+
+    // TASK-0449 (finding E237): one body of the check before its solid. A body of the kernel has its solid and the count of its
+    // polygons; a mesh body has its triangles from the backend and the count of its triangles, which is the count of the
+    // polygons of its solid, one for each triangle.
+    private sealed record Part(Guid Id, BodyRecord Record, KernelSolid? Solid, Tessellation? Mesh, long Pieces);
+
     // One body of the check: its solid in the owned kernel, its exact box, its pieces for the gap, and the mark of item 4. A
-    // mesh body of more than one shell also gives the solid and the box of each outer shell, and the work of their test.
+    // mesh body of more than one shell also gives the solid and the box of each outer shell and of each void, and the work of
+    // their test.
     private sealed record Body(Guid Id, KernelSolid Solid, Vector3R Low, Vector3R High, IReadOnlyList<NearestPoints.Piece> Pieces, bool MeshOnly)
     {
         public IReadOnlyList<Shell> Shells { get; init; } = [];
+
+        public IReadOnlyList<Shell> Voids { get; init; } = [];
 
         public long ShellWork { get; init; }
     }
@@ -155,6 +179,9 @@ public sealed class CheckInterferenceQueryHandler : IQueryHandler
     // the kernel takes a solid that does not cross itself: with two shells that overlap, a point inside the mesh can fall in
     // a leaf outside it, and a box inside the mesh was "apart". Each pair of outer shells whose boxes share a volume runs the
     // exact intersection of the kernel. A void shell, and a shell that crosses itself, are not tested (ADR-0182 "Bad").
+    // TASK-0449 (finding E236 of the third codebase review of 2026-11-21): an island in a void is an outer shell inside the box
+    // of the shell around the void, and the two share the volume of the island. The voids leave the shared volume first, as a
+    // subtract of each void whose box shares a volume with it, so only a volume of material in both shells refuses the body.
     private static ErrorDetail? Crossing(Body body, CancellationToken ct)
     {
         for (var i = 0; i < body.Shells.Count; i++)
@@ -162,7 +189,20 @@ public sealed class CheckInterferenceQueryHandler : IQueryHandler
             for (var j = i + 1; j < body.Shells.Count; j++)
             {
                 var (a, b) = (body.Shells[i], body.Shells[j]);
-                if (ShareVolume(a.Low, a.High, b.Low, b.High) && PlanarBoolean.Intersect(a.Solid, b.Solid, ct) is not null)
+                if (!ShareVolume(a.Low, a.High, b.Low, b.High))
+                    continue;
+                var shared = PlanarBoolean.Intersect(a.Solid, b.Solid, ct);
+                foreach (var hollow in body.Voids)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    if (shared is null)
+                        break;
+                    var (low, high) = BoxOf(shared);
+                    if (ShareVolume(low, high, hollow.Low, hollow.High))
+                        shared = PlanarBoolean.Subtract(shared, hollow.Solid);
+                }
+
+                if (shared is not null)
                 {
                     return new ErrorDetail(DiagnosticCodes.MeshUnsupported,
                         $"Two shells of the triangles of the mesh body '{body.Id}' share a volume, so the pair check cannot give its overlap.");
@@ -174,7 +214,9 @@ public sealed class CheckInterferenceQueryHandler : IQueryHandler
     }
 
     // The work of the test of the shells: the product of the counts of the polygons of each pair whose boxes share a volume.
-    private static long ShellWork(IReadOnlyList<Shell> shells)
+    // TASK-0449 (finding E236): and for such a pair, the product of the count of the polygons of the two shells and of each
+    // void whose box shares a volume with both, the bound of the subtract of that void.
+    private static long ShellWork(IReadOnlyList<Shell> shells, IReadOnlyList<Shell> voids)
     {
         var work = 0L;
         for (var i = 0; i < shells.Count; i++)
@@ -182,8 +224,11 @@ public sealed class CheckInterferenceQueryHandler : IQueryHandler
             for (var j = i + 1; j < shells.Count; j++)
             {
                 var (a, b) = (shells[i], shells[j]);
-                if (ShareVolume(a.Low, a.High, b.Low, b.High))
-                    work += (long)a.Solid.Polygons.Count * b.Solid.Polygons.Count;
+                if (!ShareVolume(a.Low, a.High, b.Low, b.High))
+                    continue;
+                work += (long)a.Solid.Polygons.Count * b.Solid.Polygons.Count;
+                foreach (var hollow in voids.Where(v => ShareVolume(a.Low, a.High, v.Low, v.High) && ShareVolume(b.Low, b.High, v.Low, v.High)))
+                    work += (long)(a.Solid.Polygons.Count + b.Solid.Polygons.Count) * hollow.Solid.Polygons.Count;
             }
         }
 
@@ -211,55 +256,58 @@ public sealed class CheckInterferenceQueryHandler : IQueryHandler
         return (new Vector3R(lx, ly, lz), new Vector3R(hx, hy, hz));
     }
 
-    // Items 4 and 7: the solid of one body. A mesh body of an STL file gives the solid of its triangles, from the doubles of
-    // the backend, when they close a solid; else it is refused. Each other body gives the solid of the measure queries, with
-    // their refusals.
-    private static (Body? Body, ErrorDetail? Error) Resolve(Document document, IGeometryBackend backend, Guid id)
+    // Items 4 and 8 (TASK-0449, finding E237): one body before its solid. A mesh body of an STL file gives the triangles of
+    // the backend and their count. Each other body gives the solid of the measure queries, with their refusals, and the count
+    // of its polygons.
+    private static (Part? Part, ErrorDetail? Error) Prepare(Document document, IGeometryBackend backend, Guid id)
     {
         var record = document.Bodies.First(body => body.Handle.Id == id);
-        KernelSolid? solid;
-        IReadOnlyList<Shell> shells = [];
-        bool meshOnly;
-        if (record.Kind == Commands.ImportStlCommandHandler.MeshKind)
+        if (record.Kind != Commands.ImportStlCommandHandler.MeshKind)
         {
-            (solid, shells, var error) = MeshSolid(backend, record);
-            if (solid is null)
-                return (null, error);
-            meshOnly = true;
-        }
-        else
-        {
-            (solid, var error) = MeasureTarget.SolidOf(document, id);
-            if (solid is null)
-                return (null, error);
-            meshOnly = MeasureTarget.HasCurve(solid);
+            var (solid, error) = MeasureTarget.SolidOf(document, id);
+            return solid is null ? (null, error) : (new Part(id, record, solid, null, solid.Polygons.Count), null);
         }
 
-        var (low, high) = BoxOf(solid);
-        return (new Body(id, solid, low, high, [.. solid.Polygons.Select(polygon => new NearestPoints.Piece(polygon.Vertices))], meshOnly)
+        if (backend.TryGet<ITessellationOps>() is not { } ops)
+            return (null, new ErrorDetail(DiagnosticCodes.GeomCapMissing, "Active backend does not implement ITessellationOps; cannot give the triangles of a mesh body."));
+        try
+        {
+            var mesh = ops.Tessellate(new BodyHandle(record.GeometryKey));
+            return (new Part(id, record, null, mesh, mesh.Indices.Length / 3), null);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            return (null, new ErrorDetail(DiagnosticCodes.GeomNativeOp, $"The backend could not give the triangles of the body '{record.Handle.Id}': {ex.GetType().Name}: {ex.Message}"));
+        }
+    }
+
+    // Items 4 and 7: the solid of one body. A mesh body of an STL file gives the solid of its triangles, from the doubles of
+    // the backend, when they close a solid; else it is refused. Each other body has the solid of the measure queries.
+    private static (Body? Body, ErrorDetail? Error) Resolve(Part part)
+    {
+        KernelSolid? solid = part.Solid;
+        IReadOnlyList<Shell> shells = [], voids = [];
+        if (part.Mesh is { } mesh)
+        {
+            (solid, shells, voids, var error) = MeshSolid(part.Record, mesh);
+            if (solid is null)
+                return (null, error);
+        }
+
+        var (low, high) = BoxOf(solid!);
+        return (new Body(part.Id, solid!, low, high, [.. solid!.Polygons.Select(polygon => new NearestPoints.Piece(polygon.Vertices))], part.Mesh is not null || MeasureTarget.HasCurve(solid))
         {
             Shells = shells,
-            ShellWork = ShellWork(shells),
+            Voids = voids,
+            ShellWork = ShellWork(shells, voids),
         }, null);
     }
 
     // Item 4: the triangles of a mesh body as an exact solid of the kernel. Each double of the backend enters exactly. The
     // solid is valid when each edge has one coedge in each direction (Brep.Valid) and its volume is above zero. Item 7: a
-    // valid mesh of more than one shell also gives its outer shells, which the check tests before its pairs.
-    private static (KernelSolid? Solid, IReadOnlyList<Shell> Shells, ErrorDetail? Error) MeshSolid(IGeometryBackend backend, BodyRecord record)
+    // valid mesh of more than one shell also gives its outer shells, which the check tests before its pairs, and its voids.
+    private static (KernelSolid? Solid, IReadOnlyList<Shell> Shells, IReadOnlyList<Shell> Voids, ErrorDetail? Error) MeshSolid(BodyRecord record, Tessellation mesh)
     {
-        if (backend.TryGet<ITessellationOps>() is not { } ops)
-            return (null, [], new ErrorDetail(DiagnosticCodes.GeomCapMissing, "Active backend does not implement ITessellationOps; cannot give the triangles of a mesh body."));
-        Tessellation mesh;
-        try
-        {
-            mesh = ops.Tessellate(new BodyHandle(record.GeometryKey));
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            return (null, [], new ErrorDetail(DiagnosticCodes.GeomNativeOp, $"The backend could not give the triangles of the body '{record.Handle.Id}': {ex.GetType().Name}: {ex.Message}"));
-        }
-
         var vertices = new Vector3R[mesh.VertexCount];
         var points = new int[mesh.VertexCount];
         var known = new Dictionary<(double, double, double), int>();
@@ -280,19 +328,23 @@ public sealed class CheckInterferenceQueryHandler : IQueryHandler
         {
             int[] indices = [.. mesh.Indices.Select(index => (int)index)];
             var solid = KernelSolid.Mesh(record.Handle.Id, "mesh", vertices, indices);
-            return solid.Volume().Sign > 0 && Brep.Of(solid).Valid ? (solid, OuterShells(record.Handle.Id, vertices, indices, points), null) : (null, [], open);
+            if (solid.Volume().Sign <= 0 || !Brep.Of(solid).Valid)
+                return (null, [], [], open);
+            var (shells, voids) = OuterShells(record.Handle.Id, vertices, indices, points);
+            return (solid, shells, voids, null);
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
-            return (null, [], open);
+            return (null, [], [], open);
         }
     }
 
     // Item 7 (TASK-0438, finding E234): the outer shells of a closed mesh of more than one shell, each as a solid alone. Two
     // triangles with a common edge of two points are in one shell; the backend can give one point as several vertices.
     // A shell whose signed volume has the sign of the whole mesh is an outer shell; a shell of the other sign is a void. A mesh
-    // of one shell gives no shell, because it has no pair to test.
-    private static IReadOnlyList<Shell> OuterShells(Guid body, Vector3R[] vertices, int[] indices, int[] points)
+    // of one shell gives no shell, because it has no pair to test. TASK-0449 (finding E236): each void too, as the solid that
+    // it bounds, whose volume is above zero, because KernelSolid.Mesh turns a solid of negative volume.
+    private static (IReadOnlyList<Shell> Shells, IReadOnlyList<Shell> Voids) OuterShells(Guid body, Vector3R[] vertices, int[] indices, int[] points)
     {
         var count = indices.Length / 3;
         var parent = Enumerable.Range(0, count).ToArray();
@@ -331,20 +383,18 @@ public sealed class CheckInterferenceQueryHandler : IQueryHandler
         }
 
         if (groups.Count < 2)
-            return [];
+            return ([], []);
         var signs = groups.Select(shell => Signed(vertices, shell).Sign).ToList();
         var whole = groups.Aggregate(Rational.Zero, (sum, shell) => sum + Signed(vertices, shell)).Sign;
-        var shells = new List<Shell>();
+        var (shells, voids) = (new List<Shell>(), new List<Shell>());
         for (var g = 0; g < groups.Count; g++)
         {
-            if (signs[g] != whole)
-                continue;
             var solid = KernelSolid.Mesh(body, "mesh", vertices, groups[g]);
             var (low, high) = BoxOf(solid);
-            shells.Add(new Shell(solid, low, high));
+            (signs[g] == whole ? shells : voids).Add(new Shell(solid, low, high));
         }
 
-        return shells;
+        return (shells, voids);
     }
 
     // Six times the signed volume of the triangles of a shell, the sum of a · (b × c) over each triangle.

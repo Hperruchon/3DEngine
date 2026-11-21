@@ -7,8 +7,10 @@ namespace ThreeDEngine.Desktop;
 internal readonly record struct SectionCut((double X, double Y, double Z) Point, (double X, double Y, double Z) Away);
 
 // ADR-0184 item 2: a plane that a section can take: an origin plane or a named datum, with its origin and the direction of
-// its offset. With no flip, the side that goes is the side of this direction.
-internal sealed record SectionPlane(string Name, (double X, double Y, double Z) Origin, (double X, double Y, double Z) Direction);
+// its offset. With no flip, the side that goes is the side of this direction. TASK-0449 (finding V232 of the third codebase
+// review of 2026-11-21): Datum is the identity of the datum of the plane, and null for an origin plane, so a section follows its
+// datum after a move, a rename or an undo.
+internal sealed record SectionPlane(string Name, (double X, double Y, double Z) Origin, (double X, double Y, double Z) Direction, Guid? Datum = null);
 
 // ADR-0184 items 2 and 3: the state of a section view in the window: its plane, its offset along the direction of the plane,
 // and the flip of the side that goes.
@@ -52,32 +54,47 @@ internal sealed class SectionDatums
         return _planes;
     }
 
-    // The datums of a Document as planes: each one with a name and no fault, with its origin and its normal.
+    // The datums of a Document as planes: each one with a name and no fault, with its origin, its normal and its identity.
     public static IReadOnlyList<SectionPlane> Of(IEnumerable<Engine.Contracts.Sketch.DatumRecord> datums)
         => [.. datums.Where(datum => datum.Name is not null && datum.Fault is null).Select(datum => new SectionPlane(datum.Name!,
-            (datum.Frame.Origin.X, datum.Frame.Origin.Y, datum.Frame.Origin.Z), (datum.Frame.Normal.X, datum.Frame.Normal.Y, datum.Frame.Normal.Z)))];
+            (datum.Frame.Origin.X, datum.Frame.Origin.Y, datum.Frame.Origin.Z), (datum.Frame.Normal.X, datum.Frame.Normal.Y, datum.Frame.Normal.Z), datum.Id))];
 }
 
 // One live body with a mesh, as the section cuts it: its identifier, the geometry key of its mesh, true for a solid of the
 // kernel (false for a mesh body), the centre of its box, which is the origin of its entity, and its triangles.
 internal sealed record SectionBody(Guid Id, Guid Geometry, bool Solid, (double X, double Y, double Z) Centre, double[] Positions, uint[] Indices);
 
-// ADR-0184 items 3 to 6: the meshes of a section view on the GPU. For each live body the cut of SectionMesh runs on the
+// ADR-0184 items 3 to 6: the meshes of a section view on the GPU. For each visible live body the cut of SectionMesh runs on the
 // thread pool, off the thread of the frame, and a later frame puts its kept part and its cap on the GPU around the centre of
 // the body, so the model-view matrix of the entity of the body draws them. Until the cut of a body is complete the body
 // keeps its last cut, or shows whole. A body that the plane misses shows whole; a body on the side that goes does not show.
 // The renderer draws a cap with the shading of a body and its hatch with the edge lines, in the accent colour.
+//
+// TASK-0449 (findings V229 and V230 of the third codebase review of 2026-11-21): the task of the cut also narrows the
+// positions and finds the edge lines of the kept part and the hatch of the cap, so the thread of the frame only puts the
+// meshes on the GPU (ADR-0121). A body runs one cut at a time: a new plane or a new mesh while a cut runs waits until that cut
+// ends, and then the newest plane and mesh start, so quick taps on "Flip" do not pile up cuts.
 internal sealed class SectionView
 {
+    // The cut of a body, ready for the GPU: the narrowed positions, the indices and the edge lines of the kept part, and of the
+    // cap with its hatch. Each array is empty, and each line null, for a body that is whole or gone.
+    internal sealed record Prepared(SectionMesh.Side Side, float[] Kept, uint[] KeptIndices, float[]? KeptLines, float[] Cap, uint[] CapIndices, float[]? CapLines);
+
     private sealed class Entry
     {
-        public required Guid Geometry { get; init; }
+        // The mesh and the plane that the body wants now.
+        public required Guid Geometry { get; set; }
 
-        public required SectionCut Cut { get; init; }
+        public required SectionCut Cut { get; set; }
 
-        public required Task<SectionMesh.Result> Pending { get; init; }
+        // The cut that runs or ran last, with the mesh and the plane that it cuts.
+        public required Guid RunningGeometry { get; set; }
 
-        // True when the GPU holds the result of Pending.
+        public required SectionCut RunningCut { get; set; }
+
+        public required Task<Prepared> Running { get; set; }
+
+        // True when the GPU holds the result of Running, or when that result is stale and dropped.
         public bool Uploaded { get; set; }
 
         // The side of the cut that the GPU shows, or null before the first cut of the body is on the GPU.
@@ -93,10 +110,13 @@ internal sealed class SectionView
     private double _spacing;
 
     // A test can hold a cut to choose when it is complete.
-    internal Func<Func<SectionMesh.Result>, Task<SectionMesh.Result>> RunCut { get; init; } = cut => Task.Run(cut);
+    internal Func<Func<Prepared>, Task<Prepared>> RunCut { get; init; } = cut => Task.Run(cut);
+
+    // A test can see the thread of each search of the edge lines and of the hatch.
+    internal Action? Searched { get; init; }
 
     // Complete when each cut that is in progress is complete.
-    internal Task Cuts => Task.WhenAll(_entries.Values.Select(entry => entry.Pending));
+    internal Task Cuts => Task.WhenAll(_entries.Values.Select(entry => entry.Running));
 
     // The count of the cuts that the view started, for a test.
     internal int Started { get; private set; }
@@ -111,7 +131,8 @@ internal sealed class SectionView
     internal const double HatchParts = 40;
 
     // On the render loop: the cut of each body for the section, or no section. A new plane or a new mesh of a body starts a new
-    // cut; a complete cut goes on the GPU. It returns true when a mesh of the section changed.
+    // cut when the cut of the body that runs ends; a complete cut of the plane and the mesh of now goes on the GPU. It returns
+    // true when a mesh of the section changed.
     public bool Follow(SectionCut? cut, IReadOnlyList<SectionBody> bodies, ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? box, IDictionary<string, GpuMesh> meshes, GraphicsDevice device)
     {
         ArgumentNullException.ThrowIfNull(bodies);
@@ -137,73 +158,107 @@ internal sealed class SectionView
 
         foreach (var body in bodies)
         {
-            if (_entries.TryGetValue(body.Id, out var entry) && entry.Geometry == body.Geometry && entry.Cut == plane)
+            if (!_entries.TryGetValue(body.Id, out var entry))
+            {
+                _entries[body.Id] = new Entry { Geometry = body.Geometry, Cut = plane, RunningGeometry = body.Geometry, RunningCut = plane, Running = Start(body, plane) };
                 continue;
-            var start = Start(body, plane);
-            if (entry is not null && entry.Geometry == body.Geometry)
-            {
-                // The body keeps its last cut on the GPU until the new one is complete.
-                _entries[body.Id] = new Entry { Geometry = body.Geometry, Cut = plane, Pending = start, Shown = entry.Shown, Kept = entry.Kept, Cap = entry.Cap };
             }
-            else
-            {
-                changed |= Drop(body.Id, meshes, device);
-                _entries[body.Id] = new Entry { Geometry = body.Geometry, Cut = plane, Pending = start };
-            }
-        }
 
-        foreach (var body in bodies)
-        {
-            var entry = _entries[body.Id];
-            if (entry.Pending.IsCompleted && !entry.Uploaded)
+            if (entry.Geometry != body.Geometry)
+            {
+                // The last cut is a cut of the old mesh, so it leaves the GPU, and the body shows whole until its new cut.
+                changed |= Remove(body.Id, meshes, device) || entry.Shown is not null;
+                (entry.Kept, entry.Cap, entry.Shown) = (false, false, null);
+            }
+
+            (entry.Geometry, entry.Cut) = (body.Geometry, plane);
+            if (!entry.Running.IsCompleted)
+                continue;
+            var current = entry.RunningGeometry == body.Geometry && entry.RunningCut == plane;
+            if (current && !entry.Uploaded)
+            {
                 changed |= Upload(body, entry, meshes, device);
+            }
+            else if (!current)
+            {
+                // The cut that ended is stale: the body keeps its last cut on the GPU, and the cut of now starts.
+                entry.Uploaded = false;
+                (entry.RunningGeometry, entry.RunningCut, entry.Running) = (body.Geometry, plane, Start(body, plane));
+            }
         }
 
         return changed;
     }
 
-    private Task<SectionMesh.Result> Start(SectionBody body, SectionCut plane)
+    // The cut of a body on the thread pool: the cut of SectionMesh, then the narrowed positions, the edge lines of the kept
+    // part and the hatch of the cap, with the spacing of now.
+    private Task<Prepared> Start(SectionBody body, SectionCut plane)
     {
         Started++;
-        var (positions, indices, solid) = (body.Positions, body.Indices, body.Solid);
-        return RunCut(() => SectionMesh.Cut(positions, indices, plane.Point, plane.Away, solid));
+        var spacing = _spacing;
+        var searched = Searched;
+        return RunCut(() => Prepare(body, plane, spacing, searched));
+    }
+
+    private static Prepared Prepare(SectionBody body, SectionCut plane, double spacing, Action? searched)
+    {
+        var result = SectionMesh.Cut(body.Positions, body.Indices, plane.Point, plane.Away, body.Solid);
+        if (result.Side != SectionMesh.Side.Cut)
+            return new Prepared(result.Side, [], [], null, [], [], null);
+        float[] kept = [];
+        float[]? keptLines = null;
+        if (result.Indices.Length > 0)
+        {
+            kept = MeshVertex.Narrow(result.Positions, body.Centre, 1.0);
+            searched?.Invoke();
+            keptLines = EdgeLines.Lines(kept, result.Positions, result.Indices);
+        }
+
+        float[] cap = [];
+        float[]? capLines = null;
+        if (result.CapIndices.Length > 0)
+        {
+            searched?.Invoke();
+            var hatch = SectionMesh.Hatch(result.CapPieces, plane.Away, spacing);
+            var ends = hatch.SelectMany(segment => new[] { segment.A.X, segment.A.Y, segment.A.Z, segment.B.X, segment.B.Y, segment.B.Z }).ToArray();
+            capLines = ends.Length > 0
+                ? EdgeLines.Vertices(MeshVertex.Narrow(ends, body.Centre, 1.0), [.. Enumerable.Range(0, hatch.Count).Select(i => (2 * i, (2 * i) + 1))])
+                : null;
+            cap = MeshVertex.Narrow(result.CapPositions, body.Centre, 1.0);
+        }
+
+        return new Prepared(result.Side, kept, result.Indices, keptLines, cap, result.CapIndices, capLines);
     }
 
     // The meshes of a complete cut on the GPU in the place of the last ones. A cut that failed shows the body whole, as a
     // failure of one body of SessionBodies, and the next body continues.
-    private bool Upload(SectionBody body, Entry entry, IDictionary<string, GpuMesh> meshes, GraphicsDevice device)
+    private static bool Upload(SectionBody body, Entry entry, IDictionary<string, GpuMesh> meshes, GraphicsDevice device)
     {
         entry.Uploaded = true;
         Remove(body.Id, meshes, device);
         (entry.Kept, entry.Cap) = (false, false);
-        if (entry.Pending.IsFaulted)
+        if (entry.Running.IsFaulted)
         {
-            Console.WriteLine($"[WARN] No section of body {body.Id}: {entry.Pending.Exception?.InnerException?.Message}");
+            Console.WriteLine($"[WARN] No section of body {body.Id}: {entry.Running.Exception?.InnerException?.Message}");
             entry.Shown = SectionMesh.Side.Whole;
             return true;
         }
 
-        var result = entry.Pending.Result;
+        var result = entry.Running.Result;
         entry.Shown = result.Side;
         if (result.Side != SectionMesh.Side.Cut)
             return true;
         try
         {
-            if (result.Indices.Length > 0)
+            if (result.KeptIndices.Length > 0)
             {
-                var narrowed = MeshVertex.Narrow(result.Positions, body.Centre, 1.0);
-                meshes[KeptId(body.Id)] = new GpuMesh(device, narrowed, result.Indices, EdgeLines.Lines(narrowed, result.Positions, result.Indices));
+                meshes[KeptId(body.Id)] = new GpuMesh(device, result.Kept, result.KeptIndices, result.KeptLines);
                 entry.Kept = true;
             }
 
             if (result.CapIndices.Length > 0)
             {
-                var hatch = SectionMesh.Hatch(result.CapPieces, entry.Cut.Away, _spacing);
-                var ends = hatch.SelectMany(segment => new[] { segment.A.X, segment.A.Y, segment.A.Z, segment.B.X, segment.B.Y, segment.B.Z }).ToArray();
-                var lines = ends.Length > 0
-                    ? EdgeLines.Vertices(MeshVertex.Narrow(ends, body.Centre, 1.0), [.. Enumerable.Range(0, hatch.Count).Select(i => (2 * i, (2 * i) + 1))])
-                    : null;
-                meshes[CapId(body.Id)] = new GpuMesh(device, MeshVertex.Narrow(result.CapPositions, body.Centre, 1.0), result.CapIndices, lines);
+                meshes[CapId(body.Id)] = new GpuMesh(device, result.Cap, result.CapIndices, result.CapLines);
                 entry.Cap = true;
             }
         }
@@ -237,6 +292,7 @@ internal sealed class SectionView
         return changed;
     }
 
+    // A body that goes: its meshes leave the GPU. A cut of it that still runs ends with no effect.
     private bool Drop(Guid body, IDictionary<string, GpuMesh> meshes, GraphicsDevice device)
     {
         var shown = _entries.Remove(body, out var entry) && entry.Shown is not null;

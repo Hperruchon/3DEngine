@@ -549,6 +549,8 @@ Therefore each approved objective must have a track here.
 - K15d — The side of a hole, a counterbore, a countersink, a tube, two sides on one axis, two cylinders that cross at a
   distance and the side of an arc with a curved face give their measures, and the rest is refused with its reason. v0.433,
   TASK-0450, ADR-0180.
+- P0.180 — The eleven findings of the third codebase review of 2026-11-21 have a correction and a test, or a register entry,
+  and the guards of `HostGuardTests` wait for progress and not for a time. v0.434, TASK-0449.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.

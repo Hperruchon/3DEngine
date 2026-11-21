@@ -225,6 +225,12 @@ answer, and `+`, `-`, `*`, `/` and `sqrt` give it on each platform.
    rationals of that point; else the query refuses it. Its angle to a plane face is that of item 12 when the part of the
    normal m across the axis points into the sector; else it is the angle of item 5 to the outward normal at the end of the
    arc with the larger signed square of the cosine. `GetConnectors` keeps the side of an arc as `Curved` (ADR-0183).
+   TASK-0449 (finding E235 of the third codebase review of 2026-11-21; Q6 A, under the standing order of the owner of
+   2026-11-20): the outward normals of the side of an arc depend on the side of the material. When the arc bites into the
+   profile, the material is outside the circle, and the outward normals point to the axis: the sector turned by a half turn.
+   A facet of the side gives the side of the material by the sign of its outward normal against the part across the axis
+   of one of its vertices, an exact test. The angle then reads the turned sector and its turned ends, as for the side of a
+   hole of item 21. The distance reads the points of the turn only, so it does not change.
    Two sides of a cylinder, a cone or an arc have no one angle between their normals, because two turns of normals share a
    direction. `GetAngle` gives the angle of their axes as lines, from 0 to 90 degrees: the cosine |a · b| / (|a| |b|) and
    the sine |a × b| / (|a| |b|), each the root of an exact square. The direction of an axis depends on the order of the
@@ -373,3 +379,5 @@ builds its pair check on item 4.
 - 2026-11-21 · TASK-0450 · Items 20 to 24: holes on one axis and a tube, the side of a hole and of a tube, two sides on one
   axis, two cylinders whose axes are not parallel, the side of an arc with a curved face, the cases that stay refused with
   their reasons, and the precision of each value; items 3, 6, 8, 9, 14, 16 and 18 say so.
+- 2026-11-21 · TASK-0449 · Item 17: the angle of the side of an arc that bites into the profile, from the side of the
+  material (finding E235, Q6 A of the third codebase review of 2026-11-21).

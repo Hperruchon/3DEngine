@@ -98,7 +98,10 @@ the contract for a parameter that P11 and P13 replace.
    are in one shell; a shell whose signed volume has the sign of the whole mesh is an outer shell, and the other shells are
    voids. Each pair of outer shells whose exact boxes share a volume runs the exact intersection of the kernel, before the
    first pair of bodies. This test is the smallest correct option of the review: a mark "not exact" needs the same test to
-   find the mesh, and a new value of `basis` that ADR-0157 item 7 does not give.
+   find the mesh, and a new value of `basis` that ADR-0157 item 7 does not give. TASK-0449 (finding E236 of the third
+   codebase review of 2026-11-21): an island in a void is an outer shell inside the box of the shell around the void, and the
+   two share the volume of the island. So each void whose box shares a volume with the shared volume is subtracted from it,
+   and only a volume of material in both shells refuses the body. A hollow cube with a cube in its void is checked.
 8. **The cost.** For n bodies the check has n (n - 1) / 2 pairs. Each body gives its solid, its exact box and its pieces
    once. For each pair: one comparison of the boxes; the intersection only for boxes that share a volume, which partitions the
    f_A polygons of one solid by the f_B polygons of the other (O(f_A × f_B) splits in the worst case); else the nearest pair,
@@ -116,6 +119,13 @@ the contract for a parameter that P11 and P13 replace.
    of the nearest pair, and at each node of each walk of the tree of the kernel that splits polygons
    (`PlanarBoolean.Intersect` with a token). The token changes no result. The review also proposed to sort the pieces by the
    gap of their boxes; that changes which pair of points comes first when several pairs give the minimum, so it is not done.
+
+   **The order of the bound (TASK-0449, finding E237 of the third codebase review of 2026-11-21).** The products of the pairs
+   come before the solid of a mesh body: a mesh body counts one piece for each triangle of the backend, which is the count of
+   the polygons of its solid. Above the limit the check is refused before the exact volume, the B-Rep and the shells of each
+   mesh body. After the solids, the products of the shells are added, with the product of the polygons of the two shells
+   and of each void whose box shares a volume with both, and the limit applies again. So a refusal of a body by item 7 can
+   come after the refusal of the work.
 9. **Determinism.** Each step that decides a class uses `+`, `-`, `*`, `/` and comparisons on exact rationals. A double of
    the triangles of a mesh body enters exactly. The gap is one `Math.Sqrt` of the nearest double to an exact square; each other
    value is the nearest double to an exact value. No transcendental function is called.
@@ -143,8 +153,9 @@ fork at each sample.
 **Bad:** the exact intersection and the exact nearest pair have a cost: a body of many facets, as a sphere, gives many
 polygons, and each pair of two such bodies whose boxes share a volume partitions both. The bound of item 8 refuses such a
 check, also two spheres apart, and a part of many bodies with one curved body; a client then gives fewer bodies. Below the
-bound a check can still hold the session for about 13 s. The test of the shells of item 7 does not test a void shell, nor a
-shell that crosses itself, so such a mesh can still give a wrong class. A curved body is checked on its facets,
+bound a check can still hold the session for about 13 s. The test of the shells of item 7 does not test a void shell against
+an outer shell, nor a shell that crosses itself, so such a mesh can still give a wrong class. Each void costs a subtract from
+each shared volume of two outer shells. A curved body is checked on its facets,
 so a gap below the size of the facets is not the gap of the curve, and the mark says so. One faulted body refuses the whole
 check. The two lists are text, which a client must build; a typo gives a refusal and not a wrong answer.
 
@@ -156,3 +167,5 @@ check. The two lists are text, which a client must build; a typo gives a refusal
   ADR-0083 item 4, from the answers A5 to A7 of the owner of 2026-11-15 (ADR-0157 items 5 to 7).
 - 2026-11-21 · TASK-0438 · Items 1, 7 and 8 and "Bad": the bound of work with `E-CHECK-WORK-LIMIT` and the token in the
   inner loops (finding E233, Q5 A), and the refusal of a mesh with two outer shells that share a volume (finding E234).
+- 2026-11-21 · TASK-0449 · Items 7 and 8 and "Bad": the voids leave the volume that two outer shells share, so an island in
+  a void is checked (finding E236), and the products of the pairs come before the solid of a mesh body (finding E237).

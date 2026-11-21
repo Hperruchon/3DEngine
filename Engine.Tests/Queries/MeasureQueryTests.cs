@@ -837,7 +837,9 @@ public sealed class MeasureQueryTests
     // counter-clockwise, extruded by 4. A face at x = 19 is 4 from it, because the nearest point of the whole turn is on
     // the arc. A face at x = -4 is nearest to a point of the turn that is not on the arc, so it is refused. The outward
     // normals of the arc point to +x and to each direction between -y and +y through +x: a face +x is at 0 degrees, and a
-    // face -x and a face +z at 90 degrees.
+    // face -x and a face +z at 90 degrees. TASK-0449 (finding E235): the same half circle as a bite into the profile has
+    // its material outside the circle, so its outward normals point to the centre: to +x and to each direction between -y
+    // and +y through +x again. A face +x is at 0 degrees, and a face -x and a face +z at 90 degrees.
     [NativeManifoldFact]
     public async Task The_Distance_And_The_Angle_Of_The_Side_Of_An_Arc()
     {
@@ -859,6 +861,11 @@ public sealed class MeasureQueryTests
         Assert.Equal(new AngleInfo(1, 0), await Answer<AngleInfo>(session, Angle(arc, arc, "side", box, box, "+x", itemA: item)));
         Assert.Equal(new AngleInfo(0, 1), await Answer<AngleInfo>(session, Angle(arc, arc, "side", box, box, "-x", itemA: item)));
         Assert.Equal(new AngleInfo(0, 1), await Answer<AngleInfo>(session, Angle(box, box, "+z", arc, arc, "side", itemB: item)));
+
+        var (bite, biteItem) = await ArcExtrude(session, bite: true);
+        Assert.Equal(new AngleInfo(1, 0), await Answer<AngleInfo>(session, Angle(bite, bite, "side", box, box, "+x", itemA: biteItem)));
+        Assert.Equal(new AngleInfo(0, 1), await Answer<AngleInfo>(session, Angle(bite, bite, "side", box, box, "-x", itemA: biteItem)));
+        Assert.Equal(new AngleInfo(0, 1), await Answer<AngleInfo>(session, Angle(box, box, "+z", bite, bite, "side", itemB: biteItem)));
     }
 
     // Item 17 (phase K15c, TASK-0444): the angle of two sides of a cylinder, a cone or an arc is the angle between their

@@ -62,7 +62,10 @@ stays, the pad, how the cut is made, the look of the cap, the bodies that the pl
    origin plane is the side of the eye of the start view (yaw 135 degrees, pitch 30 degrees): +z for XY, +y for XZ, +x for YZ.
    The direction of a datum is its normal. An origin plane starts at the middle of the box of the visible bodies along its
    direction, rounded to a whole unit; a datum starts at its own place, an offset of 0. The host reads the datums off the thread
-   of the frame after each change of the Document while a section lasts.
+   of the frame after each change of the Document while a section lasts. TASK-0449 (finding V232 of the third codebase review
+   of 2026-11-21): a plane of a datum keeps the identity of the datum. When the host gives the datums again, a section on a
+   datum takes the plane of the same datum, so a move, a rename or an undo of the datum moves the section, which keeps its
+   offset and its flip. A section whose datum is gone goes to XZ, as a new section, and keeps its flip.
 3. **The offset pad.** "Offset" opens a value pad as the others (ADR-0032), titled "Offset", with one field "offset" in the unit
    of the Document. An apply sets the offset and closes the pad. Escape in the pad closes the pad and keeps the offset. The pad
    gives no action to the host.
@@ -75,6 +78,17 @@ stays, the pad, how the cut is made, the look of the cap, the bodies that the pl
    opaque with the shading of a body, and its hatch is lines at 45 degrees to the two axes of the plane, in the accent colour of
    the theme (the colour of a tool in use), 1/40 of the diagonal of the box of the visible bodies apart. The edge lines of the
    kept part show the outline of the cut. No shader changes: the hatch goes through the pipeline of the edge lines.
+   TASK-0449 (findings V229, V230 and V231 of the third codebase review of 2026-11-21):
+   - The task of the cut also narrows the positions, finds the edge lines of the kept part and makes the hatch of the cap, so
+     the thread of the frame only puts the meshes on the GPU. A cut gives each kept triangle its own three vertices, so the
+     search reads more positions than the mesh had; ADR-0121 puts such a search off the thread of the frame.
+   - A body runs one cut at a time. A new plane or a new mesh while its cut runs waits until that cut ends; then the newest
+     plane and mesh start. A cut that ends for an old plane or an old mesh never reaches the GPU. So quick taps on "Flip" run
+     at most two cuts of each body, and not one for each tap.
+   - A new mesh of a body takes its last cut off the GPU at once, because that cut is of the old mesh: the body shows whole
+     until the cut of its new mesh. A new plane keeps the last cut until the new cut is complete.
+   - The section cuts the visible bodies only. A hidden body is not drawn, so its cut costs time and memory of the GPU with no
+     effect.
 6. **The bodies that the plane misses.** A body with no vertex on the side that goes shows whole, with no cut on the GPU. A body
    with no vertex on the side that stays does not show. The side of each vertex is exact.
 7. **Mesh bodies.** A mesh body of an STL import (ADR-0083) can be open, so a cap has no sure boundary. Its triangles are clipped
@@ -88,7 +102,10 @@ stays, the pad, how the cut is made, the look of the cap, the bodies that the pl
     action, so nothing goes to the engine. The client may use `Math.Sqrt` for the hatch; the cut of a solid is exact.
 11. **The test.** `SectionViewTests` holds items 1 to 8: the state of the window, the cut of a box, a plate with a hole and the
     five panels of the bookcase of K10a, a mesh body, the hatch, and the pictures of the bookcase. The layout test of ADR-0172
-    item 5 gets the state Section.
+    item 5 gets the state Section. TASK-0449 (finding T189): `SectionViewTests` holds the cuts with the hook `RunCut` for item
+    5, and the layout test gets the state `SixSegments`, the ring of the part with New, Sketch, Bodies, Section, Images and
+    Show hidden. At 640 by 360 pixels the first segment of that ring goes under the windows of the top left (register entry
+    R-0076).
 
 ## Consequences
 
@@ -132,3 +149,6 @@ to learn. The ring of the part has one segment more, so a portrait ring with "Im
 ## History
 
 - 2026-11-21 · TASK-0447 · The record, from row R26 and card N7, under the standing order of the owner of 2026-11-20.
+- 2026-11-21 · TASK-0449 · Items 2, 5 and 11: a section follows its datum by its identity (V232), the search of the edge lines
+  and the hatch in the task of the cut (V229), one cut at a time for each body (V230), the visible bodies only (V231), and the
+  tests of item 5 and of the ring of six segments (T189).

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Json;
 using System.Net.WebSockets;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Engine.Api.Http;
@@ -149,24 +150,13 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task The_Process_Refuses_To_Start_On_An_Address_That_Is_Not_Loopback()
     {
-        using var process = StartHost("http://0.0.0.0:0");
-        var errorText = process.StandardError.ReadToEndAsync();
-        var outputText = process.StandardOutput.ReadToEndAsync();
+        using var host = StartHost("http://0.0.0.0:0");
 
-        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        try
-        {
-            await process.WaitForExitAsync(limit.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            process.Kill(entireProcessTree: true);
-            Assert.Fail("The host did not exit within 30 seconds. It bound to 0.0.0.0 and ran.");
-        }
+        // A host that binds to 0.0.0.0 and runs listens before an exit, and fails here.
+        await Exited(host);
 
-        Assert.Equal(1, process.ExitCode);
-        Assert.Contains("loopback", await errorText, StringComparison.Ordinal);
-        GC.KeepAlive(outputText);
+        Assert.Equal(1, host.Process.ExitCode);
+        Assert.Contains("loopback", host.Error, StringComparison.Ordinal);
     }
 
     // Before TASK-0051 the host gave no refusal for these two sources. It tried to
@@ -178,28 +168,17 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
     [InlineData("", "5880")]
     public async Task The_Process_Refuses_A_Foreign_Address_From_Each_Source(string arguments, string? httpPorts)
     {
-        using var process = StartHost(arguments, httpPorts);
-        var errorText = process.StandardError.ReadToEndAsync();
-        var outputText = process.StandardOutput.ReadToEndAsync();
+        using var host = StartHost(arguments, httpPorts);
 
-        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        try
-        {
-            await process.WaitForExitAsync(limit.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            process.Kill(entireProcessTree: true);
-            Assert.Fail("The host did not exit within 30 seconds. It bound the address and ran.");
-        }
+        await Exited(host);
 
-        Assert.Equal(1, process.ExitCode);
-        Assert.Contains("loopback", await errorText, StringComparison.Ordinal);
+        Assert.Equal(1, host.Process.ExitCode);
+        Assert.Contains("loopback", host.Error, StringComparison.Ordinal);
 
         // The refusal came before a bind. Without the check before the start, the
         // check after it also gives exit code 1, after a bind on each interface
         // (finding T27 of the review of 2026-10-09, TASK-0058).
-        Assert.DoesNotContain("Now listening on", await outputText, StringComparison.Ordinal);
+        Assert.DoesNotContain("Now listening on", host.Output, StringComparison.Ordinal);
     }
 
     // Finding E51 of the review of 2026-10-11: a port in use ended a host with an
@@ -214,26 +193,14 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
             var address = await ListeningAddressAsync(first);
 
             using var second = StartHost(address);
-            var errorText = second.StandardError.ReadToEndAsync();
-            var outputText = second.StandardOutput.ReadToEndAsync();
-            using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-            try
-            {
-                await second.WaitForExitAsync(limit.Token);
-            }
-            catch (OperationCanceledException)
-            {
-                second.Kill(entireProcessTree: true);
-                Assert.Fail("The second host did not exit within 30 seconds.");
-            }
+            await Exited(second);
 
-            Assert.Equal(4, second.ExitCode);
-            Assert.Contains("in use", await errorText, StringComparison.Ordinal);
-            GC.KeepAlive(outputText);
+            Assert.Equal(4, second.Process.ExitCode);
+            Assert.Contains("in use", second.Error, StringComparison.Ordinal);
         }
         finally
         {
-            first.Kill(entireProcessTree: true);
+            first.Process.Kill(entireProcessTree: true);
         }
     }
 
@@ -245,34 +212,28 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
     public async Task A_Change_Of_The_Configuration_File_After_The_Start_Starts_No_Endpoint()
     {
         var folder = Directory.CreateTempSubdirectory("engine-api-http-").FullName;
-        using var process = StartHost("--urls http://127.0.0.1:0", httpPorts: null, folder);
+        using var host = StartHost("--urls http://127.0.0.1:0", httpPorts: null, folder);
         try
         {
-            await ListeningAddressAsync(process);
-
-            var lines = new List<string>();
-            _ = Task.Run(async () =>
-            {
-                string? line;
-                while ((line = await process.StandardOutput.ReadLineAsync()) is not null)
-                    lock (lines) lines.Add(line);
-            });
+            await ListeningAddressAsync(host);
+            var output = host.Output;
+            var start = output.IndexOf('\n', output.IndexOf("Now listening on", StringComparison.Ordinal)) + 1;
 
             File.WriteAllText(
                 Path.Combine(folder, "appsettings.json"),
                 """{ "Kestrel": { "Endpoints": { "E1": { "Url": "http://127.0.0.1:0" } } } }""");
+
+            // TASK-0449: the wait of 5 s can only let a fault pass, never fail a correct host, so no time decides a test that
+            // passes (ADR-0173 item 4).
             await Task.Delay(TimeSpan.FromSeconds(5));
 
-            lock (lines)
-            {
-                Assert.DoesNotContain(lines, line =>
-                    line.Contains("Config changed", StringComparison.Ordinal)
-                    || line.Contains("Now listening on", StringComparison.Ordinal));
-            }
+            var later = host.Output[start..];
+            Assert.DoesNotContain("Config changed", later, StringComparison.Ordinal);
+            Assert.DoesNotContain("Now listening on", later, StringComparison.Ordinal);
         }
         finally
         {
-            process.Kill(entireProcessTree: true);
+            host.Process.Kill(entireProcessTree: true);
             try
             {
                 Directory.Delete(folder, recursive: true);
@@ -287,10 +248,10 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task On_The_Real_Host_A_WebSocket_Upgrade_With_A_Foreign_Origin_Is_Refused()
     {
-        using var process = StartHost("http://127.0.0.1:0");
+        using var host = StartHost("http://127.0.0.1:0");
         try
         {
-            var address = await ListeningAddressAsync(process);
+            var address = await ListeningAddressAsync(host);
 
             using var foreign = new ClientWebSocket();
             foreign.Options.SetRequestHeader("Origin", "https://evil.example");
@@ -305,7 +266,7 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
         }
         finally
         {
-            process.Kill(entireProcessTree: true);
+            host.Process.Kill(entireProcessTree: true);
         }
     }
 
@@ -365,25 +326,12 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task A_Host_Whose_Start_Fails_Stops_With_Exit_Code_5()
     {
-        using var process = StartHost("--Kestrel:Endpoints:Http:Url=http://localhost:0", httpPorts: null);
-        var errorText = process.StandardError.ReadToEndAsync();
-        var outputText = process.StandardOutput.ReadToEndAsync();
-        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        try
-        {
-            await process.WaitForExitAsync(limit.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            process.Kill(entireProcessTree: true);
-            Assert.Fail("The host did not exit within 30 seconds.");
-        }
+        using var host = StartHost("--Kestrel:Endpoints:Http:Url=http://localhost:0", httpPorts: null);
+        await Exited(host);
 
-        Assert.Equal(5, process.ExitCode);
-        var error = await errorText;
-        Assert.Contains("The host did not start", error, StringComparison.Ordinal);
-        Assert.DoesNotContain("Unhandled exception", error, StringComparison.Ordinal);
-        GC.KeepAlive(outputText);
+        Assert.Equal(5, host.Process.ExitCode);
+        Assert.Contains("The host did not start", host.Error, StringComparison.Ordinal);
+        Assert.DoesNotContain("Unhandled exception", host.Error, StringComparison.Ordinal);
     }
 
     // Finding E68 of the codebase review of 2026-10-17: a configuration file that the
@@ -394,18 +342,10 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
     {
         var folder = Directory.CreateTempSubdirectory("engine-api-http-").FullName;
         File.WriteAllText(Path.Combine(folder, "appsettings.json"), "{ this is not json");
-        using var process = StartHost("--urls http://127.0.0.1:0", httpPorts: null, folder);
-        var errorText = process.StandardError.ReadToEndAsync();
-        var outputText = process.StandardOutput.ReadToEndAsync();
-        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var host = StartHost("--urls http://127.0.0.1:0", httpPorts: null, folder);
         try
         {
-            await process.WaitForExitAsync(limit.Token);
-        }
-        catch (OperationCanceledException)
-        {
-            process.Kill(entireProcessTree: true);
-            Assert.Fail("The host did not exit within 30 seconds.");
+            await Exited(host);
         }
         finally
         {
@@ -419,11 +359,10 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
             }
         }
 
-        var error = await errorText;
-        Assert.True(process.ExitCode == 5, $"The exit code is {process.ExitCode}. The error output: {error}");
+        var error = host.Error;
+        Assert.True(host.Process.ExitCode == 5, $"The exit code is {host.Process.ExitCode}. The error output: {error}");
         Assert.Contains("The host did not start", error, StringComparison.Ordinal);
         Assert.DoesNotContain("Unhandled exception", error, StringComparison.Ordinal);
-        GC.KeepAlive(outputText);
     }
 
     // ADR-0015 items 4 and 10 (TASK-0091): with --file, each applied command is in the
@@ -444,8 +383,7 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
                     .GetProperty("outputs").GetProperty("bodyId").GetGuid();
                 var renamed = await PostAsync(http, "/commands", new { name = "RenameBody", schemaVersion = 1, parameters = new { bodyId, name = "Plate" } });
                 Assert.Equal("Applied", renamed.GetProperty("status").GetString());
-                first.Kill(entireProcessTree: true);
-                await first.WaitForExitAsync();
+                await Stopped(first);
             }
 
             Assert.Equal(3, (await ReadLinesWhenFree(path)).Length);
@@ -460,8 +398,7 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
             }
             finally
             {
-                second.Kill(entireProcessTree: true);
-                await second.WaitForExitAsync();
+                await Stopped(second);
             }
         }
         finally
@@ -475,19 +412,17 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
     [Fact]
     public async Task A_Host_With_No_File_Says_That_The_Document_Is_In_Memory_Only()
     {
-        using var process = StartHost("--urls http://127.0.0.1:0", httpPorts: null);
-        var errorText = process.StandardError.ReadToEndAsync();
+        using var host = StartHost("--urls http://127.0.0.1:0", httpPorts: null);
         try
         {
-            await ListeningAddressAsync(process);
+            await ListeningAddressAsync(host);
         }
         finally
         {
-            process.Kill(entireProcessTree: true);
-            await process.WaitForExitAsync();
+            await Stopped(host);
         }
 
-        Assert.Contains("has no document file", await errorText, StringComparison.Ordinal);
+        Assert.Contains("has no document file", host.Error, StringComparison.Ordinal);
     }
 
     // E77 of the second codebase review of 2026-10-28: a save moves the file of --file, and a
@@ -515,19 +450,25 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
     // The error output of a host from its start until it listens; the host is then killed.
     private static async Task<string> ErrorOutputOfAStart(string arguments)
     {
-        using var process = StartHost(arguments, httpPorts: null);
-        var errorText = process.StandardError.ReadToEndAsync();
+        using var host = StartHost(arguments, httpPorts: null);
         try
         {
-            await ListeningAddressAsync(process);
+            await ListeningAddressAsync(host);
         }
         finally
         {
-            process.Kill(entireProcessTree: true);
-            await process.WaitForExitAsync();
+            await Stopped(host);
         }
 
-        return await errorText;
+        return host.Error;
+    }
+
+    // The host is killed, and each output is read to its end.
+    private static async Task Stopped(Host host)
+    {
+        host.Process.Kill(entireProcessTree: true);
+        await host.Process.WaitForExitAsync();
+        Assert.True(await host.Progresses(host.Reads), $"The outputs of the host did not end in {NoProgress.TotalSeconds} s after its exit.");
     }
 
     // A --file that names a folder gave exit code 5 until TASK-0099 (finding E82 of the
@@ -545,24 +486,12 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
             File.WriteAllText(path, "{\"format\":\"another-document\",\"formatVersion\":1,\"lengthUnit\":\"mm\"}\n");
         try
         {
-            using var process = StartHost($"--urls http://127.0.0.1:0 --file \"{path}\"", httpPorts: null);
-            var errorText = process.StandardError.ReadToEndAsync();
-            var outputText = process.StandardOutput.ReadToEndAsync();
-            using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-            try
-            {
-                await process.WaitForExitAsync(limit.Token);
-            }
-            catch (OperationCanceledException)
-            {
-                process.Kill(entireProcessTree: true);
-                Assert.Fail("The host did not exit within 30 seconds.");
-            }
+            using var host = StartHost($"--urls http://127.0.0.1:0 --file \"{path}\"", httpPorts: null);
+            await Exited(host);
 
-            var error = await errorText;
-            Assert.True(process.ExitCode == 6, $"The exit code is {process.ExitCode}. The error output: {error}");
+            var error = host.Error;
+            Assert.True(host.Process.ExitCode == 6, $"The exit code is {host.Process.ExitCode}. The error output: {error}");
             Assert.Contains("E-IO-LOAD-FAILED", error, StringComparison.Ordinal);
-            GC.KeepAlive(outputText);
         }
         finally
         {
@@ -591,10 +520,11 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
 
     // Finding T87 of the codebase review of 2026-10-29 (TASK-0107): the run 40839708477 on
     // Windows read the file of a killed host before the process released it. The read tries
-    // for 10 s, and the last try gives its exception.
+    // again, and the last try gives its exception. TASK-0449 (ADR-0173 item 4): the tries last
+    // NoProgress (60 s), the time against a wait for ever, and no longer 10 s.
     private static async Task<string[]> ReadLinesWhenFree(string path)
     {
-        for (var attempt = 0; attempt < 40; attempt++)
+        for (var attempt = 0; attempt < NoProgress.TotalMilliseconds / 250; attempt++)
         {
             try
             {
@@ -637,11 +567,11 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
 
     // The host binary and its runtime configuration are in the test output,
     // because Engine.Tests references Engine.Api.Http.
-    private static Process StartHost(string urls) => StartHost($"--urls {urls}", httpPorts: null);
+    private static Host StartHost(string urls) => StartHost($"--urls {urls}", httpPorts: null);
 
     // Each variable that gives an address is removed first, so that only the
     // arguments and the given port value reach the host.
-    private static Process StartHost(string arguments, string? httpPorts, string? workingDirectory = null)
+    private static Host StartHost(string arguments, string? httpPorts, string? workingDirectory = null)
     {
         var dll = Path.Combine(AppContext.BaseDirectory, "engine-api-http.dll");
         Assert.True(File.Exists(dll), $"{dll} is absent.");
@@ -660,7 +590,7 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
         if (httpPorts is not null)
             start.Environment["ASPNETCORE_HTTP_PORTS"] = httpPorts;
 
-        return Process.Start(start)!;
+        return new Host(Process.Start(start)!);
     }
 
     private static IConfiguration Configuration(params (string Key, string Value)[] values)
@@ -668,22 +598,147 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
             .AddInMemoryCollection(values.Select(v => new KeyValuePair<string, string?>(v.Key, v.Value)))
             .Build();
 
-    // The address that the host reports on its standard output, within 30 seconds.
-    private static async Task<string> ListeningAddressAsync(Process process)
+    // The address that the host reports on its standard output. A host that exits first, or that makes no progress for
+    // NoProgress, fails the test.
+    private static async Task<string> ListeningAddressAsync(Host host)
     {
-        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        while (!limit.IsCancellationRequested)
+        var exit = host.Process.WaitForExitAsync();
+        if (!await host.Progresses(Task.WhenAny(host.Listening, exit)))
         {
-            var line = await process.StandardOutput.ReadLineAsync(limit.Token);
-            if (line is null)
-                break;
-
-            var match = Regex.Match(line, @"Now listening on: (http://[^\s]+)");
-            if (match.Success)
-                return match.Groups[1].Value;
+            host.Process.Kill(entireProcessTree: true);
+            throw new InvalidOperationException($"The host made no progress for {NoProgress.TotalSeconds} s and did not report its address. Its error output: {host.Error}");
         }
 
-        process.Kill(entireProcessTree: true);
-        throw new InvalidOperationException("The host did not report its address within 30 seconds.");
+        if (host.Listening.IsCompleted)
+            return await host.Listening;
+        throw new InvalidOperationException($"The host exited with code {host.Process.ExitCode} before it reported its address. Its error output: {host.Error}");
+    }
+
+    // The host exits. A host that listens first, or that makes no progress for NoProgress, fails the test. Then each output
+    // is read to its end.
+    private static async Task Exited(Host host)
+    {
+        var exit = host.Process.WaitForExitAsync();
+        if (!await host.Progresses(Task.WhenAny(exit, host.Listening)))
+        {
+            host.Process.Kill(entireProcessTree: true);
+            Assert.Fail($"The host made no progress for {NoProgress.TotalSeconds} s and did not exit.");
+        }
+
+        if (!exit.IsCompleted)
+        {
+            host.Process.Kill(entireProcessTree: true);
+            Assert.Fail($"The host listened on {await host.Listening} and did not exit.");
+        }
+
+        await exit;
+        Assert.True(await host.Progresses(host.Reads), $"The outputs of the host did not end in {NoProgress.TotalSeconds} s after its exit.");
+    }
+
+    // ADR-0173 item 4 (TASK-0449, item 4 of P0.180): no time limit decides a test that passes. A host makes progress while it
+    // writes a line or uses processor time. A host that does neither for NoProgress fails its test, and the hang limit of the
+    // step "Test" stops a host that never ends. Until TASK-0449 a limit of 30 s from the start of each host decided these
+    // tests: on 2026-11-21 one to three of them failed at that limit in each full local run, where many tests share the
+    // processors, and each passed alone.
+    private static readonly TimeSpan NoProgress = TimeSpan.FromSeconds(60);
+
+    // A host process, with its two outputs read line by line from its start.
+    private sealed class Host : IDisposable
+    {
+        private readonly StringBuilder _output = new();
+        private readonly StringBuilder _error = new();
+        private readonly TaskCompletionSource<string> _listening = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private long _lines;
+
+        public Host(Process process)
+        {
+            Process = process;
+            Reads = Task.WhenAll(Read(process.StandardOutput, _output, listens: true), Read(process.StandardError, _error, listens: false));
+        }
+
+        public Process Process { get; }
+
+        // Complete when both outputs are at their end.
+        public Task Reads { get; }
+
+        // The address of the first line "Now listening on".
+        public Task<string> Listening => _listening.Task;
+
+        public string Output
+        {
+            get
+            {
+                lock (_output)
+                    return _output.ToString();
+            }
+        }
+
+        public string Error
+        {
+            get
+            {
+                lock (_error)
+                    return _error.ToString();
+            }
+        }
+
+        // True when the task completes; false when the host writes no line and uses no processor time for NoProgress.
+        public async Task<bool> Progresses(Task done)
+        {
+            var (mark, still) = (Mark(), Stopwatch.StartNew());
+            while (!done.IsCompleted)
+            {
+                await Task.WhenAny(done, Task.Delay(TimeSpan.FromSeconds(1)));
+                var now = Mark();
+                if (now != mark)
+                    (mark, still) = (now, Stopwatch.StartNew());
+                else if (still.Elapsed >= NoProgress && !done.IsCompleted)
+                    return false;
+            }
+
+            return true;
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                Process.Kill(entireProcessTree: true);
+            }
+            catch (InvalidOperationException)
+            {
+                // The process has no state to stop.
+            }
+
+            Process.Dispose();
+        }
+
+        // The count of the lines and the processor time of the host; an exited host has a fixed mark.
+        private (long Lines, TimeSpan Processor) Mark()
+        {
+            var lines = Interlocked.Read(ref _lines);
+            try
+            {
+                Process.Refresh();
+                return (lines, Process.HasExited ? TimeSpan.Zero : Process.TotalProcessorTime);
+            }
+            catch (InvalidOperationException)
+            {
+                return (lines, TimeSpan.Zero);
+            }
+        }
+
+        private async Task Read(StreamReader reader, StringBuilder text, bool listens)
+        {
+            string? line;
+            while ((line = await reader.ReadLineAsync()) is not null)
+            {
+                lock (text)
+                    text.Append(line).Append('\n');
+                Interlocked.Increment(ref _lines);
+                if (listens && Regex.Match(line, @"Now listening on: (http://[^\s]+)") is { Success: true } match)
+                    _listening.TrySetResult(match.Groups[1].Value);
+            }
+        }
     }
 }

@@ -105,15 +105,20 @@ public sealed class GetAngleQueryHandler : IQueryHandler
     // Item 21 (phase K15d, TASK-0450): a part of the side of a hole or of a tube is a frustum from the radius R0 to R1 over
     // the height h, so cos β = (R0 - R1) / L with L² = (R0 - R1)² + h². The outward normals of the side of a hole point to
     // the axis, at 180 degrees less β, so the terms of cos β change their sign.
+    //
+    // TASK-0449 (finding E235 of the third codebase review of 2026-11-21): the side of an arc that bites into the profile has
+    // its material outside the circle, so its outward normals point to the axis: the sector turned by a half turn, from
+    // -Start to -End. The test of the sector and the ends then read -m across the axis and the turned ends.
     internal static AngleInfo AboutAxis(MeasureCurve.Surface curve, Vector3R m)
     {
         ArgumentNullException.ThrowIfNull(curve);
         var a = curve.Axis;
         var radial = m - (a * (a.Dot(m) / a.Dot(a)));
-        if (curve.Arc is { } arc && !radial.IsZero && !arc.Holds(radial))
+        if (curve.Arc is { } arc && !radial.IsZero && !arc.Holds(curve.Inward ? -radial : radial))
         {
-            Rational Signed(Vector3R end) => end.Dot(m).Sign * end.Dot(m) * end.Dot(m) / end.Dot(end);
-            return Between(m, Signed(arc.Start) >= Signed(arc.End) ? arc.Start : arc.End);
+            var (start, end) = curve.Inward ? (-arc.Start, -arc.End) : (arc.Start, arc.End);
+            Rational Signed(Vector3R n) => n.Dot(m).Sign * n.Dot(m) * n.Dot(m) / n.Dot(n);
+            return Between(m, Signed(start) >= Signed(end) ? start : end);
         }
 
         var (h2, dot, cross) = (a.Dot(a), a.Dot(m), a.Cross(m));

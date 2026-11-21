@@ -19,8 +19,10 @@ internal static class ViewBreps
     private static readonly LinkedList<(Guid Document, Dictionary<Guid, (KernelSolid Solid, Brep Brep)> Bodies)> Kept = new();
     private static readonly Dictionary<Guid, Dictionary<Guid, int>> Built = [];
 
-    // The count of the B-Reps that the reads built for a body of a document, for a test of the cache. The counts of a
-    // document leave with its kept B-Reps.
+    // The count of the B-Reps that the reads built for a body of a document, for a test of the cache. TASK-0449 (finding E238
+    // of the third codebase review of 2026-11-21): Keep does not drop a count, so the counts of a document keep one entry for
+    // each body that its reads ever built, also a body that is gone. They leave with the kept B-Reps of the document, when the
+    // document leaves the last DocumentLimit documents.
     internal static int BuiltOf(Guid document, Guid body)
     {
         lock (Gate)

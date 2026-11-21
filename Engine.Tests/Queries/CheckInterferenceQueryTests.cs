@@ -349,6 +349,51 @@ public sealed class CheckInterferenceQueryTests(ITestOutputHelper output)
         Assert.Equal((PairClass.Overlapping, 1.0), (wall.Class, wall.Volume));
     }
 
+    // TASK-0449 (finding E236 of the third codebase review of 2026-11-21; ADR-0182 item 7): a hollow cube with a cube in its
+    // void does not cross itself. One file holds [0, 20]³ outward, [4, 16]³ inward and [8, 12]³ outward, so the island is an
+    // outer shell inside the box of the first one. Before TASK-0449 the check refused the mesh, because the two outer shells
+    // share the volume of the island. The voids now leave the shared volume first. A box of 1 at (1, 1, 1) shares its 1 mm³
+    // with the wall, a box of 1 at (6, 6, 6) in the void is 1.5 from the inner face of the wall, and a box of 2 at
+    // (10, 10, 10) shares its 8 mm³ with the island.
+    [NativeManifoldFact]
+    public async Task A_Mesh_With_An_Island_In_A_Void_Is_Checked()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var assets = new AssetBytes();
+        var session = new DocumentSession(EngineHosting.CreateDefault(backend, assets: assets));
+        static float[][] Scaled(float[][] triangles, float scale, float by) => [.. triangles.Select(t => t.Select(v => (v * scale) + by).ToArray())];
+        static float[][] Turned(float[][] triangles) => [.. triangles.Select(t => (float[])[t[0], t[1], t[2], t[6], t[7], t[8], t[3], t[4], t[5]])];
+
+        var mesh = Output(await Applied(session, new ImportStlCommand { Asset = assets.Add(Stl([.. Scaled(Cube, 2, 0), .. Turned(Scaled(Cube, 1.2f, 4)), .. Scaled(Cube, 0.4f, 8)])) }));
+        var (inWall, inVoid, inIsland) = (await Box(session, 1, 1, 1, 1), await Box(session, 1, 6, 6, 6), await Box(session, 2, 10, 10, 10));
+
+        var wall = await Pair(session, mesh, inWall);
+        Assert.Equal((PairClass.Overlapping, 1.0, true), (wall.Class, wall.Volume, wall.MeshOnly));
+        var empty = await Pair(session, mesh, inVoid);
+        Assert.Equal((PairClass.Apart, 1.5), (empty.Class, empty.Gap));
+        var island = await Pair(session, mesh, inIsland);
+        Assert.Equal((PairClass.Overlapping, 8.0), (island.Class, island.Volume));
+    }
+
+    // TASK-0449 (finding E237 of the third codebase review of 2026-11-21; ADR-0182 item 8): the bound of the work comes before
+    // the solid of a mesh body. Two files of 400 triangles each, one triangle at each height, close no solid, and their pair
+    // needs 400 × 400 = 160,000 products. Before TASK-0449 the check built the solid of the first file and refused it as open
+    // with E-MESH-UNSUPPORTED; the count of the triangles now refuses the check by the bound before that work.
+    [NativeManifoldFact]
+    public async Task The_Bound_Of_The_Work_Comes_Before_The_Solid_Of_A_Mesh_Body()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var assets = new AssetBytes();
+        var session = new DocumentSession(EngineHosting.CreateDefault(backend, assets: assets));
+        float[][] layers = [.. Enumerable.Range(0, 400).Select(k => (float[])[0, 0, k, 10, 0, k, 0, 10, k])];
+        var first = Output(await Applied(session, new ImportStlCommand { Asset = assets.Add(Stl(layers)) }));
+        var second = Output(await Applied(session, new ImportStlCommand { Asset = assets.Add(Stl(layers)) }));
+
+        var refused = await session.Query<InterferenceInfo>(new CheckInterferenceQuery { BodyIds = Ids(first, second) });
+        Assert.Equal(DiagnosticCodes.CheckWorkLimit, refused.Error?.Code);
+        Assert.Contains("160000 products", refused.Error!.Message, StringComparison.Ordinal);
+    }
+
     // TASK-0438 (finding E233; ADR-0182 item 8): the test of the shells of a mesh counts in the work. Forty cubes of 12
     // triangles, each moved by 0.1 from the last, in one file: each pair of the 780 pairs of shells shares a volume, so the
     // test of the shells needs 780 × 12 × 12 = 112,320 products, and the pair with a box 480 × 6 = 2,880. The sum, 115,200, is

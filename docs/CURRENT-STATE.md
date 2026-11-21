@@ -13492,3 +13492,58 @@ perpendicular on both spans, which item 22 now measures; the refused cylinder is
 New tests: 6. The test list holds 3180 (1840 in `Engine.Tests`, 390 in `3DEngine.Tests`, 947 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0; `E-MEASURE-CURVED` refuses fewer cases. Since
 the review of v0.431, 1 product milestone and 2 entries followed it.
+
+## v0.434 — The medium and low findings of the third codebase review of 2026-11-21 (P0.180, TASK-0449)
+
+TASK-0449 holds the two medium and nine low findings of the third codebase review of 2026-11-21 (TASK-0448, v0.432), after
+K15d (v0.433) by section 7 of `docs/templates.md`. The branch `p0180-review-findings` starts from `009e11f9` (K15d, not merged
+yet), because K15d changed `AboutAxis`, the method of E235. Q6 (E235) A is answered by the standing order of the owner of
+2026-11-20 (Q6 of the third codebase review of 2026-11-21). The session of 2026-11-21 added item 4: the time limits of
+`HostGuardTests`, because the K15d session saw one to three of them fail at 30 s in each full local run, and each passed alone.
+
+**The change.**
+- E235 (Q6 A): the side of an arc that bites into the profile has its material outside the circle. A facet of the side gives
+  the side of the material, an exact sign, and `GetAngle` reads the sector turned by a half turn (ADR-0180 item 17).
+- E236: each void leaves the volume that two outer shells of a mesh share, so a hollow cube with a cube in its void is
+  checked (ADR-0182 item 7).
+- E237: the bound of the work of `CheckInterference` counts the triangles of a mesh body before its solid, so a large STL file
+  is refused before its exact volume, its B-Rep and its shells (ADR-0182 item 8).
+- E238: the comments of `PlanarBoolean.Cut`, of the header of `RevolvedDistance` and of the counts of `ViewBreps` say what
+  the code does.
+- V229: the task of the cut of the section view narrows the positions and finds the edge lines and the hatch, so the frame
+  only puts the meshes on the GPU (ADR-0184 item 5, ADR-0121 "affects").
+- V230: a body runs one cut at a time; the newest plane and mesh start when that cut ends, and a stale cut never reaches the
+  GPU. The cache of the solid of each mesh, the second part of the correction, is not done (TASK-0449, "Scope (out)").
+- V231: the section cuts the visible bodies only.
+- V232: a plane of a datum keeps the identity of the datum, so the section follows a move, a rename or an undo of the datum,
+  and goes to XZ when the datum is gone (ADR-0184 item 2).
+- T189: `SectionViewTests` holds the cuts with `RunCut`: the last cut stays until the new one, a new mesh shows whole until its
+  cut, and a body that goes keeps no mesh. The layout test gets the state `SixSegments`, the ring of the part with six
+  segments. At 640 by 360 its first segment goes under the windows of the top left: register entry R-0076, and the test leaves
+  out that fault only.
+- T190: register entry R-0075 holds the two gaps of the HTTP surface (no query lists the sheets, none gives the live bodies
+  with their names) for the owner. The read of the guide fails on an indented fence or a fence of tildes, and the 15
+  sentences of the guide over 25 words are split.
+- T191: the running test of a stop is the first failure of `eng/report-failed-tests.js`, so with ten failures or more it keeps
+  its annotation.
+- Item 4: a host process of `HostGuardTests` fails its test only when it writes no line and uses no processor time for 60 s; a
+  refusal at the start fails at once when the host listens before it exits; the read of a held file tries for 60 s
+  (ADR-0173 item 4 and "affects").
+
+**Proof.** Five new tests in `Engine.Tests` (an island in a void, the bound before the solid of a mesh, the running test first,
+and two cases of a fence that the test does not read) and five in `3DEngine.ImageTests` (the search in the cut, one cut at a
+time, the visible bodies, a section on a datum, and the state `SixSegments` of the resize); `The_Distance_And_The_Angle_Of_The_Side_Of_An_Arc`
+gets the bite. Before each correction its test failed on the code of `009e11f9`; the tests of item 5 of ADR-0184 passed there,
+because T189 is a gap of the tests. Seventeen injections, each restored byte for byte (sha256), made a named test fail;
+TASK-0449 lists them in its section "Method". `HostGuardTests` alone passed five times (200 s, 178 s, 134 s, 143 s and 159 s
+for 48 tests) and in the full run. The injection of a host that only waits failed after 3 min 18 s, because an idle host uses
+processor time for its timers for a while; the hang limit of the step "Test" stops such a host first. A clean build gives 0
+warnings, the phone project builds with 0 warnings, `dotnet test` passes 3190 tests, and the write-set check and
+`eng/repo-gates` pass. The desktop was not run.
+The failed runs since the entry v0.433, from the API: none.
+
+Corrections: `The_Planes_Of_The_Datums_Are_The_Named_Datums_With_No_Fault` expects the identity of the datum in its plane.
+
+New tests: 10. The test list holds 3190 (1845 in `Engine.Tests`, 390 in `3DEngine.Tests`, 952 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 15 of 15. New diagnostic codes: 0. Since the review of v0.431,
+1 product milestone and 3 entries followed it.

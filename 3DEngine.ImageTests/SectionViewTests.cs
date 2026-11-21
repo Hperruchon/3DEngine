@@ -179,14 +179,47 @@ public sealed class SectionViewTests
     {
         var frame = new DatumFrame(new DatumPoint(1, 2, 3), new DatumAxis(1, 0, 0), new DatumAxis(0, 0, 1), new DatumAxis(0, -1, 0));
         var reference = new DatumReference(Guid.NewGuid(), "+y", null);
+        var front = Guid.NewGuid();
         var planes = SectionDatums.Of(
         [
-            new DatumRecord(Guid.NewGuid(), "Front face", reference, frame, null),
+            new DatumRecord(front, "Front face", reference, frame, null),
             new DatumRecord(Guid.NewGuid(), null, reference, frame, null),
             new DatumRecord(Guid.NewGuid(), "Lost", reference, frame, new DatumFault("E-DATUM-LOST", "The face is gone.")),
         ]);
 
-        Assert.Equal([new SectionPlane("Front face", (1, 2, 3), (0, -1, 0))], planes);
+        // TASK-0449 (finding V232): each plane keeps the identity of its datum.
+        Assert.Equal([new SectionPlane("Front face", (1, 2, 3), (0, -1, 0), front)], planes);
+    }
+
+    // TASK-0449 (finding V232 of the third codebase review of 2026-11-21; item 2): a section on a datum follows the datum by its
+    // identity. A move or a rename of the datum, for example by an undo, moves or renames the plane of the section and keeps the
+    // offset and the flip; a datum that is gone gives the plane XZ again. Before TASK-0449 the section kept the copy of the plane
+    // of the tap, and the next tap on "Plane" went to XY.
+    [Fact]
+    public void A_Section_On_A_Datum_Follows_The_Datum_And_Goes_Back_To_XZ_When_It_Is_Gone()
+    {
+        var display = new Vector2(1280, 720);
+        using var ui = Sectioned(display);
+        var (id, reference) = (Guid.NewGuid(), new DatumReference(Guid.NewGuid(), "+z", null));
+        DatumRecord Shelf(string name, double z)
+            => new(id, name, reference, new DatumFrame(new DatumPoint(0, 0, z), new DatumAxis(1, 0, 0), new DatumAxis(0, 1, 0), new DatumAxis(0, 0, 1)), null);
+        ui.ShowSectionDatums(SectionDatums.Of([Shelf("Shelf top", 40)]));
+        Tap(ui, display, DesktopUi.RingTextItem(DesktopUi.SectionPlaneLabel));
+        Tap(ui, display, DesktopUi.RingTextItem(DesktopUi.SectionPlaneLabel));
+        Tap(ui, display, DesktopUi.RingTextItem(DesktopUi.SectionFlipLabel));
+        Assert.Equal(new SectionCut((0, 0, 40), (0, 0, -1)), ui.Section!.Cut);
+
+        ui.ShowSectionDatums(SectionDatums.Of([Shelf("Top", 60)]));
+        Assert.Equal(("Top", new SectionCut((0, 0, 60), (0, 0, -1))), (ui.Section!.Plane.Name, ui.Section.Cut));
+        Tap(ui, display, DesktopUi.RingTextItem(DesktopUi.SectionPlaneLabel));
+        Assert.Equal("XY", ui.Section!.Plane.Name);
+        Tap(ui, display, DesktopUi.RingTextItem(DesktopUi.SectionPlaneLabel));
+        Tap(ui, display, DesktopUi.RingTextItem(DesktopUi.SectionPlaneLabel));
+        Tap(ui, display, DesktopUi.RingTextItem(DesktopUi.SectionPlaneLabel));
+        Assert.Equal("Top", ui.Section!.Plane.Name);
+
+        ui.ShowSectionDatums([]);
+        Assert.Equal(new SectionState(DesktopUi.DefaultSectionPlane, 15, true), ui.Section);
     }
 
     // Item 4: "Flip" turns the side that goes, keeps the plane, and has the colour of a tool in use while the side is flipped.
@@ -342,6 +375,200 @@ public sealed class SectionViewTests
         var parts = hatch.Select(line => (line.A.X - line.A.Z) / Math.Sqrt(2)).Order().ToList();
         foreach (var (first, second) in parts.Zip(parts.Skip(1)))
             Assert.Equal(1, Math.Abs(second - first), 9);
+    }
+
+    // Cuts of SectionView that the test holds (TASK-0449, findings V229, V230 and T189 of the third codebase review of
+    // 2026-11-21). A held cut runs when the test completes it, on a thread of its own, not on the thread of the frame.
+    private sealed class HeldCuts
+    {
+        private readonly List<Action> _held = [];
+
+        public int Count => _held.Count;
+
+        public Task<T> Hold<T>(Func<T> cut)
+        {
+            var done = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _held.Add(() =>
+            {
+                try
+                {
+                    done.SetResult(cut());
+                }
+                catch (Exception exception)
+                {
+                    done.SetException(exception);
+                }
+            });
+            return done.Task;
+        }
+
+        public void Complete(int index)
+        {
+            var thread = new Thread(() => _held[index]());
+            thread.Start();
+            thread.Join();
+        }
+    }
+
+    private static readonly ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max) BoxOfTheCuts = ((-20, -12, -5), (20, 12, 5));
+
+    // A body of the kernel as the section cuts it, with the given key of its mesh.
+    private static async Task<SectionBody> Sectioned(EngineHost host, Guid body, Guid geometry)
+    {
+        var tessellation = await Tessellation(host, body);
+        return new SectionBody(body, geometry, true, MeshVertex.Centre(tessellation.Positions), tessellation.Positions, tessellation.Indices);
+    }
+
+    private static void Free(Dictionary<string, GpuMesh> meshes)
+    {
+        foreach (var mesh in meshes.Values)
+            mesh.Dispose();
+    }
+
+    // TASK-0449 (finding V229; ADR-0121 and ADR-0184 item 5): the cut finds the edge lines of its kept part and the hatch of its
+    // cap, so the thread of the frame only puts the meshes on the GPU. Before TASK-0449 the search ran in Follow, on the thread
+    // of the frame, with no limit of triangles.
+    [VulkanImageFact]
+    public async Task The_Edge_Lines_And_The_Hatch_Of_A_Cut_Are_Found_In_The_Cut_And_Not_On_The_Thread_Of_The_Frame()
+    {
+        var messagesBefore = GraphicsDevice.ValidationMessageCount;
+        using var host = new EngineHost(new ManifoldGeometryBackend());
+        var id = await Body(host, new CreateBoxCommand { SizeX = 40, SizeY = 24, SizeZ = 10 });
+        var body = await Sectioned(host, id, Guid.NewGuid());
+        using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
+        {
+            var meshes = new Dictionary<string, GpuMesh>();
+            var held = new HeldCuts();
+            var searches = new List<int>();
+            try
+            {
+                var view = new SectionView { RunCut = held.Hold, Searched = () => { lock (searches) searches.Add(Environment.CurrentManagedThreadId); } };
+                var cut = new SectionCut((0, 0, 0), (1, 0, 0));
+                var frame = Environment.CurrentManagedThreadId;
+                view.Follow(cut, [body], BoxOfTheCuts, meshes, device);
+                Assert.Equal(1, held.Count);
+                held.Complete(0);
+                Assert.True(view.Follow(cut, [body], BoxOfTheCuts, meshes, device));
+
+                Assert.Equal(SectionMesh.Side.Cut, view.ShownOf(id));
+                Assert.True(meshes[SectionView.KeptId(id)].EdgeVertexCount > 0, "The kept part has no edge lines.");
+                Assert.True(meshes[SectionView.CapId(id)].EdgeVertexCount > 0, "The cap has no hatch.");
+                Assert.Equal(2, searches.Count);
+                Assert.DoesNotContain(frame, searches);
+            }
+            finally
+            {
+                Free(meshes);
+            }
+        }
+
+        Assert.Equal(messagesBefore, GraphicsDevice.ValidationMessageCount);
+    }
+
+    // TASK-0449 (findings V230 and T189; ADR-0184 item 5): a body runs one cut at a time, and keeps its last cut on the GPU until
+    // its new cut is complete. Three new planes while a cut runs start no cut; when the cut ends, which is stale, the newest plane
+    // starts, and the stale cut never reaches the GPU. Before TASK-0449 each plane started a cut at once, so quick taps on "Flip"
+    // ran many cuts of each body together. A new mesh of the body while its cut runs takes the old cut off the GPU, because it is
+    // a cut of the old mesh: the body shows whole until the cut of its new mesh. A body that goes while its cut runs keeps no
+    // mesh of the section, also when that cut ends.
+    [VulkanImageFact]
+    public async Task A_Body_Runs_One_Cut_At_A_Time_And_Keeps_Its_Last_Cut_Until_The_New_One()
+    {
+        var messagesBefore = GraphicsDevice.ValidationMessageCount;
+        using var host = new EngineHost(new ManifoldGeometryBackend());
+        var id = await Body(host, new CreateBoxCommand { SizeX = 40, SizeY = 24, SizeZ = 10 });
+        var body = await Sectioned(host, id, Guid.NewGuid());
+        var (a, b, c, d, e) = (Plane(0), Plane(5), Plane(-5), Plane(10), Plane(-10));
+        using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
+        {
+            var meshes = new Dictionary<string, GpuMesh>();
+            var held = new HeldCuts();
+            try
+            {
+                var view = new SectionView { RunCut = held.Hold };
+                bool Follow(SectionCut cut, params SectionBody[] bodies) => view.Follow(cut, bodies, BoxOfTheCuts, meshes, device);
+                Follow(a, body);
+                held.Complete(0);
+                Follow(a, body);
+                var first = meshes[SectionView.KeptId(id)];
+
+                Follow(b, body);
+                Follow(c, body);
+                Follow(d, body);
+                Assert.Equal(2, view.Started);
+                held.Complete(1);
+                Follow(d, body);
+                Assert.Same(first, meshes[SectionView.KeptId(id)]);
+                Assert.Equal((SectionView.KeptId(id), SectionView.CapId(id)), view.Draws(id));
+                Assert.Equal(3, view.Started);
+                held.Complete(2);
+                Assert.True(Follow(d, body));
+                Assert.NotSame(first, meshes[SectionView.KeptId(id)]);
+                Assert.Equal(SectionMesh.Side.Cut, view.ShownOf(id));
+
+                // A new mesh of the body while its cut runs.
+                Follow(e, body);
+                var wider = await Sectioned(host, await Body(host, new CreateBoxCommand { SizeX = 60, SizeY = 24, SizeZ = 10 }), Guid.NewGuid()) with { Id = id };
+                Assert.True(Follow(e, wider));
+                Assert.Null(view.Draws(id));
+                Assert.False(meshes.ContainsKey(SectionView.KeptId(id)));
+                Assert.Equal(4, view.Started);
+                held.Complete(3);
+                Follow(e, wider);
+                Assert.Null(view.Draws(id));
+                Assert.Equal(5, view.Started);
+                held.Complete(4);
+                Assert.True(Follow(e, wider));
+                Assert.Equal((SectionView.KeptId(id), SectionView.CapId(id)), view.Draws(id));
+
+                // A body that goes while its cut runs.
+                Follow(a, wider);
+                Assert.Equal(6, view.Started);
+                Assert.True(Follow(a));
+                held.Complete(5);
+                Follow(a);
+                Assert.Empty(meshes);
+                Assert.Null(view.ShownOf(id));
+                Assert.Equal(6, view.Started);
+            }
+            finally
+            {
+                Free(meshes);
+            }
+        }
+
+        Assert.Equal(messagesBefore, GraphicsDevice.ValidationMessageCount);
+        static SectionCut Plane(double x) => new((x, 0, 0), (1, 0, 0));
+    }
+
+    // TASK-0449 (finding V231; ADR-0184 item 5): the section cuts the visible bodies only. A hidden body is not drawn, so its cut
+    // would only cost the time of the cut and the memory of the GPU.
+    [VulkanImageFact]
+    public async Task The_Section_Cuts_The_Visible_Bodies_Only()
+    {
+        var messagesBefore = GraphicsDevice.ValidationMessageCount;
+        using var host = new EngineHost(new ManifoldGeometryBackend());
+        var shown = await Body(host, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 });
+        var hidden = await Body(host, new CreateBoxCommand { SizeX = 20, SizeY = 20, SizeZ = 20 });
+        Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new SetBodyVisibilityCommand { BodyId = hidden, Visible = false })).Status);
+        using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
+        {
+            var meshes = new Dictionary<string, GpuMesh>();
+            try
+            {
+                using var bodies = new SessionBodies(new HostedSession(host));
+                bodies.Apply(SessionScene.Create(), meshes, device);
+                Assert.Equal(2, bodies.Live.Count);
+
+                Assert.Equal([shown], bodies.SectionBodies.Select(body => body.Id));
+            }
+            finally
+            {
+                Free(meshes);
+            }
+        }
+
+        Assert.Equal(messagesBefore, GraphicsDevice.ValidationMessageCount);
     }
 
     // The table of the bookcase of Engine.Tests/Assembly/BookcaseCase.cs (K10a), which this project cannot reference.
