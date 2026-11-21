@@ -1,7 +1,7 @@
 ---
 id: 0426
 title: The medium and low findings of the codebase review of 2026-11-20
-status: Active
+status: Done
 phase: P0.171
 opened: 2026-11-20
 depends-on: [0425]
@@ -93,11 +93,11 @@ ADR-0178 has no code yet; R20e (TASK-0424) implements it. This task changes the 
 
 - [x] Each finding has a test that fails before its correction, or a register entry.
 - [x] Each injection of a correction makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0171-review-findings) · v0.410
+Status: Done · commit (the merge of the branch p0171-review-findings) · v0.410
 
 Fourteen findings have a correction and a test that failed on the code of v0.409. V218 and V219 are corrections of the text
 of ADR-0178, which has no code yet; the test of that code is `ShowHiddenTests` of TASK-0424. No register entry was necessary.
@@ -155,3 +155,4 @@ over a pad or a message window on the page too. `ResponsiveLayoutTests.Each_Key_
   v0.409). The answers Q1, Q2, Q3 and Q8 are in the section "Decisions".
 - 2026-11-21: the work: fourteen corrections with 32 new test cases, the text of ADR-0173, ADR-0177 and ADR-0178, and 18
   injections. Ledger entry v0.410.
+- 2026-11-21: run 44837066779 of `1045aae` passed on each job. Closed at v0.410.

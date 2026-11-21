@@ -35,6 +35,9 @@ public static class HandlerCatalog
         new TranslateCommandHandler(),
         new RotateCommandHandler(),
         new SubtractCommandHandler(),
+        // Phase K16 (TASK-0433): the union and the intersection, in the form of Subtract.
+        new UnionCommandHandler(),
+        new IntersectCommandHandler(),
         new RenameBodyCommandHandler(),
         new SetBodyVisibilityCommandHandler(),
         new UndoCommandHandler(),

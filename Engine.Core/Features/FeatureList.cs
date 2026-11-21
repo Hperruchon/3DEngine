@@ -52,8 +52,10 @@ public sealed class FeatureList
     // ADR-0039 item 1: the kinds of command that create a body.
     // ADR-0076 item 6: CreateCylinder is a creator too.
     // ADR-0083 item 1 (TASK-0258): ImportStl creates a mesh body, a feature with no input, as a box is.
+    // ADR-0181 item 1 (phase K16, TASK-0433): Union and Intersect create a body, as Subtract does.
     public static bool Creates(Command command)
-        => command is CreateBoxCommand or CreateCylinderCommand or CreateConeCommand or CreateSphereCommand or CreateTorusCommand or ImportStlCommand or ExtrudeCommand or TranslateCommand or RotateCommand or SubtractCommand;
+        => command is CreateBoxCommand or CreateCylinderCommand or CreateConeCommand or CreateSphereCommand or CreateTorusCommand or ImportStlCommand or ExtrudeCommand or TranslateCommand or RotateCommand or SubtractCommand
+            or UnionCommand or IntersectCommand;
 
     // ADR-0021 item 3: the bodies that a command consumes, in the order of its fields.
     public static IReadOnlyList<Guid> Operands(Command command) => command switch
@@ -61,6 +63,8 @@ public sealed class FeatureList
         TranslateCommand translate => [translate.BodyId],
         RotateCommand rotate => [rotate.BodyId],
         SubtractCommand subtract => [subtract.MinuendBodyId, subtract.SubtrahendBodyId],
+        UnionCommand union => [union.FirstBodyId, union.SecondBodyId],
+        IntersectCommand intersect => [intersect.FirstBodyId, intersect.SecondBodyId],
         _ => [],
     };
 

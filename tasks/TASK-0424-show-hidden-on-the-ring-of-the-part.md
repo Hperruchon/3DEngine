@@ -1,7 +1,7 @@
 ---
 id: 0424
 title: "Show hidden" on the ring of the part, and the count of the hidden bodies on the path line where the status line has no room
-status: Active
+status: Done
 phase: R20e
 opened: 2026-11-20
 depends-on: [0427]
@@ -58,12 +58,12 @@ A person finds "Show hidden" on the ring of the part, and a portrait phone shows
 - [x] `ShowHiddenTests` shows the segment with a hidden body and not without, and its tap sends one "Show all".
 - [x] At 390 by 844 with a hidden body the path line shows the part, and its tap opens the list of ADR-0124 item 3.
 - [x] An injection of each item makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
   (Local: each passes. Continuous integration runs after the push.)
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch r20e-show-hidden) · v0.412
+Status: Done · commit (the merge of the branch r20e-show-hidden) · v0.412
 
 ## Method
 
@@ -110,3 +110,4 @@ status line is also under the path line; the test now requires the top of the li
 - 2026-11-21: opened after R30i, branch `r20e-show-hidden` from `d403db9d` (R30i, TASK-0428, v0.411), which is not merged
   yet. The segment, the part on the path line, `ShowHiddenTests` (11 cases) and the state Hidden of the layout test; 11
   injections. Ledger entry v0.412.
+- 2026-11-21: run 44844390227 of `040f238a` passed on each job. Closed at v0.412.

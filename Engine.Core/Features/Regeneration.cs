@@ -277,11 +277,33 @@ internal static class Regeneration
                     return Call(handle, key, () => ops.Subtract(new BodyHandle(key), new BodyHandle(minuend), new BodyHandle(subtrahend)));
                 }
 
+                // ADR-0181 item 7 (phase K16, TASK-0433): a Union or an Intersect with a changed operand runs again, as a
+                // Subtract does. The step is a method of its own, so the frame of this recursive method does not grow.
+                case UnionCommand or IntersectCommand:
+                    return EvaluatePair(handle, key, list.Creator(handle)!);
+
                 case { } other:
                     return (handle, false, $"the command '{other.Name}' that creates the body '{handle}' is not a step that the feature graph knows");
                 default:
                     return (handle, false, $"no command in effect creates the body '{handle}'");
             }
+        }
+
+        // ADR-0181 item 7: the step of a Union or an Intersect, from the keys of its two operands.
+        private (Guid Key, bool Changed, string? Failure) EvaluatePair(Guid handle, Guid key, Command command)
+        {
+            var operands = FeatureList.Operands(command);
+            var (first, firstChanged, firstFailure) = Evaluate(operands[0]);
+            var (second, secondChanged, secondFailure) = Evaluate(operands[1]);
+            if ((firstFailure ?? secondFailure) is { } failure)
+                return (handle, false, failure);
+            if (!firstChanged && !secondChanged)
+                return (handle, false, null);
+            if (backend.TryGet<IBooleanOps>() is not { } ops)
+                return (handle, false, "the active backend does not implement IBooleanOps");
+            return command is UnionCommand
+                ? Call(handle, key, () => ops.Union(new BodyHandle(key), new BodyHandle(first), new BodyHandle(second)))
+                : Call(handle, key, () => ops.Intersect(new BodyHandle(key), new BodyHandle(first), new BodyHandle(second)));
         }
 
         // One call of the backend for one step; an exception is the failure of the step.

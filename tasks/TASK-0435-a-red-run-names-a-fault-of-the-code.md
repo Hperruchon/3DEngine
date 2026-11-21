@@ -194,3 +194,5 @@ The test of E49 of the base commit, with I3, passed in 5 s: the old limit of 5 s
 - 2026-11-21: opened under the order of the owner "Start P0.173", branch `p0173-red-runs` from `1b5827fe` (TASK-0434, K15b,
   v0.418, not merged yet). The search, the table of choices, the dumps on each system, the cause of a crash, the re-run of a
   fault of the artifact service, R-0073, and ledger entry v0.419.
+- 2026-11-21: merged `main` with K16 (v0.417) and K15b (v0.418), which the owner's order "merge k16" put first: the
+  test floor of `Engine.Tests` is 1778, and the ledger entry v0.419 counts 3 product milestones and 6 entries since v0.413.
