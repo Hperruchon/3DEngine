@@ -1,7 +1,7 @@
 ---
 id: 0423
 title: No plate of a dimension lies on the stroke of the history arc, and each text of the arc has the ground of the scene
-status: Done
+status: Active
 phase: R20d
 opened: 2026-11-20
 depends-on: [0425]
@@ -64,7 +64,7 @@ The scenario of R20c passes: no element covers a plate, and no line goes across 
 
 ## Outcome
 
-Status: Done · commit (the merge of the branch r20d-history-arc-b) · v0.409
+Status: Active · commit (the merge of the branch r20d-history-arc-b) · v0.409
 
 ## Method
 
@@ -86,3 +86,6 @@ Status: Done · commit (the merge of the branch r20d-history-arc-b) · v0.409
   cover, made the test of the ground a theory with and without a pending step, and moved to the branch r20d-history-arc-b
   from the review. Ledger entry v0.409; the first branch is not merged.
 - 2026-11-20: run 44826283924 of `0b8b0ab` passed on each job. Closed at v0.409.
+- 2026-11-21: run 44831092608 of the close commit `9cadf07` failed on macos-latest in the step "Keep the determinism hash":
+  "Failed to CreateArtifact ... Request timeout" of the artifact service of GitHub; each test passed, and the other jobs
+  passed. It is no lost runner, so ADR-0173 gives no re-run. The task is Active again for a new run, and closes after it.
