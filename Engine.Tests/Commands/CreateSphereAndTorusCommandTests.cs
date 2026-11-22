@@ -7,6 +7,7 @@ using Engine.Core.Geometry;
 using Engine.Core.Hosting;
 using Engine.Core.Queries;
 using Engine.Geometry.Manifold;
+using Engine.Kernel;
 using Engine.Tests.Geometry;
 
 namespace Engine.Tests.Commands;
@@ -149,6 +150,11 @@ public sealed class CreateSphereAndTorusCommandTests
         Assert.True(Math.Abs(t.MaxZ - 1.5) < 1e-12, $"{t.MaxZ}");
     }
 
+    // TASK-0452 (register entry R-0073): the work of the cut and of its faces, as two counts of the kernel on this thread. The
+    // command and the query of the faces each subtract the sphere from the plate. Each bound is 1.5 times the count of today.
+    private const long CutSplits = 13_875_936;
+    private const long CutExactSigns = 189_876;
+
     // A sphere at the middle of a plate cuts a hole with the name surface into +z and -z of the plate.
     [NativeManifoldFact]
     public async Task A_Sphere_Cuts_A_Hole_Of_One_Name()
@@ -157,15 +163,19 @@ public sealed class CreateSphereAndTorusCommandTests
         var session = NewSession(backend);
         var plate = Output(await Applied(session, new CreateBoxCommand { SizeX = 20, SizeY = 20, SizeZ = 4 }), "bodyId");
         var tool = Output(await Applied(session, new CreateSphereCommand { Radius = 5 }), "bodyId");
+        var (splits, exactSigns) = (Bsp.SplitsOnThisThread, Bsp.ExactSignsOnThisThread);
         var cut = Output(await Applied(session, new SubtractCommand { MinuendBodyId = plate, SubtrahendBodyId = tool }), "bodyId");
 
         var faces = await Faces(session, cut);
+        (splits, exactSigns) = (Bsp.SplitsOnThisThread - splits, Bsp.ExactSignsOnThisThread - exactSigns);
 
-        // ADR-0089 item 6: the cut and its faces take about 10 s on the computer of the owner, and took about 3 minutes
-        // before TASK-0289. TASK-0435 (phase P0.173): no time decides the test, so the limit of 300 s of TASK-0300 is gone.
-        // A count of the work of the kernel needs a change of Engine.Kernel, outside the task (R-0073). The hang limit of
-        // 2 minutes of the step "Test" still stops the form before TASK-0289.
+        // ADR-0089 item 6: the cut took about 3 minutes before the filter of doubles of TASK-0289. TASK-0435 (phase P0.173):
+        // no time decides the test (ADR-0173 item 4), so the limit of 300 s of TASK-0300 is gone. TASK-0452: the counts of
+        // the splits of a polygon by a plane and of the exact signs hold that work. The command and the query complete on
+        // this thread, so a count of zero says that the work went to another thread, and the test fails then too.
         Assert.Equal((1, 1), (faces.Single(f => f.Reference == new DatumReference(plate, "+z", null)).Holes, faces.Single(f => f.Reference == new DatumReference(plate, "-z", null)).Holes));
         Assert.Contains(faces, f => f.Reference == new DatumReference(tool, "surface", null));
+        Assert.True(splits > 0 && splits <= CutSplits * 3 / 2, $"The cut split {splits} polygons; the bound is 1.5 times {CutSplits}.");
+        Assert.True(exactSigns > 0 && exactSigns <= CutExactSigns * 3 / 2, $"The cut computed {exactSigns} exact signs; the bound is 1.5 times {CutExactSigns}.");
     }
 }

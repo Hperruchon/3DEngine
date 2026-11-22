@@ -13578,3 +13578,38 @@ The failed runs since the entry v0.434, from the API: none.
 New tests: 16 (two of the dispatch gate, nine of the marker gate and five of the review gate). The test list holds 3206 (1861 in
 `Engine.Tests`, 390 in `3DEngine.Tests`, 952 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 14 of 15. New
 diagnostic codes: 0. Since the review of v0.431, 1 product milestone and 4 entries followed it.
+
+## v0.436 — The test of the cut of a plate by a sphere holds the work of the owned kernel by two counts (P0.182, TASK-0452)
+
+Register entry R-0073 ("No test holds the cost of the cut of a plate by a sphere in the owned kernel") waited for a count of the
+exact signs of the kernel, because TASK-0435 removed the time limit of `A_Sphere_Cuts_A_Hole_Of_One_Name` and could not change
+`Engine.Kernel`. The cut took about 10 s on the computer of the owner and 64 s on a macOS runner, half of the hang limit of the
+step "Test". The branch `p0182-cost-of-a-cut` starts from `a4e957e7` (P0.181, TASK-0451, v0.435, not merged yet).
+
+**The change.**
+- `Bsp.ExactSignsOnThisThread` counts on each thread the sides that the filter of doubles cannot decide, beside the count of
+  the splits of TASK-0445. Each count is a thread-static field, so a normal run pays one increment and no lock.
+- `A_Sphere_Cuts_A_Hole_Of_One_Name` holds 13,875,936 splits and 189,876 exact signs (the command `Subtract` and the query
+  `GetFaces` each subtract the sphere from the plate) below 1.5 times each count, as T187 did for the fixed lengths. A count
+  of zero fails too, so the work cannot go to another thread unseen. A count and not a time decides (ADR-0173 item 4).
+- A probe counted and timed each step of one subtract (Debug, the computer of the owner): 6,937,968 splits, of which 5,979,455
+  build the partition of the sphere, and 94,938 exact signs, which took about 80 ms of 3.5 s. The exact volume of the result,
+  which `Subtract` reads for its sign, took 2.2 s: in the order of the polygons a partial sum had a denominator of up to 69,520
+  bits, against 400 bits for the sum. `KernelSolid.Volume` now adds its terms in pairs, then the sums in pairs: 0.16 s. An exact
+  sum has one value in each order, so each volume, sign and result is the same. The command and the query of the test take
+  4.6 s and not 8.6 s, and the torus of radii 10 and 3 less the plate 10.0 s and not 67.2 s.
+- The partition stays: another plane for each node makes fewer splits but gives other polygons. R-0073 is closed (resolved),
+  and ADR-0057 gets a History line with no change of an item.
+
+**Proof.** Three new tests in `KernelWorkTests`: the count of the exact signs on this thread only, the sum in pairs against the
+sum in order for 0 to 33 values, and the volume of a cut with split points that are not dyadic. A probe test, removed, wrote the
+tag, the plane, the exact vertices and the exact volume of nine cuts, unions, intersections and meshes, with the same sha256
+before and after. A script (`inject0452.js` in `%TEMP%\p0182`) applied nine injections, each restored byte for byte (sha256):
+eight made a named test fail; a filter with 1e-6 in place of 1e-14 passes, with the same results and a count below its bound.
+The table is in TASK-0452. A clean build gives 0 warnings, the phone project builds with 0 warnings, `dotnet test` passes
+3209 tests, and the write-set check and `eng/repo-gates` pass. The run on the branch is not done yet.
+The failed runs since the entry v0.435, from the API: none.
+
+New tests: 3. The test list holds 3209 (1864 in `Engine.Tests`, 390 in `3DEngine.Tests`, 952 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.431, 1 product milestone
+and 5 entries followed it.

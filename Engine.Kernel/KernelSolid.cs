@@ -95,18 +95,38 @@ public sealed class KernelSolid
         return new([.. Polygons.Select(p => p.Mapped(x, y, z))]);
     }
 
-    // The exact volume, by the divergence theorem over a fan of each polygon.
+    // The exact volume, by the divergence theorem over a fan of each polygon. TASK-0452 (register entry R-0073): the terms
+    // add in pairs, then the sums in pairs, until one sum stays. Each sum of rationals is exact, so each order gives the same
+    // value. In the order of the polygons, each partial sum kept a large denominator, and the volume took more than half of
+    // the work of the subtract of a plate by a sphere of 3,968 triangles (TASK-0452 gives the times).
     public Rational Volume()
     {
-        var sum = Rational.Zero;
+        var terms = new List<Rational>();
         foreach (var polygon in Polygons)
         {
             var a = polygon.Vertices[0];
             for (var i = 1; i + 1 < polygon.Vertices.Count; i++)
-                sum += a.Dot(polygon.Vertices[i].Cross(polygon.Vertices[i + 1]));
+                terms.Add(a.Dot(polygon.Vertices[i].Cross(polygon.Vertices[i + 1])));
         }
 
-        return sum / 6;
+        return SumInPairs(terms) / 6;
+    }
+
+    // The exact sum of the values: the first and the second, the third and the fourth, and so on, then the same for the sums.
+    // The list changes. An empty list gives zero.
+    internal static Rational SumInPairs(List<Rational> values)
+    {
+        if (values.Count == 0)
+            return Rational.Zero;
+        while (values.Count > 1)
+        {
+            var count = 0;
+            for (var i = 0; i < values.Count; i += 2)
+                values[count++] = i + 1 < values.Count ? values[i] + values[i + 1] : values[i];
+            values.RemoveRange(count, values.Count - count);
+        }
+
+        return values[0];
     }
 
     // ADR-0089 item 3 (phase K5c, TASK-0288): a cone with its base at -height / 2 and its apex at +height / 2 on the z
