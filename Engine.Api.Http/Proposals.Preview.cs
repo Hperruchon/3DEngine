@@ -249,15 +249,25 @@ public sealed partial class Proposals
     }
 
     // Item 2: one fork. A fork that cannot replay the copy, or that gets no backend, gives a failed preview with
-    // E-API-PREVIEW-FAILED and its cause. Only Dispose stops a fork.
+    // E-API-PREVIEW-FAILED and its cause. Only Dispose stops a fork. P15b (TASK-0459): the fork takes the factory of the host and
+    // frees each backend that it takes, the backend of the fork and, when items 8 to 10 need it, the backend of the base.
     private async Task<ProposalPreview> Compute(Entry entry, ForkSource source, CancellationToken ct)
     {
-        IGeometryBackend? backend = null;
         try
         {
-            backend = _forks!();
-            var fork = await DocumentFork.Run(source, entry.Commands, backend, _assets, ct).ConfigureAwait(false);
-            return new ProposalPreview(entry.Id, PreviewStates.Ready, fork.DocumentVersion, fork.Results, fork.FailedIndex, fork.FailedCode, fork.Bodies, null);
+            var fork = await DocumentFork.Run(source, entry.Commands, _forks!, _assets, ct).ConfigureAwait(false);
+            return new ProposalPreview(
+                entry.Id,
+                PreviewStates.Ready,
+                fork.DocumentVersion,
+                fork.Results,
+                fork.FailedIndex,
+                fork.FailedCode,
+                fork.Bodies,
+                fork.Sketches,
+                fork.Measures,
+                fork.Checks,
+                null);
         }
         catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
         {
@@ -269,11 +279,10 @@ public sealed partial class Proposals
                 null,
                 null,
                 null,
+                null,
+                null,
+                null,
                 new ErrorDetail(DiagnosticCodes.ApiPreviewFailed, $"The fork of the Document at the version {source.Version} failed: {ex.Message}"));
-        }
-        finally
-        {
-            (backend as IDisposable)?.Dispose();
         }
     }
 
@@ -292,7 +301,9 @@ public static class PreviewStates
 // ADR-0185 item 3: the preview of a proposal as GET /proposals/{id}/preview gives it. DocumentVersion is the version of the
 // Document that the fork copied. Results holds the result of each command that ran on the fork, and FailedIndex and FailedCode
 // name the command that stopped it, as in a failed accept (Accept). Bodies gives the bodies that the commands add,
-// remove and change (item 4). Row P15b adds the state of the solver, the measures and the checks.
+// remove and change (item 4). P15b (TASK-0459): Sketches gives the state of the solver of each sketch that the commands add
+// or change (item 8), Measures the measures of each body that they add or change (item 9), and Checks each pair whose state
+// changes (item 10). Each of the four is null for a failed preview.
 public sealed record ProposalPreview(
     Guid ProposalId,
     string State,
@@ -301,4 +312,7 @@ public sealed record ProposalPreview(
     int? FailedIndex,
     string? FailedCode,
     BodyDifferences? Bodies,
+    IReadOnlyList<SketchChange>? Sketches,
+    IReadOnlyList<MeasureChange>? Measures,
+    IReadOnlyList<PairChange>? Checks,
     ErrorDetail? Error);

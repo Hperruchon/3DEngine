@@ -13843,3 +13843,46 @@ The failed runs since the entry v0.441, from the API: none.
 New tests: 3 (`GroundImageTests`). The test list holds 3244 (1891 in `Engine.Tests`, 390 in `3DEngine.Tests`, 960 in
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. Since the review of
 v0.431, 3 product milestones and 11 entries followed it.
+
+## v0.443 — The preview of a proposal gives the state of the solver, the measures and the checks that the commands change (P15b, TASK-0459)
+
+The owner ordered "Start P15b" in the chat on 2026-11-22. The branch `p15b-preview-differences` starts from `main` at
+`26bcd0dd` (v0.442). ADR-0185 items 8 to 10 give the scope (Q4 A and Q5 A of the third codebase review of 2026-11-21); this
+task decides their form and records it as an amendment of ADR-0185. No new ADR.
+
+**The change.**
+- The preview gives three more members after `bodies` (`Engine.Core/Preview/PreviewDifferences.cs`). Each value comes from the
+  query that gives it to a client, on the session of the fork, so no code of the preview computes a measure or a check:
+  - `sketches` (item 8): each sketch that the commands add or change, compared by content, with `{ state, freedom, residual }`
+    before and after from `GetSketch`. The state is `solved`, `under` or `over`; the residual is the largest absolute residual.
+  - `measures` (item 9): each added or changed body, with the answer of `GetMassProperties` after the commands and, for a
+    changed body, before them, or the refusal of the query.
+  - `checks` (item 10): each pair whose state changes, with the answer of `CheckInterference` before and after. One check for
+    each pair, so the bound of work of ADR-0182 applies to each pair, and a pair above it has the state `limit`. A body that
+    does not exist counts as apart. The pairs of a removed body count: `Translate` removes the old body, so a move that ends
+    an overlap shows only in the pair of the removed body.
+- "Before" is a second replay of the same copy of the log, the base, with a new backend of the factory. It equals the first
+  Document at its version by the replay rule (ADR-0012), and it runs only when a value before is necessary. A body whose
+  geometry key and fault do not change keeps its solid (ADR-0059 item 2), so a rename needs no base and no check.
+- `DocumentFork.Run` takes the factory of backends and frees each backend that it takes (ADR-0185 item 2).
+- The guide for an agent shows the three members in its tested example of the preview, and its section "The limits" says
+  what the preview does not check.
+
+**Proof.** Five new tests in `ProposalPreviewTests`, and the bookcase test of P15a reads the measures and the eight changed
+pairs of the lift of module 1: a new distance of an extrude gives its measures before and after to the double (300 and 480
+mm³) and the one pair that goes from apart to overlapping; a second sphere gives the state `limit`; a sketch goes from `under`
+to `over` with the residual 3 and from `under` to `solved`; a proposal of `NoOp` gives empty differences with one backend, and
+a rename with no base; and a new member of a sketch record fails a test. Each new test passed at its first run, so a script
+(`inject.js` in `%TEMP%\p15b`) applied twelve injections, each restored byte for byte (sha256), and each made
+a named test fail; the table is in TASK-0459. A probe in a Release build, removed, measured the median of 12 forks of the
+bookcase: 0.7 ms with no change, 1.0 ms for a rename, 41 ms for the new shelf of the guide (one measure, 19 checks) and 28 ms
+for the lift of module 1 (two measures, 36 checks and the base); ADR-0185 item 11 records it. A clean build gives 0 warnings,
+`dotnet test` passes 3249 tests, the phone project builds with 0 warnings, and the write-set check and `eng/repo-gates`
+pass. Not verified: continuous integration has not run, and no test shows the state `over` of an iteration that does not
+converge.
+No picture of the window: the window does not change.
+
+New tests: 5. The test list holds 3249 (1896 in `Engine.Tests`, 390 in `3DEngine.Tests`, 960 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.431, 4 product milestones and
+12 entries followed it, so the next product milestone or the next entry makes a codebase review due.
+The failed runs since the entry v0.442, from the API: none.

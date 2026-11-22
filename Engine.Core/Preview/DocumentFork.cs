@@ -14,29 +14,119 @@ namespace Engine.Core.Preview;
 // (item 6). The first Document, its log, its version and its events do not change: the fork reads only its copy of the log.
 public static class DocumentFork
 {
-    // Replays the copy of the log on the backend, then applies the commands of the proposal in their order, as an accept does
-    // (Proposals.Accept): the apply stops at the first command that the engine does not apply. The backend must be new, and the
-    // caller frees it after the call; the session of the fork closes before the call returns.
+    // Replays the copy of the log on a new backend of the factory, then applies the commands of the proposal in their order, as
+    // an accept does (Proposals.Accept): the apply stops at the first command that the engine does not apply. P15b (TASK-0459,
+    // items 8 to 10): the fork then reads the state of the solver, the measures and the checks after the commands, and, when a
+    // value before them is necessary, replays the same copy again in a second session (the base) and reads it there. Each
+    // session closes and each backend is freed before the next one starts, so at most one backend of a fork lives at a time.
     //
     // A copy that does not replay throws: BackendMismatchException when an entry records another backend (ADR-0015 item 6),
-    // and ReplayDivergenceException when an entry does not apply again or gives another version. A cancellation throws
-    // OperationCanceledException.
+    // and ReplayDivergenceException when an entry does not apply again or gives another version. A factory that throws gives
+    // its exception. A cancellation throws OperationCanceledException.
     public static async Task<ForkResult> Run(
         ForkSource source,
         IReadOnlyList<Command> commands,
-        IGeometryBackend backend,
+        Func<IGeometryBackend> backends,
         IAssetSource? assets = null,
         CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(commands);
-        ArgumentNullException.ThrowIfNull(backend);
+        ArgumentNullException.ThrowIfNull(backends);
 
+        var results = new List<CommandResult>(commands.Count);
+        int? failedIndex = null;
+        string? failedCode = null;
+        BodyDifferences bodies;
+        PreviewPlan plan;
+        PreviewValues after;
+
+        var backend = backends();
+        try
+        {
+            var session = await Replay(source, backend, assets, ct).ConfigureAwait(false);
+            try
+            {
+                var (bodiesBefore, sketchesBefore) = await session.Read(Records, ct).ConfigureAwait(false);
+
+                for (var i = 0; i < commands.Count; i++)
+                {
+                    var result = await session.Apply(commands[i], ct).ConfigureAwait(false);
+                    if (result.Status == CommandStatus.Cancelled && ct.IsCancellationRequested)
+                        throw new OperationCanceledException(ct);
+
+                    // Finding E198, as Proposals.Accept: a command whose identifier the session knows gets the cached result
+                    // of the bus, and nothing applies. Its result then gives an earlier version, so the preview stops there
+                    // with no result for that command.
+                    if (result.Status == CommandStatus.Applied && result.DocumentVersion != source.Version + results.Count + 1)
+                    {
+                        (failedIndex, failedCode) = (i, DiagnosticCodes.ApiProposalCommandKnown);
+                        break;
+                    }
+
+                    results.Add(result);
+                    if (result.Status != CommandStatus.Applied)
+                    {
+                        (failedIndex, failedCode) = (i, result.Error?.Code);
+                        break;
+                    }
+                }
+
+                var (bodiesAfter, sketchesAfter) = await session.Read(Records, ct).ConfigureAwait(false);
+                bodies = BodyDifferences.Of(bodiesBefore, bodiesAfter);
+                plan = PreviewPlan.Of(bodiesBefore, bodiesAfter, sketchesBefore, sketchesAfter);
+                after = await PreviewValues.Read(session, plan, after: true, ct).ConfigureAwait(false);
+            }
+            finally
+            {
+                session.Close();
+            }
+        }
+        finally
+        {
+            (backend as IDisposable)?.Dispose();
+        }
+
+        // Item 10: the base, the fork before the first command of the proposal. It equals the first Document at its version by
+        // the replay rule (ADR-0012), so the first Document is not read again and its serial lock is not taken.
+        PreviewValues? before = null;
+        if (plan.NeedsBase)
+        {
+            var baseBackend = backends();
+            try
+            {
+                var session = await Replay(source, baseBackend, assets, ct).ConfigureAwait(false);
+                try
+                {
+                    before = await PreviewValues.Read(session, plan, after: false, ct).ConfigureAwait(false);
+                }
+                finally
+                {
+                    session.Close();
+                }
+            }
+            finally
+            {
+                (baseBackend as IDisposable)?.Dispose();
+            }
+        }
+
+        var (sketches, measures, checks) = PreviewValues.Differences(plan, after, before);
+        return new ForkResult(source.Version, results, failedIndex, failedCode, bodies, sketches, measures, checks);
+    }
+
+    // The bodies and the sketches of the Document, as arrays: the function of a read must not keep a reference to the Document.
+    private static (BodyRecord[] Bodies, Engine.Contracts.Sketch.SketchRecord[] Sketches) Records(Document document, IEventSink events)
+        => ([.. document.Bodies], [.. document.Sketches]);
+
+    // The replay of the copy in a new session on the backend. It applies each entry one time, with no look-up in the
+    // idempotency cache, as an open of a document file does (ADR-0015 item 8). Each result still goes into the cache, as in the
+    // first session. A replay that throws closes its session.
+    private static async Task<DocumentSession> Replay(ForkSource source, IGeometryBackend backend, IAssetSource? assets, CancellationToken ct)
+    {
         var session = new DocumentSession(EngineHosting.CreateDefault(backend, source.LengthUnit, source.Kind, assets));
         try
         {
-            // The replay of the copy applies each entry one time, with no look-up in the idempotency cache, as an open of a
-            // document file does (ADR-0015 item 8). Each result still goes into the cache, as in the first session.
             for (var index = 0; index < source.Log.Count; index++)
             {
                 var entry = source.Log[index];
@@ -59,40 +149,12 @@ public static class DocumentFork
                     throw new ReplayDivergenceException(index, entry.Command, replayed);
             }
 
-            var before = await session.Read((document, _) => document.Bodies.ToArray(), ct).ConfigureAwait(false);
-
-            var results = new List<CommandResult>(commands.Count);
-            int? failedIndex = null;
-            string? failedCode = null;
-            for (var i = 0; i < commands.Count; i++)
-            {
-                var result = await session.Apply(commands[i], ct).ConfigureAwait(false);
-                if (result.Status == CommandStatus.Cancelled && ct.IsCancellationRequested)
-                    throw new OperationCanceledException(ct);
-
-                // Finding E198, as Proposals.Accept: a command whose identifier the session knows gets the cached result of
-                // the bus, and nothing applies. Its result then gives an earlier version, so the preview stops there with
-                // no result for that command.
-                if (result.Status == CommandStatus.Applied && result.DocumentVersion != source.Version + results.Count + 1)
-                {
-                    (failedIndex, failedCode) = (i, DiagnosticCodes.ApiProposalCommandKnown);
-                    break;
-                }
-
-                results.Add(result);
-                if (result.Status != CommandStatus.Applied)
-                {
-                    (failedIndex, failedCode) = (i, result.Error?.Code);
-                    break;
-                }
-            }
-
-            var after = await session.Read((document, _) => document.Bodies.ToArray(), ct).ConfigureAwait(false);
-            return new ForkResult(source.Version, results, failedIndex, failedCode, BodyDifferences.Of(before, after));
+            return session;
         }
-        finally
+        catch
         {
             session.Close();
+            throw;
         }
     }
 }
@@ -110,12 +172,16 @@ public sealed record ForkSource(long Version, IReadOnlyList<LogEntry> Log, strin
 
 // Item 2: the outcome of the commands of a proposal on a fork at the version DocumentVersion. Results holds the result of each
 // command that ran; FailedIndex and FailedCode name the command that stopped the apply, as in a failed accept.
+// Items 8 to 10 (P15b, TASK-0459): Sketches, Measures and Checks give the state of the solver, the measures and the checks.
 public sealed record ForkResult(
     long DocumentVersion,
     IReadOnlyList<CommandResult> Results,
     int? FailedIndex,
     string? FailedCode,
-    BodyDifferences Bodies);
+    BodyDifferences Bodies,
+    IReadOnlyList<SketchChange> Sketches,
+    IReadOnlyList<MeasureChange> Measures,
+    IReadOnlyList<PairChange> Checks);
 
 // Item 4 (Q5 A): the bodies that the commands add, remove and change, each list in the order of the body identifiers. A body
 // changes when its record after the commands is not equal to its record before them. A body record has no list, so the

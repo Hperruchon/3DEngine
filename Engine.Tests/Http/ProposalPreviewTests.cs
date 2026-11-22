@@ -6,9 +6,12 @@ using System.Text.Json;
 using Engine.Api.Http;
 using Engine.Contracts;
 using Engine.Contracts.Geometry;
+using Engine.Contracts.Sketch;
 using Engine.Core;
 using Engine.Core.Commands;
 using Engine.Core.Geometry;
+using Engine.Core.Preview;
+using Engine.Core.Queries;
 using Engine.Geometry.Manifold;
 using Engine.Tests.Assembly;
 using Engine.Tests.Geometry; // NativeManifoldFact
@@ -173,6 +176,220 @@ public sealed class ProposalPreviewTests
         var proposal = served.Host.Proposals.Find(id)!;
         Assert.Equal(ProposalStates.Open, proposal.State);
         Assert.Empty(proposal.Results);
+
+        // P15b item 9: the measures of the added module and of the renamed shelf. The rename keeps the solid of Bas, so its
+        // measures before are its measures after. No sketch changes (item 8).
+        Assert.Empty(preview.Sketches!);
+        Assert.Equal(new[] { lifted, bas }.Order(), preview.Measures!.Select(measure => measure.BodyId));
+        var liftedMeasure = preview.Measures!.Single(measure => measure.BodyId == lifted);
+        Assert.Null(liftedMeasure.Before);
+        Assert.Null(liftedMeasure.After.Error);
+        Assert.Equal(800.0 * 400 * 1000, liftedMeasure.After.Mass!.Volume);
+        Assert.Equal(new DatumPoint(-1300, 0, 510), liftedMeasure.After.Mass.Centre);
+        var basMeasure = preview.Measures!.Single(measure => measure.BodyId == bas);
+        Assert.Equal(1164.0 * 394 * 18, basMeasure.After.Mass!.Volume);
+        Assert.Equal(basMeasure.After, basMeasure.Before);
+
+        // P15b item 10: module 1 touched the modules 7, 8, 9 and 12, and the Translate removes it. The lifted module overlaps
+        // module 7 by 10 mm and touches the modules 8, 9 and 12. Bas keeps its solid, so it is in no pair.
+        string[] neighbours = ["Module 7 - volume indicatif", "Module 8 - volume indicatif", "Module 9 - volume indicatif", "Module 12 - volume indicatif"];
+        Assert.Equal(8, preview.Checks!.Count);
+        Assert.All(preview.Checks, check => Assert.True(check.BodyIdA.CompareTo(check.BodyIdB) < 0));
+        Assert.DoesNotContain(preview.Checks, check => check.BodyIdA == bas || check.BodyIdB == bas);
+        foreach (var name in neighbours)
+        {
+            var old = Pair(preview, module, bodies[name]);
+            Assert.Equal(PairStates.Touching, old.Before!.State);
+            Assert.Null(old.After);
+            var now = Pair(preview, lifted, bodies[name]);
+            Assert.Null(now.Before);
+            Assert.Equal(name == neighbours[0] ? PairStates.Overlapping : PairStates.Touching, now.After!.State);
+        }
+
+        var overlap = Pair(preview, lifted, bodies[neighbours[0]]).After!.Check!;
+        Assert.Equal(800.0 * 400 * 10, overlap.Volume);
+        Assert.True(overlap.Fault);
+    }
+
+    // The pair of the two bodies in the checks of the preview, in either order.
+    private static PairChange Pair(ProposalPreview preview, Guid x, Guid y)
+        => Assert.Single(preview.Checks!, check => (check.BodyIdA == x && check.BodyIdB == y) || (check.BodyIdA == y && check.BodyIdB == x));
+
+    private static string Envelope(string name, string parameters)
+        => $"{{\"name\":\"{name}\",\"schemaVersion\":1,\"commandId\":\"{Guid.NewGuid()}\",\"parameters\":{parameters}}}";
+
+    private static Guid Out(CommandResult result, string name)
+        => result.Outputs.TryGet<Guid>(name, out var id) ? id : throw new InvalidOperationException($"{result.CommandName} gave no output {name}.");
+
+    // A rectangle of 10 by 6 mm on the plane XY with a corner at (0, 0): the sketch, its four points and its four lines.
+    private static async Task<(Guid Sketch, Guid[] Points, Guid[] Lines)> Rectangle(DocumentSession session)
+    {
+        (double X, double Y)[] corners = [(0, 0), (10, 0), (10, 6), (0, 6)];
+        var sketch = Out(await BookcaseCase.Applied(session, new CreateSketchCommand { DatumId = Datums.XY.Id }), "sketchId");
+        var points = new Guid[corners.Length];
+        for (var i = 0; i < points.Length; i++)
+            points[i] = Out(await BookcaseCase.Applied(session, new AddSketchPointCommand { SketchId = sketch, X = corners[i].X, Y = corners[i].Y }), "pointId");
+        var lines = new Guid[points.Length];
+        for (var i = 0; i < lines.Length; i++)
+            lines[i] = Out(await BookcaseCase.Applied(session, new AddSketchLineCommand { SketchId = sketch, StartPointId = points[i], EndPointId = points[(i + 1) % points.Length] }), "lineId");
+        return (sketch, points, lines);
+    }
+
+    // P15b items 9 and 10: a new distance of an extrude changes its body in place. The preview gives the measures of the body
+    // before and after the command, to the double, and the one pair whose class changes: the extrude now overlaps the box above
+    // it. The far box stays apart, so its pair is not a difference, and the sketch of the extrude does not change.
+    [NativeManifoldFact]
+    public async Task A_Changed_Body_Gives_Its_Measures_Before_And_After_And_The_Pair_Whose_Class_Changes()
+    {
+        await using var served = await Served.Start(Native, Native);
+        var session = served.Host.Session;
+        var (sketch, _, _) = await Rectangle(session);
+        var extrude = Out(await BookcaseCase.Applied(session, new ExtrudeCommand { SketchId = sketch, Distance = 5 }), "bodyId");
+        var above = BookcaseCase.Output(await BookcaseCase.Applied(session, new TranslateCommand
+        {
+            BodyId = BookcaseCase.Output(await BookcaseCase.Applied(session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 })),
+            Dx = 5, Dy = 3, Dz = 12,
+        }));
+        await BookcaseCase.Applied(session, new TranslateCommand
+        {
+            BodyId = BookcaseCase.Output(await BookcaseCase.Applied(session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 })),
+            Dx = 100, Dy = 0, Dz = 0,
+        });
+        var before = await Read(served.Host);
+
+        var id = await Post(served, "Make the extrude 8 mm high", Envelope("SetExtrudeDistance", $"{{\"extrudeId\":\"{extrude}\",\"distance\":8}}"));
+        var preview = await Preview(served, id);
+
+        Assert.Equal(PreviewStates.Ready, preview.State);
+        Assert.Equal(extrude, Assert.Single(preview.Bodies!.Changed).After.Handle.Id);
+        Assert.Empty(preview.Sketches!);
+
+        var measure = Assert.Single(preview.Measures!);
+        Assert.Equal(extrude, measure.BodyId);
+        Assert.Equal(new MassProperties(300, new DatumPoint(5, 3, 2.5), false), measure.Before!.Mass);
+        Assert.Equal(new MassProperties(480, new DatumPoint(5, 3, 4), false), measure.After.Mass);
+
+        var pair = Assert.Single(preview.Checks!);
+        Assert.Equal(new[] { extrude, above }.Order(), new[] { pair.BodyIdA, pair.BodyIdB });
+        Assert.Equal(PairStates.Apart, pair.Before!.State);
+        Assert.Equal(2, pair.Before.Check!.Gap);
+        Assert.Equal(PairStates.Overlapping, pair.After!.State);
+        Assert.Equal(60, pair.After.Check!.Volume);
+        Unchanged(before, await Read(served.Host));
+    }
+
+    // P15b item 10 (Q4 A): a pair above the bound of work of CheckInterference (ADR-0182 item 8) has the state limit, with
+    // E-CHECK-WORK-LIMIT and no answer of a check. A body that the proposal adds counts as apart before it, so the pair is a
+    // difference.
+    [NativeManifoldFact]
+    public async Task A_Pair_Above_The_Bound_Of_Work_Has_The_State_Limit()
+    {
+        await using var served = await Served.Start(Native, Native);
+        var first = BookcaseCase.Output(await BookcaseCase.Applied(served.Host.Session, new CreateSphereCommand { Radius = 10 }));
+
+        var made = Guid.NewGuid();
+        var id = await Post(served, "Make a second sphere", $"{{\"name\":\"CreateSphere\",\"schemaVersion\":1,\"commandId\":\"{made}\",\"parameters\":{{\"radius\":10}}}}");
+        var preview = await Preview(served, id);
+
+        var pair = Assert.Single(preview.Checks!);
+        Assert.Equal(new[] { first, made }.Order(), new[] { pair.BodyIdA, pair.BodyIdB });
+        Assert.Null(pair.Before);
+        Assert.Equal(PairStates.Limit, pair.After!.State);
+        Assert.Equal(DiagnosticCodes.CheckWorkLimit, pair.After.Error?.Code);
+        Assert.Null(pair.After.Check);
+        var measure = Assert.Single(preview.Measures!);
+        Assert.Equal(made, measure.BodyId);
+        Assert.True(measure.After.Mass!.Volume > 0);
+    }
+
+    // P15b item 8: the state of the solver of each sketch that the proposal changes, before and after its commands. A second
+    // distance on the same line conflicts, so the sketch goes from under to over, with the residual of the conflict. Four fixed
+    // points at their places give no free degree, so the sketch goes from under to solved.
+    [Fact]
+    public async Task A_Sketch_That_The_Proposal_Changes_Gives_Its_State_Before_And_After()
+    {
+        await using var served = await Served.Start(Managed);
+        var (sketch, points, lines) = await Rectangle(served.Host.Session);
+        await BookcaseCase.Applied(served.Host.Session, new AddSketchConstraintCommand { SketchId = sketch, Kind = "distance", First = lines[0], Value = 10 });
+
+        var conflict = await Post(served, "Make the first line 7 mm", Envelope("AddSketchConstraint", $"{{\"sketchId\":\"{sketch}\",\"kind\":\"distance\",\"first\":\"{lines[0]}\",\"value\":7}}"));
+        (double X, double Y)[] corners = [(0, 0), (10, 0), (10, 6), (0, 6)];
+        var fix = await Post(
+            served,
+            "Fix the four corners",
+            [.. points.Select((point, i) => Envelope("AddSketchConstraint", $"{{\"sketchId\":\"{sketch}\",\"kind\":\"fixed\",\"first\":\"{point}\",\"value\":{Number(corners[i].X)},\"secondValue\":{Number(corners[i].Y)}}}"))]);
+
+        var over = Assert.Single((await Preview(served, conflict)).Sketches!);
+        Assert.Equal(sketch, over.SketchId);
+        Assert.Equal(SketchStates.Under, over.Before!.State);
+        Assert.Equal(7, over.Before.Freedom);
+        Assert.Equal(0, over.Before.Residual);
+        Assert.Equal(SketchStates.Over, over.After.State);
+        Assert.Equal(3, over.After.Residual);
+
+        var solved = Assert.Single((await Preview(served, fix)).Sketches!);
+        Assert.Equal(SketchStates.Under, solved.Before!.State);
+        Assert.Equal(SketchStates.Solved, solved.After.State);
+        Assert.Equal(0, solved.After.Freedom);
+        Assert.Equal(0, solved.After.Residual);
+    }
+
+    // P15b items 8 to 10: a proposal that changes no record gives three empty differences, and the fork needs no base. A rename
+    // changes the record of the body and keeps its solid: the measures before are the measures after, no pair is checked, and the
+    // fork needs no base either. Each preview takes one backend of the factory.
+    [Fact]
+    public async Task A_Proposal_That_Changes_Nothing_Gives_Empty_Differences_And_No_Base()
+    {
+        var backends = 0;
+        await using var served = await Served.Start(() =>
+        {
+            Interlocked.Increment(ref backends);
+            return new InProcessMeshBackend();
+        });
+        var box = BookcaseCase.Output(await BookcaseCase.Applied(served.Host.Session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 }));
+        BookcaseCase.Output(await BookcaseCase.Applied(served.Host.Session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 }));
+
+        var nothing = await Preview(served, await Post(served, "Nothing", Envelope("NoOp", "{\"echo\":\"x\"}")));
+        Assert.Equal(CommandStatus.Applied, Assert.Single(nothing.Results).Status);
+        Assert.Empty(nothing.Bodies!.Added);
+        Assert.Empty(nothing.Bodies.Removed);
+        Assert.Empty(nothing.Bodies.Changed);
+        Assert.Empty(nothing.Sketches!);
+        Assert.Empty(nothing.Measures!);
+        Assert.Empty(nothing.Checks!);
+        Assert.Equal(1, Volatile.Read(ref backends));
+
+        var renamed = await Preview(served, await Post(served, "Rename the box", Rename(Guid.NewGuid(), box, "Box")));
+        var measure = Assert.Single(renamed.Measures!);
+        Assert.Equal(box, measure.BodyId);
+        Assert.Equal(1000, measure.After.Mass!.Volume);
+        Assert.Equal(measure.After, measure.Before);
+        Assert.Empty(renamed.Checks!);
+        Assert.Equal(2, Volatile.Read(ref backends));
+    }
+
+    // P15b item 8 (Q5 A): the preview compares two sketch records by content, member by member, because the equality of the
+    // record compares each list by reference (SketchContent). A new member of a sketch record or of one of its items fails this
+    // test, so the comparison changes with it.
+    [Fact]
+    public void The_Comparison_Of_Two_Sketches_Reads_Each_Member_Of_A_Sketch_Record()
+    {
+        var read = new Dictionary<Type, string[]>
+        {
+            [typeof(SketchRecord)] = ["Id", "DatumId", "Name", "Points", "Lines", "Circles", "Arcs", "Constraints", "References"],
+            [typeof(SketchPoint)] = ["Id", "X", "Y"],
+            [typeof(SketchLine)] = ["Id", "Start", "End"],
+            [typeof(SketchCircle)] = ["Id", "Center", "Radius"],
+            [typeof(SketchArc)] = ["Id", "Center", "Start", "End"],
+            [typeof(SketchConstraint)] = ["Id", "Kind", "Items", "Values"],
+            [typeof(SketchReference)] = ["Id", "Target", "Points", "Line", "Fault"],
+            [typeof(DatumReference)] = ["FeatureId", "Element", "ItemId"],
+            [typeof(DatumFault)] = ["Code", "Message"],
+        };
+        foreach (var (type, names) in read)
+            Assert.True(
+                names.Order().SequenceEqual(type.GetProperties().Select(property => property.Name).Order()),
+                $"{type.Name} has the members {string.Join(", ", type.GetProperties().Select(property => property.Name))}; SketchContent reads {string.Join(", ", names)} (ADR-0185 item 8).");
     }
 
     // Item 2 and ADR-0092 item 6: a refused command gives its code, and the commands after it do not run, as in an accept. The
@@ -393,6 +610,13 @@ public sealed class ProposalPreviewTests
             Assert.Equal(made, bodies.GetProperty("added")[0].GetProperty("handle").GetProperty("id").GetGuid());
             Assert.Equal(0, bodies.GetProperty("removed").GetArrayLength());
             Assert.Equal(0, bodies.GetProperty("changed").GetArrayLength());
+            // P15b (TASK-0459): the three other differences. The new box has its measures after the command only.
+            Assert.Equal(0, body.GetProperty("sketches").GetArrayLength());
+            var measure = body.GetProperty("measures")[0];
+            Assert.Equal(made, measure.GetProperty("bodyId").GetGuid());
+            Assert.Equal(JsonValueKind.Null, measure.GetProperty("before").ValueKind);
+            Assert.Equal(1000, measure.GetProperty("after").GetProperty("mass").GetProperty("volume").GetDouble());
+            Assert.Equal(0, body.GetProperty("checks").GetArrayLength());
         }
 
         foreach (var route in new[] { $"/proposals/{Guid.NewGuid()}/preview", "/proposals/not-a-guid/preview" })
@@ -430,6 +654,9 @@ public sealed class ProposalPreviewTests
             Assert.Equal(1, preview.DocumentVersion);
             Assert.Empty(preview.Results);
             Assert.Null(preview.Bodies);
+            Assert.Null(preview.Sketches);
+            Assert.Null(preview.Measures);
+            Assert.Null(preview.Checks);
         }
     }
 
