@@ -13646,3 +13646,44 @@ The failed runs since the entry v0.436, from the API: none.
 New tests: 5. The test list holds 3214 (1864 in `Engine.Tests`, 390 in `3DEngine.Tests`, 957 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.431, 1 product milestone and 6
 entries followed it.
+
+## v0.438 — The command and each reader of a cut make one exact boolean for each change of the Document (P0.184, TASK-0454)
+
+TASK-0452 (P0.182) found the defect and put it out of its scope: the command `Subtract` subtracts the two solids for the faults
+of its datums, and the query `GetFaces` subtracts them again. The exact subtract of the owned kernel is the costly step: the plate
+less the sphere of the test takes seconds. The branch `p0184-one-subtract` starts from `0f84f26d` (P0.183, TASK-0453, v0.437,
+not merged yet).
+
+**The change.**
+- The second subtract came from the walk of the projection (ADR-0058 item 2): `GetFaces` calls `KernelProjection.Of`, which
+  calls the kernel again for each boolean step on the way from the body to its creator. The kept solid of a committed key
+  (ADR-0059 item 2) did not help, because the command makes its boolean before the commit, and the walk kept nothing. Each other
+  reader of the solid, and each walk through a later step, made the boolean again too.
+- `KernelProjection.Boolean` keeps the result of each boolean step (`Subtract`, `Union`, `Intersect`) under the Document and the
+  step, with the kind of the step and its two operand solids. The command, the regeneration and each walk take the kept result
+  only when the kind and each polygon of the two operands are the same; else the kernel makes the boolean. A result is a
+  function of that content only, so a kept result is the result that a new boolean gives, and the log does not hold it.
+- At most 256 results stay, the oldest use goes first; each walk from a committed Document first removes the results of its steps
+  that are no longer in effect; one lock holds the entries. ADR-0059 item 2 states the rule.
+- `PlanarBoolean.BooleansOnThisThread` counts the booleans of two solids on each thread (ADR-0057, a History line with no change
+  of an item). One `Subtract` and one `GetFaces` make 1 boolean, not 2; the splits fall from 13,875,936 to 6,937,968 and the exact
+  signs from 189,876 to 94,938, and `A_Sphere_Cuts_A_Hole_Of_One_Name` holds the new counts and 1 boolean.
+- The walk takes the Document as one more parameter, and the 150 turns of K10a then overflowed the stack of the test. The subtract
+  is now a step of `PairSolid`, as the union and the intersection are (TASK-0433), so the frame of the recursive walk is smaller.
+
+**Proof.** Seven new tests in `KeptBooleanTests`: one boolean for a command and its readers (`Subtract`, `Union`, `Intersect`),
+a new boolean after a change of an operand, the same kind and the same operands, the removal after an undo, the limit, 16,384
+calls on eight threads, and a replay of a session with edits, an undo and a redo that gives the same records and exact solids. A
+probe test, removed, wrote the exact solids, the faces and the datums of three documents (the sphere cut, a chain of two cuts, a
+union and an intersection, and an extrude with edits): the sha256 of each is the same before and after, and the same after a
+replay of its log. The query of the faces of the sphere cut took 3.0 s and now 1.6 s (Debug, the computer of the owner); the
+first read after the 150 turns of K10a stays at about 2.3 s, because its walk holds no boolean. A script (`inject0454.js` in
+`%TEMP%\p0184`) applied eleven injections, each restored byte for byte (sha256), and each made a named test fail; the first
+form of the test of the threads passed with no lock, and the test now makes more calls. The table is in TASK-0454. A clean build
+gives 0 warnings, the phone project builds with 0 warnings, `dotnet test` passes 3221 tests, and the write-set check and
+`eng/repo-gates` pass. The run on the branch is not done yet.
+The failed runs since the entry v0.437, from the API: none.
+
+New tests: 7. The test list holds 3221 (1871 in `Engine.Tests`, 390 in `3DEngine.Tests`, 957 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.431, 1 product milestone
+and 7 entries followed it.

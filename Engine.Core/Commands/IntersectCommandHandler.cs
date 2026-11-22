@@ -3,7 +3,6 @@ using Engine.Contracts.Geometry;
 using Engine.Contracts.Handlers;
 using Engine.Contracts.Schema;
 using Engine.Core.Persistence;
-using Engine.Kernel;
 
 namespace Engine.Core.Commands;
 
@@ -59,6 +58,6 @@ public sealed class IntersectCommandHandler : ICommandHandler, ICommandEncoder
             new BooleanStep.Operands(intersect.CommandId, intersect.FirstBodyId, intersect.SecondBodyId),
             "intersect",
             (ops, result, first, second) => ops.Intersect(result, first, second),
-            PlanarBoolean.Intersect);
+            intersect);
     }
 }

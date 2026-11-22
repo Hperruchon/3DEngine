@@ -108,3 +108,6 @@ slices. On 2026-11-05 the owner answered four questions:
   that its filter of doubles cannot decide, beside the splits, and a test holds both counts of the subtract of a plate by a
   sphere. The exact volume adds its terms in pairs: each order of an exact sum gives the same value, and the volume of that
   subtract no longer takes more than half of its work.
+- 2026-11-22 · TASK-0454 · No item changes. `PlanarBoolean` counts on each thread the booleans of two solids, each
+  subtract, union and intersection, so a test holds that one `Subtract` and one `GetFaces` make one boolean (ADR-0059
+  item 2).

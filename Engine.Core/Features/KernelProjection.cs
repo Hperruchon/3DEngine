@@ -28,20 +28,134 @@ internal static class KernelProjection
     private static readonly Dictionary<(Guid Document, Guid Key), KernelSolid> Kept = [];
     private static readonly Queue<(Guid Document, Guid Key)> KeptOrder = new();
 
+    // ADR-0059 item 2, amended by TASK-0454 (phase P0.184): the count of the kept results of the boolean steps; the result of
+    // the oldest use goes first.
+    public const int BooleanLimit = 256;
+
+    // TASK-0454: the kept result of each boolean step, under the Document and the identifier of the step, with the kind of
+    // the step and its two operands. The list holds the order of use, the last use first.
+    private sealed record KeptBoolean((Guid Document, Guid Step) Key, string Kind, KernelSolid First, KernelSolid Second, KernelSolid? Result);
+
+    private static readonly Dictionary<(Guid Document, Guid Step), LinkedListNode<KeptBoolean>> Booleans = [];
+    private static readonly LinkedList<KeptBoolean> BooleanUse = new();
+
     // The kernel solid of the body in the committed state of the Document, or the reason that the kernel cannot build it.
+    // TASK-0454: the walk first removes the kept results of the steps of the Document that are no longer in effect.
     public static (KernelSolid? Solid, string? Reason) Of(Document document, Guid body)
     {
         ArgumentNullException.ThrowIfNull(document);
-        return Of(FeatureGraph.Of(document), body, Committed(document), id => DatumResolver.Frame(document, id));
+        var graph = FeatureGraph.Of(document);
+        KeepBooleans(document.DocumentId, graph);
+        return Of(document.DocumentId, graph, body, Committed(document), id => DatumResolver.Frame(document, id));
     }
 
-    // The kernel solid of the body in one state: state gives the sketch and the distance of an extrude, and frameOf the
-    // frame of a datum.
+    // The kernel solid of the body in one state of the Document: state gives the sketch and the distance of an extrude, and
+    // frameOf the frame of a datum.
     public static (KernelSolid? Solid, string? Reason) Of(
-        FeatureGraph graph, Guid body, Func<ExtrudeCommand, DatumResolver.ExtrudeState> state, Func<Guid, DatumFrame?> frameOf)
+        Guid document, FeatureGraph graph, Guid body, Func<ExtrudeCommand, DatumResolver.ExtrudeState> state, Func<Guid, DatumFrame?> frameOf)
     {
         ArgumentNullException.ThrowIfNull(graph);
-        return Solid(graph, body, state, frameOf);
+        return Solid(document, graph, body, state, frameOf);
+    }
+
+    // ADR-0059 item 2, amended by TASK-0454: the result of a boolean step (a Subtract, a Union or an Intersect) of the Document
+    // from the solids of its two operands. The result is a function of the kind and of the exact content of the two operands
+    // only, so the kept result of the step answers when its kind and its operands are the same, polygon for polygon; else the
+    // kernel makes the boolean and the step keeps the new result. So the command, the regeneration and each reader make one
+    // boolean for each change of the Document, and a kept result is the result that a new boolean gives. A boolean that throws
+    // is not kept. The Document and the step only find the entry; they do not decide that the result answers.
+    public static KernelSolid? Boolean(Guid document, Command step, KernelSolid first, KernelSolid second)
+    {
+        ArgumentNullException.ThrowIfNull(step);
+        ArgumentNullException.ThrowIfNull(first);
+        ArgumentNullException.ThrowIfNull(second);
+        var key = (document, step.CommandId);
+        KeptBoolean? kept;
+        lock (Gate)
+            kept = Booleans.TryGetValue(key, out var node) ? node.Value : null;
+        if (kept is not null && kept.Kind == step.Name && Same(kept.First, first) && Same(kept.Second, second))
+        {
+            lock (Gate)
+            {
+                if (Booleans.TryGetValue(key, out var node) && ReferenceEquals(node.Value, kept))
+                {
+                    BooleanUse.Remove(node);
+                    BooleanUse.AddFirst(node);
+                }
+            }
+
+            return kept.Result;
+        }
+
+        var result = step switch
+        {
+            SubtractCommand => PlanarBoolean.Subtract(first, second),
+            UnionCommand => PlanarBoolean.Union(first, second),
+            IntersectCommand => PlanarBoolean.Intersect(first, second),
+            _ => throw new ArgumentException($"The command '{step.Name}' is not a Subtract, a Union or an Intersect.", nameof(step)),
+        };
+        lock (Gate)
+        {
+            if (Booleans.Remove(key, out var old))
+                BooleanUse.Remove(old);
+            Booleans[key] = BooleanUse.AddFirst(new KeptBoolean(key, step.Name, first, second, result));
+            while (BooleanUse.Count > BooleanLimit)
+            {
+                Booleans.Remove(BooleanUse.Last!.Value.Key);
+                BooleanUse.RemoveLast();
+            }
+        }
+
+        return result;
+    }
+
+    // TASK-0454: the kept results of the steps of the Document that are no longer in effect leave: a step that an undo
+    // removed, or a step of a command that did not commit. A read that runs between a command and its commit removes the
+    // result of that command too, and the next reader makes the boolean again.
+    private static void KeepBooleans(Guid document, FeatureGraph graph)
+    {
+        lock (Gate)
+        {
+            foreach (var key in Booleans.Keys.Where(key => key.Document == document && graph.Creator(key.Step)?.CommandId != key.Step).ToList())
+            {
+                BooleanUse.Remove(Booleans[key]);
+                Booleans.Remove(key);
+            }
+        }
+    }
+
+    // True when the projection keeps a result of the step of the Document, for a test.
+    internal static bool IsBooleanKept(Guid document, Guid step)
+    {
+        lock (Gate)
+            return Booleans.ContainsKey((document, step));
+    }
+
+    // The count of the kept results of the boolean steps, for a test.
+    internal static int BooleansKept
+    {
+        get
+        {
+            lock (Gate)
+                return Booleans.Count;
+        }
+    }
+
+    // TASK-0454: the exact content of two solids: each polygon with its vertices, its plane and its tag, in order.
+    private static bool Same(KernelSolid kept, KernelSolid solid)
+    {
+        if (ReferenceEquals(kept, solid))
+            return true;
+        var (a, b) = (kept.Polygons, solid.Polygons);
+        if (a.Count != b.Count)
+            return false;
+        for (var i = 0; i < a.Count; i++)
+        {
+            if (!ReferenceEquals(a[i], b[i]) && (a[i].Plane != b[i].Plane || a[i].Tag != b[i].Tag || !a[i].Vertices.SequenceEqual(b[i].Vertices)))
+                return false;
+        }
+
+        return true;
     }
 
     // ADR-0059 item 2: the solid of a live body with no fault, kept under its geometry key. A rebuild gives a body a new
@@ -265,8 +379,9 @@ internal static class KernelProjection
             SketchModel.Find(document, extrude.SketchId),
             SketchRebuild.DistanceInEffect(document, extrude.CommandId) ?? extrude.Distance);
 
+    // TASK-0454: document is the identifier of the Document of the graph, under which a boolean step keeps its result.
     private static (KernelSolid? Solid, string? Reason) Solid(
-        FeatureGraph graph, Guid handle, Func<ExtrudeCommand, DatumResolver.ExtrudeState> state, Func<Guid, DatumFrame?> frameOf)
+        Guid document, FeatureGraph graph, Guid handle, Func<ExtrudeCommand, DatumResolver.ExtrudeState> state, Func<Guid, DatumFrame?> frameOf)
     {
         switch (graph.Creator(handle))
         {
@@ -293,7 +408,7 @@ internal static class KernelProjection
                 return Extrude(graph, extrude, state, frameOf);
             case TranslateCommand translate:
             {
-                var (solid, reason) = Solid(graph, translate.BodyId, state, frameOf);
+                var (solid, reason) = Solid(document, graph, translate.BodyId, state, frameOf);
                 return (solid?.Translate(Vector3R.FromDoubles(translate.Dx, translate.Dy, translate.Dz)), reason);
             }
             // ADR-0112 item 5: the kernel reads the nine doubles of the turn exactly, as the backend takes them.
@@ -301,25 +416,16 @@ internal static class KernelProjection
             {
                 if (RotateCommandHandler.Turn(rotate) is not { } r)
                     return (null, $"The Rotate '{rotate.CommandId}' has a quaternion that gives no turn.");
-                var (solid, reason) = Solid(graph, rotate.BodyId, state, frameOf);
+                var (solid, reason) = Solid(document, graph, rotate.BodyId, state, frameOf);
                 return (solid?.Rotate(Vector3R.FromDoubles(r.Xx, r.Xy, r.Xz), Vector3R.FromDoubles(r.Yx, r.Yy, r.Yz), Vector3R.FromDoubles(r.Zx, r.Zy, r.Zz)), reason);
-            }
-            case SubtractCommand subtract:
-            {
-                var (minuend, first) = Solid(graph, subtract.MinuendBodyId, state, frameOf);
-                if (minuend is null)
-                    return (null, first);
-                var (subtrahend, second) = Solid(graph, subtract.SubtrahendBodyId, state, frameOf);
-                if (subtrahend is null)
-                    return (null, second);
-                var result = PlanarBoolean.Subtract(minuend, subtrahend);
-                return result is null ? (null, $"The Subtract '{subtract.CommandId}' leaves no solid in the owned kernel.") : (result, null);
             }
             // ADR-0181 item 5 (phase K16, TASK-0433): the union and the intersection of the solids of the two bodies. The step
             // is a method of its own: a local of a case is a part of the frame of this recursive method, and a chain of 150
-            // turns of the bookcase (K10a) overflowed the stack of a test with the larger frame.
-            case UnionCommand or IntersectCommand:
-                return PairSolid(graph, graph.Creator(handle)!, state, frameOf);
+            // turns of the bookcase (K10a) overflowed the stack of a test with the larger frame. TASK-0454 (phase P0.184): the
+            // parameter document made the frame larger, and the chain overflowed again, so the subtract is a step of that
+            // method too, with the same message.
+            case SubtractCommand or UnionCommand or IntersectCommand:
+                return PairSolid(document, graph, graph.Creator(handle)!, state, frameOf);
             case ImportStlCommand:
                 return (null, $"The body '{handle}' is a mesh body of an STL file, which the owned kernel does not build (ADR-0083 item 4).");
             case null:
@@ -339,27 +445,30 @@ internal static class KernelProjection
         return curves;
     }
 
-    // ADR-0181 item 5: the solid of a Union or an Intersect from the solids of its two bodies.
+    // ADR-0181 item 5: the solid of a Union or an Intersect from the solids of its two bodies. TASK-0454: a Subtract too, from
+    // the solid of the minuend and of the subtrahend; each step takes its kept result, which the command made.
     private static (KernelSolid? Solid, string? Reason) PairSolid(
-        FeatureGraph graph, Command command, Func<ExtrudeCommand, DatumResolver.ExtrudeState> state, Func<Guid, DatumFrame?> frameOf)
+        Guid document, FeatureGraph graph, Command command, Func<ExtrudeCommand, DatumResolver.ExtrudeState> state, Func<Guid, DatumFrame?> frameOf)
     {
         var (firstId, secondId) = Pair(command);
-        var (first, firstReason) = Solid(graph, firstId, state, frameOf);
+        var (first, firstReason) = Solid(document, graph, firstId, state, frameOf);
         if (first is null)
             return (null, firstReason);
-        var (second, secondReason) = Solid(graph, secondId, state, frameOf);
+        var (second, secondReason) = Solid(document, graph, secondId, state, frameOf);
         if (second is null)
             return (null, secondReason);
-        var result = command is UnionCommand ? PlanarBoolean.Union(first, second) : PlanarBoolean.Intersect(first, second);
+        var result = Boolean(document, command, first, second);
         return result is null ? (null, $"The {command.Name} '{command.CommandId}' leaves no solid in the owned kernel.") : (result, null);
     }
 
-    // ADR-0181 item 1: the two operands of a Union or an Intersect.
+    // ADR-0181 item 1: the two operands of a Union or an Intersect. TASK-0454: the minuend and the subtrahend of a Subtract,
+    // for PairSolid only.
     private static (Guid First, Guid Second) Pair(Command command) => command switch
     {
+        SubtractCommand subtract => (subtract.MinuendBodyId, subtract.SubtrahendBodyId),
         UnionCommand union => (union.FirstBodyId, union.SecondBodyId),
         IntersectCommand intersect => (intersect.FirstBodyId, intersect.SecondBodyId),
-        _ => throw new ArgumentException($"The command '{command.Name}' is not a Union or an Intersect.", nameof(command)),
+        _ => throw new ArgumentException($"The command '{command.Name}' is not a Subtract, a Union or an Intersect.", nameof(command)),
     };
 
     // Item 2: the profile of the sketch in the state, with the item of each side, on the frame of its datum, by the
