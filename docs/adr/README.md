@@ -113,7 +113,7 @@ names. Do not read all of them.
 | [0105](0105-the-values-on-the-edges-of-an-active-sketch.md) | The values of an active sketch show on its edges | Amended | Clients, rendering | — | 0115 |
 | [0106](0106-open-project-shows-an-stl-file-too.md) | "Open project..." shows an STL file too, and an STL file goes to the import | Accepted | Persistence, clients | 0102 | — |
 | [0107](0107-the-arc-of-a-proposal-is-in-the-free-room.md) | With no ring of a body, the arc of a proposal is in the room right of the panel | Accepted | Clients | 0092 | — |
-| [0108](0108-the-look-of-the-render.md) | The window has the look of the render, an almost black ground and outlined controls with no fill | Amended | Clients, rendering | 0078, 0081, 0092, 0095, 0098, 0113 | 0150 |
+| [0108](0108-the-look-of-the-render.md) | The window has the look of the render, an almost black ground and outlined controls with no fill | Amended | Clients, rendering | 0078, 0081, 0092, 0095, 0098, 0113 | 0150, 0186 |
 | [0109](0109-the-edges-of-the-body.md) | The edges of a body are lines, and the selected body is transparent with dashed hidden edges | Amended | Rendering, clients | 0029 | 0121, 0129 |
 | [0110](0110-a-proposal-shows-each-value-on-its-chip.md) | A proposal shows each value that it changes on the chip of that value | Amended | Clients, surface | 0092 | 0114, 0115, 0130 |
 | [0111](0111-a-proposal-takes-its-own-taps-and-commands.md) | A proposal takes its own taps, its own command identifiers and its own steps | Amended | Surface, clients | 0092 | 0114, 0135 |
@@ -191,6 +191,7 @@ names. Do not read all of them.
 | [0183](0183-the-connectors-of-a-body.md) | The query GetConnectors gives the named datums of a body and the implicit frames of its faces | Accepted | Kernel, queries, assembly | — | — |
 | [0184](0184-the-section-view.md) | The section view of the window, a cut of each body by a plane with a cap | Accepted | Clients, rendering | 0174 | — |
 | [0185](0185-the-preview-of-a-proposal-on-a-fork.md) | The preview of a proposal on a fork of the Document, a replay of a copy of its log off the serial lock | Accepted | Surface, agent | 0092 | — |
+| [0186](0186-the-soft-light-of-the-ground.md) | The ground of the scene has the soft light of the render, lighter at the middle and darker at the corners | Accepted | Clients, rendering | 0108 | — |
 
 ## Topics
 

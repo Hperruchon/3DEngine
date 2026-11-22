@@ -13807,3 +13807,39 @@ The failed runs since the entry v0.440, from the API: none; the entry v0.440 nam
 New tests: 10 (the race test, two facts and seven rows of the gate). The test list holds 3241 (1891 in `Engine.Tests`, 390 in
 `3DEngine.Tests`, 957 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0.
 Since the review of v0.431, 2 product milestones and 10 entries followed it.
+
+## v0.442 — The ground of the scene has the soft light of the render, lighter at the middle and darker at the corners (R18p, TASK-0458)
+
+The owner ordered "Finish R18p" on 2026-11-22, after the report that R18p is the only work that did not come to `main`. The
+work was done on 2026-11-20 in the commit `75b30af` of the branch ground-light-b, and continuous integration passed on it. Its
+close waited for a codebase review, and in that time P0.170 took ADR-0178 and v0.407 and R20d took TASK-0423 on `main`.
+
+**The renumbering.** The branch r18p-ground-light starts from `main` at `90097dd4` (v0.441) and takes `75b30af` by a
+cherry-pick: TASK-0423 is now TASK-0458, ADR-0178 is now ADR-0186, and v0.407 is now v0.442. Each reference that means R18p
+changed in the files of the commit: the comments of the code, the shaders and the tests, the amendment of ADR-0108, the row of
+the ADR index, the row of the roadmap and the task file. The references to TASK-0423 of R20d and to ADR-0178 of P0.170 stay.
+
+**The change.**
+- `Theme.GroundAt` gives the ground at each pixel: `#03060b` at the corners to `#0a1a28` at the middle, with + − × ÷ only
+  (ADR-0186 item 1, amends ADR-0108 item 1).
+- `GroundPipeline` draws one triangle over the target as the first draw after the begin of the render pass, with no depth test
+  and no blend (item 2). In `SceneRenderer` it comes before the bodies, the caps and the hatch of the section view (ADR-0184),
+  the images, the edge lines and the overlay, so each of them lies over the light.
+- Each image test that compared a pixel with the one clear colour reads the ground at that pixel (`GroundPixels.IsGround`).
+- Three conflicts: `SceneRenderer.cs` (the fields of the section view and the pipeline of the ground, both kept),
+  `docs/adr/README.md` (the rows 0178 to 0185 of `main`, and row 0186) and `eng/test-floor.txt`. The new comments of
+  `ground.vert` and `ground.frag` changed the hash of their source, so `compile.js` (shaderc v2023.8) wrote the lock again;
+  each SPIR-V file is the same.
+
+**Proof.** All 960 tests of `3DEngine.ImageTests` passed on the computer of the owner with the soft light. No image test that
+`main` added after `05aafda` reads the ground: `SectionViewTests`, the one new test that reads pixels, counts the accent colour
+of the hatch, so no test file of `main` changed. A script (`inject.js` in `%TEMP%\r18p`) applied three injections to
+`SceneRenderer.cs`, the file of the conflict, each restored byte for byte (sha256): no draw of the ground, the ground after the
+bodies, and the two colours swapped in the push block. Each made a named test of `GroundImageTests` fail; TASK-0458 names
+them. A clean build gives 0 warnings, the phone project builds with 0 warnings, `dotnet test` passes 3244 tests, and the
+write-set check and `eng/repo-gates` pass. No picture of the real window was made. The run on the branch is not done yet.
+The failed runs since the entry v0.441, from the API: none.
+
+New tests: 3 (`GroundImageTests`). The test list holds 3244 (1891 in `Engine.Tests`, 390 in `3DEngine.Tests`, 960 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. Since the review of
+v0.431, 3 product milestones and 11 entries followed it.
