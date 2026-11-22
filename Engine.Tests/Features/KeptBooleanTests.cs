@@ -17,6 +17,9 @@ namespace Engine.Tests.Features;
 // command and each reader make one exact boolean for each change of the Document, and not one for each reader. The count of
 // the booleans of the kernel on this thread (PlanarBoolean.BooleansOnThisThread) holds the work, and no time decides a test
 // (ADR-0173 item 4). The command and the queries complete on the thread of the test (TASK-0452).
+// TASK-0457 (phase P0.186): two tests fill the kept results past their limit and each test counts the booleans or the kept
+// results, so the class runs in the collection "kept booleans", alone (KeptBooleanCollection.cs).
+[Collection("kept booleans")]
 public sealed class KeptBooleanTests : IDisposable
 {
     private readonly string _folder = Directory.CreateTempSubdirectory("kept-boolean-").FullName;
@@ -211,6 +214,47 @@ public sealed class KeptBooleanTests : IDisposable
         Assert.All(volumes, volume => Assert.Equal((Rational)(64 - 16), volume));
         Assert.True(KernelProjection.BooleansKept <= KernelProjection.BooleanLimit, $"{KernelProjection.BooleansKept} results are kept.");
     }
+
+    // TASK-0457 (phase P0.186): the failure of run 45021528072, made on purpose. Another thread adds BooleanLimit new results
+    // between the command Subtract and the query of the faces, as a test of this class that runs at the same time can do. The
+    // kept result of the cut leaves, so the query makes the boolean again: two booleans on the thread of the test, and not
+    // one. The new result has the same exact content as the result that left. So the product is correct, and only a test that
+    // counts the booleans or the kept results depends on the tests that run beside it (KeptBooleanCollection.cs).
+    [NativeManifoldFact]
+    public async Task A_Result_That_Other_Steps_Push_Out_Is_Made_Again_With_The_Same_Content()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        var plate = await Body(session, new CreateBoxCommand { SizeX = 20, SizeY = 20, SizeZ = 4 });
+        var tool = await Body(session, new CreateCylinderCommand { Radius = 3, Height = 10 });
+        var step = Guid.NewGuid();
+
+        var start = PlanarBoolean.BooleansOnThisThread;
+        var cut = await Body(session, new SubtractCommand { CommandId = step, MinuendBodyId = plate, SubtrahendBodyId = tool });
+        var before = await Solid(session, cut);
+        Assert.Equal(1, PlanarBoolean.BooleansOnThisThread - start);
+
+        var other = new Thread(() =>
+        {
+            var document = Guid.NewGuid();
+            for (var i = 0; i < KernelProjection.BooleanLimit; i++)
+                KernelProjection.Boolean(document, new SubtractCommand { CommandId = Guid.NewGuid(), MinuendBodyId = Guid.NewGuid(), SubtrahendBodyId = Guid.NewGuid() }, First, Second);
+        });
+        other.Start();
+        other.Join();
+        Assert.False(KernelProjection.IsBooleanKept(session.DocumentId, step));
+
+        var faces = await Faces(session, cut);
+        Assert.Equal(2, PlanarBoolean.BooleansOnThisThread - start);
+        Assert.Contains(faces.Faces, face => face.Reference == new DatumReference(tool, "side", null));
+        var after = await Solid(session, cut);
+        Assert.Equal(2, PlanarBoolean.BooleansOnThisThread - start);
+        Assert.NotSame(before, after);
+        Assert.Equal(Text(before!), Text(after!));
+    }
+
+    private static string Text(KernelSolid solid)
+        => string.Join("\n", solid.Polygons.Select(polygon => $"{polygon.Tag} {polygon.Plane} {string.Join(" ", polygon.Vertices)}")) + $"\n{solid.Volume()}";
 
     // The kept results hold no state that the log does not give: the session makes the cut with a datum on a face that it
     // removes, edits the plate two times, reads the faces, undoes and redoes, and a replay of its log in a new session gives
