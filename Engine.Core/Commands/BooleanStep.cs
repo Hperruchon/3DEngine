@@ -18,7 +18,7 @@ internal static class BooleanStep
         Operands operands,
         string verb,
         Action<IBooleanOps, BodyHandle, BodyHandle, BodyHandle> backendStep,
-        Func<KernelSolid, KernelSolid, KernelSolid?> kernelStep)
+        Command step)
     {
         // 1. Both operands must be live in the Document projection, before the capability check, so a bad reference has
         // the same code on each backend. A consumed body is not live (ADR-0021 item 4).
@@ -46,10 +46,11 @@ internal static class BooleanStep
         // 3. ADR-0181 item 3: the exact result of the owned kernel. When the kernel holds both operands and the result has no
         // volume, the two bodies share no volume, and the command is refused before the backend. Manifold gives a flat solid
         // of no volume for two bodies that touch on a face, so its own check of an empty result is not enough. A body that
-        // the kernel cannot build leaves the check to the backend.
+        // the kernel cannot build leaves the check to the backend. TASK-0454 (phase P0.184): the projection keeps the result
+        // under the step, so a later read of the solid of the body does not make the boolean again (ADR-0059 item 2).
         var a = Features.KernelProjection.OfRecord(document, first).Solid;
         var b = Features.KernelProjection.OfRecord(document, second).Solid;
-        var exact = a is not null && b is not null ? kernelStep(a, b) : null;
+        var exact = a is not null && b is not null ? Features.KernelProjection.Boolean(document.DocumentId, step, a, b) : null;
         if (a is not null && b is not null && exact is null)
             return Failure(DiagnosticCodes.GeomNativeOp, $"The bodies '{operands.First}' and '{operands.Second}' share no volume, so the owned kernel gives no solid to {verb}.");
 

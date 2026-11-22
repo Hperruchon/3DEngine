@@ -49,6 +49,14 @@ of K4. On 2026-11-05 the owner answered five questions:
 2. **The kept solids.** The projection keeps the solid of the last 64 committed geometry keys. A key comes from the
    command and the body (ADR-0037 item 3), so a committed key names one solid in one Document. The projection keeps it
    under the identity of the Document and the key (E135, TASK-0192). A body with a fault gives no solid.
+   The projection also keeps the result of each boolean step, a `Subtract`, a `Union` or an `Intersect`, under the
+   identity of the Document and of the step, with the kind of the step and its two operand solids (TASK-0454). A walk,
+   the command of the step and the regeneration take the kept result only when the kind and each polygon of the two
+   operands are the same: the vertices, the plane and the tag, in order. Else the kernel makes the boolean, and the
+   step keeps the new result. A result is a function of that content only, so a kept result is the result that a new
+   boolean gives, and the log does not hold it. The projection keeps at most 256 results; the result of the oldest use
+   goes first. Each walk from a committed Document first removes the results of its steps that are no longer in
+   effect.
 3. **A gone face.** The chain of a feature is the walk from its body through each consumer, a `Translate`, a `Rotate`
    (ADR-0112 item 6) or a `Subtract`, to the live body at its end. A datum with no other fault, whose chain
    holds a `Subtract`, and whose name is not a face of the kernel solid of that end, gets the fault
@@ -99,3 +107,6 @@ of K4. On 2026-11-05 the owner answered five questions:
   by the Document too, and a face-gone fault stays while the kernel cannot build the end. Q4 A, answered by the standing
   order of 2026-11-05.
 - 2026-11-10 · TASK-0335 · ADR-0112 item 6 amends item 3: a `Rotate` is a step of the chain of a feature.
+- 2026-11-22 · TASK-0454 · Item 2: the projection keeps the result of each boolean step under the Document and the
+  step, and takes it only for the same kind and the same operands. The command `Subtract` made the boolean for the
+  faults of its datums, and `GetFaces` made it again (TASK-0452); now one `Subtract` and one `GetFaces` make one boolean.

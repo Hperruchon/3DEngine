@@ -150,10 +150,12 @@ public sealed class CreateSphereAndTorusCommandTests
         Assert.True(Math.Abs(t.MaxZ - 1.5) < 1e-12, $"{t.MaxZ}");
     }
 
-    // TASK-0452 (register entry R-0073): the work of the cut and of its faces, as two counts of the kernel on this thread. The
-    // command and the query of the faces each subtract the sphere from the plate. Each bound is 1.5 times the count of today.
-    private const long CutSplits = 13_875_936;
-    private const long CutExactSigns = 189_876;
+    // TASK-0452 (register entry R-0073): the work of the cut and of its faces, as two counts of the kernel on this thread. Each
+    // bound is 1.5 times the count of today. TASK-0454 (phase P0.184): the command subtracts the sphere from the plate one
+    // time, and the query of the faces takes the kept result, so the counts are half the counts of TASK-0452 (13,875,936 and
+    // 189,876).
+    private const long CutSplits = 6_937_968;
+    private const long CutExactSigns = 94_938;
 
     // A sphere at the middle of a plate cuts a hole with the name surface into +z and -z of the plate.
     [NativeManifoldFact]
@@ -163,11 +165,11 @@ public sealed class CreateSphereAndTorusCommandTests
         var session = NewSession(backend);
         var plate = Output(await Applied(session, new CreateBoxCommand { SizeX = 20, SizeY = 20, SizeZ = 4 }), "bodyId");
         var tool = Output(await Applied(session, new CreateSphereCommand { Radius = 5 }), "bodyId");
-        var (splits, exactSigns) = (Bsp.SplitsOnThisThread, Bsp.ExactSignsOnThisThread);
+        var (splits, exactSigns, booleans) = (Bsp.SplitsOnThisThread, Bsp.ExactSignsOnThisThread, PlanarBoolean.BooleansOnThisThread);
         var cut = Output(await Applied(session, new SubtractCommand { MinuendBodyId = plate, SubtrahendBodyId = tool }), "bodyId");
 
         var faces = await Faces(session, cut);
-        (splits, exactSigns) = (Bsp.SplitsOnThisThread - splits, Bsp.ExactSignsOnThisThread - exactSigns);
+        (splits, exactSigns, booleans) = (Bsp.SplitsOnThisThread - splits, Bsp.ExactSignsOnThisThread - exactSigns, PlanarBoolean.BooleansOnThisThread - booleans);
 
         // ADR-0089 item 6: the cut took about 3 minutes before the filter of doubles of TASK-0289. TASK-0435 (phase P0.173):
         // no time decides the test (ADR-0173 item 4), so the limit of 300 s of TASK-0300 is gone. TASK-0452: the counts of
@@ -175,6 +177,7 @@ public sealed class CreateSphereAndTorusCommandTests
         // this thread, so a count of zero says that the work went to another thread, and the test fails then too.
         Assert.Equal((1, 1), (faces.Single(f => f.Reference == new DatumReference(plate, "+z", null)).Holes, faces.Single(f => f.Reference == new DatumReference(plate, "-z", null)).Holes));
         Assert.Contains(faces, f => f.Reference == new DatumReference(tool, "surface", null));
+        Assert.Equal(1, booleans);
         Assert.True(splits > 0 && splits <= CutSplits * 3 / 2, $"The cut split {splits} polygons; the bound is 1.5 times {CutSplits}.");
         Assert.True(exactSigns > 0 && exactSigns <= CutExactSigns * 3 / 2, $"The cut computed {exactSigns} exact signs; the bound is 1.5 times {CutExactSigns}.");
     }

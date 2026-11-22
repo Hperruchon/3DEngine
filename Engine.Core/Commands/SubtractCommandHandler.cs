@@ -127,7 +127,7 @@ public sealed class SubtractCommandHandler : ICommandHandler, ICommandEncoder
             ["bodyId"] = handle.Id,
         });
 
-        var (datums, warnings) = GoneFaces(document, minuend, subtrahend, handle.Id);
+        var (datums, warnings) = GoneFaces(document, subtract, minuend, subtrahend, handle.Id);
         return Task.FromResult(CommandHandlerResult.Success(
             outputs,
             diagnostics: warnings,
@@ -140,12 +140,14 @@ public sealed class SubtractCommandHandler : ICommandHandler, ICommandEncoder
     // ADR-0059 item 3 (phase K4c, TASK-0185): a datum on a face of either operand that the cut removes gets a fault. The
     // owned kernel subtracts the kept solids of the two operands, and a datum whose chain ends at an operand is checked
     // against the names of the result. When the kernel cannot build an operand or the result, no datum has a check.
+    // TASK-0454 (phase P0.184): the projection keeps the result under the step, so a later read of the solid of the body does
+    // not subtract the two solids again (ADR-0059 item 2).
     private static (IReadOnlyList<Engine.Contracts.Sketch.DatumRecord> Datums, IReadOnlyList<Diagnostic> Warnings) GoneFaces(
-        Document document, BodyRecord minuend, BodyRecord subtrahend, Guid body)
+        Document document, SubtractCommand subtract, BodyRecord minuend, BodyRecord subtrahend, Guid body)
     {
         if (Features.KernelProjection.OfRecord(document, minuend).Solid is not { } a
             || Features.KernelProjection.OfRecord(document, subtrahend).Solid is not { } b
-            || Kernel.PlanarBoolean.Subtract(a, b) is not { } result)
+            || Features.KernelProjection.Boolean(document.DocumentId, subtract, a, b) is not { } result)
             return ([], []);
 
         var graph = Sketch.FeatureGraph.Of(document);

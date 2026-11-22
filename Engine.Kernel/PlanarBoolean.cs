@@ -2,12 +2,21 @@ namespace Engine.Kernel;
 
 public static class PlanarBoolean
 {
+    // TASK-0454 (phase P0.184): the count of the booleans of two solids on this thread, each Subtract, Union and Intersect, a
+    // measure of the work of a command or a query for a test, beside the counts of Bsp. The projection of the engine keeps the
+    // result of each boolean of the history of a body, so one Subtract and one read of its faces make one boolean.
+    [ThreadStatic]
+    private static long booleans;
+
+    internal static long BooleansOnThisThread => booleans;
+
     // ADR-0057 item 5: a minus b, in the steps of csg.js: the parts of a outside b, and the parts of b inside a, turned.
     // Each part keeps the tag of its face. Null when the result is empty, which the caller refuses.
     public static KernelSolid? Subtract(KernelSolid a, KernelSolid b)
     {
         ArgumentNullException.ThrowIfNull(a);
         ArgumentNullException.ThrowIfNull(b);
+        booleans++;
         var left = new Bsp(a.Polygons);
         var right = new Bsp(b.Polygons);
         left.Invert();
@@ -32,6 +41,7 @@ public static class PlanarBoolean
     {
         ArgumentNullException.ThrowIfNull(a);
         ArgumentNullException.ThrowIfNull(b);
+        booleans++;
         var left = new Bsp(a.Polygons);
         var right = new Bsp(b.Polygons);
         left.ClipTo(right);
@@ -53,6 +63,7 @@ public static class PlanarBoolean
     {
         ArgumentNullException.ThrowIfNull(a);
         ArgumentNullException.ThrowIfNull(b);
+        booleans++;
         var left = new Bsp(a.Polygons, cancel);
         var right = new Bsp(b.Polygons, cancel);
         left.Invert();

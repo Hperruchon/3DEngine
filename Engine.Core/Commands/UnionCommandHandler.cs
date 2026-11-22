@@ -3,7 +3,6 @@ using Engine.Contracts.Geometry;
 using Engine.Contracts.Handlers;
 using Engine.Contracts.Schema;
 using Engine.Core.Persistence;
-using Engine.Kernel;
 
 namespace Engine.Core.Commands;
 
@@ -58,6 +57,6 @@ public sealed class UnionCommandHandler : ICommandHandler, ICommandEncoder
             new BooleanStep.Operands(union.CommandId, union.FirstBodyId, union.SecondBodyId),
             "unite",
             (ops, result, first, second) => ops.Union(result, first, second),
-            PlanarBoolean.Union);
+            union);
     }
 }

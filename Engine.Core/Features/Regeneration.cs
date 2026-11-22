@@ -91,7 +91,7 @@ internal static class Regeneration
                 return known;
             Kernel.KernelSolid? solid = null;
             if (solids.Changed.FirstOrDefault(body => body.Handle.Id == end) is { } rebuilt)
-                solid = rebuilt.Fault is null ? KernelProjection.Of(graph, end, StateAfter, planes.FrameOf).Solid : null;
+                solid = rebuilt.Fault is null ? KernelProjection.Of(document.DocumentId, graph, end, StateAfter, planes.FrameOf).Solid : null;
             else if (document.Bodies.FirstOrDefault(body => body.Handle.Id == end) is { } live)
                 solid = KernelProjection.OfRecord(document, live).Solid;
             return names[end] = solid is null ? null : KernelProjection.Tags(solid);
