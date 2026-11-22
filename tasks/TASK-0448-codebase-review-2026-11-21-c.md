@@ -1,7 +1,7 @@
 ---
 id: 0448
 title: The third codebase review of 2026-11-21 is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-21
 depends-on: [0447]
@@ -54,12 +54,12 @@ A review of the code at `2aed6d7` (v0.431) is in `docs/reviews/`, and a task hol
 - [x] Each finding of the review has its place and its evidence, and the session read the headings, the measures, the summary
       and the questions.
 - [x] The measures use the method of the last review.
-- [ ] `CodebaseReviewGateTests`, `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on
+- [x] `CodebaseReviewGateTests`, `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on
       the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch codebase-review-2026-11-21-c) · v0.432
+Status: Done · commit (the merge of the branch codebase-review-2026-11-21-c) · v0.432
 
 ## Method
 
@@ -72,3 +72,4 @@ Weakest:    the freeze time of V229 is an estimate, not a run.
 
 - 2026-11-21: opened after R26 (TASK-0447), branch codebase-review-2026-11-21-c from `2aed6d7`. The session read the summary,
   the measures, the heading of each finding and the questions. Ledger entry v0.432.
+- 2026-11-22: run 44944914166 of `d7077cf8` passed on each job. Closed at v0.432.
