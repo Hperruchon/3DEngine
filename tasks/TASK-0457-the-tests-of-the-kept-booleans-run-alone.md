@@ -1,7 +1,7 @@
 ---
 id: 0457
 title: The tests that fill or count the kept booleans run alone, so the order of the tests does not decide their result
-status: Active
+status: Done
 phase: P0.186
 opened: 2026-11-22
 depends-on: [0456]
@@ -76,7 +76,7 @@ Each test class that fills the kept booleans past their limit, or that counts th
 - [x] A gate fails by the name of the class when a class that names one of the four members is not in the collection, and when
   the collection is not defined with parallel runs off (see the injections in "Method").
 - [x] No change of `Engine.Core`, `Engine.Kernel` or the limit.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Decisions
 
@@ -97,7 +97,7 @@ Each test class that fills the kept booleans past their limit, or that counts th
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0186-kept-boolean-tests) · v0.441
+Status: Done · commit (the merge of the branch p0186-kept-boolean-tests) · v0.441
 
 ## Method
 
@@ -160,3 +160,4 @@ suffix, and a name in a comment or a text only.
 - 2026-11-22: branch `p0186-kept-boolean-tests` from `486d4bfc` (P15a, TASK-0456, v0.440, not merged yet). The collection
   "kept booleans", the attribute on the two classes, the gate, the race test, the roadmap rows P0.186 and the ledger entry
   v0.441.
+- 2026-11-22: run 45025689752 of `3224f3ba` passed on each job. Closed at v0.441.
