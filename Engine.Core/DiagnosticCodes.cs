@@ -31,6 +31,9 @@ public static class DiagnosticCodes
     public const string ApiProposalNotFound = "E-API-PROPOSAL-NOT-FOUND";
     public const string ApiProposalClosed = "E-API-PROPOSAL-CLOSED";
     public const string ApiProposalCommandKnown = "E-API-PROPOSAL-COMMAND-KNOWN";
+
+    // TASK-0456 (phase P15a): the fork of the preview of a proposal could not replay the log of the Document.
+    public const string ApiPreviewFailed = "E-API-PREVIEW-FAILED";
     public const string GeomCapMissing = "E-GEOM-CAP-MISSING";
     public const string GeomInvalidParam = "E-GEOM-INVALID-PARAM";
     public const string GeomBodyNotFound = "E-GEOM-BODY-NOT-FOUND";

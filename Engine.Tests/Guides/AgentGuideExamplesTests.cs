@@ -117,6 +117,8 @@ public sealed class AgentGuideExamplesTests
             Assert.True(requests.Any(line => line.StartsWith(route, StringComparison.Ordinal)), $"{GuidePath} has no request that starts with \"{route}\".");
         Assert.Contains(steps, step => step.Block.Marker == "agent-person" && step.Block.Text.StartsWith("accept ", StringComparison.Ordinal));
         Assert.Contains(steps, step => step.Block.Marker == "agent-refusal");
+        // Row P15a (TASK-0456): the preview of a proposal is a step of the loop, before the person decides.
+        Assert.True(requests.Any(line => line.StartsWith("GET /proposals/", StringComparison.Ordinal) && line.EndsWith("/preview", StringComparison.Ordinal)), $"{GuidePath} has no request of the preview of a proposal.");
         // Row K17 (TASK-0443): the connectors of a body are a step of the measure.
         foreach (var query in new[] { "GetBodyInfo", "GetDistance", "GetMassProperties", "GetConnectors", "CheckInterference", "GetViewLines" })
             Assert.Contains(steps, step => step.Block.Marker == "agent-request" && step.Block.Text.Contains($"\"name\": \"{query}\"", StringComparison.Ordinal));
@@ -164,7 +166,9 @@ public sealed class AgentGuideExamplesTests
     {
         var steps = Steps(Blocks(ReadGuide()));
 
-        using var host = new EngineHost(new ManifoldGeometryBackend());
+        // ADR-0185 item 2 (TASK-0456): the host makes the preview of a proposal on a fork with its own native backend, as the
+        // desktop does.
+        using var host = new EngineHost(new ManifoldGeometryBackend(), forks: () => new ManifoldGeometryBackend());
         var folder = new DocumentFolder(Path.Combine(Path.GetTempPath(), "3de-guide-" + Guid.NewGuid().ToString("N")));
         var builder = WebApplication.CreateBuilder();
         builder.WebHost.UseUrls("http://127.0.0.1:0");

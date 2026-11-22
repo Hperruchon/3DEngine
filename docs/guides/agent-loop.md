@@ -273,6 +273,47 @@ GET /document
 { "version": "<version>" }
 ```
 
+Read the preview of your proposal before the person decides. The host runs the commands of the proposal on a fork of the
+Document: a copy of its log, replayed in a second session with its own backend (ADR-0185). The fork changes nothing in the
+Document, its log or its events. The host makes the preview when the proposal arrives, and again at each new version of the
+Document while the proposal is open. `GET /proposals/{id}/preview` waits for the preview of the version of the Document at
+your request.
+
+```http agent-request
+GET /proposals/<proposal>/preview
+```
+
+The answer gives the version that the fork copied, the result of each command, as an accept gives it, and the bodies that the
+commands add, remove and change. Each body is a record of the body, as the events give it. Here the box of `CreateBox` is not
+in the list, because `Translate` consumes it: the preview compares the bodies before the first command and after the last
+command. The new shelf "Milieu" is the one added body.
+
+```json agent-result
+{
+  "proposalId": "<proposal>",
+  "state": "ready",
+  "documentVersion": "<version>",
+  "results": [
+    { "commandName": "CreateBox", "status": "Applied", "outputs": { "bodyId": "<new box>" } },
+    { "commandName": "Translate", "status": "Applied", "outputs": { "bodyId": "<Milieu>" } },
+    { "commandName": "RenameBody", "status": "Applied" }
+  ],
+  "failedIndex": null,
+  "failedCode": null,
+  "bodies": {
+    "added": [ { "handle": { "id": "<Milieu>" }, "name": "Milieu" } ],
+    "removed": [],
+    "changed": []
+  },
+  "error": null
+}
+```
+
+A command that the fork does not apply stops the preview, as it stops the accept: `failedIndex` and `failedCode` name it, and
+the commands after it do not run. A preview with the state `failed` could not replay the log, and `error` gives the code
+`E-API-PREVIEW-FAILED` and the cause. When the person or another agent changes the Document, read the preview again: the
+proposal has `stale` true, and the new preview runs on the new log.
+
 `GET /proposals` gives the open proposals, the oldest first. The window shows the oldest one. The queue holds at most 8
 open proposals.
 
@@ -481,8 +522,15 @@ DELETE /proposals/<proposal>
 
 ## 12 The limits
 
-- **No preview.** The window shows the commands of a proposal, not their result. A check before the accept is not possible;
-  check after the accept. Row P15 adds a preview on a fork of the Document.
+- **The preview gives the bodies only.** `GET /proposals/{id}/preview` gives the outcome of each command and the bodies that
+  change. It gives no state of a sketch, no measure and no check: row P15b adds them. To measure or check before the accept,
+  read the records of the bodies in the preview; to check a pair, check after the accept. The window shows the commands of a
+  proposal and not the preview (row R25). On a host with no backend for a fork the route gives HTTP 501 with
+  `E-API-NOT-SUPPORTED`; the desktop and `engine-api-http` make a fork.
+- **A preview is not a promise.** The accept applies the commands to the Document as it is at the accept, not to the copy of
+  the preview. A change of the Document between the preview and the accept can give another outcome, and so can a
+  `commandId` that the session refused before: the fork knows only the identifiers of the log. Read the preview again just
+  before you ask the person; row P16 makes the accept compare the two results.
 - **Curved faces.** `GetDistance` measures a face of a cylinder, a cone, a sphere or an arc. The body of that face has only
   `Translate` and `Rotate` after its command. It also measures the side of a hole or of a tube that a `Subtract` made. The
   tool of that `Subtract` is a cylinder, a cone or an extrude of one circle. The faces of the body near the hole are across

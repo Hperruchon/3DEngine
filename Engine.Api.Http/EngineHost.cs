@@ -33,7 +33,9 @@ public sealed class EngineHost : IDisposable
     // a DocumentFileException, and the backend is freed.
     // ADR-0083 item 2 (TASK-0258): assets is the store of the assets of the host, which the import of an STL file reads at
     // each apply and each open; a host with no store refuses the import.
-    public EngineHost(IGeometryBackend backend, DocumentFileOptions? file = null, Engine.Core.Assets.IAssetSource? assets = null)
+    // ADR-0185 item 2 (TASK-0456): forks makes a new backend of the kind of backend for each fork of the preview of a
+    // proposal; the host frees it after the fork. A host with no forks makes no preview, and its route gives HTTP 501.
+    public EngineHost(IGeometryBackend backend, DocumentFileOptions? file = null, Engine.Core.Assets.IAssetSource? assets = null, Func<IGeometryBackend>? forks = null)
     {
         ArgumentNullException.ThrowIfNull(backend);
 
@@ -70,8 +72,9 @@ public sealed class EngineHost : IDisposable
         QueryRegistry = kit.QueryRegistry;
         Session = new DocumentSession(kit, new BroadcastingEventSink(kit.Events, Broadcaster));
 
-        // ADR-0092 item 1 (TASK-0326): the queue of the proposals of an agent, outside the log.
-        Proposals = new Proposals(Session, Subscribe);
+        // ADR-0092 item 1 (TASK-0326): the queue of the proposals of an agent, outside the log. ADR-0185 item 2 (TASK-0456):
+        // with the forks of its previews.
+        Proposals = new Proposals(Session, Subscribe, forks, assets);
 
         try
         {

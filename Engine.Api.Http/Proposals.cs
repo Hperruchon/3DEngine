@@ -12,7 +12,9 @@ namespace Engine.Api.Http;
 // of the window does not wait for a command. The order of the locks is the order of DocumentSession: the session first, this
 // lock second. A post adds its proposal inside DocumentSession.Read, and the subscription marks a proposal inside a commit.
 // Accept takes this lock only between two commands, never while it waits for the session.
-public sealed class Proposals : IDisposable
+//
+// ADR-0185 (phase P15a, TASK-0456): Proposals.Preview.cs gives the preview of each proposal on a fork of the Document.
+public sealed partial class Proposals : IDisposable
 {
     // Item 3: at most 8 open proposals, first in, first out; the queue keeps the last 32 closed proposals.
     public const int MostOpen = 8;
@@ -31,12 +33,20 @@ public sealed class Proposals : IDisposable
     private readonly List<Entry> _closed = new();
     private readonly IDisposable _subscription;
 
-    // The host gives its session and its subscription to the committed events (EngineHost.Subscribe).
-    internal Proposals(DocumentSession session, Func<Action<EventRecord>, IDisposable> subscribe)
+    // The host gives its session and its subscription to the committed events (EngineHost.Subscribe). ADR-0185 item 2: forks
+    // makes the backend of each fork of a preview, and assets is the store that the fork reads as the session does; with no
+    // forks the queue makes no preview.
+    internal Proposals(
+        DocumentSession session,
+        Func<Action<EventRecord>, IDisposable> subscribe,
+        Func<Engine.Contracts.Geometry.IGeometryBackend>? forks = null,
+        Engine.Core.Assets.IAssetSource? assets = null)
     {
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(subscribe);
         _session = session;
+        _forks = forks;
+        _assets = assets;
         _subscription = subscribe(OnEvent);
     }
 
@@ -55,17 +65,20 @@ public sealed class Proposals : IDisposable
     }
 
     // Item 3: adds a proposal at the end of the queue, or gives null when 8 proposals are open. The caller calls this inside
-    // DocumentSession.Read and gives the version of the Document, so each later commit marks the proposal (item 4).
-    internal Proposal? Add(string summary, IReadOnlyList<(ProposedCommand Text, Command Command)> commands, long version)
+    // DocumentSession.Read and gives the Document, so each later commit marks the proposal (item 4). ADR-0185 item 3: the
+    // proposal keeps a copy of the log for its first preview, made here under the serial lock.
+    internal Proposal? Add(string summary, IReadOnlyList<(ProposedCommand Text, Command Command)> commands, Document document)
     {
         ArgumentNullException.ThrowIfNull(summary);
         ArgumentNullException.ThrowIfNull(commands);
+        ArgumentNullException.ThrowIfNull(document);
         lock (_lock)
         {
             if (_open.Count >= MostOpen)
                 return null;
-            var entry = new Entry(Guid.NewGuid(), summary, [.. commands.Select(command => command.Text)], [.. commands.Select(command => command.Command)], version);
+            var entry = new Entry(Guid.NewGuid(), summary, [.. commands.Select(command => command.Text)], [.. commands.Select(command => command.Command)], document.Version);
             _open.Add(entry);
+            AddedLocked(entry, document);
             return View(entry);
         }
     }
@@ -154,11 +167,17 @@ public sealed class Proposals : IDisposable
             return Of(id) is { State: ProposalStates.Open } entry ? CloseLocked(entry, ProposalStates.Rejected) : null;
     }
 
-    public void Dispose() => _subscription.Dispose();
+    // ADR-0185 item 7: the subscription ends first, then the fork that runs now stops and the queue waits for its end.
+    public void Dispose()
+    {
+        _subscription.Dispose();
+        StopPreviews();
+    }
 
     // Item 4: an applied command after the post changes the version of the Document, so each open proposal is stale. The
     // action runs inside the commit; it takes only the lock of the queue. The commit of the command that an accept applies
-    // marks that command as committed (finding E198).
+    // marks that command as committed (finding E198). ADR-0185 item 3: a new version asks for a new preview of each open
+    // proposal.
     private void OnEvent(EventRecord record)
     {
         if (record.Kind != CommandApplied)
@@ -172,19 +191,27 @@ public sealed class Proposals : IDisposable
                 else if (entry.State == ProposalStates.Applying && entry.Running is { } running && running == record.CauseCommandId)
                     entry.Committed = true;
             }
+
+            NewVersionLocked();
         }
     }
 
     private Entry? Of(Guid id) => _open.FirstOrDefault(entry => entry.Id == id) ?? _closed.FirstOrDefault(entry => entry.Id == id);
 
     // Item 3: a closed proposal leaves the queue, and the queue keeps the last 32.
+    // ADR-0185 item 5: the preview of a proposal leaves the queue with it.
     private Proposal CloseLocked(Entry entry, string state)
     {
         entry.State = state;
         _open.Remove(entry);
         _closed.Add(entry);
         if (_closed.Count > MostKept)
+        {
+            DroppedLocked(_closed[0]);
             _closed.RemoveAt(0);
+        }
+
+        SettleLocked(entry);
         return View(entry);
     }
 
@@ -217,6 +244,16 @@ public sealed class Proposals : IDisposable
         public Guid? Running { get; set; }
 
         public bool Committed { get; set; }
+
+        // ADR-0185 items 3 and 5: the last preview, the copy of the log that the next preview starts from, true while a fork
+        // computes it, and the callers that wait for a preview.
+        public ProposalPreview? Preview { get; set; }
+
+        public Engine.Core.Preview.ForkSource? Pending { get; set; }
+
+        public bool Computing { get; set; }
+
+        public List<Waiter> Waiters { get; } = new();
     }
 }
 

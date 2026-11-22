@@ -63,7 +63,8 @@ internal sealed class DesktopSession : IDisposable
         try
         {
             // ADR-0083 item 2 (TASK-0258): the store of the desktop, which the import of an STL file reads.
-            host = new EngineHost(new ManifoldGeometryBackend(), options, assets);
+            // ADR-0185 item 2 (TASK-0456): each fork of the preview of a proposal gets a new native backend.
+            host = new EngineHost(new ManifoldGeometryBackend(), options, assets, () => new ManifoldGeometryBackend());
         }
         catch (IOException ex)
         {

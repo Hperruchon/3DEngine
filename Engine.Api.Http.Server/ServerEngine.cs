@@ -29,14 +29,15 @@ internal static class ServerEngine
             // Finding E35 of the codebase review of 2026-10-08 (TASK-0139): /schema/backend gave the
             // version of the assembly Engine.Core, which says nothing. It gives the identity that each
             // entry of the log records (ADR-0015 item 5), and since TASK-0142 the host reads it (E111).
+            // ADR-0185 item 2 (TASK-0456): each fork of a preview gets a new backend of the same kind.
             var managed = new InProcessMeshBackend();
-            return new EngineHost(managed, file, assets);
+            return new EngineHost(managed, file, assets, () => new InProcessMeshBackend());
         }
 
         if (options.IsNativeAvailable())
         {
             var native = new ManifoldGeometryBackend();
-            return new EngineHost(native, file, assets);
+            return new EngineHost(native, file, assets, () => new ManifoldGeometryBackend());
         }
 
         throw new BackendUnavailableException(

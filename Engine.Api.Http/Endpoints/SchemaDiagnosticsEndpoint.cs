@@ -40,6 +40,7 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.ApiProposalNotFound,   "Error",   "API"), // TASK-0326
         new(DiagnosticCodes.ApiProposalClosed,     "Error",   "API"), // TASK-0326
         new(DiagnosticCodes.ApiProposalCommandKnown, "Error", "API"), // TASK-0331
+        new(DiagnosticCodes.ApiPreviewFailed,      "Error",   "API"), // TASK-0456
         new(DiagnosticCodes.IoBackendMismatch,     "Error",   "IO"),  // ADR-0015 item 6, TASK-0091
         new(DiagnosticCodes.IoNotEncodable,        "Error",   "IO"),  // ADR-0015 item 4, TASK-0091
         new(DiagnosticCodes.IoWriteFailed,         "Error",   "IO"),  // ADR-0015 item 4, TASK-0091

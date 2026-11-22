@@ -170,6 +170,8 @@ public static class EngineSurface
         app.MapGet("/proposals", ProposalsEndpoint.List);
         app.MapGet("/proposals/{id}", ProposalsEndpoint.Get);
         app.MapDelete("/proposals/{id}", ProposalsEndpoint.Withdraw);
+        // ADR-0185 item 3 (TASK-0456): the preview of a proposal on a fork of the Document.
+        app.MapGet("/proposals/{id}/preview", ProposalsEndpoint.Preview);
 
         return app;
     }
