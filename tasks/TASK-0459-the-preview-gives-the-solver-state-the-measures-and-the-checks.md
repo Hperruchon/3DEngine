@@ -1,7 +1,7 @@
 ---
 id: 0459
 title: The preview of a proposal gives the state of the solver, the measures and the checks that the commands change
-status: Active
+status: Done
 phase: P15b
 opened: 2026-11-22
 depends-on: [0458]
@@ -97,7 +97,7 @@ The answers of the owner (option A of Q4 and Q5) give the scope. ADR-0185 record
 
 ## Outcome
 
-Status: Active · the commit of the branch p15b-preview-differences · v0.443
+Status: Done · commit (the merge of the branch p15b-preview-differences) · v0.443
 
 ## Method
 
@@ -139,3 +139,4 @@ Injections (`inject.js` in `%TEMP%\p15b`, dotnet with shell:false, filter `Propo
 - 2026-11-22: opened, branch `p15b-preview-differences` from `26bcd0dd`. The records and the plan of the differences, the
   base, the three members of the preview, five tests and the extension of the bookcase test, the guide example, the
   injections, the amendment of ADR-0185, the row P15b and the ledger entry v0.443.
+- 2026-11-22: run 45051658377 of `c895156f` passed on each job. Closed at v0.443.
