@@ -104,3 +104,7 @@ slices. On 2026-11-05 the owner answered four questions:
   in the x range of an edge; a triangle of item 4 skips the test of convexity, which it always passes. Each list keeps its
   order (item 8), and 175 solids give the same B-Rep as before. The B-Rep of a sphere of 3,968 triangles takes 0.15 s, not
   1.0 s.
+- 2026-11-22 · TASK-0452 · No item changes. For register entry R-0073 the partition counts on each thread the exact signs
+  that its filter of doubles cannot decide, beside the splits, and a test holds both counts of the subtract of a plate by a
+  sphere. The exact volume adds its terms in pairs: each order of an exact sum gives the same value, and the volume of that
+  subtract no longer takes more than half of its work.

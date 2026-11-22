@@ -213,6 +213,14 @@ internal sealed class Bsp
 
     internal static long SplitsOnThisThread => splits;
 
+    // TASK-0452 (register entry R-0073): the count of the exact signs of a side on this thread, each side that the filter of
+    // doubles cannot decide. An exact sign costs products of large integers, and a filter that decides less makes this count
+    // grow and not the count of the splits. The test of a cut holds the two counts below a bound.
+    [ThreadStatic]
+    private static long exactSigns;
+
+    internal static long ExactSignsOnThisThread => exactSigns;
+
     // ADR-0089 item 6 (K5d, TASK-0289): the doubles of the vertices of each list, made once. A list does not change after
     // its polygon is made, so the table keys it by its reference.
     private static readonly ConditionalWeakTable<IReadOnlyList<Vector3R>, double[]> Approximations = new();
@@ -262,6 +270,7 @@ internal sealed class Bsp
                     return sum > 0 ? 1 : -1;
             }
 
+            exactSigns++;
             return plane.Side(vertex);
         }
     }

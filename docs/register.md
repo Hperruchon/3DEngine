@@ -313,20 +313,6 @@ The floor of the file name, the gap of 12 pixels (ADR-0138) and the part on the 
 Exit: the owner says which rule gives way at 360 pixels, and a task makes
 `With_A_Sheet_The_Path_Line_And_The_Top_Bar_End_Left_Of_Views` pass at 360 pixels.
 
-### R-0073 · No test holds the cost of the cut of a plate by a sphere in the owned kernel
-- class: debt
-- opened: 2026-11-21
-- due: 2027-05-20
-- extended: no
-- refs: `Engine.Tests/Commands/CreateSphereAndTorusCommandTests.cs` (`A_Sphere_Cuts_A_Hole_Of_One_Name`), `Engine.Kernel/Bsp.cs`,
-  ADR-0089 item 6, ADR-0173 item 4, TASK-0300, TASK-0435
-TASK-0435 removed the limit of 300 s of the cut, because no time decides a test (ADR-0173 item 4). The cut takes about 10 s on
-the computer of the owner and 64 s on a macOS runner, and took about 3 minutes before the filter of doubles of TASK-0289. Only
-the hang limit of 2 minutes of the step "Test" stops that form now. A count of the exact signs of the tree is the work that the
-time stood for, and it needs a change of `Engine.Kernel`, which the write set of TASK-0435 forbids.
-Exit: a task of the kernel gives the count of the exact signs of a cut in a form that a test reads, and the test of the cut
-holds that count below a bound; or the owner accepts the hang limit as the only guard.
-
 ### R-0075 · The HTTP surface has no query that lists the sheets, and none that gives the live bodies with their names
 - class: question
 - opened: 2026-11-21
@@ -490,6 +476,25 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0073 · No test holds the cost of the cut of a plate by a sphere in the owned kernel
+- class: debt
+- opened: 2026-11-21
+- due: 2027-05-20
+- extended: no
+- refs: `Engine.Tests/Commands/CreateSphereAndTorusCommandTests.cs` (`A_Sphere_Cuts_A_Hole_Of_One_Name`), `Engine.Kernel/Bsp.cs`,
+  ADR-0089 item 6, ADR-0173 item 4, TASK-0300, TASK-0435
+TASK-0435 removed the limit of 300 s of the cut, because no time decides a test (ADR-0173 item 4). The cut takes about 10 s on
+the computer of the owner and 64 s on a macOS runner, and took about 3 minutes before the filter of doubles of TASK-0289. Only
+the hang limit of 2 minutes of the step "Test" stops that form now. A count of the exact signs of the tree is the work that the
+time stood for, and it needs a change of `Engine.Kernel`, which the write set of TASK-0435 forbids.
+Exit: a task of the kernel gives the count of the exact signs of a cut in a form that a test reads, and the test of the cut
+holds that count below a bound; or the owner accepts the hang limit as the only guard.
+Closed 2026-11-22 · resolved · TASK-0452, v0.436. `Bsp.ExactSignsOnThisThread` counts each side that the filter of doubles cannot
+decide, beside `Bsp.SplitsOnThisThread`, and `A_Sphere_Cuts_A_Hole_Of_One_Name` holds 13,875,936 splits and 189,876 exact signs
+below 1.5 times each count. The exact signs were a small part of the work: a probe found that the exact volume of the result,
+a sum in the order of the polygons, took more than half of a subtract. The volume is now a sum in pairs with the same exact
+value, and nine digests of polygons, tags and volumes are the same before and after. TASK-0452 gives the counts and the times.
 
 ### R-0031 · A gate can pass while its rule is broken
 - class: debt
