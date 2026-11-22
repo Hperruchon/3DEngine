@@ -140,160 +140,6 @@ envelope with `E-API-BAD-REQUEST`, a negative cursor gets a reset, and the comma
 1 and 2 (they need new diagnostic codes), 3 (the text of a JSON exception and an unknown charset), 5 (the pump stops before
 the close frame), 6 (no time limit on the subscribe frame) and 9 (a flag read as a command name).
 
-### R-0031 · A gate can pass while its rule is broken
-- class: debt
-- opened: 2026-09-30
-- due: 2026-12-24
-- extended: no
-- refs: `docs/reviews/2026-09-30-codebase-review.md` findings T3, T4, T5, T6 and T7, TASK-0039
-Eight injected violations passed their gate on 2026-09-30. Examples: a reference from `Engine.Core` to
-`3DEngine.Core` inside an `Include` with two paths, `double.Pow` in `Engine.Core`, a task with the
-status `ready`, a register with an open code fence, and a change inside a merge commit. TASK-0039
-tested that each gate can fail. It did not test the forms that a gate cannot see. The limit is
-earlier than the class permits, because the code tasks start before that date and each one relies on
-the gates.
-Exit: each injected violation of the second review and of the third review fails its gate.
-Progress 2026-09-30: TASK-0043 closed the holes of T3, T4 and T6, and the status and the fence parts of
-T5. The `affects` parser, the reserve heading, the codebase review gate and the findings of T7 stay.
-Progress 2026-10-04: the third codebase review finds T3 open in one part of three (a commit can name
-a task that is `Done`) and T4 open in three parts of four (four forms pass the determinism gate, a
-closed identifier passes the marker gate, and the dispatch gate reads two projects by name). The line
-of 2026-09-30 said that TASK-0043 closed the holes of T3 and T4; it closed some of them. The review
-adds T9 (the project file of the tests and a props file get past the gates), T10, T11 and two parts
-of T13 to this entry, and the exit now names the injections of the third review too.
-Progress 2026-10-04: TASK-0047 corrected T9: the project file of the tests, each `Directory.Build`
-file, the cut-off and each workflow are gate files, and the dependency gate and the x86 gate read each
-file that MSBuild reads. It corrected the open part of T3: a task that is `Done` before a commit and
-after it governs nothing. It corrected the part of T11 for the task file, which the gate now reads at
-the commit. Each change failed on an injection first. T4 (three parts), T5, T7, T10, the rest of T11
-and two parts of T13 stay.
-Progress 2026-10-08: the fourth codebase review adds T14, T16, T17, T23, T25 and the comment part of
-T24. The worst is T14: a module initializer in a test file can clear the variable that the write-set
-gate reads, so the commit judges itself. Question Q1 of that review asks where the check must run.
-T15 is corrected in the review (the write set of TASK-0038), and TASK-0049 corrected T18 to T22.
-Progress 2026-10-08: the owner answered Q1 of the fourth review with option A: the dynamic write-set
-check runs as a program in `eng/` that the pipeline builds from `main`, outside the test assembly.
-TASK-0053 holds it, and TASK-0038 depends on it, because TASK-0038 permits `Engine.Tests/**`.
-Progress 2026-10-09: TASK-0053 corrected T14. The judge `eng/write-set-check` runs from a build of
-`main`, and a local run of the pipeline steps failed the injection of the review and a commit that
-changed the judge. The workflow still comes from the judged commit, so a task that names
-`.github/workflows/ci.yml` exactly can change the job; a branch protection on GitHub closes that.
-Progress 2026-10-09: run 37963719832 on a branch that was never merged proved the judge in the pipeline.
-The same run found a new hole: the job "Contract-touched-needs-ADR" passed a commit that changed
-`Engine.Contracts/Document.cs` with no ADR. On the first push of a branch the job compares the range
-from the cut-off commit, and an ADR changed somewhere in that range, so the job passes each new
-branch. A later push and a push to `main` compare from the previous tip and are not affected.
-Progress 2026-10-09: the codebase review of 2026-10-09 corrects the line above: a later push and a push
-to `main` are affected too, because the job checks a range and not each commit; one ADR change in the
-range lets a contract change with no ADR pass (T26). The review adds T26 to T35, three of them high:
-a program named `git` in the checkout replaces git for the judge (T29), a root commit or a merge
-carries any change past the judge (T30), and the attack class of T14 is open for the other gates
-(T31). TASK-0057 holds T26 and T28 to T35, and TASK-0058 holds T27.
-Progress 2026-10-10: the owner answered the questions of that review. Q1, yes: the owner protects
-`main` on GitHub against a force push, which closes one path of T28 when it is set. Q2, option A: the
-judge refuses four calls under `Engine.Tests/` (T31), in TASK-0057.
-Progress 2026-10-10: TASK-0057 corrected T26, T29 to T35 and the parts of T28 in the code: the judge
-runs git by a full path, fails a commit with no parent, judges a merge against its first parent,
-refuses the four calls, holds the contract rule for each commit, and comes from `main` or the job
-fails. Tests run the real judge on scratch repositories. The workflow still comes from the judged
-commit; the branch protection of the owner closes the force push. T4, T5, T7, T10, T13, T16, T17,
-T23, T24 and T25 stay.
-Progress 2026-10-10: TASK-0058 corrected T27: the process test of a port key asserts that no address
-was bound, and an injected bind before the refusal failed it.
-Progress 2026-10-11: the codebase review of 2026-10-11 corrects the line of 2026-10-09 that says a
-branch protection on GitHub closes the case of a task that changes `.github/workflows/ci.yml`. It does
-not: a protection against a force push leaves a commit that edits the workflow free to change the job
-of the same run (T38); question Q2 of that review gives the options. The review also finds T31 open
-again (six bypasses of the four texts), a lost rule of the judge for a merge (T36), tests that do not
-hold each rule (T37), and two smaller gaps (T39, T40). TASK-0061 holds T36 to T40; question Q1 holds
-T31.
-Progress 2026-10-11: the owner answered Q1 and Q2 of that review. Q1, yes: TASK-0064 moves the gates
-that read the repository into a program that the pipeline builds from `main` (T31). Q2, option A: the
-condition of the workflow file is accepted, in entry R-0038 under "Accepted compromises" (T28, T38).
-Progress 2026-10-11: TASK-0061 corrected T36, T37, T39 and T40. A merge is judged on each file that
-differs from each parent and on each file that differs from its first parent and that no commit of
-its second parent changed; the two forms of T36 failed the old rule and fail the new one. T31 stays
-with TASK-0064.
-Progress 2026-10-12: TASK-0064 corrected T31 for the fourteen gate classes that read only files of the
-repository. The program `eng/repo-gates` compiles them from a build of `main` and reads the judged
-checkout as data. The escaped attribute and `AppDomain.SetData` of the review passed the marker gate
-as a test and failed it from the program. When the judged commits change a source of the program, its
-gates come from the judged commit, with the condition of R-0038. `DispatchSurfaceGateTests`,
-`SchemaEndpointGateTests` and `ReplayDeterminismGateTests` run engine code, so they stay in the test
-process, and the attack class still reaches them; the four-text refusal of the judge stays as their
-second line. T4, T5, T7, T10, T13, T16, T17, T23, T24 and T25 stay.
-Progress 2026-10-12: the codebase review of 2026-10-12 finds that the checks from `main` still take
-inputs of the build from the judged checkout: a `global.json` chooses the SDK that builds the judge and
-the gates (T41), and files that are not gate files switch the gates to the judged commit and control its
-packages (T44). A merge can undo a change of `main` with no judgement (T42). T41 is a defect of the step
-of TASK-0064. The review also adds T43, T45, T46 and T47, and finds T31 fixed in part. TASK-0066 holds
-T41 to T47.
-Progress 2026-10-12: TASK-0066 corrected T41 to T47, and the part of T16 that skipped an import with a
-property. Each build of a program of `main` runs outside the judged checkout, each input of a build is
-a gate file, the judge answers the switch of the gates, a merge is judged against the automatic merge
-of its parents, the determinism gate binds each call with Roslyn, the dependency gate refuses an import
-that it cannot resolve, and the runner fails on a form that it cannot run. T4, T5, T7, T10, T13, T17,
-T23, T24 and T25 stay.
-Progress 2026-10-12: the codebase review of 2026-10-13 corrects the line above: T24 was fixed, and the
-line listed it as open. It finds that four kinds of file that are not gate files can take `Engine.Tests`
-out of the step "Test" with a green run (T48, high), that the determinism gate and the dependency gate miss
-forms that MSBuild evaluates (T49, T50), that a rename carries a change into a gate file through a clean
-merge (T51), and two small gaps (T52, T53). TASK-0073 holds T48 to T53.
-Progress 2026-10-14: TASK-0073 corrected T48 to T53. Each input of a build that chooses the projects of a
-run is a gate file, and the step "Test" fails below a floor of executed tests. The judge reads a merge with
-no detection of renames. The determinism gate and the dependency gate refuse each form of the review, and
-21 test cases hold those forms. The runner refuses an `async void` check, and two reviews may share a
-date. T4, T5, T7, T10, T13, T17, T23 and T25 stay.
-Progress 2026-10-17: the codebase review of 2026-10-17 finds the fixes of T48 to T53 held for their forms,
-and new forms: two files that are not gate files can leave no test in `Engine.Tests` with a green run
-(T54, high), the gates read MSBuild names with case (T55, high), and T56 to T61. T31 is worse through T54.
-TASK-0078 holds T54 to T61.
-Progress 2026-10-17: TASK-0078 corrected T54 to T61. A gate refuses a shadow of an attribute or of `Assert` of
-xUnit, each test project has an exact count with one result file, the gates read MSBuild names with no regard
-to case and refuse a wildcard reference, the determinism gate binds each name of the log path, the runner fails
-an async lambda that returns void, the workflow reads the repository only, and the review gate checks the
-declared ledger version. T31 stays open in part: the three gates that run engine code stay in the test process.
-T4, T5, T7, T10, T13, T17, T23 and T25 stay.
-Progress 2026-10-28: the codebase review of 2026-10-28 finds the fixes of T54 to T61 held for their forms, and
-new forms: a test framework of xUnit in a file that is not a gate file makes each failed test pass with the exact
-count (T62, high), a project under a `bin/` folder hides from the dependency and determinism gates (T63), the gate
-of the UI library reads text (T64), and T65 to T67. T31 is worse through T62. TASK-0088 holds T62, and TASK-0089
-holds T63 to T67. T4, T5, T7, T10, T13, T17, T23 and T25 stay.
-Progress 2026-10-28: TASK-0088 corrected T62. The gate refuses in each test project each point where a file can
-give xUnit a framework, a runner, a sink, an order or a discoverer, and a product type with a name of xUnit where
-a test sees it. T31 stays open in part: the three gates that run engine code stay in the test process.
-Progress 2026-10-28: TASK-0089 corrected T63 to T67. A reference must name a project that the dependency gate reads,
-the gate of the UI library reads names, XML and imports, an archived ADR needs its file and its status, a product
-task with no roadmap row is a problem, and the runner refuses a discarded task. T4, T5, T7, T10, T13, T17, T23 and T25
-stay, and T31 stays open in part.
-Progress 2026-10-28: the second codebase review of 2026-10-28 finds new forms. A test framework in a `bin/` folder
-inside a test project (T68, high) and an alias in the project file of `3DEngine.Tests` (T69, high) each make each
-failed test pass with the exact count. T70 to T75 and T77 are medium or low. T31 is worse through T68. TASK-0097
-holds T68 and T69 before K2, and TASK-0098 holds the rest after K2. T4, T5, T7, T10, T13, T17, T23 and T25 stay.
-Progress 2026-10-28: TASK-0097 corrected T68 and T69. The test framework gate reads each source that MSBuild compiles
-and the project file of each test project, and the judge names those project files as gate files. T31 stays open in
-part.
-Progress 2026-10-30: TASK-0107 corrected T80 to T87 for their forms. It found a new form that no gate reads: MSBuild
-reads each `Directory.Build.rsp` above a project at the command line, and a `/p:TargetName=` or `/p:AssemblyName=` in
-it sets the property for each project. A probe build outside the repository gave `Engine.Tests.dll` from such a
-file. No such file is in the repository. The next codebase review gives it a
-finding. T31 stays open in part.
-Progress 2026-10-30: TASK-0114 corrected T89 to T95 for their forms. PendingTasks still does not see a task that waits
-for a signal that nobody gives with a type other than TaskCompletionSource, for example a semaphore. T31 stays open in
-part.
-Progress 2026-11-09: a read-only check found T4 (determinism part) and T13 parts 1 and 2 fixed, and the form of
-PendingTasks with a semaphore fixed by TASK-0123 (T100, T103). TASK-0320 fixed T4 (marker part) and T13 part 3 (the marker
-gate accepts only the identifiers of open and accepted entries, and reads `nuget/.gitignore`), T5 (quotes and brackets of
-`affects`), T7 (the columns "Amends" and "Amended by" of the index; `previous: none` for the first review only), T10 (the
-exact heading of an entry, and a repeated field), T13 part 4 (each reader of the two tests of concurrency ran), T17 (a third
-package in the folder feed), T23 (the path of a Windows runner) and the response file (`*.rsp`). Each change failed on an
-injection first. Open: T4 dispatch part (the dispatch gate does not read the desktop host). For the owner to accept: the clock
-of the register gate (T7), the case of a path on Windows (T7; the Linux job fails on it), the provenance of the native
-binaries (T23; a checksum pins each binary), the local mode of the write-set check (T25; the pipeline judges each commit),
-and the three gates that run engine code in the test process (T31).
-Progress 2026-11-10: the owner answered Q1 A of the codebase reviews of 2026-11-09 (TASK-0331): the five parts above are
-accepted. Open: T4, the dispatch part. The entry closes when the dispatch gate reads the desktop host.
-
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
 - opened: 2026-10-04
@@ -644,6 +490,171 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0031 · A gate can pass while its rule is broken
+- class: debt
+- opened: 2026-09-30
+- due: 2026-12-24
+- extended: no
+- refs: `docs/reviews/2026-09-30-codebase-review.md` findings T3, T4, T5, T6 and T7, TASK-0039
+Eight injected violations passed their gate on 2026-09-30. Examples: a reference from `Engine.Core` to
+`3DEngine.Core` inside an `Include` with two paths, `double.Pow` in `Engine.Core`, a task with the
+status `ready`, a register with an open code fence, and a change inside a merge commit. TASK-0039
+tested that each gate can fail. It did not test the forms that a gate cannot see. The limit is
+earlier than the class permits, because the code tasks start before that date and each one relies on
+the gates.
+Exit: each injected violation of the second review and of the third review fails its gate.
+Progress 2026-09-30: TASK-0043 closed the holes of T3, T4 and T6, and the status and the fence parts of
+T5. The `affects` parser, the reserve heading, the codebase review gate and the findings of T7 stay.
+Progress 2026-10-04: the third codebase review finds T3 open in one part of three (a commit can name
+a task that is `Done`) and T4 open in three parts of four (four forms pass the determinism gate, a
+closed identifier passes the marker gate, and the dispatch gate reads two projects by name). The line
+of 2026-09-30 said that TASK-0043 closed the holes of T3 and T4; it closed some of them. The review
+adds T9 (the project file of the tests and a props file get past the gates), T10, T11 and two parts
+of T13 to this entry, and the exit now names the injections of the third review too.
+Progress 2026-10-04: TASK-0047 corrected T9: the project file of the tests, each `Directory.Build`
+file, the cut-off and each workflow are gate files, and the dependency gate and the x86 gate read each
+file that MSBuild reads. It corrected the open part of T3: a task that is `Done` before a commit and
+after it governs nothing. It corrected the part of T11 for the task file, which the gate now reads at
+the commit. Each change failed on an injection first. T4 (three parts), T5, T7, T10, the rest of T11
+and two parts of T13 stay.
+Progress 2026-10-08: the fourth codebase review adds T14, T16, T17, T23, T25 and the comment part of
+T24. The worst is T14: a module initializer in a test file can clear the variable that the write-set
+gate reads, so the commit judges itself. Question Q1 of that review asks where the check must run.
+T15 is corrected in the review (the write set of TASK-0038), and TASK-0049 corrected T18 to T22.
+Progress 2026-10-08: the owner answered Q1 of the fourth review with option A: the dynamic write-set
+check runs as a program in `eng/` that the pipeline builds from `main`, outside the test assembly.
+TASK-0053 holds it, and TASK-0038 depends on it, because TASK-0038 permits `Engine.Tests/**`.
+Progress 2026-10-09: TASK-0053 corrected T14. The judge `eng/write-set-check` runs from a build of
+`main`, and a local run of the pipeline steps failed the injection of the review and a commit that
+changed the judge. The workflow still comes from the judged commit, so a task that names
+`.github/workflows/ci.yml` exactly can change the job; a branch protection on GitHub closes that.
+Progress 2026-10-09: run 37963719832 on a branch that was never merged proved the judge in the pipeline.
+The same run found a new hole: the job "Contract-touched-needs-ADR" passed a commit that changed
+`Engine.Contracts/Document.cs` with no ADR. On the first push of a branch the job compares the range
+from the cut-off commit, and an ADR changed somewhere in that range, so the job passes each new
+branch. A later push and a push to `main` compare from the previous tip and are not affected.
+Progress 2026-10-09: the codebase review of 2026-10-09 corrects the line above: a later push and a push
+to `main` are affected too, because the job checks a range and not each commit; one ADR change in the
+range lets a contract change with no ADR pass (T26). The review adds T26 to T35, three of them high:
+a program named `git` in the checkout replaces git for the judge (T29), a root commit or a merge
+carries any change past the judge (T30), and the attack class of T14 is open for the other gates
+(T31). TASK-0057 holds T26 and T28 to T35, and TASK-0058 holds T27.
+Progress 2026-10-10: the owner answered the questions of that review. Q1, yes: the owner protects
+`main` on GitHub against a force push, which closes one path of T28 when it is set. Q2, option A: the
+judge refuses four calls under `Engine.Tests/` (T31), in TASK-0057.
+Progress 2026-10-10: TASK-0057 corrected T26, T29 to T35 and the parts of T28 in the code: the judge
+runs git by a full path, fails a commit with no parent, judges a merge against its first parent,
+refuses the four calls, holds the contract rule for each commit, and comes from `main` or the job
+fails. Tests run the real judge on scratch repositories. The workflow still comes from the judged
+commit; the branch protection of the owner closes the force push. T4, T5, T7, T10, T13, T16, T17,
+T23, T24 and T25 stay.
+Progress 2026-10-10: TASK-0058 corrected T27: the process test of a port key asserts that no address
+was bound, and an injected bind before the refusal failed it.
+Progress 2026-10-11: the codebase review of 2026-10-11 corrects the line of 2026-10-09 that says a
+branch protection on GitHub closes the case of a task that changes `.github/workflows/ci.yml`. It does
+not: a protection against a force push leaves a commit that edits the workflow free to change the job
+of the same run (T38); question Q2 of that review gives the options. The review also finds T31 open
+again (six bypasses of the four texts), a lost rule of the judge for a merge (T36), tests that do not
+hold each rule (T37), and two smaller gaps (T39, T40). TASK-0061 holds T36 to T40; question Q1 holds
+T31.
+Progress 2026-10-11: the owner answered Q1 and Q2 of that review. Q1, yes: TASK-0064 moves the gates
+that read the repository into a program that the pipeline builds from `main` (T31). Q2, option A: the
+condition of the workflow file is accepted, in entry R-0038 under "Accepted compromises" (T28, T38).
+Progress 2026-10-11: TASK-0061 corrected T36, T37, T39 and T40. A merge is judged on each file that
+differs from each parent and on each file that differs from its first parent and that no commit of
+its second parent changed; the two forms of T36 failed the old rule and fail the new one. T31 stays
+with TASK-0064.
+Progress 2026-10-12: TASK-0064 corrected T31 for the fourteen gate classes that read only files of the
+repository. The program `eng/repo-gates` compiles them from a build of `main` and reads the judged
+checkout as data. The escaped attribute and `AppDomain.SetData` of the review passed the marker gate
+as a test and failed it from the program. When the judged commits change a source of the program, its
+gates come from the judged commit, with the condition of R-0038. `DispatchSurfaceGateTests`,
+`SchemaEndpointGateTests` and `ReplayDeterminismGateTests` run engine code, so they stay in the test
+process, and the attack class still reaches them; the four-text refusal of the judge stays as their
+second line. T4, T5, T7, T10, T13, T16, T17, T23, T24 and T25 stay.
+Progress 2026-10-12: the codebase review of 2026-10-12 finds that the checks from `main` still take
+inputs of the build from the judged checkout: a `global.json` chooses the SDK that builds the judge and
+the gates (T41), and files that are not gate files switch the gates to the judged commit and control its
+packages (T44). A merge can undo a change of `main` with no judgement (T42). T41 is a defect of the step
+of TASK-0064. The review also adds T43, T45, T46 and T47, and finds T31 fixed in part. TASK-0066 holds
+T41 to T47.
+Progress 2026-10-12: TASK-0066 corrected T41 to T47, and the part of T16 that skipped an import with a
+property. Each build of a program of `main` runs outside the judged checkout, each input of a build is
+a gate file, the judge answers the switch of the gates, a merge is judged against the automatic merge
+of its parents, the determinism gate binds each call with Roslyn, the dependency gate refuses an import
+that it cannot resolve, and the runner fails on a form that it cannot run. T4, T5, T7, T10, T13, T17,
+T23, T24 and T25 stay.
+Progress 2026-10-12: the codebase review of 2026-10-13 corrects the line above: T24 was fixed, and the
+line listed it as open. It finds that four kinds of file that are not gate files can take `Engine.Tests`
+out of the step "Test" with a green run (T48, high), that the determinism gate and the dependency gate miss
+forms that MSBuild evaluates (T49, T50), that a rename carries a change into a gate file through a clean
+merge (T51), and two small gaps (T52, T53). TASK-0073 holds T48 to T53.
+Progress 2026-10-14: TASK-0073 corrected T48 to T53. Each input of a build that chooses the projects of a
+run is a gate file, and the step "Test" fails below a floor of executed tests. The judge reads a merge with
+no detection of renames. The determinism gate and the dependency gate refuse each form of the review, and
+21 test cases hold those forms. The runner refuses an `async void` check, and two reviews may share a
+date. T4, T5, T7, T10, T13, T17, T23 and T25 stay.
+Progress 2026-10-17: the codebase review of 2026-10-17 finds the fixes of T48 to T53 held for their forms,
+and new forms: two files that are not gate files can leave no test in `Engine.Tests` with a green run
+(T54, high), the gates read MSBuild names with case (T55, high), and T56 to T61. T31 is worse through T54.
+TASK-0078 holds T54 to T61.
+Progress 2026-10-17: TASK-0078 corrected T54 to T61. A gate refuses a shadow of an attribute or of `Assert` of
+xUnit, each test project has an exact count with one result file, the gates read MSBuild names with no regard
+to case and refuse a wildcard reference, the determinism gate binds each name of the log path, the runner fails
+an async lambda that returns void, the workflow reads the repository only, and the review gate checks the
+declared ledger version. T31 stays open in part: the three gates that run engine code stay in the test process.
+T4, T5, T7, T10, T13, T17, T23 and T25 stay.
+Progress 2026-10-28: the codebase review of 2026-10-28 finds the fixes of T54 to T61 held for their forms, and
+new forms: a test framework of xUnit in a file that is not a gate file makes each failed test pass with the exact
+count (T62, high), a project under a `bin/` folder hides from the dependency and determinism gates (T63), the gate
+of the UI library reads text (T64), and T65 to T67. T31 is worse through T62. TASK-0088 holds T62, and TASK-0089
+holds T63 to T67. T4, T5, T7, T10, T13, T17, T23 and T25 stay.
+Progress 2026-10-28: TASK-0088 corrected T62. The gate refuses in each test project each point where a file can
+give xUnit a framework, a runner, a sink, an order or a discoverer, and a product type with a name of xUnit where
+a test sees it. T31 stays open in part: the three gates that run engine code stay in the test process.
+Progress 2026-10-28: TASK-0089 corrected T63 to T67. A reference must name a project that the dependency gate reads,
+the gate of the UI library reads names, XML and imports, an archived ADR needs its file and its status, a product
+task with no roadmap row is a problem, and the runner refuses a discarded task. T4, T5, T7, T10, T13, T17, T23 and T25
+stay, and T31 stays open in part.
+Progress 2026-10-28: the second codebase review of 2026-10-28 finds new forms. A test framework in a `bin/` folder
+inside a test project (T68, high) and an alias in the project file of `3DEngine.Tests` (T69, high) each make each
+failed test pass with the exact count. T70 to T75 and T77 are medium or low. T31 is worse through T68. TASK-0097
+holds T68 and T69 before K2, and TASK-0098 holds the rest after K2. T4, T5, T7, T10, T13, T17, T23 and T25 stay.
+Progress 2026-10-28: TASK-0097 corrected T68 and T69. The test framework gate reads each source that MSBuild compiles
+and the project file of each test project, and the judge names those project files as gate files. T31 stays open in
+part.
+Progress 2026-10-30: TASK-0107 corrected T80 to T87 for their forms. It found a new form that no gate reads: MSBuild
+reads each `Directory.Build.rsp` above a project at the command line, and a `/p:TargetName=` or `/p:AssemblyName=` in
+it sets the property for each project. A probe build outside the repository gave `Engine.Tests.dll` from such a
+file. No such file is in the repository. The next codebase review gives it a
+finding. T31 stays open in part.
+Progress 2026-10-30: TASK-0114 corrected T89 to T95 for their forms. PendingTasks still does not see a task that waits
+for a signal that nobody gives with a type other than TaskCompletionSource, for example a semaphore. T31 stays open in
+part.
+Progress 2026-11-09: a read-only check found T4 (determinism part) and T13 parts 1 and 2 fixed, and the form of
+PendingTasks with a semaphore fixed by TASK-0123 (T100, T103). TASK-0320 fixed T4 (marker part) and T13 part 3 (the marker
+gate accepts only the identifiers of open and accepted entries, and reads `nuget/.gitignore`), T5 (quotes and brackets of
+`affects`), T7 (the columns "Amends" and "Amended by" of the index; `previous: none` for the first review only), T10 (the
+exact heading of an entry, and a repeated field), T13 part 4 (each reader of the two tests of concurrency ran), T17 (a third
+package in the folder feed), T23 (the path of a Windows runner) and the response file (`*.rsp`). Each change failed on an
+injection first. Open: T4 dispatch part (the dispatch gate does not read the desktop host). For the owner to accept: the clock
+of the register gate (T7), the case of a path on Windows (T7; the Linux job fails on it), the provenance of the native
+binaries (T23; a checksum pins each binary), the local mode of the write-set check (T25; the pipeline judges each commit),
+and the three gates that run engine code in the test process (T31).
+Progress 2026-11-10: the owner answered Q1 A of the codebase reviews of 2026-11-09 (TASK-0331): the five parts above are
+accepted. Open: T4, the dispatch part. The entry closes when the dispatch gate reads the desktop host.
+Progress 2026-11-22: TASK-0451 ran each form that the second review and the third review injected, or read in the code of a
+gate, again on the gates of `28dcc1c9` (v0.434), one form at a time, with a script that restores each file byte for byte (the
+table is in TASK-0451). Five forms of 35 passed their gate: the desktop host `3DEngine` and the phone host `3DEngine.Android`
+named a command (T4, the dispatch gate read three projects by name), a TODO with no identifier in a script of `eng/` or in a
+project file (T13, the marker gate read C# and four kinds of configuration file only), and a measure row of a review with an
+empty value (T7, the review gate looked for the name of the measure only). TASK-0451 corrected the three gates, with tests, and
+each of the 35 forms now fails its gate.
+Closed 2026-11-22 · resolved · TASK-0451, v0.435. Each injected violation of the second review and of the third review fails
+its gate. The dispatch gate reads each host of the classes of the dependency gate, the marker gate reads each tracked script,
+shader and MSBuild file, and the review gate requires the value of each measure. The five parts that the owner accepted on
+2026-11-10 stay accepted; they are conditions, not injections.
 
 ### R-0069 · A read of a sheet with three views of a sphere takes about 5 s
 - class: debt

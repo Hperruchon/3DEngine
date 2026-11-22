@@ -17,7 +17,11 @@ public class DispatchSurfaceGateTests
 {
     // TASK-0038 moved the program engine-api-http into its own project; the
     // surface library and the program are each a host source.
-    private static readonly string[] HostProjects = ["Engine.Cli", "Engine.Api.Http", "Engine.Api.Http.Server"];
+    // Finding T4 of the codebase review of 2026-09-30 (R-0031, TASK-0451): the gate
+    // read three projects by name, so the desktop host 3DEngine and the phone host
+    // 3DEngine.Android were not read. The hosts now come from the classes of the
+    // dependency gate, where each project must be.
+    internal static IReadOnlyList<string> HostProjects => Governance.DependencyDirectionGateTests.DispatchHosts;
 
     [Fact]
     public void No_Host_File_Contains_A_Registered_Command_Or_Query_Name()
@@ -27,16 +31,23 @@ public class DispatchSurfaceGateTests
             .Concat(HandlerCatalog.QueryHandlers().Select(h => h.QueryName))
             .ToArray();
 
+        // The folder of a project is the folder of its tracked project file, which is not
+        // always the name of the project: BookcaseCompare is in eng/bookcase-compare.
+        var projectFiles = Governance.DependencyDirectionGateTests.TrackedFiles()
+            .Where(relative => relative.EndsWith(".csproj", StringComparison.Ordinal))
+            .ToList();
+
         var files = new List<(string Relative, string[] Lines)>();
         foreach (var project in HostProjects)
         {
-            var directory = Path.Combine(root, project);
-            Assert.True(Directory.Exists(directory), $"Host project not found: {project}");
+            var found = projectFiles.Where(relative => Path.GetFileNameWithoutExtension(relative) == project).ToList();
+            Assert.True(found.Count == 1, $"Host project {project}: {found.Count} project files, and the gate needs one.");
+            var folder = Path.GetDirectoryName(found[0])!.Replace('\\', '/');
 
-            foreach (var path in Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories))
+            foreach (var path in Directory.EnumerateFiles(Path.Combine(root, folder), "*.cs", SearchOption.AllDirectories))
             {
                 var relative = Path.GetRelativePath(root, path).Replace('\\', '/');
-                if (!IsCompiled(project, relative))
+                if (!IsCompiled(folder, relative))
                     continue;
 
                 files.Add((relative, File.ReadAllLines(path)));
@@ -56,18 +67,30 @@ public class DispatchSurfaceGateTests
     // root (finding T68 of the second codebase review of 2026-10-28, TASK-0098). Until
     // TASK-0098 the gate skipped a folder bin or obj at each depth, so a host file in
     // Engine.Cli/Commands/bin/ named a command and passed.
-    internal static bool IsCompiled(string project, string relative)
-        => !relative.StartsWith($"{project}/obj/", StringComparison.Ordinal)
-        && !relative.StartsWith($"{project}/bin/", StringComparison.Ordinal);
+    internal static bool IsCompiled(string folder, string relative)
+        => !relative.StartsWith($"{folder}/obj/", StringComparison.Ordinal)
+        && !relative.StartsWith($"{folder}/bin/", StringComparison.Ordinal);
 
     [Theory]
     [InlineData("Engine.Cli", "Engine.Cli/Commands/bin/Host.cs", true)]
     [InlineData("Engine.Cli", "Engine.Cli/Commands/obj/Host.cs", true)]
     [InlineData("Engine.Cli", "Engine.Cli/bin/Debug/Host.cs", false)]
     [InlineData("Engine.Api.Http", "Engine.Api.Http/obj/Debug/Engine.Api.Http.AssemblyInfo.cs", false)]
-    public void The_Gate_Reads_Each_Host_Source_That_MSBuild_Compiles(string project, string relative, bool compiled)
+    [InlineData("eng/bookcase-compare", "eng/bookcase-compare/obj/Debug/BookcaseCompare.AssemblyInfo.cs", false)]
+    public void The_Gate_Reads_Each_Host_Source_That_MSBuild_Compiles(string folder, string relative, bool compiled)
     {
-        Assert.Equal(compiled, IsCompiled(project, relative));
+        Assert.Equal(compiled, IsCompiled(folder, relative));
+    }
+
+    // Finding T4 of the codebase review of 2026-09-30 (R-0031, TASK-0451): the gate reads each
+    // host of the classes of the dependency gate, the desktop host and the phone host too, and
+    // not the application, which is the client of the person (DependencyDirectionGateTests.DispatchHosts).
+    [Fact]
+    public void The_Gate_Reads_Each_Host_Of_The_Dependency_Gate()
+    {
+        Assert.Equal(
+            ["3DEngine", "3DEngine.Android", "BookcaseCompare", "Engine.Api.Http", "Engine.Api.Http.Server", "Engine.Cli"],
+            HostProjects.Order(StringComparer.Ordinal));
     }
 
     // ADR-0028 item 9 (TASK-0085): the commands of R8a change central files of the engine one
