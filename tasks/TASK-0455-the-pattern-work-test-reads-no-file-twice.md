@@ -1,7 +1,7 @@
 ---
 id: 0455
 title: The test of the work of the path patterns reads no file a second time and gives the same result in each run
-status: Active
+status: Done
 phase: P0.185
 opened: 2026-11-22
 depends-on: [0454]
@@ -64,7 +64,7 @@ builds the expression of each pattern once.
 - [x] The candidates that the reasoning excludes are tested, and they give no failure in the suite.
 - [x] The loops of the Governance tests and of all of `Engine.Tests` (20 runs each) give no failure before or after the change.
 - [x] Each injection makes a named test fail, and each file is restored byte for byte (sha256).
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Decisions
 
@@ -101,7 +101,7 @@ builds the expression of each pattern once.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0185-pattern-work-test) · v0.439
+Status: Done · commit (the merge of the branch p0185-pattern-work-test) · v0.439
 
 ## Method
 
@@ -156,3 +156,4 @@ restored byte for byte (sha256):
   reasoning and by three probes, the bound of the second test by the growth of the cache, a new pattern for each call of the
   first test, the loops before and after, the injections, the History line of ADR-0173, the roadmap rows P0.185 and the ledger
   entry v0.439.
+- 2026-11-22: run 45018469481 of `e4f8aee5` passed on each job. Closed at v0.439.
