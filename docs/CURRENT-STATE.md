@@ -13613,3 +13613,36 @@ The failed runs since the entry v0.435, from the API: none.
 New tests: 3. The test list holds 3209 (1864 in `Engine.Tests`, 390 in `3DEngine.Tests`, 952 in `3DEngine.ImageTests`,
 3 in `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.431, 1 product milestone
 and 5 entries followed it.
+
+## v0.437 — On the sheet page the amber value of a source that the same proposal changes is the proposed number (P0.183, TASK-0453)
+
+Register entry R-0071 ("On the sheet page the amber value of a proposed dimension is the value of the design, not of the
+proposal") waited for an answer, because the correction of finding V222 changes ADR-0177 item 2. The question was answered by
+the standing order of the owner of 2026-11-20 (the correction of finding V222 that the review recommended). The branch
+`p0183-amber-proposed-value` starts from `be1c82d0` (P0.182, TASK-0452, v0.436, not merged yet).
+
+**The change.**
+- When one proposal holds a PlaceSheetDimension for a source and also SetSketchConstraintValue or SetExtrudeDistance for that
+  same constraint or extrude, the amber value on the page shows the proposed number, not the value of the design now. With no
+  such command it keeps the value of the design, as before. The number is in the length unit of the document, as each other
+  amber value (ADR-0060 item 2), and a radius on a whole circle still shows as a diameter.
+- With two changes of one source the number of the last change shows, because the commands apply in their order; the pending
+  chips use the same rule (`ProposedValues.Of`, ADR-0110 item 1). A constraint takes only a change of a constraint and an
+  extrude only a change of an extrude. A source that the design does not hold still gives "?".
+- `ProposedSheet.OfCard` gives the sheet of a card with the values that its commands change (`ProposedSheet.Changes`), and the
+  window uses it. `ProposedSheet.Text` takes the changes. ADR-0177 item 2 states the rule and has a History line. R-0071 is
+  closed (resolved).
+
+**Proof.** Five new tests in `ProposedSheetTests`. Four post a proposal to the desktop over HTTP, read the page before the accept
+and hold each amber value against GetSheet after the accept: a changed distance (5, not 3), a changed constraint (12, not 10), a
+change of another source (the length keeps 10), and two changes of one source (7, the last one). Each of the four failed before
+the change. The fifth holds the text and the changes of a card with no host. A script (`inject0453.js` in `%TEMP%\p0183`) applied
+ten injections, each restored byte for byte (sha256): nine made a named test fail; the line of the window that gives the card
+to `ProposedSheet.OfCard` passes, because no test runs the frame. The table is in TASK-0453. A clean build gives 0 warnings, the phone
+project builds with 0 warnings, `dotnet test` passes 3214 tests, and the write-set check and `eng/repo-gates` pass. No picture
+of the real window was made. The run on the branch is not done yet.
+The failed runs since the entry v0.436, from the API: none.
+
+New tests: 5. The test list holds 3214 (1864 in `Engine.Tests`, 390 in `3DEngine.Tests`, 957 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.431, 1 product milestone and 6
+entries followed it.

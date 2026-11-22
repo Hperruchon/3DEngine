@@ -1090,9 +1090,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         // bodies and the values of the frame.
         var proposals = ProposedValues.Named(_proposalDesk?.Waiting(), _sketches?.Live ?? [], _renderer.LiveBodies, values);
         // ADR-0177 item 2 (phase R30f, TASK-0422): the boxes and the values of the sheet items of the proposal that the arc shows, from
-        // GetViewLines, GetBodyInfo and the sketches of this frame, read on the thread pool; the frame does not wait.
+        // GetViewLines, GetBodyInfo and the sketches of this frame, read on the thread pool; the frame does not wait. R-0071
+        // (TASK-0453): a value that the same proposal changes shows its proposed number.
         SheetProposal? sheetProposal = null;
-        if (proposals is [{ Sheet: { } sheetItems } shownProposal, ..] && ProposedSheet.Of(sheetItems) is { } proposedSheet)
+        if (proposals is [{ } shownProposal, ..] && ProposedSheet.OfCard(shownProposal) is { } proposedSheet)
         {
             sheetProposal = _sheetProposal.Read(version, shownProposal.Id, () =>
             {

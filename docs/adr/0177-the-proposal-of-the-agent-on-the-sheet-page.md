@@ -49,7 +49,11 @@ proposed dimension names the proposed view.
      square of 10 mm, as for a view of the page (ADR-0168 item 2).
    - the text of each proposed dimension: the value of its constraint in the sketches of the window, or the distance of its
      extrude from GetBodyInfo, as the page prints a value (a radius on a whole circle is a diameter, ADR-0165 item 4). A source
-     that the design does not hold gives "?".
+     that the design does not hold gives "?". When the same proposal also holds a command that changes that source,
+     SetSketchConstraintValue for a constraint or SetExtrudeDistance for an extrude, the text has the proposed number of that
+     command in place of the number now, in the length unit of the document as each other value (ADR-0060 item 2). With two
+     such commands for one source, the number of the last one shows, because the commands apply in their order
+     (`ProposedValues.Of`, ADR-0110 item 1). With no such command the text keeps the value of the design.
    - the paper of a new sheet, from its CreateSheet.
    The read sends no command and writes nothing, so nothing enters the log before the accept.
 3. **The page (amends ADR-0168 item 1).** While the proposal has sheet items, the button "Sheet" shows with an amber outline,
@@ -101,3 +105,5 @@ preview of a proposal on a fork (R25).
   2026-11-20.
 - 2026-11-21 · TASK-0426 · Item 5: the arc keeps the line of each command that the page does not show (finding V222, Q3 A of
   the owner), draws over the paper, and a tap on Accept or Reject over the paper is the tap of the arc only (finding V221).
+- 2026-11-22 · TASK-0453 · Item 2: the amber value of a source that the same proposal changes shows the proposed number of the
+  last change (R-0071, the correction of finding V222, by the standing order of the owner of 2026-11-20).

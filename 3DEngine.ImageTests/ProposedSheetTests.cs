@@ -175,13 +175,59 @@ public sealed class ProposedSheetTests
             ], true, 0),
         };
         ProposedDimension Of(Guid source, string kind) => new(Guid.NewGuid(), Sheet, Front, source, kind, 0, 0);
-        Assert.Equal("Ø8", ProposedSheet.Text(Of(diameter, "constraint"), sketches, null));
-        Assert.Equal("R2.5", ProposedSheet.Text(Of(radius, "constraint"), sketches, null));
-        Assert.Equal("12", ProposedSheet.Text(Of(length, "constraint"), sketches, null));
-        Assert.Equal("?", ProposedSheet.Text(Of(angle, "constraint"), sketches, null));
-        Assert.Equal("?", ProposedSheet.Text(Of(Guid.NewGuid(), "constraint"), sketches, null));
-        Assert.Equal("30", ProposedSheet.Text(Of(Body.Id, "distance"), sketches, 30));
-        Assert.Equal("?", ProposedSheet.Text(Of(Body.Id, "distance"), sketches, null));
+        Assert.Equal("Ø8", ProposedSheet.Text(Of(diameter, "constraint"), sketches, null, []));
+        Assert.Equal("R2.5", ProposedSheet.Text(Of(radius, "constraint"), sketches, null, []));
+        Assert.Equal("12", ProposedSheet.Text(Of(length, "constraint"), sketches, null, []));
+        Assert.Equal("?", ProposedSheet.Text(Of(angle, "constraint"), sketches, null, []));
+        Assert.Equal("?", ProposedSheet.Text(Of(Guid.NewGuid(), "constraint"), sketches, null, []));
+        Assert.Equal("30", ProposedSheet.Text(Of(Body.Id, "distance"), sketches, 30, []));
+        Assert.Equal("?", ProposedSheet.Text(Of(Body.Id, "distance"), sketches, null, []));
+    }
+
+    // Item 2 (R-0071, TASK-0453): a change of the source of a value in the same proposal gives the text its proposed number, with
+    // the form of the page: a proposed radius on a whole circle is a diameter. A change of another constraint or extrude, a change
+    // of an extrude for a constraint with the same identifier, and a source that the design does not hold keep the text of the
+    // design. The card gives the changes with the number of the last change of each source.
+    [Fact]
+    public void The_Text_Takes_The_Number_Of_A_Change_Of_Its_Source()
+    {
+        var (circle, arc, sketch) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var (diameter, radius, length, angle) = (Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        var sketches = new[]
+        {
+            new SketchInfo(sketch, Guid.Empty, "S", [], [], [new SketchCircle(circle, Guid.Empty, 4)], [],
+            [
+                new SketchConstraintInfo(diameter, "radius", [circle], [4], 0),
+                new SketchConstraintInfo(radius, "radius", [arc], [2.5], 0),
+                new SketchConstraintInfo(length, "distance", [Guid.NewGuid()], [12], 0),
+                new SketchConstraintInfo(angle, "angle", [Guid.NewGuid(), Guid.NewGuid()], [0, 1], 0),
+            ], true, 0),
+        };
+        ProposedDimension Of(Guid source, string kind) => new(Guid.NewGuid(), Sheet, Front, source, kind, 0, 0);
+        var unknown = Guid.NewGuid();
+        ProposedValue[] changes =
+        [
+            new(sketch, diameter, null, 5), new(sketch, radius, null, 3), new(sketch, length, null, 14.5), new(sketch, angle, null, 1) { Second = 0 },
+            new(null, null, Body.Id, 7), new(sketch, unknown, null, 9),
+        ];
+        Assert.Equal("Ø10", ProposedSheet.Text(Of(diameter, "constraint"), sketches, null, changes));
+        Assert.Equal("R3", ProposedSheet.Text(Of(radius, "constraint"), sketches, null, changes));
+        Assert.Equal("14.5", ProposedSheet.Text(Of(length, "constraint"), sketches, null, changes));
+        Assert.Equal("?", ProposedSheet.Text(Of(angle, "constraint"), sketches, null, changes));
+        Assert.Equal("?", ProposedSheet.Text(Of(unknown, "constraint"), sketches, null, changes));
+        Assert.Equal("7", ProposedSheet.Text(Of(Body.Id, "distance"), sketches, 30, changes));
+        Assert.Equal("?", ProposedSheet.Text(Of(Body.Id, "distance"), sketches, null, changes));
+        Assert.Equal("30", ProposedSheet.Text(Of(Body.Id, "distance"), sketches, 30, [new(null, null, Guid.NewGuid(), 7), new(sketch, Body.Id, null, 8)]));
+        Assert.Equal("12", ProposedSheet.Text(Of(length, "constraint"), sketches, null, [new(sketch, Guid.NewGuid(), null, 20), new(null, null, length, 21)]));
+
+        var view = (Name: "AddSheetView", Id: Front, Parameters: View(Front, FlatView.Front, 100, 150).Parameters);
+        var card = new ProposalCard(Guid.NewGuid(), "A value", [], Values:
+            [null, new(null, null, Body.Id, 5), new(sketch, length, null, 13), new(null, null, Body.Id, 7)],
+            Sheet: [ProposedSheet.ItemOf(view.Name, Parameters(view.Parameters), view.Id), null, null, null]);
+        var proposed = ProposedSheet.OfCard(card) ?? throw new InvalidOperationException("No proposed sheet.");
+        Assert.Equal([(Body.Id, 7.0), (length, 13.0)], proposed.Changes.Select(change => (change.Target!.Value, change.Number)));
+        Assert.Empty((ProposedSheet.Of(card.Sheet) ?? throw new InvalidOperationException("No proposed sheet.")).Changes);
+        Assert.Null(ProposedSheet.OfCard(card with { Sheet = [null] }));
     }
 
     // Items 1, 2 and 6, and C7 of the design file: an agent posts a sheet, three views and two values to the desktop. Before the
@@ -247,6 +293,103 @@ public sealed class ProposedSheetTests
         {
             Directory.Delete(folder, recursive: true);
         }
+    }
+
+    // Item 2 (R-0071, finding V222, TASK-0453): the plate on the desktop, and a proposal of a sheet, the front view and the given
+    // commands, posted over HTTP. The result is the text of each amber value of the read before the accept, and the text of each
+    // value of GetSheet after the accept, as the page prints it. The commands take the body, the length and the sketch.
+    private static async Task<(IReadOnlyList<string> Before, IReadOnlyList<string> After)> ValuesOf(
+        Func<Guid, Guid, Guid, (string Name, Guid Id, string Parameters)[]> commands)
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "3de-proposed-value-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(folder, "documents"));
+        try
+        {
+            string[] args =
+            [
+                "--port", "0",
+                "--file", Path.Combine(folder, "documents", "plate.3de"),
+                $"--{DesktopSurface.DocumentFolderSetting}={Path.Combine(folder, "documents")}",
+                $"--{DesktopSurface.UnsavedFolderSetting}={Path.Combine(folder, "unsaved")}",
+                $"--Engine:AssetFolder={Path.Combine(folder, "assets")}",
+            ];
+            var (surface, code, message) = DesktopEngineHost.Start(args, null);
+            Assert.True(surface is not null, $"{code}: {message}");
+            using var session = surface.Session;
+            using (surface)
+            {
+                var (body, length) = await Plate(surface.Host.Session);
+                var sketch = Assert.Single(await Sketches(surface.Host.Session)).SketchId;
+                (string Name, Guid Id, string Parameters)[] all = [Commands(length, body)[0], Commands(length, body)[1], .. commands(body, length, sketch)];
+                using var client = new HttpClient { BaseAddress = new Uri(surface.Address) };
+                var json = string.Join(",", all.Select(command =>
+                    $"{{\"name\":\"{command.Name}\",\"schemaVersion\":1,\"commandId\":\"{command.Id}\",\"parameters\":{command.Parameters}}}"));
+                using var post = new StringContent($"{{\"summary\":\"A sheet and a changed value\",\"commands\":[{json}]}}", System.Text.Encoding.UTF8, "application/json");
+                var response = await client.PostAsync("/proposals", post);
+                Assert.True(response.StatusCode == System.Net.HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+
+                var desk = new HostedSession(surface.Host);
+                var card = Assert.Single(desk.Waiting());
+                var sheet = ProposedSheet.OfCard(card) ?? throw new InvalidOperationException("No proposed sheet.");
+                var read = await ReadOf(surface.Host.Session, card.Id, sheet, await Sketches(surface.Host.Session));
+
+                var outcome = await desk.Accept(card.Id);
+                Assert.Equal("accepted", outcome.State);
+                var after = (await surface.Host.Session.Query<SheetInfo>(new GetSheetQuery { SheetId = Sheet })).Result ?? throw new InvalidOperationException("No sheet after the accept.");
+                return ([.. read.Values.Select(value => value.Text)], [.. after.Dimensions.Select(dimension => SvgExport.Value(dimension, "Ø"))]);
+            }
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    private static (string Name, Guid Id, string Parameters) ExtrudeDistance(Guid body, double distance)
+        => ("SetExtrudeDistance", Guid.NewGuid(), $"{{\"extrudeId\":\"{body}\",\"distance\":{distance.ToString("R", CultureInfo.InvariantCulture)}}}");
+
+    private static (string Name, Guid Id, string Parameters) ConstraintValue(Guid sketch, Guid constraint, double value)
+        => ("SetSketchConstraintValue", Guid.NewGuid(), $"{{\"sketchId\":\"{sketch}\",\"constraintId\":\"{constraint}\",\"value\":{value.ToString("R", CultureInfo.InvariantCulture)}}}");
+
+    // Item 2 (TASK-0453): a proposal that places the distance of the extrude and changes that distance from 3 to 5 shows 5 in
+    // amber, the value of GetSheet after the accept, and not 3, the value of the design now.
+    [Fact]
+    public async Task A_Proposed_Distance_Shows_The_Number_Of_SetExtrudeDistance()
+    {
+        var (before, after) = await ValuesOf((body, _, _) => [Dimension(DistanceValue, body, "distance", 130, 150), ExtrudeDistance(body, 5)]);
+        Assert.Equal(["5"], before);
+        Assert.Equal(after, before);
+    }
+
+    // Item 2 (TASK-0453): the same for a constraint: a proposal that changes the length from 10 to 12 shows 12 in amber.
+    [Fact]
+    public async Task A_Proposed_Constraint_Shows_The_Number_Of_SetSketchConstraintValue()
+    {
+        var (before, after) = await ValuesOf((_, length, sketch) => [Dimension(LengthValue, length, "constraint", 100, 170), ConstraintValue(sketch, length, 12)]);
+        Assert.Equal(["12"], before);
+        Assert.Equal(after, before);
+    }
+
+    // Item 2 (TASK-0453): a change of one source does not change the value of another source. The proposal places the length
+    // and the distance and changes the distance only: the length keeps 10, the value of the design.
+    [Fact]
+    public async Task A_Change_Of_Another_Source_Keeps_The_Value_Of_The_Design()
+    {
+        var (before, after) = await ValuesOf((body, length, _) =>
+            [Dimension(LengthValue, length, "constraint", 100, 170), Dimension(DistanceValue, body, "distance", 130, 150), ExtrudeDistance(body, 5)]);
+        Assert.Equal(["10", "5"], before);
+        Assert.Equal(after, before);
+    }
+
+    // Item 2 (TASK-0453): with two changes of one source the amber value is the number of the last change, the value after the
+    // accept, also when the first change comes before the PlaceSheetDimension and the last one after it.
+    [Fact]
+    public async Task Two_Changes_Of_One_Source_Give_The_Number_Of_The_Last_Change()
+    {
+        var (before, after) = await ValuesOf((body, _, _) =>
+            [ExtrudeDistance(body, 5), Dimension(DistanceValue, body, "distance", 130, 150), ExtrudeDistance(body, 7)]);
+        Assert.Equal(["7"], before);
+        Assert.Equal(after, before);
     }
 
     // A proposal of a new A4 sheet with two boxes and one value, as the host reads it.
