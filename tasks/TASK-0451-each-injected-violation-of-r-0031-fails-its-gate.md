@@ -1,7 +1,7 @@
 ---
 id: 0451
 title: Each injected violation of the second and the third codebase reviews fails its gate
-status: Active
+status: Done
 phase: P0.181
 opened: 2026-11-21
 depends-on: [0449]
@@ -63,7 +63,7 @@ Each injected violation of the second and the third codebase reviews fails its g
 - [x] Each form of the table in "Method" fails its gate after the task, and the table says which forms passed before it.
 - [x] Each strengthened gate has a test of its new rule, and its injection failed the gate of the base commit first.
 - [x] R-0031 is closed with the exit "resolved".
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Decisions
 
@@ -92,7 +92,7 @@ Each injected violation of the second and the third codebase reviews fails its g
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0181-gates-hold-their-rules) · v0.435
+Status: Done · commit (the merge of the branch p0181-gates-hold-their-rules) · v0.435
 
 ## Method
 
@@ -162,3 +162,4 @@ run of the dispatch forms only, and the full run above gave each form its own st
 ## Progress
 
 - 2026-11-21: branch `p0181-gates-hold-their-rules` from `28dcc1c9` (P0.180, TASK-0449, v0.434, not merged yet).
+- 2026-11-22: run 44962984251 of `a4e957e7` passed on each job. Closed at v0.435.
