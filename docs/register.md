@@ -285,20 +285,6 @@ of the owned kernel has a numerator of 2576 digits; each length changed by less 
 `docs/proposals/2026-11-21-the-bookcase-case-of-k10.md` gives the table and the numbers. The support of the lamp waits for
 its sizes from the owner (K10b), and the ADR of P11.0 is not written, so the entry stays open.
 
-### R-0071 · On the sheet page the amber value of a proposed dimension is the value of the design, not of the proposal
-- class: debt
-- opened: 2026-11-21
-- due: 2027-05-20
-- extended: no
-- refs: `3DEngine.App/ProposedSheet.cs`, `docs/adr/0177-the-proposal-of-the-agent-on-the-sheet-page.md` item 2,
-  `docs/reviews/2026-11-20-codebase-review.md` (V222), TASK-0426
-A proposal can hold PlaceSheetDimension for a value and a command that changes that value, for example SetExtrudeDistance.
-The page shows the amber value as GetBodyInfo gives it now (ADR-0177 item 2), so it is not the value after the accept. The
-review recommended the proposed number from `ProposedValues`; that changes ADR-0177 item 2, and no answer of the owner
-covers it. An agent that proposes both in one proposal is not known today.
-Exit: a task gives the amber value the proposed number, with a test and an amendment of ADR-0177 item 2; or the owner accepts
-the value of the design.
-
 ### R-0072 · On a portrait phone of 360 pixels with a sheet, "N hidden" on the path line still goes under "Views"
 - class: question
 - opened: 2026-11-21
@@ -476,6 +462,26 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0071 · On the sheet page the amber value of a proposed dimension is the value of the design, not of the proposal
+- class: debt
+- opened: 2026-11-21
+- due: 2027-05-20
+- extended: no
+- refs: `3DEngine.App/ProposedSheet.cs`, `docs/adr/0177-the-proposal-of-the-agent-on-the-sheet-page.md` item 2,
+  `docs/reviews/2026-11-20-codebase-review.md` (V222), TASK-0426
+A proposal can hold PlaceSheetDimension for a value and a command that changes that value, for example SetExtrudeDistance.
+The page shows the amber value as GetBodyInfo gives it now (ADR-0177 item 2), so it is not the value after the accept. The
+review recommended the proposed number from `ProposedValues`; that changes ADR-0177 item 2, and no answer of the owner
+covers it. An agent that proposes both in one proposal is not known today.
+Exit: a task gives the amber value the proposed number, with a test and an amendment of ADR-0177 item 2; or the owner accepts
+the value of the design.
+Closed 2026-11-22 · resolved · TASK-0453, v0.437. The standing order of the owner of 2026-11-20 answered it with the correction
+of finding V222 that the review recommended. `ProposedSheet.OfCard` gives the sheet of a card with the values that
+its commands change (`ProposedValues.Of`, the last change of each source), and `ProposedSheet.Text` shows the proposed number of
+a changed constraint or extrude. Four tests post a proposal to the desktop and hold that each amber value is the value of
+GetSheet after the accept: a changed distance, a changed constraint, a change of another source, and two changes of one source.
+ADR-0177 item 2 states the rule.
 
 ### R-0073 · No test holds the cost of the cut of a plate by a sphere in the owned kernel
 - class: debt

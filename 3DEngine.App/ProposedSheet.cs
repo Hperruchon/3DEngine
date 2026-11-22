@@ -3,6 +3,7 @@ using System.Text.Json;
 using Engine.Contracts.Drawing;
 using Engine.Core.Export;
 using Engine.Core.Queries;
+using ThreeDEngine.Desktop.Ui;
 
 namespace ThreeDEngine.Desktop;
 
@@ -25,6 +26,10 @@ internal sealed record ProposedDimension(Guid Id, Guid Sheet, Guid View, Guid So
 // do not show. New is the CreateSheet of that sheet, or null for a live sheet.
 internal sealed record ProposedSheet(Guid SheetId, ProposedNewSheet? New, IReadOnlyList<ProposedView> Views, IReadOnlyList<ProposedDimension> Dimensions)
 {
+    // ADR-0177 item 2 (R-0071, TASK-0453): the values that the same proposal changes, one for each constraint or extrude, with the
+    // number of its last change (ProposedValues.Of). A proposed dimension of a changed source shows that number.
+    public IReadOnlyList<ProposedValue> Changes { get; init; } = [];
+
     public const string CreateSheet = "CreateSheet";
     public const string AddSheetView = "AddSheetView";
     public const string PlaceSheetDimension = "PlaceSheetDimension";
@@ -77,6 +82,13 @@ internal sealed record ProposedSheet(Guid SheetId, ProposedNewSheet? New, IReadO
         return new ProposedSheet(sheet, mine.OfType<ProposedNewSheet>().FirstOrDefault(), [.. mine.OfType<ProposedView>()], [.. mine.OfType<ProposedDimension>()]);
     }
 
+    // ADR-0177 items 1 and 2 (TASK-0453): the sheet of a card, with the values that its commands change.
+    public static ProposedSheet? OfCard(ProposalCard card)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        return Of(card.Sheet) is { } sheet ? sheet with { Changes = ProposedValues.Of(card.Values ?? []) } : null;
+    }
+
     // ADR-0177 item 2: the box of a proposed view on the paper in millimetres (left, bottom, right, top), as GetSheet places the
     // view after the accept (SheetLayout.Place): the box of its edges and its outlines, with each whole curve, around the centre
     // of that box at the place of the view, times the scale. The lines of GetViewLines are in units of the design already, so
@@ -125,30 +137,35 @@ internal sealed record ProposedSheet(Guid SheetId, ProposedNewSheet? New, IReadO
 
     // ADR-0177 item 2: the text of a proposed dimension, as the sheet page prints the value of a dimension (SvgExport.Value), from
     // the design now: a constraint of a live sketch, or the distance of an extrude. A radius on a whole circle of its sketch is a
-    // diameter, as GetSheet gives it. A source that the design does not hold gives "?".
-    public static string Text(ProposedDimension dimension, IEnumerable<SketchInfo> sketches, double? distance)
+    // diameter, as GetSheet gives it. A source that the design does not hold gives "?". R-0071 (TASK-0453): when the changes of
+    // the same proposal hold that constraint or that extrude, the text has the proposed number in place of the number now. The
+    // number of a command is in the length unit of the document, as the number of the design (ADR-0060 item 2).
+    public static string Text(ProposedDimension dimension, IEnumerable<SketchInfo> sketches, double? distance, IReadOnlyList<ProposedValue> changes)
     {
         ArgumentNullException.ThrowIfNull(dimension);
         ArgumentNullException.ThrowIfNull(sketches);
+        ArgumentNullException.ThrowIfNull(changes);
         (string Label, double Value)? value = null;
         if (dimension.SourceKind == "constraint")
         {
+            var proposed = changes.FirstOrDefault(change => change.Constraint == dimension.Source)?.Number;
             foreach (var sketch in sketches)
             {
                 if (sketch.Constraints.FirstOrDefault(constraint => constraint.Id == dimension.Source) is not { Values.Count: > 0 } constraint)
                     continue;
+                var number = proposed ?? constraint.Values[0];
                 value = constraint.Kind switch
                 {
-                    "distance" => ("length", constraint.Values[0]),
-                    "radius" when constraint.Items.Count == 1 && sketch.Circles.Any(circle => circle.Id == constraint.Items[0]) => ("diameter", 2 * constraint.Values[0]),
-                    "radius" => ("radius", constraint.Values[0]),
+                    "distance" => ("length", number),
+                    "radius" when constraint.Items.Count == 1 && sketch.Circles.Any(circle => circle.Id == constraint.Items[0]) => ("diameter", 2 * number),
+                    "radius" => ("radius", number),
                     _ => null,
                 };
                 break;
             }
         }
         else if (dimension.SourceKind == "distance" && distance is { } length)
-            value = ("distance", length);
+            value = ("distance", changes.FirstOrDefault(change => change.Extrude == dimension.Source)?.Number ?? length);
 
         return value is { } known
             ? SvgExport.Value(new SheetDimensionInfo(dimension.Id, dimension.View, dimension.Source, dimension.SourceKind, dimension.X, dimension.Y, false, known.Label, known.Value), "Ø")
@@ -242,7 +259,7 @@ internal sealed record SheetProposal(Guid Proposal, Guid SheetId, SheetInfo? New
                     distances[dimension.Source] = length = await distance(dimension.Source).ConfigureAwait(false);
             }
 
-            values.Add(new Value(dimension.Id, ProposedSheet.Text(dimension, sketches, length), dimension.X, dimension.Y));
+            values.Add(new Value(dimension.Id, ProposedSheet.Text(dimension, sketches, length, sheet.Changes), dimension.X, dimension.Y));
         }
 
         SheetInfo? paper = null;
