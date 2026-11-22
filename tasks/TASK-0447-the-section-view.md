@@ -1,7 +1,7 @@
 ---
 id: 0447
 title: The section view of the window, a cut of each body by a plane with a cap
-status: Active
+status: Done
 phase: R26
 opened: 2026-11-21
 depends-on: [0446]
@@ -84,7 +84,7 @@ cut with a cap, with no change of the engine.
 - [x] The layout test of ADR-0172 holds the state Section at each size.
 - [x] The pictures of the bookcase with a section through its middle at 1280 by 720 and at 390 by 844 (local, not committed).
 - [x] An injection in each part makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Decisions
 
@@ -104,7 +104,7 @@ ADR-0184 holds the decisions and the alternatives. In short:
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch r26-section-view) · v0.431
+Status: Done · commit (the merge of the branch r26-section-view) · v0.431
 
 ## Method
 
@@ -158,3 +158,4 @@ with the window, `section-bookcase-scene-*.png` with the scene only, and `sectio
 - 2026-11-21: a question of the review: the pictures show "0 mm" for XZ. The bookcase is 400 mm deep from y = -200 to
   200 (`BookcaseCase.cs`), so 0 is the middle. The picture test now holds the box of the bodies that the window gets, and an
   injection of no box makes it fail. The host sets `SectionBox` before each frame (`NativeThreeDEngine`). No code changed.
+- 2026-11-22: run 44943334498 of `2aed6d7e` passed on each job. Closed at v0.431.
