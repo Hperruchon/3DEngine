@@ -85,7 +85,9 @@ Three constraints remove the other forms of the fork:
      stops there with `E-API-PROPOSAL-COMMAND-KNOWN` and no result for it, as an accept (finding E198).
    - The host gives a factory of backends (`EngineHost`, parameter `forks`); the desktop and `engine-api-http` give a new
      backend of the kind of their own backend. The host frees each backend after its fork. A host with no factory makes no
-     preview.
+     preview. Since P15b (TASK-0459) `DocumentFork.Run` takes the factory, and the fork frees each backend that it takes: the
+     backend of the fork and, when items 8 to 10 need it, the backend of the base. The first backend is free before the base
+     takes the second one.
 3. **When, and the surface (Q3 A).** The post of a proposal copies the log for its first preview, inside the read that adds it
    to the queue. Each commit (`command.applied`) asks for a new preview of each open proposal. One worker of the queue computes
    the previews one after the other, the oldest proposal first, so at most one fork runs at a time. A burst of commits gives
@@ -96,7 +98,8 @@ Three constraints remove the other forms of the fork:
      with no factory gives HTTP 501 with `E-API-NOT-SUPPORTED`. The host itself calls `Proposals.Preview`.
    - The answer: `proposalId`; `state`, `ready` or `failed`; `documentVersion`, the version that the fork copied; `results`,
      the result of each command that ran, as `GET /proposals/{id}` gives it after an accept; `failedIndex` and `failedCode`;
-     `bodies`; `error`, null or `{ code, message }` for a failed preview.
+     `bodies`; `error`, null or `{ code, message }` for a failed preview. Since P15b (TASK-0459) also `sketches` (item 8),
+     `measures` (item 9) and `checks` (item 10), each after `bodies`; each of the four is null for a failed preview.
 4. **The bodies (Q5 A).** `bodies` holds `added`, `removed` and `changed` (`{ before, after }`), each in the order of the body
    identifiers. The fork compares its bodies before the first command of the proposal with its bodies after the last command
    that ran. A body changes when its two records are not equal. The equality of a record compares its content while no member
@@ -114,14 +117,71 @@ Three constraints remove the other forms of the fork:
    the end of the fork, so no fork runs after its host. A command that runs ends first (ADR-0006 section 4).
 8. **P15b: the state of the solver.** For each sketch that the proposal changes, its state after the commands: solved, under
    or over constrained, with its residual, from the records of the fork. The record of P15b decides the form.
+
+   The form (TASK-0459): `sketches` holds one `{ sketchId, before, after }` for each sketch that the commands add or change, in
+   the order of the sketch identifiers. A sketch changes when its record after the last command that ran is not the same as
+   its record before the first command. Two sketch records compare by content, member by member (`SketchContent`), because
+   the equality of the record compares each list by reference; `ProposalPreviewTests` fails when a sketch record or one of
+   its items gets a member that the comparison does not read. `before` is null for a sketch that the commands add. Each
+   state is `{ state, freedom, residual }` from the query `GetSketch` on the fork, so the preview and the query give the
+   same values:
+   - `state`: `solved` when each equation is within its tolerance and `freedom` is 0; `under` when each equation is within
+     its tolerance and `freedom` is above 0; `over` when an equation is not within its tolerance, because the constraints
+     conflict or the iteration did not converge (ADR-0035 items 5, 6 and 8). The solver gives no other sign of a conflict,
+     so `over` also names an iteration that did not converge.
+   - `freedom`: the count of the free degrees of `GetSketch`.
+   - `residual`: the largest absolute residual of the constraints of the sketch, 0 with no constraint, or null when a
+     residual is not finite (finding E88).
 9. **P15b: the measures (K15).** For each body that the proposal adds or changes, the measures of ADR-0180 after the commands,
    and for a changed body before them, to the double (Q5 A).
+
+   The form (TASK-0459): `measures` holds one `{ bodyId, before, after }` for each body of `bodies.added` and
+   `bodies.changed`, in the order of the body identifiers. Each side is `{ mass, error }`: `mass` is the answer of the query
+   `GetMassProperties` on the fork (`volume`, `centre`, `facets`, ADR-0180 item 3), or null with the refusal of the query in
+   `error`, for example `E-MESH-UNSUPPORTED`. `before` is null for an added body. `GetDistance` and `GetAngle` measure two
+   items, so they are not measures of one body, and the preview does not give them.
+
+   **The same solid.** A committed geometry key names one solid (ADR-0059 item 2), and a body with a fault gives no solid. So
+   a changed body whose geometry key and fault do not change keeps its solid: a rename or a change of the visibility. Its
+   measures before are its measures after, and the fork does not read them again.
 10. **P15b: the checks (K11, Q4 A).** `CheckInterference` on the fork, for each pair with a body that the proposal adds or
     changes, under the bound of work of ADR-0182; above it the pair has the state `limit`. Only the pairs whose state changes
     are a difference.
+
+    The form (TASK-0459): `checks` holds one `{ bodyIdA, bodyIdB, before, after }` for each pair whose state changes, A before
+    B in the order of the body identifiers. Each side is `{ state, check, error }`. `state` is `apart`, `touching` or
+    `overlapping` (the class of ADR-0182 item 3), `limit` (the refusal `E-CHECK-WORK-LIMIT`), or `refused` (another refusal
+    of the check, for example `E-GEOM-BODY-FAULTED`). `check` is the answer of the check for the pair (ADR-0182 item 4), or
+    null; `error` is the refusal, or null.
+    - **The pairs.** After the commands: each pair of a body with a new solid (an added body, or a changed body that does not
+      keep its solid, item 9) and another live body. Before them: each pair of a changed body with a new solid or of a
+      removed body, and another body that is live before. A pair whose two bodies keep their solids keeps its state, so the
+      fork does not check it. A removed body counts, although Q4 A names the bodies that the proposal changes: `Translate`
+      and each boolean make a new body and remove the old one (ADR-0021), so a move that ends an overlap shows only in the
+      pair of the removed body.
+    - **One check for each pair.** The fork asks `CheckInterference` with the two bodies of the pair in `bodyIds`. So the
+      bound of work of ADR-0182 item 8 applies to each pair: a pair above it has the state `limit`, and the other pairs are
+      checked. No intended pair is given (P11 and P13 put them in the Document), so `fault` is true for each overlap.
+    - **Before.** "Before" is the fork before the first command of the proposal. By the replay rule of ADR-0012 it equals the
+      first Document at the version of the copy, so the first Document is not read again and its serial lock is not taken.
+      The session of the fork holds the state after the commands, so the fork replays the same copy again in a second
+      session with a new backend of the factory, the base, and reads each value before the commands there. The base runs
+      only when a value before is necessary: a changed sketch that exists before, a changed body with a new solid, or a pair
+      whose two bodies are live before.
+    - **The difference.** A body that does not exist counts as apart: `before` is null when a body of the pair does not exist
+      before the commands, and `after` is null when a body does not exist after them. A pair is a difference when its state
+      changes, or when the code of its refusal changes.
 11. **The cost.** Each commit with open proposals costs one replay of the log and the commands of each open proposal, off the
     lock: for the bookcase of K10a, 57 entries and a few commands. A log of 507 commands replayed in 17 to 19 ms (v0.413), so 8
     open proposals cost about 0.15 s of a thread for each burst of commits. A native backend is made and freed for each fork.
+
+    The cost of P15b (TASK-0459), measured in a Release build on the computer of the owner, the median of 12 forks of the
+    bookcase on the native backend: a proposal that changes no body takes 0.7 ms (the replay of 57 entries); a rename of a
+    shelf 1.0 ms (one measure, no check, no base); the new shelf "Milieu" of the guide 41 ms (one measure and 19 checks); the
+    lift of module 1 and a rename 28 ms (two measures, 36 checks and the base). So a check of a pair of boxes costs about 1 to
+    2 ms, and the checks are most of the cost: 8 open proposals of one new body each cost about 0.35 s of a thread for each
+    burst of commits. Each check resolves its two bodies again, so a body with n pairs is resolved n times. The worst case of
+    one pair is the bound of ADR-0182 item 8, about 13 s for an intersection at the limit.
 
 ## Consequences
 
@@ -140,11 +200,24 @@ serves P16, R25, K12 and P15b.
   Document. The result does not change; a later read can build again.
 - The window shows no preview until R25, and the preview has the bodies only until P15b.
 - The code `E-API-PROPOSAL-COMMAND-KNOWN` is now also a code of the preview, where nothing applies.
+- P15b (TASK-0459): the checks are most of the cost of a preview, and one worker computes the previews one after the other.
+  A preview with many pairs near the bound of work of ADR-0182 can take minutes and holds the previews of the other
+  proposals. No bound of the sum of the work of one preview exists; it needs the counts of the pieces before the checks,
+  which only the check computes.
+- P15b: a second replay (the base) runs for each preview that needs a value before the commands, which is each proposal with
+  a `Translate`. The base and the fork take more entries in the caches of the kernel that are keyed by the Document.
+- P15b: the rule of the same solid (item 9) trusts that a committed geometry key names one solid (ADR-0059 item 2). A
+  command that changes a solid and keeps its key breaks the rule, and the cache of `KernelProjection` too.
+- P15b: `over` names a conflict and an iteration that did not converge with one word, because the solver gives no other sign
+  (ADR-0035 item 6).
 
-**Next:** row P15b (items 8 to 10), then P16 and R25. No register entry.
+**Next:** P16 and R25. No register entry.
 
 ## History
 
 - 2026-11-22 · TASK-0456 · The record, Accepted: the answers of the owner of 2026-11-22 (option A of Q1 to Q5 of the third
   codebase review of 2026-11-21) and the design of P15; P15a ships items 1 to 7 and 11.
 - 2026-11-22 · TASK-0456 · Amends ADR-0092 item 2: a fifth route, `GET /proposals/{id}/preview`.
+- 2026-11-22 · TASK-0459 · P15b ships items 8 to 10 and gives their form: `sketches`, `measures` and `checks` in the answer
+  of item 3, the base for the values before the commands, the rule of the same solid, the pairs of a removed body, and one
+  check for each pair. Item 2: the fork takes the factory of backends and frees each backend. Item 11: the measured cost.

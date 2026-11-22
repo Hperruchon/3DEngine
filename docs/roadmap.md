@@ -569,6 +569,9 @@ Therefore each approved objective must have a track here.
   booleans", so a test that runs beside them does not decide their result. v0.441, TASK-0457.
 - R18p — The ground of the scene has the soft light of the render, from `#03060b` at the corners to `#0a1a28` at the middle,
   drawn first, so each body lies over it. v0.442, TASK-0458, ADR-0186.
+- P15b — The preview of a proposal also gives the state of the solver of each changed sketch, the measures of each added or
+  changed body before and after the commands, and each pair whose check changes, with the state `limit` above the bound of
+  work. v0.443, TASK-0459, ADR-0185.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -812,7 +815,7 @@ This track removes each condition that blocks other work.
 | P14 | The role of a body (to print, context, excluded from an envelope) and the print export: one STL for each chosen part, in millimetres, with a check that its mesh is closed and has no degenerate triangle; 3MF later (ADR-0126 items 6 and 7). After P11. | 1–2 |
 | P15 | The preview of a proposal (S11 of `docs/proposals/2026-11-10-gaps-to-the-render.md`): the host runs the commands of a proposal on a fork of the Document, with no change of the first Document or of its log, and gives the outcome of each command and four differences: the bodies, the state of the solver, the measures (K15) and the checks (K11). Its ADR gives the design of the second Document (R-0055, ADR-0157 item 8). After K11. The owner answered Q1 to Q5 of the third codebase review of 2026-11-21 with option A on 2026-11-22 (ADR-0185), and the row has two parts. | 3–5 |
 | P15a | The fork and the first difference: a copy of the log under the serial lock, a replay in a new session with its own backend off the lock, the commands of the proposal as an accept applies them, the outcome of each command and the bodies added, removed and changed by content; computed at the post and at each new version, one preview for each proposal of the queue, and the route `GET /proposals/{id}/preview` (ADR-0185 items 1 to 7). TASK-0456, ADR-0185. | 2–3 |
-| P15b | The three other differences of the preview: the state of the solver of each changed sketch, the measures of K15 of each added or changed body to the double, and the checks of K11 of the pairs with a changed body under the bound of work, with the state `limit` (ADR-0185 items 8 to 10, Q4 A and Q5 A). After P15a. | 1–2 |
+| P15b | The three other differences of the preview: the state of the solver of each changed sketch, the measures of K15 of each added or changed body to the double, and the checks of K11 of the pairs with a changed body under the bound of work, with the state `limit` (ADR-0185 items 8 to 10, Q4 A and Q5 A). After P15a. TASK-0459, ADR-0185. | 1–2 |
 | P16 | The accept after a preview: the accept runs the dry run again; it applies when the result equals the result that the person saw, shows the new preview when it differs, and applies each command or none; one proposal is one step of undo. Its ADR amends ADR-0092 items 4 and 6, ADR-0130 item 4 and ADR-0031 (ADR-0157 items 9 and 10). After P15. | 2–3 |
 | P17 | The guide for an agent in `docs/`: the loop read, measure, propose and check, with the SVG of a view (P10a) as its picture (ADR-0157 item 13). After K11 and P10a. TASK-0439. | 1 |
 | P18 | Groups of bodies in the Document: a named set of parts by identity, which can hold groups, rigid by default (ADR-0157 item 1). Its ADR gives the record. After P11. | 1–2 |

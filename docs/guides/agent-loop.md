@@ -288,6 +288,18 @@ commands add, remove and change. Each body is a record of the body, as the event
 in the list, because `Translate` consumes it: the preview compares the bodies before the first command and after the last
 command. The new shelf "Milieu" is the one added body.
 
+The answer also gives three more differences (ADR-0185 items 8 to 10):
+
+- `sketches`: each sketch that the commands add or change, with the state of its solver before and after them. The state is
+  `solved` (no free degree), `under` (a free degree) or `over` (an equation is not within its tolerance), with `freedom` and
+  `residual`, the largest absolute residual of its constraints. Here no sketch changes.
+- `measures`: each body that the commands add or change, with the values of `GetMassProperties` after them and, for a changed
+  body, before them. `before` is null for an added body. Here the shelf has 1164 × 394 × 18 = 8,255,088 mm³.
+- `checks`: each pair with a body that the commands add, change or remove whose state changes, with the answer of
+  `CheckInterference` before and after. The state is `apart`, `touching`, `overlapping`, `limit` (the pair is above the bound
+  of work of the check, `E-CHECK-WORK-LIMIT`) or `refused`. A body that does not exist counts as apart, so `before` is null
+  here. The shelf touches the two sides and the back panel, so three pairs change from apart to touching.
+
 ```json agent-result
 {
   "proposalId": "<proposal>",
@@ -305,6 +317,19 @@ command. The new shelf "Milieu" is the one added body.
     "removed": [],
     "changed": []
   },
+  "sketches": [],
+  "measures": [
+    {
+      "bodyId": "<Milieu>",
+      "before": null,
+      "after": { "mass": { "volume": 8255088, "centre": { "x": 300, "y": -3, "z": 1000 }, "facets": false }, "error": null }
+    }
+  ],
+  "checks": [
+    { "before": null, "after": { "state": "touching", "check": { "class": "Touching", "gap": 0, "fault": false } } },
+    { "before": null, "after": { "state": "touching" } },
+    { "before": null, "after": { "state": "touching" } }
+  ],
   "error": null
 }
 ```
@@ -522,11 +547,12 @@ DELETE /proposals/<proposal>
 
 ## 12 The limits
 
-- **The preview gives the bodies only.** `GET /proposals/{id}/preview` gives the outcome of each command and the bodies that
-  change. It gives no state of a sketch, no measure and no check: row P15b adds them. To measure or check before the accept,
-  read the records of the bodies in the preview; to check a pair, check after the accept. The window shows the commands of a
-  proposal and not the preview (row R25). On a host with no backend for a fork the route gives HTTP 501 with
-  `E-API-NOT-SUPPORTED`; the desktop and `engine-api-http` make a fork.
+- **The preview checks only the changed pairs.** `GET /proposals/{id}/preview` checks each pair with a body that the commands
+  add, change or remove, and gives only the pairs whose state changes. A pair whose two bodies keep their solids is not
+  checked: a rename or a change of the visibility keeps the solid. `GetDistance` and `GetAngle` are not in the preview; ask
+  them after the accept. Each pair is one check with its own bound of work, so a large body gives `limit` for its pair and not
+  a refusal of the preview. The window shows the commands of a proposal and not the preview (row R25). On a host with no
+  backend for a fork the route gives HTTP 501 with `E-API-NOT-SUPPORTED`; the desktop and `engine-api-http` make a fork.
 - **A preview is not a promise.** The accept applies the commands to the Document as it is at the accept, not to the copy of
   the preview. A change of the Document between the preview and the accept can give another outcome, and so can a
   `commandId` that the session refused before: the fork knows only the identifiers of the log. Read the preview again just

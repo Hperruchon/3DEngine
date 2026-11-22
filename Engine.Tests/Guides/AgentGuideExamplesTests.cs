@@ -119,6 +119,13 @@ public sealed class AgentGuideExamplesTests
         Assert.Contains(steps, step => step.Block.Marker == "agent-refusal");
         // Row P15a (TASK-0456): the preview of a proposal is a step of the loop, before the person decides.
         Assert.True(requests.Any(line => line.StartsWith("GET /proposals/", StringComparison.Ordinal) && line.EndsWith("/preview", StringComparison.Ordinal)), $"{GuidePath} has no request of the preview of a proposal.");
+        // Row P15b (TASK-0459): the result of the preview shows the state of the solver, the measures and the checks.
+        var preview = steps.First(step => step.Block.Marker == "agent-request" && step.Block.Text.Split('\n')[0].StartsWith("GET /proposals/", StringComparison.Ordinal) && step.Block.Text.Split('\n')[0].EndsWith("/preview", StringComparison.Ordinal));
+        var shape = JsonDocument.Parse(preview.Result!.Text).RootElement;
+        foreach (var member in new[] { "sketches", "measures", "checks" })
+            Assert.True(shape.TryGetProperty(member, out _), $"{GuidePath}, line {preview.Result.Line}: the result of the preview has no member \"{member}\".");
+        Assert.NotEqual(0, shape.GetProperty("measures").GetArrayLength());
+        Assert.NotEqual(0, shape.GetProperty("checks").GetArrayLength());
         // Row K17 (TASK-0443): the connectors of a body are a step of the measure.
         foreach (var query in new[] { "GetBodyInfo", "GetDistance", "GetMassProperties", "GetConnectors", "CheckInterference", "GetViewLines" })
             Assert.Contains(steps, step => step.Block.Marker == "agent-request" && step.Block.Text.Contains($"\"name\": \"{query}\"", StringComparison.Ordinal));
