@@ -1,7 +1,7 @@
 ---
 id: 0449
 title: The medium and low findings of the third codebase review of 2026-11-21
-status: Active
+status: Done
 phase: P0.180
 opened: 2026-11-21
 depends-on: [0448]
@@ -86,7 +86,7 @@ Each finding has a correction and a test, or a register entry with its reason.
 
 - [x] Each finding has a test that fails before its correction, or a register entry.
 - [x] Each injection of a correction makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Decisions
 
@@ -111,7 +111,7 @@ Each finding has a correction and a test, or a register entry with its reason.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0180-review-findings) · v0.434
+Status: Done · commit (the merge of the branch p0180-review-findings) · v0.434
 
 ## Method
 
@@ -165,3 +165,4 @@ of the session. In the full local run (`dotnet test 3DEngine.sln`, 3190 tests) e
 
 - 2026-11-21: branch `p0180-review-findings` from `009e11f9` (K15d, TASK-0450, v0.433, not merged yet). Eleven findings and
   item 4; register entries R-0075 and R-0076; ledger entry v0.434.
+- 2026-11-22: run 44956991254 of `28dcc1c9` passed on each job. Closed at v0.434.
