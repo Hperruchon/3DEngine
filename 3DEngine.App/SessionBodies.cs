@@ -132,9 +132,10 @@ internal sealed class SessionBodies : IDisposable
         => _triangles.Select(body => new PickBody(body.Key, body.Value.Positions, body.Value.Indices, IsVisible(body.Key.ToString())));
 
     // ADR-0184 item 3 (phase R26, TASK-0447): each live body with a mesh, as the section view cuts it: the key of its mesh, a
-    // solid of the kernel or a mesh body, the origin of its entity and its triangles.
+    // solid of the kernel or a mesh body, the origin of its entity and its triangles. TASK-0449 (finding V231 of the third
+    // codebase review of 2026-11-21): the visible bodies only, because a hidden body is not drawn.
     public IReadOnlyList<SectionBody> SectionBodies
-        => [.. _live.Where(body => _triangles.ContainsKey(body.Id) && _entities.ContainsKey(body.Id.ToString())).Select(body => new SectionBody(
+        => [.. _live.Where(body => _triangles.ContainsKey(body.Id) && _entities.ContainsKey(body.Id.ToString()) && IsVisible(body.Id.ToString())).Select(body => new SectionBody(
             body.Id, _geometry.GetValueOrDefault(body.Id), body.Kind != Engine.Core.Commands.ImportStlCommandHandler.MeshKind,
             _entities[body.Id.ToString()].Origin, _triangles[body.Id].Positions, _triangles[body.Id].Indices))];
 

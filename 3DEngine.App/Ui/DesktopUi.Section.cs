@@ -40,11 +40,21 @@ internal sealed unsafe partial class DesktopUi
     // ADR-0184 item 2: the box of the visible bodies, which the host gives before each frame, for the offset of a new section.
     internal ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? SectionBox { get; set; }
 
-    // ADR-0184 item 2: the named datums of the document with no fault, which the host gives while a section lasts.
+    // ADR-0184 item 2: the named datums of the document with no fault, which the host gives while a section lasts. TASK-0449
+    // (finding V232 of the third codebase review of 2026-11-21): a section on a datum takes the plane of the same datum, by its
+    // identity, so a move, a rename or an undo of the datum moves the section; it keeps its offset and its flip. A datum that is
+    // gone gives the plane of a new section, XZ, with the flip.
     internal void ShowSectionDatums(IReadOnlyList<SectionPlane> datums)
     {
         ArgumentNullException.ThrowIfNull(datums);
         _sectionDatums = datums;
+        if (_section is not { Plane.Datum: { } datum } shown)
+            return;
+        var now = datums.FirstOrDefault(plane => plane.Datum == datum);
+        if (now is null)
+            _section = new SectionState(DefaultSectionPlane, DefaultOffset(DefaultSectionPlane), shown.Flip);
+        else if (now != shown.Plane)
+            _section = shown with { Plane = now };
     }
 
     // ADR-0184 item 2: the planes that "Plane" goes through, in order: the origin planes, then each named datum.

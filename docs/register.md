@@ -481,6 +481,35 @@ time stood for, and it needs a change of `Engine.Kernel`, which the write set of
 Exit: a task of the kernel gives the count of the exact signs of a cut in a form that a test reads, and the test of the cut
 holds that count below a bound; or the owner accepts the hang limit as the only guard.
 
+### R-0075 · The HTTP surface has no query that lists the sheets, and none that gives the live bodies with their names
+- class: question
+- opened: 2026-11-21
+- due: 2027-02-19
+- extended: no
+- refs: `docs/guides/agent-loop.md` section 12, `docs/CURRENT-STATE.md` entry v0.422,
+  `docs/reviews/2026-11-21-c-codebase-review.md` (T190), TASK-0439, TASK-0449
+Row P17 (TASK-0439) found two gaps when it wrote the guide for an agent. No query and no field of the snapshot gives the sheets
+of the Document, so an agent learns a sheet only from the event `sheet.created` while it listens. No query gives the live bodies
+with their names: the snapshot of `/events` gives them, and `GetFeatures` gives the identifiers with no name. Each new query is a
+new shape of `Engine.Contracts`, so it needs an ADR and the owner.
+Exit: the owner says whether to add the two queries; a task adds them with an ADR and the examples of the guide, or the owner
+accepts the snapshot and `sheet.created` as the only sources.
+
+### R-0076 · On a landscape phone of 640 by 360 the first segment of a ring of six goes under the windows of the top left
+- class: question
+- opened: 2026-11-21
+- due: 2027-02-19
+- extended: no
+- refs: `3DEngine.App/Ui/DesktopUi.Ring.cs` (`Layout`), `3DEngine.ImageTests/ResponsiveLayoutTests.cs` (state `SixSegments`),
+  ADR-0113 item 5, ADR-0119 item 2, ADR-0184 "Bad", `docs/reviews/2026-11-21-c-codebase-review.md` (T189), TASK-0449
+TASK-0449 added the ring of the part with six segments (New, Sketch, Bodies, Section, Images and Show hidden) to the layout test,
+as finding T189 asks. At 640 by 360 pixels the inner radius is at its floor of 100, each segment keeps 46 pixels at that
+radius (ADR-0119 item 2), so six segments span more than `RingSpan`, the span of four, and "New" goes under the windows of the top left (the test
+measured its label at (352, 60, 397, 86) under the window (16, 56, 376, 114)). Each other size of the test holds the six
+segments. The test leaves out only that fault of that size, with this identifier.
+Exit: the owner says which rule gives way at 640 by 360 (the floor of the inner radius, the width of a segment, the place of the
+ring, or the windows of the top left), and a task removes the exception from `ResponsiveLayoutTests`.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.

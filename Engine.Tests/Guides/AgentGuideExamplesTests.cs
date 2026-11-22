@@ -34,6 +34,7 @@ public sealed class AgentGuideExamplesTests
     private const string GuidePath = "docs/guides/agent-loop.md";
 
     private static readonly Regex Fence = new(@"^```(.*)$", RegexOptions.Compiled);
+    private static readonly Regex OtherFence = new(@"^(\s+```|\s*~~~)", RegexOptions.Compiled);
     private static readonly Regex WholePlaceholder = new("^<([^<>\"]+)>$", RegexOptions.Compiled);
     private static readonly Regex QuotedPlaceholder = new("\"<([^<>\"]+)>\"", RegexOptions.Compiled);
     private static readonly Regex Placeholder = new("<([^<>\"]+)>", RegexOptions.Compiled);
@@ -52,6 +53,9 @@ public sealed class AgentGuideExamplesTests
         var lines = markdown.Split('\n');
         for (var i = 0; i < lines.Length; i++)
         {
+            // TASK-0449 (finding T190): Markdown shows an indented fence and a fence of tildes as a block too, so the test
+            // refuses them and does not skip a block that it does not send.
+            Assert.False(OtherFence.IsMatch(lines[i]), $"{GuidePath}, line {i + 1}: the fence is indented or of tildes. Each fenced block of the guide starts with three backticks at the start of a line, so the test reads it.");
             var open = Fence.Match(lines[i]);
             if (!open.Success)
                 continue;
@@ -116,6 +120,18 @@ public sealed class AgentGuideExamplesTests
         // Row K17 (TASK-0443): the connectors of a body are a step of the measure.
         foreach (var query in new[] { "GetBodyInfo", "GetDistance", "GetMassProperties", "GetConnectors", "CheckInterference", "GetViewLines" })
             Assert.Contains(steps, step => step.Block.Marker == "agent-request" && step.Block.Text.Contains($"\"name\": \"{query}\"", StringComparison.Ordinal));
+    }
+
+    // TASK-0449 (finding T190 of the third codebase review of 2026-11-21): the test reads a fence of three backticks at the
+    // start of a line only. An indented fence or a fence of tildes is a block that Markdown shows and the test would not send,
+    // so the read of the guide fails on it.
+    [Theory]
+    [InlineData("Text.\n\n  ```http agent-request\n  GET /document\n  ```\n")]
+    [InlineData("Text.\n\n~~~http agent-request\nGET /document\n~~~\n")]
+    public void A_Fence_That_The_Test_Does_Not_Read_Fails_The_Read_Of_The_Guide(string markdown)
+    {
+        var error = Assert.ThrowsAny<Exception>(() => Blocks(markdown));
+        Assert.Contains("line 3", error.Message, StringComparison.Ordinal);
     }
 
     [Fact]

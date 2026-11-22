@@ -10,7 +10,9 @@ namespace Engine.Core.Queries;
 // point, with ρ the distance to the axis and z the height along the axis from the base; a cylinder has R1 = R0 and a cone
 // R1 = 0. The distance from a point to the side is the distance from its (ρ, z) to the profile. Each step that decides a
 // case uses + - * / and comparisons on exact rationals, except the decisions of a sphere (item 16), which compare doubles;
-// the values then leave as doubles from + - * / and sqrt. A piece with no closed form gives null, and the caller refuses
+// the values then leave as doubles from + - * / and sqrt. TASK-0449 (finding E238 of the third codebase review of
+// 2026-11-21): the choice of the nearest of several candidates (Better) also compares their distances as doubles, so two
+// candidates within the rounding of a double can give either pair of points at that distance. A piece with no closed form gives null, and the caller refuses
 // the case with E-MEASURE-CURVED when that piece can be nearer than the best one. Items 21 and 22 (phase K15d, TASK-0450):
 // a part of the side of a hole is a frustum from R0 to R1; two sides on one axis and two cylinders whose axes are not
 // parallel decide their case with exact comparisons, and give the values with one root and + - * / in doubles.

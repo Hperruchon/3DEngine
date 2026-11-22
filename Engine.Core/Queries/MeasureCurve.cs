@@ -21,7 +21,8 @@ internal static class MeasureCurve
     // the part of the turn of the side of an arc, and null for a whole turn. Item 21 (phase K15d, TASK-0450): a part of the
     // side of a hole or of a tube (CutMass.Sides) is the side of a cylinder or of a frustum: Top is the radius at Base + Axis
     // of a frustum, below Radius, and null for a whole cylinder or cone; Inward is true for the side of a hole, whose outward
-    // normals point to the axis. OnFacets is then a point of the curve in doubles.
+    // normals point to the axis. OnFacets is then a point of the curve in doubles. TASK-0449 (finding E235): Inward is also
+    // true for the side of an arc that bites into the profile, whose material is outside the circle.
     internal sealed record Surface(SideCurveKind Kind, Vector3R Base, Vector3R Axis, Rational Radius, Vector3R OnFacets, Sector? Arc = null, Rational? Top = null, bool Inward = false);
 
     // Item 17: the arc of a side, from the direction Start counter-clockwise about Normal to the direction End, each across
@@ -173,8 +174,20 @@ internal static class MeasureCurve
 
         if (!KernelProjection.Curves(document, body).TryGetValue(tag, out var curve))
             return (null, "it has no curve of the design");
-        var onFacets = solid.Polygons.First(polygon => polygon.Tag == tag).Vertices[0];
-        return (new Surface(curve.Kind, curve.Base, curve.Axis, curve.Radius, onFacets, sector), null);
+        var facet = solid.Polygons.First(polygon => polygon.Tag == tag);
+        var onFacets = facet.Vertices[0];
+        return (new Surface(curve.Kind, curve.Base, curve.Axis, curve.Radius, onFacets, sector, Inward: sector is not null && Bites(facet, curve.Base, curve.Axis)), null);
+    }
+
+    // TASK-0449 (finding E235 of the third codebase review of 2026-11-21): the side of the material at an arc. A facet of the
+    // side is a chord of the arc, and its outward normal points away from the axis when the material is on the side of the
+    // centre (a bulge), and to the axis when the arc bites into the profile. The sign of the outward normal against the part
+    // across the axis of a vertex of the facet is exact: about r cos(δ / 2) for a chord of the angle δ, never near zero.
+    private static bool Bites(KernelPolygon facet, Vector3R origin, Vector3R axis)
+    {
+        var w = facet.Vertices[0] - origin;
+        var radial = w - (axis * (axis.Dot(w) / axis.Dot(axis)));
+        return facet.Plane.Normal.Dot(radial).Sign < 0;
     }
 
     // Item 17: the sector of the arc of the sketch of an extrude, on the exact frame of the kernel, moved and turned with

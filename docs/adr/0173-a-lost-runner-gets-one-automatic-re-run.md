@@ -16,6 +16,7 @@ affects:
   - Engine.Tests/Pipeline/**
   - Engine.Tests/Http/EngineHostSubscriptionTests.cs
   - Engine.Tests/Http/HttpConcurrencyTests.cs
+  - Engine.Tests/Http/HostGuardTests.cs
 enforced-by: Engine.Tests/Pipeline/LostRunnerTests.cs
 ---
 
@@ -73,6 +74,11 @@ a red run with no fault of the code stops the work until the owner sees it.
    a stop removes the limit that hid the fault: in `DesktopSurfaceTests` the host of the subscriber has no stop limit, and the
    host of the partial request keeps the limit of the surface. A test with another real assertion drops its limit: the cut of
    a plate by a sphere in `CreateSphereAndTorusCommandTests`; a count of the work of the kernel waits for R-0073.
+   TASK-0449 (phase P0.180): `HostGuardTests` waited 30 seconds from the start of a host process for its exit or its
+   address, and on 2026-11-21 one to three of these tests failed at that limit in each full local run. A host process now
+   makes progress while it writes a line or uses processor time, and it fails its test only when it does neither for 60
+   seconds. A test that protects a refusal at the start fails at once when the host listens before it exits, an order and not
+   a time. The read of a file that a killed host still holds tries for 60 seconds.
 
 ## Consequences
 
@@ -91,7 +97,8 @@ a red run with no fault of the code stops the work until the owner sees it.
   count of the lines of the tests that it leaves out, and the report of the runtime, with a cut of 1200 characters for each
   cause; it gives no output of a test (run 44908442870). A crash with no running test in a sequence file or a .trx file says
   "No sequence file: the crashed test is not known." or "No sequence file names a running test: the crashed test is not
-  known."
+  known." Since TASK-0449 (finding T191) each running test comes first in the list of the failures, so with ten failures or
+  more its message keeps an annotation and does not go into "N more" as a bare name.
 - A test that runs longer than the hang limit of 2 minutes of the step "Test" stops the test host, and the test platform
   reports "Test host process crashed" with no dump. Since TASK-0441 the message says "A test ran longer than the hang limit
   of 2 minutes, so the test platform stopped the test host: a hang, not a crash." from the message of the blame data
@@ -123,3 +130,6 @@ a red run with no fault of the code stops the work until the owner sees it.
   output of other tests, and a crash with no known running test says so (phase P0.175, run 44908442870).
 - 2026-11-21 · TASK-0441 · Consequences: a stop at the hang limit names the limit and not a crash, and the test of the resize
   of `ResponsiveLayoutTests` is one test for each state, below a count of layouts (phase P0.176).
+- 2026-11-21 · TASK-0449 · Item 4 and "affects": the limits of `HostGuardTests` become no progress for 60 seconds and the
+  order of the address and the exit; and in "Consequences", the running test of a stop is the first failure of the report,
+  so with ten failures or more it keeps its annotation (finding T191 of the third codebase review of 2026-11-21, phase P0.180).

@@ -10,6 +10,7 @@ amends: ['0109']
 amended-by: []
 affects:
   - 3DEngine.App/SessionBodies.cs
+  - 3DEngine.App/SectionView.cs
   - 3DEngine.Vulkan/EdgeLines.cs
   - 3DEngine.ImageTests/BodyEdgesImageTests.cs
 enforced-by: 3DEngine.ImageTests/BodyEdgesImageTests.cs
@@ -73,3 +74,6 @@ spends that time and draws no line. The time of the upload in the window and on 
 - 2026-11-11 · TASK-0345 · The record, from finding V167 of the codebase review of 2026-11-11 and the judgement of the
   session.
 - 2026-11-11 · TASK-0345 · Shipped at v0.332.
+- 2026-11-21 · TASK-0449 · "affects": `3DEngine.App/SectionView.cs`. The cut of a section view finds the edge lines of its
+  kept part in the task of the cut, off the thread of the frame, for each count of triangles (finding V229 of the third
+  codebase review of 2026-11-21, ADR-0184 item 5).

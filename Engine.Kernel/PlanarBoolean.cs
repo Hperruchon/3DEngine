@@ -72,7 +72,9 @@ public static class PlanarBoolean
     // it, and goes when it looks the other way. The cap is the region of the plane that the edges of the kept parts on the
     // plane bound: each piece has the tag cap and looks along the normal. Null when no material stays, as for an empty
     // subtract. The result is the subtract of a box that holds the half space in front of the plane, with the cap in fewer
-    // pieces and no partition of the solid, so the work grows with the count of the polygons and not with its square.
+    // pieces and no partition of the solid. TASK-0449 (finding E238 of the third codebase review of 2026-11-21): the split of
+    // the polygons grows with their count, but the tree of the walls of the cap costs about the square of the count of the
+    // edges of the cap, as ADR-0057 item 10 says. The review counted 6,252 of the 10,220 splits of a sphere in the cap.
     public static KernelSolid? Cut(KernelSolid solid, Vector3R point, Vector3R normal, FaceTag cap)
     {
         ArgumentNullException.ThrowIfNull(solid);

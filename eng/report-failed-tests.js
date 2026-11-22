@@ -216,19 +216,23 @@ const dumpText = dumps.length > 0 ? ` Dumps of the crash: ${dumps.join(", ")}.` 
 const causeText = " Cause: " + (causes.length > 0 ? causes.join(" ") : "no reason was written.");
 // The tests that were running when the test host stopped: first from the sequence files, then from the .trx files.
 const running = [...new Set([...sequences.flatMap(incompleteTests), ...files.flatMap(runningInTrx)])];
-const failures = files.flatMap(failedTests);
+const failed = files.flatMap(failedTests);
+// TASK-0449 (finding T191 of the third codebase review of 2026-11-21): each running test of a stop comes first in the list,
+// so that with ten failures or more its message has an annotation and does not go into "N more" as a bare name.
+const stopped = [];
 for (const name of running) {
-  if (failures.some(f => f.name === name)) continue;
+  if (failed.some(f => f.name === name)) continue;
   // TASK-0440: the name comes first, so that no cut of the message hides it (run 44908442870 named no test in its message).
   const others = running.filter(other => other !== name);
   const otherText = others.length === 0 ? "" :
     ` The same run also stopped: ${others.slice(0, 3).join(", ")}${others.length > 3 ? ` and ${others.length - 3} more` : ""}.`;
-  failures.push({
+  stopped.push({
     name,
     message: `${name}: the test did not complete, because the test host stopped while it ran.` + hangText + otherText + dumpText + causeText,
     stack: "",
   });
 }
+const failures = [...stopped, ...failed];
 
 // TASK-0440: a crash with no running test says that the crashed test is not known.
 const unknownText = sequences.length === 0

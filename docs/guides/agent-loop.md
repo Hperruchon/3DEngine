@@ -6,8 +6,8 @@ This guide is for an agent that works on the Document of a person through the HT
 steps, the exact request of each step, the shape of each answer, the refusals and the limits. Row P17 (TASK-0439) wrote it,
 and ADR-0157 item 13 asks for it. The guide covers the HTTP surface only; the command line comes later.
 
-A test keeps the guide true. `Engine.Tests/Guides/AgentGuideExamplesTests.cs` reads this file, sends each example request
-to a host in the order of the guide, and compares each answer with the shape under it. When a request of the guide is
+A test keeps the guide true. `Engine.Tests/Guides/AgentGuideExamplesTests.cs` reads this file and sends each example
+request to a host in the order of the guide. It compares each answer with the shape under it. When a request of the guide is
 refused, or an answer does not have its shape, the test fails.
 
 ## 1 The rules
@@ -40,10 +40,10 @@ same order, with other items between them. An empty array of the shape needs an 
 gives the start of an answer that is not JSON.
 
 A text between `<` and `>` is a placeholder. The first time that a placeholder occurs in an answer, it takes the value of
-the answer at that place; after that, each answer must give the same value. A placeholder in a request is that value. A
+the answer at that place. After that, each answer must give the same value. A placeholder in a request is that value. A
 placeholder that no earlier answer gave is a new UUID that you make. For example `<Bas>` is the identifier of the body
 "Bas"; your identifiers are different. A placeholder that is the whole JSON string `"<version>"` stands for the value of
-the answer with its type, so in your request the version is a number with no quotes.
+the answer with its type. So in your request the version is a number with no quotes.
 
 A block `http agent-refusal` is a request that the host refuses, and its `json agent-result` gives the code. A block
 `text agent-person` is an action of the person in the window, not a request.
@@ -93,8 +93,8 @@ GET /document
 { "lengthUnit": "mm", "version": "<version>" }
 ```
 
-Then open the WebSocket `GET /events` and send `{}` as the first frame. The first message is a snapshot of the Document:
-each live body with its identifier `handle`, its kind and its name, in the order of the Document. After the snapshot, the
+Then open the WebSocket `GET /events` and send `{}` as the first frame. The first message is a snapshot of the Document. It
+gives each live body in the order of the Document, with its identifier `handle`, its kind and its name. After the snapshot, the
 stream gives each event of each applied command, for example `body.created`. To continue after a break, send
 `{ "documentId": "<document>", "lastSeenSeq": n }` with the last `seq` that you read. When the host cannot continue the
 stream from that event, it sends a new snapshot.
@@ -185,8 +185,8 @@ Content-Type: application/json
 So "Bas" is 1164 by 394 by 18 mm, with its centre at x = 300 and y = -3. The new shelf gets the same size, with its centre
 at (300, -3, 1000). `GetAngle` gives the cosine and the sine between two plane faces, when you need an angle.
 
-`GetConnectors` gives the places on a body that a later step can name: each named datum of the body, and one entry for
-each face, with the name that `GetFaces` gives. A plane face gives `point`, the centre of its area, and `direction`, its
+`GetConnectors` gives the places on a body that a later step can name. It gives each named datum of the body, and one
+entry for each face with the name that `GetFaces` gives. A plane face gives `point`, the centre of its area, and `direction`, its
 outward unit normal. The whole side of a cylinder gives a point of its axis, the direction of the axis, and `radius`.
 Another curved face gives its `kind` only. "Bas" has no datum, and its top face `+z` is at z = 618:
 
@@ -355,8 +355,8 @@ sides and the back, and it is 373 mm from each other shelf. No pair is a fault.
 }
 ```
 
-A pair with `fault` true, or a gap that is not the gap of your plan, starts the loop again: read, measure, and propose a
-correction. To remove an accepted change, propose the opposite change; the person can also undo it in the window.
+A pair with `fault` true starts the loop again: read, measure, and propose a correction. A gap that is not the gap of
+your plan does the same. To remove an accepted change, propose the opposite change; the person can also undo it in the window.
 
 ## 10 The picture
 
@@ -483,35 +483,43 @@ DELETE /proposals/<proposal>
 
 - **No preview.** The window shows the commands of a proposal, not their result. A check before the accept is not possible;
   check after the accept. Row P15 adds a preview on a fork of the Document.
-- **Curved faces.** `GetDistance` measures a face of a cylinder, a cone, a sphere or an arc whose body has only `Translate`
-  and `Rotate` after its command, and the side of a hole or of a tube that a `Subtract` of a cylinder, a cone or an extrude
-  of one circle made, when the faces of the body near the hole are across its axis or far from it. It refuses with
-  `E-MEASURE-CURVED` a body with a curved face as a side, an edge of a curved face, a torus, a slanted face or edge near the
-  side of a cone or near a rim, the side of a notch or of a hole at an angle, the side of an arc whose nearest point of the
-  whole turn is not on the arc, a cone and another side on another axis, and two cylinders that are not parallel when their
-  common perpendicular is past an end or when they cross. Measure from a plane face or an edge of the other body in place of
-  a body. `GetAngle` gives the angle of the axes for two curved faces, from 0 to 90 degrees, and the angle of the side of a
-  hole from its outward normals, which point to the axis; it refuses a sphere and a torus. `GetMassProperties` does not
-  refuse: a plate with holes, a counterbore, a countersink and a tube give the volume of their curve, and a body with no
-  closed form, as a hole at an angle or a notch, gives `facets` true. No query names a vertex, so no measure starts at a
-  vertex (ADR-0180 item 23, row K15d).
+- **Curved faces.** `GetDistance` measures a face of a cylinder, a cone, a sphere or an arc. The body of that face has only
+  `Translate` and `Rotate` after its command. It also measures the side of a hole or of a tube that a `Subtract` made. The
+  tool of that `Subtract` is a cylinder, a cone or an extrude of one circle. The faces of the body near the hole are across
+  its axis or far from it. `GetDistance` refuses some cases with `E-MEASURE-CURVED`:
+  - a body with a curved face as a side, an edge of a curved face, and a torus;
+  - a slanted face or edge near the side of a cone or near a rim;
+  - the side of a notch or of a hole at an angle;
+  - the side of an arc whose nearest point of the whole turn is not on the arc;
+  - a cone and another side on another axis;
+  - two cylinders that are not parallel, when their common perpendicular is past an end or when they cross.
+
+  Measure from a plane face or an edge of the other body in place of a body. For two curved faces, `GetAngle` gives the
+  angle of their axes, from 0 to 90 degrees. It gives the angle of the side of a hole from its outward normals, which point
+  to the axis. The side of an arc that bites into the profile has outward normals that point to the axis too. `GetAngle`
+  refuses a sphere and a torus. `GetMassProperties` does not refuse. A plate with holes, a counterbore, a countersink and a
+  tube give the volume of their curve. A body with no closed form, as a hole at an angle or a notch, gives `facets` true.
+  No query names a vertex, so no measure starts at a vertex (ADR-0180 item 23, row K15d).
 - **The cost of a check.** `CheckInterference` holds the session for its whole work, and each command waits for it. The
   work is the sum, over each pair, of the product of the counts of the facets of the two bodies. Above 100,000 the check is
-  refused with `E-CHECK-WORK-LIMIT` before its first pair: the 19 boxes of the bookcase need 6,156, a sphere and a plate
-  23,808, and two spheres 15,745,024. Below the limit a check can still hold the session for some seconds, and a cancel
-  stops it inside a pair (ADR-0182 item 8). Check the bodies near your change, not each body.
-- **Curved and mesh bodies in a check.** A body with a curved face, or a body of an STL file, is checked on its facets or its
-  triangles, with `meshOnly` true. A closed mesh with two shells that share a volume is refused with `E-MESH-UNSUPPORTED`
-  (ADR-0182 item 7).
-- **Connectors.** `GetConnectors` gives the axis of the side of a cylinder only when the body has no step after the
-  cylinder or the extrude of a circle other than `Translate` and `Rotate`. The side of a hole that a `Subtract` made is
-  `Curved`, with no axis. A datum keeps the frame of the place where it was made: a later `Translate` or `Rotate` of its
+  refused with `E-CHECK-WORK-LIMIT` before its first pair. The 19 boxes of the bookcase need 6,156, a sphere and a plate
+  23,808, and two spheres 15,745,024. The count of the triangles of an STL file comes before its solid, so a large file is
+  refused before that work. Below the limit a check can still hold the session for some seconds. A cancel stops it inside
+  a pair (ADR-0182 item 8). Check the bodies near your change, not each body.
+- **Curved and mesh bodies in a check.** A body with a curved face is checked on its facets, with `meshOnly` true. A body
+  of an STL file is checked on its triangles, with `meshOnly` true. A closed mesh is refused with `E-MESH-UNSUPPORTED`
+  when two of its shells share a volume outside its voids (ADR-0182 item 7).
+- **Connectors.** `GetConnectors` gives the axis of the side of a cylinder or of an extrude of a circle. The body must have
+  no step after that command other than `Translate` and `Rotate`. The side of a hole that a `Subtract` made is
+  `Curved`, with no axis. A datum keeps the frame of the place where it was made. A later `Translate` or `Rotate` of its
   body does not move it, so compare its frame with the face of its `reference` (ADR-0183 item 3).
 - **No list of the sheets.** No query and no field of the snapshot gives the sheets of the Document. The event
-  `sheet.created` gives the identifier of a new sheet while you listen; for an earlier sheet, ask the person.
+  `sheet.created` gives the identifier of a new sheet while you listen; for an earlier sheet, ask the person. Register
+  entry R-0075 holds this gap.
 - **No list of the bodies by a query.** The snapshot of `/events` gives each live body with its name. `GetFeatures` gives
-  the identifiers but not the names; then `GetBodyInfo` gives one name for each request.
+  the identifiers but not the names; then `GetBodyInfo` gives one name for each request. Register entry R-0075 holds this
+  gap.
 - **No person on `engine-api-http`.** That program has no window, so its proposals stay open.
 - **No phone.** The phone has no HTTP surface, so it shows no proposal.
-- **No author in the log.** An accepted command is a command of the person in the log; the log does not record that an agent
-  proposed it.
+- **No author in the log.** An accepted command is a command of the person in the log. The log does not record that an
+  agent proposed it.
