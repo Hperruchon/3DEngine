@@ -13771,3 +13771,39 @@ New tests: 10. The test list holds 3231 (1881 in `Engine.Tests`, 390 in `3DEngin
 3 in `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 1, `E-API-PREVIEW-FAILED`;
 `E-API-NOT-SUPPORTED`, `E-API-PROPOSAL-NOT-FOUND` and `E-API-PROPOSAL-COMMAND-KNOWN` get one more place. Since the review of
 v0.431, 2 product milestones and 9 entries followed it.
+
+## v0.441 — The tests that fill or count the kept booleans run alone (P0.186, TASK-0457)
+
+The owner answered "Yes, both" on 2026-11-22 to "Re-run 45021528072 and fix the test race as P0.186 after P15a?". The branch
+`p0186-kept-boolean-tests` starts from `486d4bfc` (P15a, TASK-0456, v0.440, not merged yet).
+
+**The cause.** The run 45021528072 on `main`, the merge of P0.184 at `58ea382`, failed on Windows:
+`A_Sphere_Cuts_A_Hole_Of_One_Name` counted two booleans at line 180, not one. P0.184 keeps the result of each boolean step in
+one static store of the process, at most 256 results, and the result of the oldest use goes first (ADR-0059 item 2). xUnit runs
+the test classes in parallel, and two tests of `KeptBooleanTests` add more results than the limit (264 steps, and 512 keys in
+16,384 calls). When they run between the command `Subtract` of the sphere test and its query of the faces, the kept result of
+the cut leaves, and the query makes the boolean again. The product is correct: the new result has the same content. A new test
+makes the race on purpose and shows the count 2 and the same exact solid. Six runs of the two classes beside each other before
+the change gave no failure, so the run on `main` is the only observed failure.
+
+**The change.**
+- The collection "kept booleans" with parallel runs off (`Engine.Tests/Features/KeptBooleanCollection.cs`), in the form of the
+  collection "real host". `KeptBooleanTests` and `CreateSphereAndTorusCommandTests` are in it. A probe, removed, showed that
+  xUnit 2.9.3 runs such a collection after the parallel collections and alone.
+- `KeptBooleanCollectionGateTests` holds the rule: each class of `Engine.Tests` whose code names `BooleansOnThisThread`,
+  `BooleansKept`, `IsBooleanKept` or `BooleanLimit` carries the attribute, and the collection has parallel runs off. It is a
+  gate file, so `eng/repo-gates` runs it too.
+- No change of `Engine.Core`, `Engine.Kernel` or the limit.
+
+**Proof.** A script (`inject.js` in `%TEMP%\p0186`) applied five injections, each restored byte for byte (sha256): no attribute
+on each of the two classes, the collection "real host" in place of "kept booleans", the collection with parallel runs on, and
+the collection under another name. Each made a named test of the gate fail; the table is in TASK-0457. Four full runs of
+`Engine.Tests` in turn took 83.8 s and 86.7 s before the change and 87.4 s and 86.6 s after it: the two classes take about 9 s
+alone at the end, and beside the other tests they took longer. Also, the gate table of `docs/templates.md` has a row for the new
+gate (`DocumentPathGateTests`). A clean build gives 0 warnings,
+`dotnet test` passes 3241 tests, and the write-set check and `eng/repo-gates` pass. The run on the branch is not done yet.
+The failed runs since the entry v0.440, from the API: none; the entry v0.440 names run 45021528072, and its attempt 2 passed.
+
+New tests: 10 (the race test, two facts and seven rows of the gate). The test list holds 3241 (1891 in `Engine.Tests`, 390 in
+`3DEngine.Tests`, 957 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0.
+Since the review of v0.431, 2 product milestones and 10 entries followed it.

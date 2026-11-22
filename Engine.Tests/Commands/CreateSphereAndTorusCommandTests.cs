@@ -14,6 +14,9 @@ namespace Engine.Tests.Commands;
 
 // The sphere and the torus are closed meshes that the engine makes (ADR-0089 item 5, phase K5d, TASK-0289). The refusals,
 // the record of the inputs, the meshes from the unit 64-gon of ADR-0040, the face surface, and a cut of a plate.
+// TASK-0457 (phase P0.186): the cut of a plate counts the booleans of the kernel, so the class runs in the collection "kept
+// booleans", alone (Engine.Tests/Features/KeptBooleanCollection.cs).
+[Collection("kept booleans")]
 public sealed class CreateSphereAndTorusCommandTests
 {
     private static async Task<CommandResult> Applied(DocumentSession session, Command command)
