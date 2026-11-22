@@ -1,7 +1,7 @@
 ---
 id: 0453
 title: On the sheet page the amber value of a source that the same proposal changes is the proposed number
-status: Active
+status: Done
 phase: P0.183
 opened: 2026-11-22
 depends-on: [0452]
@@ -77,7 +77,7 @@ On the sheet page the amber value of a proposed dimension shows the proposed num
 - [x] An injection in each part makes a named test fail.
 - [x] ADR-0177 item 2 states the rule, with a History line.
 - [x] R-0071 is closed with the exit "resolved".
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Decisions
 
@@ -102,7 +102,7 @@ On the sheet page the amber value of a proposed dimension shows the proposed num
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0183-amber-proposed-value) · v0.437
+Status: Done · commit (the merge of the branch p0183-amber-proposed-value) · v0.437
 
 ## Method
 
@@ -151,3 +151,4 @@ The last form passes. No test runs the frame of `NativeThreeDEngine`, so the one
 - 2026-11-22: branch `p0183-amber-proposed-value` from `be1c82d0` (P0.182, TASK-0452, v0.436, not merged yet). Five new tests
   in `ProposedSheetTests`, the changes of a card in `ProposedSheet`, the amendment of ADR-0177 item 2, the close of R-0071, the
   roadmap rows P0.183 and the ledger entry v0.437.
+- 2026-11-22: run undefined:1 of `0f84f26d` passed on each job. Closed at v0.437.
