@@ -185,6 +185,12 @@ public static class TaskFiles
     // with it, and not its time.
     public static int PatternsBuiltOnThisThread => built;
 
+    // The number of patterns that the cache keeps. The cache never removes a pattern, so a
+    // thread that builds an expression for a pattern adds one to this number before its call
+    // returns. A test bounds the expressions of a thread by the growth of this number, and
+    // reads no file for the bound (TASK-0455).
+    public static int PatternsKept => Patterns.Count;
+
     // A path pattern, in the form that docs/templates.md uses. Two stars match
     // each character. One star matches each character except the separator.
     public static Regex PathPattern(string pattern) => Patterns.GetOrAdd(pattern, Build);
