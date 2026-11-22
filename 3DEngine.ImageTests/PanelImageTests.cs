@@ -66,7 +66,6 @@ public class PanelImageTests
         // The panel lies inside the picture, so that each count below reads it.
         Assert.True(panel.Z <= Width && panel.W <= Height, $"The panel {panel} is not inside the picture {Width} x {Height}.");
 
-        var clear = SceneRenderer.Background;
         int ground = 0, bright = 0, inside = 0;
         for (var row = (int)panel.Y + 8; row < (int)panel.W - 8; row++)
         {
@@ -74,7 +73,7 @@ public class PanelImageTests
             {
                 var (r, g, b) = Pixel(pixels, column, row);
                 inside++;
-                if (Math.Abs(r - clear.R * 255) < 2 && Math.Abs(g - clear.G * 255) < 2 && Math.Abs(b - clear.B * 255) < 2)
+                if (GroundPixels.IsGround(pixels, column, row, (int)Width, (int)Height, 1))
                     ground++;
                 if (r > 180 && g > 180 && b > 180)
                     bright++;
@@ -89,8 +88,8 @@ public class PanelImageTests
         {
             var (r, g, b) = Pixel(pixels, column, row);
             Assert.True(
-                Math.Abs(r - clear.R * 255) < 2 && Math.Abs(g - clear.G * 255) < 2 && Math.Abs(b - clear.B * 255) < 2,
-                $"The picture {picture}: the pixel ({column}, {row}) outside the panel is ({r}, {g}, {b}), not the colour of the clear.");
+                GroundPixels.IsGround(pixels, column, row, (int)Width, (int)Height, 1),
+                $"The picture {picture}: the pixel ({column}, {row}) outside the panel is ({r}, {g}, {b}), not the ground.");
         }
     }
 
@@ -217,7 +216,6 @@ public class PanelImageTests
             $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages.");
         Assert.True(menu.W > panel.W + 20f, $"The menu {menu} does not reach under the folded structure view {panel}.");
 
-        var clear = SceneRenderer.Background;
         int ground = 0, inside = 0;
         for (var row = (int)panel.W + 4; row < (int)menu.W - 4; row++)
         {
@@ -225,7 +223,7 @@ public class PanelImageTests
             {
                 var (r, g, b) = Pixel(pixels, column, row);
                 inside++;
-                if (Math.Abs(r - clear.R * 255) < 2 && Math.Abs(g - clear.G * 255) < 2 && Math.Abs(b - clear.B * 255) < 2)
+                if (GroundPixels.IsGround(pixels, column, row, (int)Width, (int)Height, 1))
                     ground++;
             }
         }

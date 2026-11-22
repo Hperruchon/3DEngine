@@ -65,6 +65,9 @@ internal sealed unsafe class SceneRenderer : IDisposable
     // ADR-0184 items 3 and 4: the section view, for a test.
     internal SectionView SectionMeshes => _section;
 
+    // ADR-0186 item 2 (phase R18p, TASK-0458): the ground with the soft light of the render, the first draw after the clear.
+    private readonly GroundPipeline _ground;
+
     public SceneRenderer(GraphicsDevice device, VkRenderPass renderPass, ISessionHost host)
     {
         _device = device;
@@ -78,6 +81,7 @@ internal sealed unsafe class SceneRenderer : IDisposable
         _edges = new EdgePipeline(device, renderPass, hidden: false);
         _hiddenEdges = new EdgePipeline(device, renderPass, hidden: true);
         _images = new ImageRenderer(device, renderPass);
+        _ground = new GroundPipeline(device, renderPass);
         _bodies = new SessionBodies(host);
     }
 
@@ -221,6 +225,9 @@ internal sealed unsafe class SceneRenderer : IDisposable
         };
 
         _device.DeviceApi.vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VkSubpassContents.Inline);
+
+        // ADR-0186 item 2: the ground first, so each draw below lies over its light. Until TASK-0458 the clear was the ground.
+        _ground.Execute(commandBuffer, extent, Ui.Theme.GroundVector(Ui.Theme.GroundMiddle), Ui.Theme.GroundVector(Ui.Theme.GroundCorner));
         var projection = camera.Projection((float)extent.width / extent.height);
         _selected.Clear();
         _others.Clear();
@@ -289,5 +296,6 @@ internal sealed unsafe class SceneRenderer : IDisposable
         _edges.Dispose();
         _hiddenEdges.Dispose();
         _images.Dispose();
+        _ground.Dispose();
     }
 }

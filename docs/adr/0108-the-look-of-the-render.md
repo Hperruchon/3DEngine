@@ -7,7 +7,7 @@ date: 2026-11-10
 supersedes: []
 superseded-by: []
 amends: ['0078', '0081', '0092', '0095', '0098', '0113']
-amended-by: ['0150']
+amended-by: ['0150', '0186']
 affects:
   - 3DEngine.App/Ui/Theme.cs
   - 3DEngine.App/Ui/DesktopUi.cs
@@ -85,3 +85,5 @@ the scene waits.
 - 2026-11-10 · TASK-0332 · Shipped at v0.321.
 - 2026-11-14 · TASK-0385 · ADR-0150 items 1 and 2 amend item 4: on macOS the Command key opens the field, which shows
   "Cmd K" there.
+- 2026-11-20 · TASK-0458 · ADR-0186 items 1 and 2 amend item 1: the ground has the soft light of the render, from
+  `#03060b` at the corners to `#0a1a28` at the middle; the clear stays the colour of a plate.

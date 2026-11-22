@@ -54,7 +54,6 @@ public class HomeImageTests
 
         // Finding V132 of the codebase review of 2026-11-07 (b) (TASK-0271): each control that the name of the test names is
         // drawn: its rectangle holds pixels of a colour that is not the clear. Until TASK-0271 the test read "Open file" only.
-        var clear = Theme.Clear;
         foreach (var (name, rectangle) in new[] { ("Open file", open), ("New part", newPart), ("the recent file bracket", recent) })
         {
             var drawn = 0;
@@ -63,7 +62,7 @@ public class HomeImageTests
                 for (var x = (int)rectangle.X; x < (int)rectangle.Z; x++)
                 {
                     var index = ((y * (int)Width) + x) * 4;
-                    if (Math.Abs(pixels[index] - clear.R) > 2 || Math.Abs(pixels[index + 1] - clear.G) > 2 || Math.Abs(pixels[index + 2] - clear.B) > 2)
+                    if (!GroundPixels.IsGround(pixels, x, y, (int)Width, (int)Height))
                         drawn++;
                 }
             }
