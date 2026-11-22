@@ -1,7 +1,7 @@
 ---
 id: 0452
 title: The test of the cut of a plate by a sphere holds the work of the owned kernel by two counts
-status: Active
+status: Done
 phase: P0.182
 opened: 2026-11-22
 depends-on: [0451]
@@ -76,7 +76,7 @@ of today, and R-0073 closes.
   are the same, byte for byte, before and after (see "Method").
 - [x] An injection in each part makes a named test fail.
 - [x] R-0073 is closed with the exit "resolved".
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Decisions
 
@@ -106,7 +106,7 @@ of today, and R-0073 closes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0182-cost-of-a-cut) · v0.436
+Status: Done · commit (the merge of the branch p0182-cost-of-a-cut) · v0.436
 
 ## Method
 
@@ -162,3 +162,4 @@ failed, because a field that nothing assigns is a warning, and a warning is an e
 - 2026-11-22: branch `p0182-cost-of-a-cut` from `a4e957e7` (P0.181, TASK-0451, v0.435, not merged yet). The count of the
   exact signs, the bounds of the sphere test, the volume as a sum in pairs, three new tests, the close of R-0073, the History
   line of ADR-0057, the roadmap row P0.182 and the ledger entry v0.436.
+- 2026-11-22: run 44967507628 of `be1c82d0` passed on each job. Closed at v0.436.
