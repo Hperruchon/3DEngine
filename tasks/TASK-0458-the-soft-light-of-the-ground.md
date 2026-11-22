@@ -1,7 +1,7 @@
 ---
 id: 0458
 title: The ground of the scene has the soft light of the render, lighter at the middle and darker at the corners
-status: Active
+status: Done
 phase: R18p
 opened: 2026-11-20
 depends-on: [0332, 0333, 0457]
@@ -74,15 +74,15 @@ body lies over it. A person sees it in the window and on the phone.
 
 ## Acceptance criteria
 
-- [ ] With no body, each pixel of a picture at 1280 by 720 and at 360 by 780 is `Theme.GroundAt` at that pixel, within 1.
-- [ ] A body at the middle lies over the light, and a corner stays the ground.
-- [ ] Each point of the ground is almost black, and each colour keeps its contrast on the middle of the ground.
-- [ ] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch.
+- [x] With no body, each pixel of a picture at 1280 by 720 and at 360 by 780 is `Theme.GroundAt` at that pixel, within 1.
+- [x] A body at the middle lies over the light, and a corner stays the ground.
+- [x] Each point of the ground is almost black, and each colour keeps its contrast on the middle of the ground.
+- [x] A clean build (`--no-incremental`) gives zero errors and zero warnings, and the phone project builds.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes on the branch.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch r18p-ground-light) · v0.442
+Status: Done · commit (the merge of the branch r18p-ground-light) · v0.442
 
 ## Method
 
@@ -126,3 +126,4 @@ Status: Active · commit (the merge of the branch r18p-ground-light) · v0.442
   | The two colours swapped in the push block | `An_Empty_Scene_Shows_The_Soft_Light_Of_The_Ground`, `A_Body_At_The_Middle_Lies_Over_The_Light` |
 
   With no injection the three tests pass. The branch ground-light-b stays unmerged.
+- 2026-11-22: run 45035637208 of `8614868e` passed on each job. Closed at v0.442.
