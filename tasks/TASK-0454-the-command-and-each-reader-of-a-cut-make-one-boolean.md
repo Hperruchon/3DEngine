@@ -1,7 +1,7 @@
 ---
 id: 0454
 title: The command and each reader of a cut make one exact boolean for each change of the Document
-status: Active
+status: Done
 phase: P0.184
 opened: 2026-11-22
 depends-on: [0453]
@@ -81,7 +81,7 @@ Each exact boolean of the history of a body is made one time for each change of 
 - [x] The results are the same: the digests of the exact solids, the faces and the records of three documents are the same
   before and after, and the same after a replay of their logs (see "Method").
 - [x] An injection in each part makes a named test fail (see "Method").
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Decisions
 
@@ -112,7 +112,7 @@ Each exact boolean of the history of a body is made one time for each change of 
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0184-one-subtract) · v0.438
+Status: Done · commit (the merge of the branch p0184-one-subtract) · v0.438
 
 ## Method
 
@@ -193,3 +193,4 @@ the limit, so the order of use changes at each call; with no lock it fails, and 
   boolean steps in `KernelProjection`, the count of the booleans in `PlanarBoolean`, seven new tests in `KeptBooleanTests`, the
   bounds of the sphere test, the amendment of ADR-0059 item 2, the History line of ADR-0057, the roadmap rows P0.184 and the
   ledger entry v0.438.
+- 2026-11-22: run 44974317993 of `6770ff34` passed on each job. Closed at v0.438.
