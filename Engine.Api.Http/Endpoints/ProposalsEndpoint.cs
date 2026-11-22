@@ -16,6 +16,7 @@ namespace Engine.Api.Http.Endpoints;
 //   GET    /proposals       the open proposals, the oldest first
 //   GET    /proposals/{id}  one open or kept proposal
 //   DELETE /proposals/{id}  withdraws an open proposal
+//   GET    /proposals/{id}/preview  the preview of the proposal on a fork of the Document (ADR-0185, TASK-0456)
 //
 // An envelope is the body of POST /commands. The post checks each envelope as POST /commands does: a known name and version,
 // and parameters that bind. Nothing enters the log at the post. No route accepts or rejects: only the person in the window
@@ -81,10 +82,11 @@ internal static class ProposalsEndpoint
         }
 
         // Item 4: the proposal keeps the version of the Document at the post. It enters the queue inside the read, so each
-        // later commit marks it (Proposals.OnEvent). The function of the read takes only the lock of the queue.
+        // later commit marks it (Proposals.OnEvent). The function of the read takes only the lock of the queue. ADR-0185
+        // item 3: the queue copies the log there for the first preview.
         var summary = body.Summary;
         var added = await host.Session
-            .Read((document, _) => host.Proposals.Add(summary, commands, document.Version), context.RequestAborted)
+            .Read((document, _) => host.Proposals.Add(summary, commands, document), context.RequestAborted)
             .ConfigureAwait(false);
         if (added is null)
             return Failure(
@@ -102,6 +104,21 @@ internal static class ProposalsEndpoint
         => Guid.TryParse(id, out var key) && host.Proposals.Find(key) is { } proposal
             ? Results.Json(proposal, ApiJson.Options)
             : NotFound(id);
+
+    // ADR-0185 item 3 (TASK-0456): the preview of an open or kept proposal. The route waits for a preview of the version of the
+    // Document at the request, or for the last preview of a closed proposal. A host with no backend for a fork gives HTTP 501.
+    public static async Task<IResult> Preview(string id, EngineHost host, HttpContext context)
+    {
+        if (!host.Proposals.MakesPreviews)
+            return Failure(
+                DiagnosticCodes.ApiNotSupported,
+                "This host makes no fork of the Document, so it gives no preview of a proposal (ADR-0185 item 3).",
+                StatusCodes.Status501NotImplemented);
+        if (!Guid.TryParse(id, out var key))
+            return NotFound(id);
+        var preview = await host.Proposals.Preview(key, context.RequestAborted).ConfigureAwait(false);
+        return preview is null ? NotFound(id) : Results.Json(preview, ApiJson.Options);
+    }
 
     public static IResult Withdraw(string id, EngineHost host)
     {

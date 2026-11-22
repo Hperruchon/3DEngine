@@ -13726,3 +13726,48 @@ The failed runs since the entry v0.438, from the API: none.
 New tests: 0. The test list holds 3221 (1871 in `Engine.Tests`, 390 in `3DEngine.Tests`, 957 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.431, 1 product milestone and 8
 entries followed it.
+
+## v0.440 — The preview of a proposal on a fork of the Document gives the outcome of each command and the changed bodies (P15a, TASK-0456)
+
+The owner ordered on 2026-11-22 in the chat "start P15 with the A answers", then "Resume all": option A of Q1 to Q5 of the third
+codebase review of 2026-11-21. ADR-0185 records the answers and the design of the whole row P15. The branch
+`p15a-preview-fork-b` starts from `e4f8aee5` (P0.185, TASK-0455, v0.439, not merged yet); a local branch `p15a-preview-fork`
+of a stopped attempt exists in another worktree and is not used.
+
+**The change.**
+- The fork (`Engine.Core/Preview/DocumentFork.cs`, Q2 A): the host copies the log of the Document inside the serial lock, then
+  off the lock replays the copy in a new `DocumentSession` with its own backend and the in-memory sink of its kit, and applies
+  the commands of the proposal as an accept does: the apply stops at the first refused command, and a known command
+  identifier gives `E-API-PROPOSAL-COMMAND-KNOWN`. An entry of another backend, an entry that does not apply again, or a
+  factory that throws gives a failed preview with the new code `E-API-PREVIEW-FAILED`.
+- The previews of the queue (`Engine.Api.Http/Proposals.Preview.cs`, Q3 A): the post copies the log for the first preview,
+  and each commit asks for a new preview of each open proposal. One worker computes them one after the other, with no flow of
+  the context of the session. A fork that a new version makes old runs to its end and serves the callers that asked before
+  its copy; only the stop of the host stops a fork, and the stop waits for it. The queue keeps one preview for each proposal,
+  at most 8 open and 32 kept; a closed proposal keeps its last preview.
+- The surface: `GET /proposals/{id}/preview` waits for the preview of the version at the request and gives `proposalId`,
+  `state`, `documentVersion`, `results`, `failedIndex`, `failedCode`, `bodies` (`added`, `removed`, `changed` by content, Q5 A)
+  and `error`. An unknown proposal gives HTTP 404 with `E-API-PROPOSAL-NOT-FOUND`, and a host with no backend for a fork HTTP
+  501 with `E-API-NOT-SUPPORTED`. `EngineHost` takes a factory of backends; the desktop and `engine-api-http` give one.
+- ADR-0185 amends ADR-0092 item 2 (a fifth route). The guide for an agent has a tested example of the preview and its limits.
+  The roadmap row P15 splits into P15a and P15b (the state of the solver, the measures and the checks, Q4 A).
+
+**Proof.** Ten new tests in `ProposalPreviewTests`: three commands on the bookcase of K10a give three outcomes and one added,
+one removed and one changed body, and the version, the log, the bodies and the events of the first Document do not change; a
+refused command and a known identifier stop the preview as they stop the accept; a new version computes the preview again;
+no event of a fork reaches a subscriber; a command of the person applies while a fork waits for its backend; the bound of the
+previews; the route; a failed replay; and a body record with no list. Before the change nine of them failed (the guard of
+the body record holds a property that exists). A script (`inject.js` and `inject2.js` in `%TEMP%\p15a`) applied sixteen
+injections, each restored byte for byte (sha256), and each made a named test fail; the table is in TASK-0456. The first form
+of the test of the bound missed one (a closed proposal that gets a new preview), because no proposal was open at the new
+version; the test now keeps one open. A clean build gives 0 warnings, the phone project builds with 0 warnings, `dotnet test`
+passes 3231 tests, and the write-set check and `eng/repo-gates` pass. The run on the branch is not done yet. No picture of
+the window: the window does not change.
+The failed runs since the entry v0.439, from the API: 45021528072, the run on `main` of the merge of P0.184 at `58ea382`: on Windows `A_Sphere_Cuts_A_Hole_Of_One_Name` counted two booleans, because two tests of `KeptBooleanTests` fill the kept booleans past their limit at the same time.
+
+Corrections: `ProposalsEndpointTests.No_Route_Accepts_Or_Rejects` lists the fifth route.
+
+New tests: 10. The test list holds 3231 (1881 in `Engine.Tests`, 390 in `3DEngine.Tests`, 957 in `3DEngine.ImageTests`,
+3 in `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 1, `E-API-PREVIEW-FAILED`;
+`E-API-NOT-SUPPORTED`, `E-API-PROPOSAL-NOT-FOUND` and `E-API-PROPOSAL-COMMAND-KNOWN` get one more place. Since the review of
+v0.431, 2 product milestones and 9 entries followed it.

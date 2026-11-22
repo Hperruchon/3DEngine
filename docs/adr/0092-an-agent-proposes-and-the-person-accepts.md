@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0107', '0108', '0110', '0111', '0113', '0130', '0133', '0134', '0135', '0136', '0177']
+amended-by: ['0107', '0108', '0110', '0111', '0113', '0130', '0133', '0134', '0135', '0136', '0177', '0185']
 affects:
   - Engine.Api.Http/Proposals.cs
   - Engine.Api.Http/Endpoints/ProposalsEndpoint.cs
@@ -86,7 +86,7 @@ The owner chose A for Q1, Q2 and Q4, and B for Q3.
 1. **The place (Q1 A).** A proposal lives in the queue of the host, `EngineHost.Proposals`, in `Engine.Api.Http`, outside
    the log. `Engine.Contracts` does not change, and nothing enters the log before an accept. `Engine.Core` gets only the
    constants of the three new codes of item 3, beside the other codes of the surface.
-2. **The routes.** The surface serves four routes, with the checks of `POST /commands` (the Host filter and the open of a
+2. **The routes.** The surface serves five routes, with the checks of `POST /commands` (the Host filter and the open of a
    file, ADR-0030 item 4):
    - `POST /proposals` takes `{ "summary": string, "commands": [envelope, …] }`. An envelope is the body of
      `POST /commands`. The summary is required and has at most 120 characters; the list has from 1 to 16 envelopes. The
@@ -97,6 +97,7 @@ The owner chose A for Q1, Q2 and Q4, and B for Q3.
    - `GET /proposals/{id}` gives one proposal, open or closed. The queue keeps the last 32 closed proposals, so an agent
      reads the outcome of its proposal.
    - `DELETE /proposals/{id}` withdraws an open proposal; the agent changed its mind.
+   - `GET /proposals/{id}/preview` gives the preview of an open or kept proposal on a fork of the Document (ADR-0185).
    No route accepts or rejects. Only the person in the window does, so an agent cannot accept its own proposal.
 3. **The queue (Q3 B).** The queue holds at most 8 open proposals, first in, first out. The window shows the oldest one, with
    its place ("1 of 3"). The codes are:
@@ -160,3 +161,5 @@ first one.
   word lie on no target of a tool of the ring.
 - 2026-11-20 · TASK-0422 · ADR-0177 item 5 amends item 5: while the sheet page shows the sheet of the proposal, the arc has
   no command lines, and the boxes and the values on the paper show the commands.
+- 2026-11-22 · TASK-0456 · ADR-0185 amends item 2: a fifth route, `GET /proposals/{id}/preview`, gives the preview of a
+  proposal on a fork of the Document. The window still shows no simulated result (item 5) until R25.

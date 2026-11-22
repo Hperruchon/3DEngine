@@ -274,8 +274,8 @@ public sealed class ProposalsEndpointTests : IAsyncLifetime
         Assert.Equal(0, await Version());
     }
 
-    // Item 2: no route accepts or rejects. The surface maps four routes under /proposals, and each other method or path
-    // leaves the proposal open.
+    // Item 2: no route accepts or rejects. The surface maps five routes under /proposals (the fifth, the preview, since
+    // ADR-0185 and TASK-0456), and each other method or path leaves the proposal open.
     [Fact]
     public async Task No_Route_Accepts_Or_Rejects()
     {
@@ -286,7 +286,7 @@ public sealed class ProposalsEndpointTests : IAsyncLifetime
                 .Select(method => $"{method} /{endpoint.RoutePattern.RawText!.TrimStart('/')}"))
             .Order(StringComparer.Ordinal)
             .ToArray();
-        Assert.Equal(["DELETE /proposals/{id}", "GET /proposals", "GET /proposals/{id}", "POST /proposals"], routes);
+        Assert.Equal(["DELETE /proposals/{id}", "GET /proposals", "GET /proposals/{id}", "GET /proposals/{id}/preview", "POST /proposals"], routes);
 
         var id = await Posted("Wait for the person", Box(20));
         foreach (var (method, route) in new[]
