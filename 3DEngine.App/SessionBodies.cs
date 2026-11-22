@@ -131,6 +131,13 @@ internal sealed class SessionBodies : IDisposable
     public IEnumerable<PickBody> PickBodies
         => _triangles.Select(body => new PickBody(body.Key, body.Value.Positions, body.Value.Indices, IsVisible(body.Key.ToString())));
 
+    // ADR-0184 item 3 (phase R26, TASK-0447): each live body with a mesh, as the section view cuts it: the key of its mesh, a
+    // solid of the kernel or a mesh body, the origin of its entity and its triangles.
+    public IReadOnlyList<SectionBody> SectionBodies
+        => [.. _live.Where(body => _triangles.ContainsKey(body.Id) && _entities.ContainsKey(body.Id.ToString())).Select(body => new SectionBody(
+            body.Id, _geometry.GetValueOrDefault(body.Id), body.Kind != Engine.Core.Commands.ImportStlCommandHandler.MeshKind,
+            _entities[body.Id.ToString()].Origin, _triangles[body.Id].Positions, _triangles[body.Id].Indices))];
+
     // On the render loop: one entity and one mesh for each live body. The mesh is
     // narrowed around the centre of its box, and that centre is the origin of the
     // entity, in double precision (ADR-0024 item 2). It returns true when the scene changed.

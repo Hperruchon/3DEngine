@@ -117,6 +117,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     private long _changes;
     private IDisposable? _changesSubscription;
 
+    // ADR-0184 item 2 (phase R26, TASK-0447): the named datums of the document for the planes of a section.
+    private readonly SectionDatums _sectionDatums = new();
+
     // Finding V196 of the codebase review of 2026-11-18 (TASK-0410): the count of the events that can change the lines of a
     // flat view (ViewLines.ChangesLines), so a command of a sheet does not start a new read of the lines.
     private long _lineChanges;
@@ -907,6 +910,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         // of the frame, so a commit after this read gives new steps in the next frame. The frame takes no lock of the session.
         var version = Interlocked.Read(ref _changes);
 
+        // ADR-0184 items 1 and 4 (phase R26, TASK-0447): the plane of the section of the last frame of the window.
+        _renderer.Section = _ui.Section?.Cut;
         // Finding V86 of the codebase review of 2026-11-05 (b) (TASK-0191): the far plane holds the live images too.
         _renderer.Update(scene, Camera, (float)extent.width / extent.height, images);
 
@@ -921,6 +926,14 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         // the focus on the ring, in the command line and in the path line.
         _renderer.Focus = _actions?.Focus;
         _ui.Focus = _actions?.Focus;
+        // ADR-0184 item 2: the box of the visible bodies for the offset of a new section, and the named datums while a section
+        // lasts.
+        _ui.SectionBox = _renderer.Union(hiddenToo: false);
+        if (_ui.Section is not null)
+        {
+            var host = _host;
+            _ui.ShowSectionDatums(_sectionDatums.Planes(version, () => Task.Run(() => host.Session.Read((document, _) => SectionDatums.Of(document.Datums), CancellationToken.None))));
+        }
         _sketches?.Apply();
         var imagePanel = _images is not null && _imageActions is { } imageActions
             ? new ImagePanel(_images.Live, imageActions.Calibrating, imageActions.Points.Count, imageActions.Message, imageActions.Proposal?.Pixels.Count ?? 0)

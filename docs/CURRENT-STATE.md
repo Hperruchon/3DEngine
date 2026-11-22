@@ -13361,3 +13361,41 @@ The failed runs since the entry v0.429, from the API: none.
 New tests: 2. The test list holds 3157 (1834 in `Engine.Tests`, 390 in `3DEngine.Tests`, 930 in `3DEngine.ImageTests`, 3
 in `3DEngine.VisionTests`). Open entries: 13 of 15 (R-0069 closed). New diagnostic codes: 0. Since the review of v0.420, 3
 product milestones and 10 entries followed it.
+
+## v0.431 — "Section" on the ring of the part cuts each body by a plane, with a pad for the offset and a hatched cap (R26, TASK-0447)
+
+Row R26 of the roadmap asks for a section view in the window: a cut plane on an origin plane or on a datum, a pad for its offset,
+and a cap on the cut faces, as presentation only. ADR-0157 item 15 and card N7 give it. The branch `r26-section-view` starts from
+`13965c54` (P0.179, TASK-0446, v0.430, not merged yet). ADR-0184 records the choices that the row leaves open, under the standing
+order of the owner of 2026-11-20, and amends ADR-0174 item 1. No change of `Engine.Contracts`, of a command, of a query, of an
+event or of the Document, and no change of a shader.
+
+**The change.**
+- The ring of the part has "Section" after "Bodies" while the part has a live body. A tap starts a section on XZ through the middle
+  of the visible bodies, rounded to a whole millimetre, with the side of +y going, the side of the start eye. While the section
+  lasts, the ring of the part holds "Section" in the colour of a tool in use, "Plane" with the name of the plane, "Offset" with the
+  offset and its unit, and "Flip".
+- "Plane" goes through XY, XZ and YZ, then each datum of the Document with a name and no fault; the host reads the datums off the
+  thread of the frame after each change. "Offset" opens a value pad whose apply sets the offset and gives no action. "Flip" turns
+  the side that goes. Escape at the level of the document, a second tap on "Section", no live body and the home screen end it.
+- The renderer cuts the tessellation of each body with the cut of the owned kernel, `PlanarBoolean.Cut` (ADR-0057 item 10), on
+  the thread pool (`SectionMesh`, `SectionView`). The kept part and the cap go on the GPU around the centre of the body, so the
+  matrix of its entity draws them, and a body keeps its last cut until its new cut is complete. The cap is opaque with the
+  shading of a body; its hatch is lines at 45 degrees in the accent colour, 1/40 of the diagonal of the visible bodies apart,
+  through the pipeline of the edge lines. A body that the plane misses shows whole, a body on the side that goes does not show,
+  and a mesh body is clipped with no cap.
+
+**Proof.** 17 new tests in `3DEngine.ImageTests`: fifteen in `SectionViewTests` with no Vulkan device (the state of the
+window, the cut of a box, of a plate with a hole and of the five panels of the bookcase, a mesh body, the hatch, the planes of the
+datums, and the table of the bookcase against `BookcaseCase.cs`), one picture test with a Vulkan device, and the state Section of
+the layout test of ADR-0172. The new tests do not compile with the code of `13965c54`. The pictures of the bookcase with a section
+on XZ through y = 0, at 1280 by 720 and at 390 by 844, are on the computer of this session and not in the repository; the bookcase is
+400 mm deep from y = -200 to 200, so the middle offset is 0, and the test holds that box. Twenty injections, each restored byte for byte (sha256), made a named test fail; TASK-0447 lists them. Corrections: the exact lists of
+the ring of the part in `PartRingTests` and `ShowHiddenTests` have "Section". A clean build gives 0 warnings, the phone project
+builds with 0 warnings, `dotnet test` passes 3174 tests, and the write-set check and `eng/repo-gates` pass. The desktop was
+not run.
+The failed runs since the entry v0.430, from the API: none.
+
+New tests: 17. The test list holds 3174 (1834 in `Engine.Tests`, 390 in `3DEngine.Tests`, 947 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.420,
+4 product milestones and 11 entries followed it, so the codebase review is due before the next product milestone.

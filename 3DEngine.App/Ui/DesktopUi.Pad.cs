@@ -44,14 +44,14 @@ internal sealed unsafe partial class DesktopUi
     // a chip and the pad of the distance set it again after the open (ADR-0082 items 1 and 4).
     private void OpenPad(NumericPad pad, Func<double[], PanelAction> apply, bool bySketch = false, PadScope scope = PadScope.None, string? key = null)
     {
-        (_pad, _padApply, _padBySketch, _padApplied) = (pad, apply, bySketch, false);
+        (_pad, _padApply, _padBySketch, _padApplied, _padLocal) = (pad, apply, bySketch, false, null);
         // ADR-0167 item 5 (TASK-0407): one pad at a time.
         _sheetPad = null;
         (_padScope, _padKey) = (scope, key ?? Key(scope));
         _pendingValue = null;
     }
 
-    private void ClosePad() => (_pad, _padApply, _padScope, _padKey, _padApplied) = (null, null, PadScope.None, null, false);
+    private void ClosePad() => (_pad, _padApply, _padScope, _padKey, _padApplied, _padLocal) = (null, null, PadScope.None, null, false, null);
 
     // ADR-0049 item 8: the pad of the distance of the selected extrude, which starts with the
     // distance in effect. A change of the selection closes it, as for Move.
@@ -301,6 +301,18 @@ internal sealed unsafe partial class DesktopUi
     {
         if (_padApplied)
             return;
+        // ADR-0184 item 3 (phase R26, TASK-0447): the pad of a state of the window applies its numbers and closes, with no action.
+        if (_padLocal is { } local)
+        {
+            if (pad.Apply() is { } numbers)
+            {
+                local(numbers);
+                ClosePad();
+            }
+
+            return;
+        }
+
         if (pad.Apply() is { } values && _padApply is { } apply)
         {
             _padAction = apply(values);

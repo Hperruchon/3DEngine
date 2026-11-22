@@ -61,7 +61,9 @@ internal sealed unsafe partial class DesktopUi
 
     // The labels that RingIcon draws an icon for. A kind of a constraint has none, so it keeps the plate of a wide label.
     private static readonly HashSet<string> RingIconLabels =
-        [EditSketchLabel, RenameLabel, DimensionsLabel, NextPointLabel, ExtrudeLabel, MoveLabel, SetDistanceLabel, HideLabel, ShowLabel, SketchOnFaceButtonLabel, LineToolLabel, SelectToolLabel, CircleToolLabel, ArcToolLabel, ConstrainLabel, FinishLabel, BackLabel, NewLabel, PartSketchLabel, BodiesLabel, PartImagesLabel, ShowHiddenLabel];
+        [EditSketchLabel, RenameLabel, DimensionsLabel, NextPointLabel, ExtrudeLabel, MoveLabel, SetDistanceLabel, HideLabel, ShowLabel, SketchOnFaceButtonLabel, LineToolLabel, SelectToolLabel, CircleToolLabel, ArcToolLabel, ConstrainLabel, FinishLabel, BackLabel, NewLabel, PartSketchLabel, BodiesLabel, PartImagesLabel, ShowHiddenLabel,
+         // ADR-0184 item 1 (phase R26, TASK-0447): the tools of the section.
+         SectionLabel, SectionPlaneLabel, SectionOffsetLabel, SectionFlipLabel];
 
     // The icon of a segment, drawn with the draw list at its centre: none for a label with no icon.
     private static bool RingIcon(ImDrawListPtr list, string label, Vector2 c, uint ink)
@@ -183,8 +185,9 @@ internal sealed unsafe partial class DesktopUi
                 list.AddLine(c + new Vector2(-h, h * 0.6f), c + new Vector2(-h * 0.2f, -h * 0.1f), ink, w);
                 list.AddLine(c + new Vector2(-h * 0.2f, -h * 0.1f), c + new Vector2(h, h * 0.6f), ink, w);
                 return true;
+            // ADR-0184 item 1: the icons of the section.
             default:
-                return false;
+                return SectionIcon(list, label, c, ink, h, w);
         }
     }
 }

@@ -543,6 +543,8 @@ Therefore each approved objective must have a track here.
   first read builds no partition of the solid and gives the same lines and hatch. v0.429, TASK-0445.
 - P0.179 — A read of a sheet builds the B-Rep of each body once and keeps it until the body changes, so three views of a
   sphere read in less than 1 s with the same result (R-0069 closed). v0.430, TASK-0446.
+- R26 — "Section" on the ring of the part cuts each body by an origin plane or a named datum, with a pad for the offset, a
+  flip of the side and a hatched cap from the cut of the owned kernel, in the window only. v0.431, TASK-0447, ADR-0184.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -886,7 +888,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R23 | A joint in the window: a rotation handle on a pivot and a pad for the angle, one `Rotate` at the end of a drag, and the contact and the envelope of the checks in the view. After P11. | 2 |
 | R24 | The end-to-end scenario of the tilting support of a light: the AI finds the contact of the knob with the arm, proposes a new value, runs the checks again, and shows the envelope within 60 mm; the physical load test has its own recorded result, with the criteria C1 to C11 of the design file (ADR-0126, ADR-0157 item 12). After each phase of the assembly work. | 1–2 |
 | R25 | The preview of a proposal in the window: the new shape in dashed amber lines on the present shape, a switch "before, after, both", a table "measure, before, after", and the state of the solver after (gap G12 of the render, ADR-0157 item 8). Desktop first. After P15. | 2 |
-| R26 | The section view: a cut plane on an origin plane or on a datum, a pad for its offset, and a cap on the cut faces; presentation only (kernel boundary: section by a plane). After K10. | 1–2 |
+| R26 | The section view: a cut plane on an origin plane or on a datum, a pad for its offset, and a cap on the cut faces; presentation only (kernel boundary: section by a plane). After K10. TASK-0447, ADR-0184. | 1–2 |
 | R27 | A tool of the window that turns a body, and the snap of a body to a body by two connectors (ADR-0157 items 3 and 4). After P11. | 2 |
 | R28 | The end-to-end scenario of the bookcase: the agent places the panels of a module by connectors, uses one module several times, checks the gaps and the screws, and proposes a change of a width, with the criteria C1 to C11 of the design file (ADR-0157 item 12). After P20 and K18. | 1–2 |
 | R29 | The drag of a face as a change of the value that owns the face: the distance of an extrude or the size of a primitive (ADR-0157 item 15). After P12. | to estimate |

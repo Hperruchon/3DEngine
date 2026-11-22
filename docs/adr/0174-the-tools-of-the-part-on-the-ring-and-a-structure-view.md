@@ -7,7 +7,7 @@ date: 2026-11-19
 supersedes: []
 superseded-by: []
 amends: ['0056', '0076', '0081', '0093', '0100', '0102', '0172']
-amended-by: ['0175']
+amended-by: ['0175', '0184']
 affects:
   - 3DEngine.App/NativeThreeDEngine.cs
   - 3DEngine.App/Ui/DesktopUi.Fixed.cs
@@ -102,3 +102,5 @@ not show.
   C, density B).
 - 2026-11-20 · TASK-0420 · ADR-0175 amends item 3 (the rows of 30 pixels in the density "Compact", and no gap between two
   body rows) and item 5 (the cells "Compact" and "For touch" on the row of "Top").
+- 2026-11-21 · TASK-0447 · ADR-0184 item 1 amends item 1: the ring of the part has "Section" after "Bodies" while the part has
+  a live body, and while a section lasts it holds the tools of the section.

@@ -67,12 +67,13 @@ public sealed class ShowHiddenTests
     {
         var display = new Vector2(width, height);
         using var ui = Started(display, Shown);
-        Assert.Equal([DesktopUi.NewLabel, DesktopUi.PartSketchLabel, DesktopUi.BodiesLabel], ui.RingLabels);
+        // ADR-0184 item 1 (TASK-0447): "Section" after "Bodies".
+        Assert.Equal([DesktopUi.NewLabel, DesktopUi.PartSketchLabel, DesktopUi.BodiesLabel, DesktopUi.SectionLabel], ui.RingLabels);
         Assert.Null(ui.ItemRectangle(DesktopUi.RingTextItem(DesktopUi.ShowHiddenLabel)));
 
         Step(ui, display, TwoHidden);
         Step(ui, display, TwoHidden);
-        Assert.Equal([DesktopUi.NewLabel, DesktopUi.PartSketchLabel, DesktopUi.BodiesLabel, DesktopUi.ShowHiddenLabel], ui.RingLabels);
+        Assert.Equal([DesktopUi.NewLabel, DesktopUi.PartSketchLabel, DesktopUi.BodiesLabel, DesktopUi.SectionLabel, DesktopUi.ShowHiddenLabel], ui.RingLabels);
         var text = Box(ui, DesktopUi.RingTextItem(DesktopUi.ShowHiddenLabel), display);
         Assert.True(text.X >= 0f && text.Z <= display.X && text.Y >= 0f && text.W <= display.Y, $"The label at {text} is outside the display {display}.");
         Assert.NotNull(ui.ItemRectangle(DesktopUi.RingIconItem(DesktopUi.ShowHiddenLabel)));
