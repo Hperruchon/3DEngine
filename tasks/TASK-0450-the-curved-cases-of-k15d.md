@@ -1,7 +1,7 @@
 ---
 id: 0450
 title: The measure queries give the side of a hole, holes on one axis, a tube, two sides on one axis, two cylinders that are not parallel and an arc with a curved face
-status: Active
+status: Done
 phase: K15d
 opened: 2026-11-21
 depends-on: [0444]
@@ -92,7 +92,7 @@ The file changes: ADR-0180 items 20 to 24 and the changed items, the row K15d, t
 - [x] Two cylinders whose axes cross at a right angle are 4 apart; a foot past an end and two sides that cross are refused.
 - [x] The side of an arc is 4 from a sphere and from a cylinder beyond it, and refused for a sphere on the other side.
 - [x] An injection in each part makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Decisions
 
@@ -114,7 +114,7 @@ hold. This task takes these decisions; the owner accepts the change of the secti
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch k15d-curved-last) · v0.433
+Status: Done · commit (the merge of the branch k15d-curved-last) · v0.433
 
 ## Method
 
@@ -164,3 +164,4 @@ the upper part of the hole, because both parts are 6 from the slot, so the first
 
 - 2026-11-21: opened after the third codebase review of 2026-11-21 (TASK-0448, v0.432, not merged yet), branch
   `k15d-curved-last` from `d7077cf8`. ADR-0180 items 20 to 24, six new tests, two tests of K15c changed. Ledger entry v0.433.
+- 2026-11-22: run 44952444341 of `009e11f9` passed on each job. Closed at v0.433.
