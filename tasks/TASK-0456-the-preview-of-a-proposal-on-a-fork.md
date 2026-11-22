@@ -1,7 +1,7 @@
 ---
 id: 0456
 title: The preview of a proposal gives the outcome of each command and the changed bodies from a fork of the Document
-status: Active
+status: Done
 phase: P15a
 opened: 2026-11-22
 depends-on: [0455]
@@ -90,7 +90,7 @@ removes and changes, from a fork of the Document that changes nothing in the Doc
 - [x] A fork that cannot replay the log gives a failed preview with `E-API-PREVIEW-FAILED`.
 - [x] The guide for an agent has a preview request that `AgentGuideExamplesTests` sends to a host.
 - [x] Each injection makes a named test fail, and each file is restored byte for byte (sha256).
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Decisions
 
@@ -119,7 +119,7 @@ Decisions of this task that the answers do not settle (ADR-0185 records each one
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p15a-preview-fork-b) · v0.440
+Status: Done · commit (the merge of the branch p15a-preview-fork-b) · v0.440
 
 ## Method
 
@@ -173,3 +173,4 @@ give 0 warnings.
 - 2026-11-22: opened, branch `p15a-preview-fork-b` from `e4f8aee5`. ADR-0185, the fork, the previews of the queue, the
   route, the factory of each host, the code `E-API-PREVIEW-FAILED`, the guide example, ten tests, the injections, the rows
   P15a and P15b, and the ledger entry v0.440.
+- 2026-11-22: run 45022828650 of `486d4bfc` passed on each job. Closed at v0.440.
