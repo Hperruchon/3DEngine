@@ -101,6 +101,10 @@ public sealed class GetAngleQueryHandler : IQueryHandler
     // Item 17 (phase K15c, TASK-0444): the side of an arc has the outward normals of its sector only. When the part of m
     // across the axis points into the sector, the nearest normal is the one above. Else the nearest normal is at an end of
     // the arc, and the angle is that of item 5 to the end whose signed square of the cosine is larger, an exact comparison.
+    //
+    // Item 21 (phase K15d, TASK-0450): a part of the side of a hole or of a tube is a frustum from the radius R0 to R1 over
+    // the height h, so cos β = (R0 - R1) / L with L² = (R0 - R1)² + h². The outward normals of the side of a hole point to
+    // the axis, at 180 degrees less β, so the terms of cos β change their sign.
     internal static AngleInfo AboutAxis(MeasureCurve.Surface curve, Vector3R m)
     {
         ArgumentNullException.ThrowIfNull(curve);
@@ -118,10 +122,11 @@ public sealed class GetAngleQueryHandler : IQueryHandler
         if (curve.Kind == Drawing.SideCurveKind.Cylinder)
             return new AngleInfo(Root(x2 / lengths), Root(dot * dot / lengths));
 
-        var (r2, scale) = (curve.Radius * curve.Radius, lengths * ((curve.Radius * curve.Radius) + h2));
-        var signed = dot.Sign < 0 ? -1 : 1;
-        var cosine = (signed * Root(dot * dot * r2 / scale)) + Root(x2 * h2 / scale);
-        var sine = Math.Abs(Root(x2 * r2 / scale) - (signed * Root(dot * dot * h2 / scale)));
+        var slope = curve.Radius - (curve.Top ?? Rational.Zero);
+        var (r2, scale) = (slope * slope, lengths * ((slope * slope) + h2));
+        var (signed, inward) = (dot.Sign < 0 ? -1 : 1, curve.Inward ? -1 : 1);
+        var cosine = (inward * signed * Root(dot * dot * r2 / scale)) + Root(x2 * h2 / scale);
+        var sine = Math.Abs((inward * Root(x2 * r2 / scale)) - (signed * Root(dot * dot * h2 / scale)));
         return new AngleInfo(cosine, sine);
     }
 

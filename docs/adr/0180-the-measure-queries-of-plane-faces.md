@@ -24,7 +24,7 @@ affects:
   - Engine.Core/Features/KernelProjection.cs
   - Engine.Tests/Queries/MeasureQueryTests.cs
 enforced-by: Engine.Tests/Queries/MeasureQueryTests.cs
-notes: K15a, K15b and K15c. The answers Q1 A to Q4 A of the codebase review of 2026-11-21, by the standing order of the owner of 2026-11-20.
+notes: K15a, K15b, K15c and K15d. The answers Q1 A to Q4 A of the codebase review of 2026-11-21, by the standing order of the owner of 2026-11-20.
 ---
 
 # ADR-0180 — The measure queries GetMassProperties, GetDistance and GetAngle read the exact solid of the owned kernel and the curve of the design
@@ -68,9 +68,10 @@ answer, and `+`, `-`, `*`, `/` and `sqrt` give it on each platform.
 3. **GetMassProperties(bodyId).** The result is `volume` in mm³, `centre` (x, y, z) in mm, and `facets`. The volume is
    `KernelSolid.Volume`. The centre is the sum of the centres of the tetrahedra of a fan of each polygon with the origin,
    each weighted by its signed volume. Both are exact rationals, and each leaves as the nearest double. Since K15b, item
-   10 gives the volume and the centre of the curve where a closed form exists, and since K15c item 14 for a body with a
-   Subtract. `facets` is true when a face of the body is curved (item 6) and items 10 and 14 give no closed form: the volume
-   and the centre are then those of the plane facets of the solid, and not those of the curve (Q2 A).
+   10 gives the volume and the centre of the curve where a closed form exists, since K15c item 14 for a body with a
+   Subtract, and since K15d item 20 for holes on one axis and a tube. `facets` is true when a face of the body is curved
+   (item 6) and items 10, 14 and 20 give no closed form: the volume and the centre are then those of the plane facets of
+   the solid, and not those of the curve (Q2 A).
 4. **GetDistance(A, B).** The result is `distance` in mm, `pointA` on side A and `pointB` on side B (Q4 A). Each side is a
    body, a face or an edge of a body of plane faces. The pieces of a side are the convex polygons of the body or of the face,
    or the segments of the edge. Between two pieces the nearest pair has a point on an edge of one of them, so the steps are
@@ -86,9 +87,10 @@ answer, and `+`, `-`, `*`, `/` and `sqrt` give it on each platform.
 6. **Plane faces first (Q1 A).** A face name is curved when its pieces lie on more than one plane: the facets of a cylinder,
    a cone, a sphere, a torus or an arc of a profile, as `GetFaces` gives no normal for them. K15a refused each curved face.
    Since K15b, items 11 and 12 measure a whole curved face of a cylinder, a cone or a sphere in the cases that they give,
-   and since K15c items 15 to 17 add the side of a cone, a part past an end of a cylinder, two curved faces and the side
-   of an arc. `E-MEASURE-CURVED` refuses each other case; item 18 lists them. A plane face of a curved body, as the top of
-   a cylinder, is measured as the polygon of its facets. `GetMassProperties` refuses no curved body (items 3, 10 and 14).
+   since K15c items 15 to 17 add the side of a cone, a part past an end of a cylinder, two curved faces and the side
+   of an arc, and since K15d items 21 and 22 add the side of a hole or of a tube and three more pairs of curved faces.
+   `E-MEASURE-CURVED` refuses each other case; item 23 lists them. A plane face of a curved body, as the top of a
+   cylinder, is measured as the polygon of its facets. `GetMassProperties` refuses no curved body (items 3, 10, 14 and 20).
 7. **The refusals.** A body that is not live gives `E-GEOM-BODY-NOT-FOUND`, a mesh body `E-MESH-UNSUPPORTED`, a body with a
    fault `E-GEOM-BODY-FAULTED`, and a body that the kernel cannot build `E-GEOM-FACES-FAILED`, as for `GetFaces`. A face or
    an edge that the body does not have, or a part of a name, gives `E-MEASURE-NAME-NOT-FOUND`.
@@ -103,11 +105,13 @@ answer, and `+`, `-`, `*`, `/` and `sqrt` give it on each platform.
    same bits on each platform, but an exact tie can refuse a case that has an answer (finding E232, TASK-0438). Since K15c,
    items 14 to 17 keep these rules: each decision of a case is exact, except the skip of a piece whose lower bound is not
    below the best distance, the refusal of item 11 against the best distance, and the decisions of a sphere against a
-   side (item 16), which compare doubles; item 19 gives the precision of each value.
+   side (item 16), which compare doubles; item 19 gives the precision of each value. Since K15d, items 20 to 22 decide
+   each new case on exact rationals, and item 24 gives the precision of each new value.
 9. **The kernel does not change.** The queries read the public members `KernelSolid.Polygons`, `KernelSolid.Volume`,
    `KernelSolid.Box`, `KernelSolid.Translate`, `PlanarBoolean.Subtract`, `Brep.Of`, `PlaneR` and `Vector3R`. K15b reads the
    values of the design through `KernelProjection` of `Engine.Core` (items 10 and 11), and the kernel does not change. K15c
-   reads the same members and `KernelProjection.Of` of the body before a Subtract; the kernel does not change.
+   reads the same members and `KernelProjection.Of` of the body before a Subtract; the kernel does not change. K15d
+   reads the same members; the kernel does not change.
 10. **The volume of the curve (K15b).** `GetMassProperties` gives the volume and the centre of the curve of the design,
    with `facets` false, when the body is one command with only Translate and Rotate steps after it
    (`KernelProjection.Placed`, the map of the walk of the solid):
@@ -180,7 +184,8 @@ answer, and `+`, `-`, `*`, `/` and `sqrt` give it on each platform.
    volume, and the centre is the balance of the two centres. A plate of 100 by 50 by 10 mm with a hole of radius 5 through
    it gives 50000 - 250 π mm³. Each other body with a curved face keeps the exact values of its facets with `facets` true:
    a hole that meets a face at an angle or that crosses a side face (a notch), two holes that meet, a tool of a torus, of an
-   extrude of arcs or of several commands, a first body with a curved face (a tube), and a Union or an Intersect.
+   extrude of arcs or of several commands, a first body with a curved face (a tube), and a Union or an Intersect. Since
+   K15d, item 20 gives holes that meet on one axis and a tube.
 15. **The distance from the side of a cone, and past an end of a cylinder (K15c).** A side of revolution has a profile: the
    segment from (R0, 0) to (R1, H) in the half-plane (ρ, z) of a point, with ρ the distance to the axis, z the height from
    the base and H = |a|; a cylinder has R1 = R0, a cone R1 = 0. The distance from a point to the side is the distance from
@@ -212,7 +217,7 @@ answer, and `+`, `-`, `*`, `/` and `sqrt` give it on each platform.
    - Two spheres, as in item 11.
 
    The query refuses the side of a cylinder and of a cone, two cones, two cylinders whose axes are not parallel, and the
-   side of an arc with a curved face.
+   side of an arc with a curved face. Since K15d, item 22 measures them in the cases that it gives.
 17. **The side of an arc, and the angle of two curved faces (K15c).** The side of an arc of the sketch of an extrude, with
    only Translate and Rotate steps after it, is a part of the side of a cylinder: its sector goes from the direction of the
    start counter-clockwise about u × v of the exact frame to the direction of the end. Its distance is that of the whole
@@ -231,6 +236,7 @@ answer, and `+`, `-`, `*`, `/` and `sqrt` give it on each platform.
    is not on the arc; the pairs of item 16 with no closed form; and a sphere for an angle. A vertex is not a side of
    `GetDistance`: no query gives a name of a vertex. `GetFaces` and `GetConnectors` give faces, edges and datums, and the
    segments of `GetFaces` give positions only, so no public name is invented. Row K15d of the roadmap holds these cases.
+   Since K15d, item 23 replaces this list.
 19. **The precision of the values (K15c).** Each decision is exact except those of item 8. The values are doubles:
    - Item 14: the volume of the body before the Subtract is the nearest double to an exact rational; the removed volume is
      π R² |a| times the nearest double to an exact integral, with one root of a · a. So about five roundings: the volume
@@ -243,6 +249,75 @@ answer, and `+`, `-`, `*`, `/` and `sqrt` give it on each platform.
    - Item 17: each cosine and sine is the root of the nearest double to an exact square, as in item 5: within one unit of
      the last place. The test of the sector of a distance is exact on the double of the point, so an end of the arc within
      the rounding of that double can be taken as in the arc or not.
+20. **Holes on one axis and a tube (K15d).** The tools of item 14 of a cylinder, a cone or an extrude of one circle whose
+   axes are on one line make one group, as a hole with its counterbore or its countersink (`CutMass`). A later tool on
+   that line joins the group while no Translate or Rotate comes between them, because the group keeps the solid before its
+   first tool for the test of inside. The radius of the group at the part s of its line is the largest radius of its tools
+   there. The parts are cut at the planes of item 14, at the ends of the tools and at each point where two radii are equal,
+   so on each part the radius is one linear function α + β s, and the integrals of (α + β s)² and of s (α + β s)² are exact.
+   The removed volume is π |a| times the integral over the parts that the body holds, with the conditions of item 14 for
+   the largest radius of the group; the tools of two groups keep the sum of their radii apart. A first body of one
+   CreateCylinder, CreateCone or extrude of one circle, with only Translate and Rotate steps after it, takes tools on its
+   axis only (a tube): its volume and its centre are those of item 10, and the removed volume is the integral of the square
+   of the lower of its radius and the radius of the group over its span, with no test of inside. A sphere stays alone in
+   its group. A plate of 40 by 40 by 10 with a hole of radius 3 and a counterbore of radius 5 and depth 4 gives
+   16000 - 154 π mm³; a tube of radius 10 less 6 and height 20 gives 1280 π mm³.
+21. **The side of a hole (K15d).** The parts of item 20 give the faces too. On a part that the body holds, the side of the
+   tool with the largest radius is a face of the body; on a part of a tube where the radius of the group is below that of
+   the first body, the side of the first body is a face as well. So the side of a hole of items 14 and 20, and each side of a
+   tube, is the side of a cylinder or of a frustum on each part, from its larger radius R0 to its smaller radius R1
+   (`CutMass.Sides`), and a hole through the two arms of a clevis has two parts. `GetDistance` measures each part by items
+   11, 15 and 16 with the profile from (R0, 0) to (R1, H), and gives the lowest, the first part in the order of the line
+   when several give it. `GetAngle` gives the angle of item 12 with cos β = (R0 - R1) / L and L² = (R0 - R1)² + h². The
+   outward normals of the side of a hole point to the axis, at 180 degrees less β, so the terms of cos β change their sign:
+   the side of a countersink of 90 degrees is at 45 degrees to the top face, and its tool alone at 135 degrees. Two tools
+   with the same radius on one part give no one face there, and the face is refused. The zone of a sphere, the side of a
+   notch, of a hole at an angle or of two holes that meet on two axes, and a face of a body with a Union or an Intersect
+   have no parts and are refused. `GetConnectors` reads `MeasureCurve.Whole` only, so the side of a hole stays `Curved`
+   there (ADR-0183).
+22. **Two curved faces (K15d).** Three more pairs have a closed form:
+   - Two sides on one axis, as a cylinder and a cone, two cones, or a pin in a countersink. For x on one side and y on the
+     other, |x - y|² = ρ² + σ² - 2 ρ σ cos Δθ + Δz² is lowest at Δθ = 0, so the distance is that of the two profiles in one
+     half-plane. With the heights Z = (x - P) · A, the square of a length there is dρ² + dZ² / (A · A), and the method of
+     the segments of item 4 gives the nearest pair on exact rationals. The half-plane is in each arc; two arcs on one axis
+     with no common direction are refused.
+   - Two cylinders whose axes are not parallel. Each point of a side is within its radius of the line of its axis, so
+     D - r - s is a lower bound, with D the distance of the two lines. The common perpendicular of the lines reaches it
+     when its two feet are on the two spans and D ≥ r + s, each decided on exact rationals.
+   - The side of an arc and a curved face. The side of an arc is a part of its whole turn. The lowest distance over a part
+     is not below the lowest over the whole turn, and is equal when the part holds the pair. So a pair of items 11, 16 or 22
+     holds when its point on the side of each arc is on the arc, by the exact test of item 17; else the case is refused.
+23. **The cases that stay refused (K15d).** `E-MEASURE-CURVED` refuses these cases, each with its reason:
+   - A slanted piece near the side of a cone, near a rim of a cylinder or of a part of a hole; an edge of a curved face; a
+     body with a curved face as a side of `GetDistance` (its plane faces end at a rim); a torus; two cylinders whose common
+     perpendicular is past an end of a span or whose sides cross; a cone and another side on another axis. The nearest pair
+     can be between a segment, or a circle, and a circle. On the line x(t), the distance to a circle of radius r is
+     √(A(t) + r² - 2 r √B(t)) with A and B quadratics, and its stationary points are the roots of the polynomial of degree
+     four A'² B - r² B'². Its formula needs a cube root, and a search for its roots on exact rationals (a Sturm sequence and
+     halvings) needs a proved bound of its work, which this item does not give. The distance to a torus is the distance to
+     its centre circle less its tube radius, the same polynomial. No iterative solver is added.
+   - The side of an arc whose nearest point of the whole turn is not on the arc: the nearest point is then on an end line of
+     the arc, on an arc of a rim, or at another local minimum of the side.
+   - A notch, a hole at an angle, two holes that meet on two axes, a tool of a torus, of an extrude of arcs or of several
+     commands, and a Union or an Intersect: the volume keeps its facets with `facets` true, and the side is refused. A notch
+     and two holes on parallel axes need the area of a disc cut by lines or by a second disc, a later closed form with the
+     angle of item 13; a hole at an angle needs a test that each slanted face holds its whole ellipse, and moves the centre
+     by a term for each slanted face; two holes on axes that are not parallel meet in a volume of elliptic integrals.
+   - A sphere for an angle (item 12).
+   - A vertex as a side of `GetDistance`. No query gives a name of a vertex: `GetFaces` gives faces and edges, with the
+     segments of an edge as positions, and `GetConnectors` gives datums, faces and axes. K15b, K15c and K15d added no name
+     of a vertex, and none is invented.
+24. **The precision of the values (K15d).** Each decision of items 20 to 22 is exact, except those of item 8 that the
+   code of items 11, 15 and 16 makes for each part of a hole. The values are doubles:
+   - Item 20: the integral of each part is exact; the volume of a group is π |a| times the nearest double to the exact
+     integral, with one root of a · a, and the balance of the centres adds about three roundings for each group. So the
+     volume is within a few units of the last place of the larger volume. No other bound is proved; the tests hold 1e-12
+     of the volume and 1e-9 mm of the centre.
+   - Item 21: a part of a hole gives the values of items 11, 15 and 16, about ten operations. Its point for the test of
+     inside is a point of the curve from doubles, within the rounding of the turn, as the vertex of the facets of item 11.
+   - Item 22: two sides on one axis give an exact square and one root; the points add the direction across the axis in
+     doubles. Two cylinders give the exact square of D, one root and two subtractions. Each value is within a few units of
+     the last place of the sizes of the case. The tests hold 1e-12.
 
 ## Consequences
 
@@ -272,8 +347,15 @@ the test of inside of item 4 runs once for each part of the segment of a tool, s
 boolean for each hole. The angle of two curved faces is the angle of their axes, with no sign, a choice that a person must know. The
 exact facets of a sphere through a plate take about 45 s in the kernel before a measure, so the test uses a cap.
 
-**Next:** K15d holds the cases of item 18 and a measure from a vertex when a name of a vertex exists. K11 builds its pair
-check on item 4.
+Since K15d: the side of a hole, a counterbore, a countersink, a tube, two sides on one axis, two cylinders that cross at a
+distance and the side of an arc with a curved face have a closed form. The cases of item 23 need the distance from a circle,
+a root of a polynomial of degree four, and stay refused: a slanted face near a rim, a torus, a body with a curved face as a
+side, a notch and a hole at an angle. Item 20 builds the solid of the body before each group again, and the test of inside
+runs once for each part, as in item 14. A tool on the axis of a group joins it only before a Translate or a Rotate.
+
+**Next:** The row K15d of the roadmap keeps the cases of item 23. The distance from a circle needs a search for the roots of
+a polynomial of degree four with a proved bound of its work; a measure from a vertex waits for a name of a vertex. K11
+builds its pair check on item 4.
 
 ## History
 
@@ -288,3 +370,6 @@ check on item 4.
   side of a cone and past an end of a cylinder, three pairs of curved faces, the side of an arc, the angle of two curved
   faces, the cases that stay refused and the precision of each value; items 3, 6 and 8 to 12 say so, and the rest waits
   for K15d.
+- 2026-11-21 · TASK-0450 · Items 20 to 24: holes on one axis and a tube, the side of a hole and of a tube, two sides on one
+  axis, two cylinders whose axes are not parallel, the side of an arc with a curved face, the cases that stay refused with
+  their reasons, and the precision of each value; items 3, 6, 8, 9, 14, 16 and 18 say so.

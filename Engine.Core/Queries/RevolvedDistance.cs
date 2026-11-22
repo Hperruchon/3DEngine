@@ -11,7 +11,9 @@ namespace Engine.Core.Queries;
 // R1 = 0. The distance from a point to the side is the distance from its (ρ, z) to the profile. Each step that decides a
 // case uses + - * / and comparisons on exact rationals, except the decisions of a sphere (item 16), which compare doubles;
 // the values then leave as doubles from + - * / and sqrt. A piece with no closed form gives null, and the caller refuses
-// the case with E-MEASURE-CURVED when that piece can be nearer than the best one.
+// the case with E-MEASURE-CURVED when that piece can be nearer than the best one. Items 21 and 22 (phase K15d, TASK-0450):
+// a part of the side of a hole is a frustum from R0 to R1; two sides on one axis and two cylinders whose axes are not
+// parallel decide their case with exact comparisons, and give the values with one root and + - * / in doubles.
 internal static class RevolvedDistance
 {
     // The side from P to P + A, with the radius R0 at P and R1 at P + A. Length is A · A and H its root.
@@ -35,10 +37,11 @@ internal static class RevolvedDistance
 
         public double H { get; }
 
+        // Item 21 (phase K15d, TASK-0450): a part of the side of a hole is a frustum, with its top radius.
         public static Revolution Of(MeasureCurve.Surface side)
         {
             ArgumentNullException.ThrowIfNull(side);
-            return new(side.Base, side.Axis, side.Radius, side.Kind == SideCurveKind.Cone ? Rational.Zero : side.Radius);
+            return new(side.Base, side.Axis, side.Radius, side.Top ?? (side.Kind == SideCurveKind.Cone ? Rational.Zero : side.Radius));
         }
 
         // The place of x along the axis, as a part of A: 0 at the base and 1 at the other end.
@@ -342,6 +345,119 @@ internal static class RevolvedDistance
         }
 
         return new DistanceInfo(Math.Sqrt((circles * circles) + gap.ToDouble()), At(atFirst, place.First), At(atSecond, place.Second));
+    }
+
+    // Item 22 (phase K15d, TASK-0450): two sides on one axis. With x on the first side and y on the second, |x - y|² is
+    // ρ² + σ² - 2 ρ σ cos Δθ + Δz², which is lowest at Δθ = 0, so the distance of the sides is the distance of their
+    // profiles in one half-plane. The heights are Z = (x - P) · A, so a height is Z / |A| and the square of a length in the
+    // half-plane is dρ² + dZ² / (A · A): each step is exact, and the root of the square is the one step in doubles. The
+    // half-plane is in each arc. Coaxial is false when the axes are not on one line, and Info is null when the arcs hold
+    // no common direction.
+    public static (bool Coaxial, DistanceInfo? Info) Coaxial(MeasureCurve.Surface first, MeasureCurve.Surface second)
+    {
+        ArgumentNullException.ThrowIfNull(first);
+        ArgumentNullException.ThrowIfNull(second);
+        var (one, two) = (Revolution.Of(first), Revolution.Of(second));
+        var (p, a, length) = (one.P, one.A, one.Length);
+        if (!a.Cross(two.A).IsZero || !(two.P - p).Cross(a).IsZero)
+            return (false, null);
+        if (Common(a, first.Arc, second.Arc) is not var (ex, ey, ez))
+            return (true, null);
+
+        var (z0, z1) = ((two.P - p).Dot(a), (two.P + two.A - p).Dot(a));
+        var (s, t, squared) = Profiles((one.R0, Rational.Zero), (one.R1, length), (two.R0, z0), (two.R1, z1), length);
+        DatumPoint At(Rational rho, Rational height)
+        {
+            var (bx, by, bz) = (p + (a * (height / length))).ToDoubles();
+            var r = rho.ToDouble();
+            return new DatumPoint(bx + (r * ex), by + (r * ey), bz + (r * ez));
+        }
+
+        var pointA = At(one.R0 + ((one.R1 - one.R0) * s), length * s);
+        var pointB = At(two.R0 + ((two.R1 - two.R0) * t), z0 + ((z1 - z0) * t));
+        return (true, new DistanceInfo(Math.Sqrt(squared.ToDouble()), pointA, pointB));
+    }
+
+    // A unit direction across the axis a that each arc holds, in doubles: the direction Across(a) with no arc, else the
+    // middle of an arc or one of its ends, the first that the other arc holds too; null when none is.
+    private static (double X, double Y, double Z)? Common(Vector3R a, MeasureCurve.Sector? first, MeasureCurve.Sector? second)
+    {
+        if (first is null && second is null)
+            return CurvedDistance.Across(a);
+        var candidates = new[] { first, second }.OfType<MeasureCurve.Sector>().SelectMany(arc => new[] { Middle(arc), arc.Start, arc.End });
+        foreach (var w in candidates)
+        {
+            if ((first?.Holds(w) ?? true) && (second?.Holds(w) ?? true))
+                return Unit(w.ToDoubles(), Math.Sqrt(w.Dot(w).ToDouble()));
+        }
+
+        return null;
+    }
+
+    // A direction strictly inside an arc: the sum of its ends for a sweep below a half turn, the opposite of that sum above
+    // it, and the start turned a quarter about the normal for a half turn; the start for a whole turn.
+    private static Vector3R Middle(MeasureCurve.Sector arc)
+    {
+        var sweep = arc.Start.Cross(arc.End).Dot(arc.Normal);
+        if (sweep.Sign > 0)
+            return arc.Start + arc.End;
+        if (sweep.Sign < 0)
+            return (arc.Start + arc.End) * (Rational)(-1);
+        return arc.Start.Dot(arc.End).Sign > 0 ? arc.Start : arc.Normal.Cross(arc.Start);
+    }
+
+    // The nearest pair of the segments P1 Q1 and P2 Q2 of the half-plane (ρ, Z), with the inner product
+    // u.ρ v.ρ + u.Z v.Z / length, by the method of C. Ericson, "Real-Time Collision Detection", section 5.1.9: the parts s
+    // and t of the two points, each clamped to [0, 1], and the exact square of their distance.
+    private static (Rational S, Rational T, Rational Squared) Profiles(
+        (Rational R, Rational Z) p1, (Rational R, Rational Z) q1, (Rational R, Rational Z) p2, (Rational R, Rational Z) q2, Rational length)
+    {
+        Rational Dot((Rational R, Rational Z) u, (Rational R, Rational Z) v) => (u.R * v.R) + (u.Z * v.Z / length);
+        Rational Clamp(Rational value) => value.Sign < 0 ? Rational.Zero : value > Rational.One ? Rational.One : value;
+        var (d1, d2, r) = ((q1.R - p1.R, q1.Z - p1.Z), (q2.R - p2.R, q2.Z - p2.Z), (p1.R - p2.R, p1.Z - p2.Z));
+        var (a, e, f, c, b) = (Dot(d1, d1), Dot(d2, d2), Dot(d2, r), Dot(d1, r), Dot(d1, d2));
+        var denominator = (a * e) - (b * b);
+        var s = denominator.IsZero ? Rational.Zero : Clamp(((b * f) - (c * e)) / denominator);
+        var tn = (b * s) + f;
+        Rational t;
+        if (tn.Sign < 0)
+            (s, t) = (Clamp(-c / a), Rational.Zero);
+        else if (tn > e)
+            (s, t) = (Clamp((b - c) / a), Rational.One);
+        else
+            t = tn / e;
+        var gap = (p1.R + (d1.Item1 * s) - p2.R - (d2.Item1 * t), p1.Z + (d1.Item2 * s) - p2.Z - (d2.Item2 * t));
+        return (s, t, Dot(gap, gap));
+    }
+
+    // Item 22 (phase K15d, TASK-0450): the sides of two cylinders whose axes are not parallel. Each point of a side is
+    // within its radius of the line of its axis, so D - r - s is a lower bound of the distance, with D the distance of the
+    // two lines. The common perpendicular of the lines reaches it when its two feet are on the two spans and D ≥ r + s, each
+    // an exact test; null for each other case: a foot past an end, where the rim of an end is nearest, or two sides that
+    // cross, where the curve of the crossing can be past an end.
+    public static DistanceInfo? Skew(MeasureCurve.Surface first, MeasureCurve.Surface second)
+    {
+        ArgumentNullException.ThrowIfNull(first);
+        ArgumentNullException.ThrowIfNull(second);
+        var (p, a, r, q, b, s) = (first.Base, first.Axis, first.Radius, second.Base, second.Axis, second.Radius);
+        var w = p - q;
+        var (aa, ab, bb, aw, bw) = (a.Dot(a), a.Dot(b), b.Dot(b), a.Dot(w), b.Dot(w));
+        var denominator = (aa * bb) - (ab * ab);
+        if (denominator.IsZero)
+            return null;
+        var (u, v) = (((ab * bw) - (bb * aw)) / denominator, ((aa * bw) - (ab * aw)) / denominator);
+        if (u.Sign < 0 || u > Rational.One || v.Sign < 0 || v > Rational.One)
+            return null;
+        var (from, to) = (p + (a * u), q + (b * v));
+        var squared = (to - from).Dot(to - from);
+        if (squared < (r + s) * (r + s))
+            return null;
+        var distance = Math.Sqrt(squared.ToDouble());
+        var (ux, uy, uz) = Unit((to - from).ToDoubles(), distance);
+        var (fx, fy, fz) = from.ToDoubles();
+        var (tx, ty, tz) = to.ToDoubles();
+        var (rd, sd) = (r.ToDouble(), s.ToDouble());
+        return new DistanceInfo(distance - rd - sd, new DatumPoint(fx + (ux * rd), fy + (uy * rd), fz + (uz * rd)), new DatumPoint(tx - (ux * sd), ty - (uy * sd), tz - (uz * sd)));
     }
 
     private static (double X, double Y, double Z) Unit((double X, double Y, double Z) v, double length) => (v.X / length, v.Y / length, v.Z / length);

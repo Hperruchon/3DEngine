@@ -13,13 +13,17 @@ namespace Engine.Core.Queries;
 // gives the same bits on each platform, but an exact tie can refuse a case that has an answer. A case with no closed form
 // here gives the reason, and the caller refuses it with E-MEASURE-CURVED. Items 15 to 17 (phase K15c, TASK-0444): a part of
 // a piece past an end of the side of a cylinder, each piece against the side of a cone (RevolvedDistance), the side of an
-// arc when the nearest point of the whole turn is on the arc, and two curved faces of RevolvedDistance.
+// arc when the nearest point of the whole turn is on the arc, and two curved faces of RevolvedDistance. Items 21 and 22
+// (phase K15d, TASK-0450): the side of a hole in its parts, two sides on one axis, two cylinders whose axes are not
+// parallel, and the side of an arc with a curved face.
 internal static class CurvedDistance
 {
     public static (DistanceInfo? Info, ErrorDetail? Error) Between(MeasureTarget.Resolved a, MeasureTarget.Resolved b)
     {
         ArgumentNullException.ThrowIfNull(a);
         ArgumentNullException.ThrowIfNull(b);
+        if (a.Parts is not null || b.Parts is not null)
+            return Parts(a, b);
         if (a.Curve is null && b.Curve is null)
             return (GetDistanceQueryHandler.Between(a, b), null);
         if (a.Curve is { } first && b.Curve is { } second)
@@ -55,28 +59,67 @@ internal static class CurvedDistance
         return (swap ? new DistanceInfo(info.Distance, info.PointB, info.PointA) : info, null);
     }
 
+    // Item 21 (phase K15d, TASK-0450): the side of a hole in two parts or more. The distance is the lowest over the pairs of
+    // parts, the first pair in the order of the parts when several give it, and a part with no closed form refuses the case.
+    private static (DistanceInfo? Info, ErrorDetail? Error) Parts(MeasureTarget.Resolved a, MeasureTarget.Resolved b)
+    {
+        DistanceInfo? best = null;
+        IReadOnlyList<MeasureCurve.Surface?> PartsOf(MeasureTarget.Resolved side) => side.Parts is { } parts ? [.. parts] : [side.Curve];
+        foreach (var x in PartsOf(a))
+        {
+            foreach (var y in PartsOf(b))
+            {
+                var (info, error) = Between(a with { Curve = x, Parts = null }, b with { Curve = y, Parts = null });
+                if (info is null)
+                    return (null, error);
+                if (best is null || info.Distance < best.Distance)
+                    best = info;
+            }
+        }
+
+        return (best, null);
+    }
+
     // Item 16: two curved faces. Two spheres, a sphere and the side of a cylinder or a cone, and the sides of two cylinders
-    // with parallel axes have a closed form; the side of an arc, two cones, a cylinder and a cone, and two cylinders whose
-    // axes are not parallel have none.
+    // with parallel axes have a closed form. Item 22 (phase K15d, TASK-0450): two sides on one axis, as a cylinder and a
+    // cone or two cones, have the closed form of their profiles, and two cylinders whose axes are not parallel the closed
+    // form of the common perpendicular of the axes when it reaches both spans and the sides are apart. The side of an arc
+    // is a part of its whole turn: the pair of the whole turn holds when its point on the side is on the arc, because the
+    // lowest distance over a part is not below the lowest over the whole and is equal when the part holds the pair. Each
+    // other pair has none: a cone and another side on another axis, and two cylinders whose common perpendicular is past
+    // an end or whose sides cross.
     private static (DistanceInfo? Info, ErrorDetail? Error) Pair(MeasureCurve.Surface first, MeasureCurve.Surface second)
     {
         if (first.Kind == SideCurveKind.Sphere && second.Kind == SideCurveKind.Sphere)
             return (Spheres(first, second), null);
-        if (first.Arc is null && second.Arc is null)
+        DistanceInfo? info = null;
+        if (first.Kind == SideCurveKind.Sphere || second.Kind == SideCurveKind.Sphere)
         {
-            if (first.Kind == SideCurveKind.Sphere || second.Kind == SideCurveKind.Sphere)
-            {
-                var (ball, side) = first.Kind == SideCurveKind.Sphere ? (first, second) : (second, first);
-                var info = RevolvedDistance.Sphere(RevolvedDistance.Revolution.Of(side), ball.Base, ball.Radius);
-                return (first.Kind != SideCurveKind.Sphere ? info : new DistanceInfo(info.Distance, info.PointB, info.PointA), null);
-            }
-
-            if (first.Kind == SideCurveKind.Cylinder && second.Kind == SideCurveKind.Cylinder && RevolvedDistance.Cylinders(first, second) is { } between)
-                return (between, null);
+            var (ball, side) = first.Kind == SideCurveKind.Sphere ? (first, second) : (second, first);
+            var found = RevolvedDistance.Sphere(RevolvedDistance.Revolution.Of(side), ball.Base, ball.Radius);
+            info = first.Kind != SideCurveKind.Sphere ? found : new DistanceInfo(found.Distance, found.PointB, found.PointA);
+        }
+        else if ((first.Kind == SideCurveKind.Cone || second.Kind == SideCurveKind.Cone || first.Arc is not null || second.Arc is not null)
+            && RevolvedDistance.Coaxial(first, second) is (true, var coaxial))
+        {
+            // Two sides on one axis: the pair is in a half-plane that both arcs hold, so it needs no test of the arc.
+            return coaxial is null
+                ? (null, MeasureTarget.Curved("The two sides are on one axis, but their arcs hold no common direction from the axis."))
+                : (coaxial, null);
+        }
+        else if (first.Kind == SideCurveKind.Cylinder && second.Kind == SideCurveKind.Cylinder)
+        {
+            info = RevolvedDistance.Cylinders(first, second) ?? RevolvedDistance.Skew(first, second);
         }
 
-        return (null, MeasureTarget.Curved("The two sides are curved faces with no closed form: only two spheres, a sphere and the side of a cylinder or a cone, and two cylinders with parallel axes have one."));
+        if (info is null)
+            return (null, MeasureTarget.Curved("The two sides are curved faces with no closed form: only two spheres, a sphere and the side of a cylinder or a cone, two sides on one axis, two cylinders with parallel axes, and two cylinders whose common perpendicular reaches both spans while the sides are apart have one."));
+        if ((first.Arc is { } one && !OnArc(first, one, Exact(info.PointA))) || (second.Arc is { } two && !OnArc(second, two, Exact(info.PointB))))
+            return (null, MeasureTarget.Curved("The nearest point of the whole turn of the side of the arc is not on the arc."));
+        return (info, null);
     }
+
+    private static Vector3R Exact(DatumPoint p) => Vector3R.FromDoubles(p.X, p.Y, p.Z);
 
     // Item 17: true when the direction from the axis to the point x is in the arc, from its start counter-clockwise about
     // its normal to its end. Each step is exact on the rationals of x, so a point on an end of the arc within the rounding
