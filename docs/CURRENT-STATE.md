@@ -13687,3 +13687,42 @@ The failed runs since the entry v0.437, from the API: none.
 New tests: 7. The test list holds 3221 (1871 in `Engine.Tests`, 390 in `3DEngine.Tests`, 957 in `3DEngine.ImageTests`,
 3 in `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.431, 1 product milestone
 and 7 entries followed it.
+
+## v0.439 — The test of the work of the path patterns reads no file a second time (P0.185, TASK-0455)
+
+The session of TASK-0454 (P0.184) reported on 2026-11-22 that a test of `PathPatternWorkTests` (P0.177, TASK-0442) failed once in
+a full local run and passed in the next run. The output of that run was not kept. The branch `p0185-pattern-work-test` starts
+from `6770ff34` (P0.184, TASK-0454, v0.438, not merged yet).
+
+**The cause.**
+- The second test, the count of the gate of governed-by, read the ADR files and the task files to get its bound, and the gate then read them a
+  second time. With no expression in the cache, the gate builds one expression for each of its patterns, so the count equals
+  the bound (478 of 478 today). A file that gains one pattern between the two reads gives "built 479 expressions for 478
+  patterns", and the next run passes. A probe that adds and removes one write path of an open task while the test runs with a
+  cold cache gave this failure in 10 of 200 rounds.
+- The candidates of the threads do not give it. `GetOrAdd` can call the factory on two threads for one pattern, but one thread
+  builds one pattern at most once; a test of another class that builds first only lowers the count; the tests have no await.
+  A probe ran the two tests beside the gate of governed-by and `WriteSetGateTests` on eight threads with a cold cache in each of
+  40 rounds: no failure in 320 calls.
+- The first test used one fixed pattern, so a second call of the test on another thread at the same time built it first (a
+  probe: 11 failures of 320 calls). The suite calls the test once, so this did not cause the report.
+
+**The change.**
+- The bound of the second test is the growth of the cache during the gate (`TaskFiles.PatternsKept`). A thread builds the
+  expression of a pattern only when the cache does not keep it, the cache keeps it before the call returns, and the cache never
+  removes a pattern. The test reads no file for its bound.
+- The first test uses a new pattern for each call.
+- The History of ADR-0173 records it (item 4: a count of the work, and no second read of the files for the bound).
+
+**Proof.** After the change the three probes gave no failure: 0 of 200 rounds with the changing write set (1 to 4 reads of the
+file were refused by the system in each run of the probe, before and after; that is a property of each gate that reads the
+repository), 0 of 320 calls on eight threads, 0 of 320 calls with the first test on two threads. The probes are removed. Twenty
+runs of the Governance tests and twenty runs of all of `Engine.Tests` gave no failure before and after the change. A script
+(`inject.js` in `%TEMP%\p0185`) applied five injections, each restored byte for byte (sha256), and each made a named test fail;
+the table is in TASK-0455. A clean build gives 0 warnings, `dotnet test` passes 3221 tests, and the write-set check and `eng/repo-gates` pass. The run on
+the branch is not done yet.
+The failed runs since the entry v0.438, from the API: none.
+
+New tests: 0. The test list holds 3221 (1871 in `Engine.Tests`, 390 in `3DEngine.Tests`, 957 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.431, 1 product milestone and 8
+entries followed it.

@@ -133,3 +133,6 @@ a red run with no fault of the code stops the work until the owner sees it.
 - 2026-11-21 · TASK-0449 · Item 4 and "affects": the limits of `HostGuardTests` become no progress for 60 seconds and the
   order of the address and the exit; and in "Consequences", the running test of a stop is the first failure of the report,
   so with ten failures or more it keeps its annotation (finding T191 of the third codebase review of 2026-11-21, phase P0.180).
+- 2026-11-22 · TASK-0455 · Item 4 with no change of an item: the count of the work of the path patterns in
+  `PathPatternWorkTests` has a bound that reads no file a second time, the growth of the cache during the gate, so an edit of a
+  file during the run does not decide the result; the first test uses a new pattern for each call (phase P0.185).
