@@ -76,6 +76,9 @@ internal sealed class DesktopSession : IDisposable
             return (null, DesktopSurface.ExitStartFailed, $"The surface did not start: {ex.Message}");
         }
 
+        // ADR-0187 item 1 (phase R25, TASK-0462): the desktop draws the preview of a proposal, so each fork reads the shapes after
+        // the commands from the first proposal on, also from a proposal that an agent posts before the window starts.
+        host.Proposals.KeepShapes = true;
         foreach (var warning in host.OpenWarnings)
             Console.Error.WriteLine($"{warning.Code}: {warning.Message}");
         if (host.NewFileMessage is { } made)

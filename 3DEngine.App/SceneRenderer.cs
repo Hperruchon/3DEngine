@@ -68,6 +68,23 @@ internal sealed unsafe class SceneRenderer : IDisposable
     // ADR-0186 item 2 (phase R18p, TASK-0458): the ground with the soft light of the render, the first draw after the clear.
     private readonly GroundPipeline _ground;
 
+    // ADR-0187 item 5 (phase R25, TASK-0462): the preview of the shown proposal that the window gives before each frame, or
+    // null; the meshes of its shapes; and the draws of its shapes in one frame. The new shapes are dashed lines in the amber of
+    // a proposal (DesktopUi.DimensionColour, #ffa040), at full alpha where they are in front of the scene and at
+    // PreviewHiddenAlpha behind it, so a shape inside a body still shows.
+    public PreviewDraw? ProposalPreview { get; set; }
+
+    private readonly PreviewMeshes _preview = new();
+    private readonly DrawList _previewList = new();
+    internal static readonly System.Numerics.Vector4 PreviewColour = new(
+        (Ui.DesktopUi.DimensionColour & 0xFF) / 255f, ((Ui.DesktopUi.DimensionColour >> 8) & 0xFF) / 255f, ((Ui.DesktopUi.DimensionColour >> 16) & 0xFF) / 255f, 1f);
+    internal const float PreviewHalfWidth = 1.0f;
+    internal const float PreviewDash = 5f;
+    internal const float PreviewHiddenAlpha = 0.45f;
+
+    // ADR-0187 item 5: the shapes of the preview, for a test.
+    internal PreviewMeshes PreviewMeshes => _preview;
+
     public SceneRenderer(GraphicsDevice device, VkRenderPass renderPass, ISessionHost host)
     {
         _device = device;
@@ -158,7 +175,13 @@ internal sealed unsafe class SceneRenderer : IDisposable
         var changed = _bodies.Apply(scene, _meshes, _device);
         // ADR-0184 items 3 and 4: the cut of each body for the plane of the section, after the meshes of this frame.
         _section.Follow(Section, Section is null ? [] : _bodies.SectionBodies, _bodies.Bounds, _meshes, _device);
-        if (SceneBox(_bodies.Bounds, images) is not { } box)
+        // ADR-0187 item 5: the shapes of the preview, after the meshes of this frame. The far plane holds them too, so a new
+        // shape far from the bodies shows whole; the camera does not frame them.
+        _preview.Follow(ProposalPreview?.Card, _meshes, _device);
+        var bodies = ProposalPreview is { Mode: not PreviewMode.Before } && _preview.Bounds is { } shapes
+            ? ThreeDEngine.Core.Measuring.Dimensions.Union(_bodies.Bounds is { } known ? [known, shapes] : [shapes])
+            : _bodies.Bounds;
+        if (SceneBox(bodies, images) is not { } box)
             return;
 
         // Frame keeps the distance at half the far plane, so the far plane of the box comes before the frame, and again
@@ -233,8 +256,12 @@ internal sealed unsafe class SceneRenderer : IDisposable
         _others.Clear();
         _caps.Clear();
         var selectedMesh = selected?.ToString();
+        // ADR-0187 item 4: in the mode "After" each body that the proposal removes or gives a new solid does not draw.
+        var replaced = ProposalPreview is { Mode: PreviewMode.After } after ? after.Card.Replaced : null;
         foreach (var record in _drawList.Records)
         {
+            if (replaced is { Count: > 0 } && Guid.TryParse(record.MeshId, out var gone) && replaced.Contains(gone))
+                continue;
             var list = record.MeshId == selectedMesh ? _selected : _others;
             // ADR-0184 item 4: while a section lasts, a cut body draws its kept part in the place of its mesh, and its cap with
             // the same model-view matrix; a body on the side that goes draws nothing.
@@ -265,6 +292,16 @@ internal sealed unsafe class SceneRenderer : IDisposable
             _highlighter.Execute(commandBuffer, extent, _selected, _meshes, projection);
             _hiddenEdges.Execute(commandBuffer, extent, _selected, _meshes, projection, SelectedEdgeColour, SelectedEdgeHalfWidth, HiddenDash);
             _edges.Execute(commandBuffer, extent, _selected, _meshes, projection, SelectedEdgeColour, SelectedEdgeHalfWidth, 0f);
+        }
+
+        // ADR-0187 item 5: the new shapes of the preview last, over each body, in dashed amber lines: behind the scene at a lower
+        // alpha, then in front of it. While a focus lasts, only the shape of the body of the focus (ADR-0101 item 2).
+        if (ProposalPreview is { Mode: not PreviewMode.Before } && _preview.Scene.Entities.Count > 0)
+        {
+            _previewList.Clear();
+            SceneWalker.Fill(_preview.Scene, camera, Focus is { } shapeFocus ? new FocusList(_previewList, PreviewMeshes.MeshId(shapeFocus)) : _previewList);
+            _hiddenEdges.Execute(commandBuffer, extent, _previewList.Records, _meshes, projection, PreviewColour with { W = PreviewHiddenAlpha }, PreviewHalfWidth, PreviewDash);
+            _edges.Execute(commandBuffer, extent, _previewList.Records, _meshes, projection, PreviewColour, PreviewHalfWidth, PreviewDash);
         }
 
         overlay?.Invoke(commandBuffer);

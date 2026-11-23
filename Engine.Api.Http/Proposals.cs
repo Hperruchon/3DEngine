@@ -203,6 +203,9 @@ public sealed partial class Proposals : IDisposable
     private Proposal CloseLocked(Entry entry, string state)
     {
         entry.State = state;
+        // ADR-0187 item 2 (TASK-0462): a closed proposal keeps its preview (ADR-0185 item 5) but not its shapes, which only the
+        // window of a waiting proposal draws.
+        (entry.Shapes, entry.ShapesLeftOut) = (null, 0);
         _open.Remove(entry);
         _closed.Add(entry);
         if (_closed.Count > MostKept)
@@ -254,6 +257,12 @@ public sealed partial class Proposals : IDisposable
         public bool Computing { get; set; }
 
         public List<Waiter> Waiters { get; } = new();
+
+        // ADR-0187 item 2 (phase R25, TASK-0462): the shapes of the last preview of an open proposal, and the count of the
+        // bodies above the bound; a proposal drops its shapes when it closes.
+        public IReadOnlyList<Engine.Core.Preview.PreviewShape>? Shapes { get; set; }
+
+        public int ShapesLeftOut { get; set; }
     }
 }
 

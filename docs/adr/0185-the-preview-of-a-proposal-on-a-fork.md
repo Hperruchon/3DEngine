@@ -1,13 +1,13 @@
 ---
 id: 0185
 title: The preview of a proposal on a fork of the Document, a replay of a copy of its log off the serial lock
-status: Accepted
+status: Amended
 topic: Surface, agent
 date: 2026-11-22
 supersedes: []
 superseded-by: []
 amends: ['0092']
-amended-by: []
+amended-by: ['0187']
 affects:
   - Engine.Core/Preview/**
   - Engine.Api.Http/Proposals.cs
@@ -221,3 +221,13 @@ serves P16, R25, K12 and P15b.
 - 2026-11-22 · TASK-0459 · P15b ships items 8 to 10 and gives their form: `sketches`, `measures` and `checks` in the answer
   of item 3, the base for the values before the commands, the rule of the same solid, the pairs of a removed body, and one
   check for each pair. Item 2: the fork takes the factory of backends and frees each backend. Item 11: the measured cost.
+- 2026-11-23 · TASK-0462 · The owner answered "all A" in the chat to the questions of the codebase review of 2026-11-23. Q5 A:
+  the owner accepts the pairs of a removed body in the checks of item 10, past the words "adds or changes" of Q4 A, because
+  `Translate` and the booleans remove the old body.
+- 2026-11-23 · TASK-0462 · Q6 A of the same review: a bound of the sum of the work of the checks of one preview. The check gives
+  the work of a pair before it splits, the fork adds the work of its pairs, and each pair after the bound has the state
+  `limit`. It comes in the first task that changes the checks of the preview, P16 or a task before it; until then the point of
+  "Bad" on the sum of the checks stays.
+- 2026-11-23 · TASK-0462 · ADR-0187 amends items 2 and 5: a host that draws sets `KeepShapes`, the fork then also reads the
+  triangles of each body with a new solid before it frees its backend, and the queue keeps them for an open proposal only,
+  outside the answer of the route.

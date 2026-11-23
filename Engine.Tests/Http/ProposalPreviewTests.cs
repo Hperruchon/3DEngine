@@ -672,4 +672,126 @@ public sealed class ProposalPreviewTests
                     property.PropertyType != typeof(string) && typeof(IEnumerable).IsAssignableFrom(property.PropertyType),
                     $"{type.Name}.{property.Name} is a {property.PropertyType.Name}: the equality of the record compares it by reference, not by content (ADR-0185 item 4).");
     }
+
+    // ADR-0187 items 1 and 2 (phase R25, TASK-0462): a host that draws sets KeepShapes, and the queue keeps the shape of each body
+    // with a new solid of the last preview of an open proposal: the new box has a shape, and the renamed box keeps its solid and
+    // has none. The shape is the tessellation of the box after the accept. A closed proposal keeps its preview and drops its
+    // shapes. The native backend, because only it gives the triangles of a body (ITessellationOps).
+    [NativeManifoldFact]
+    public async Task With_KeepShapes_The_Queue_Keeps_The_Shape_Of_Each_New_Solid_Until_The_Proposal_Closes()
+    {
+        await using var served = await Served.Start(Native, Native);
+        served.Host.Proposals.KeepShapes = true;
+        var box = BookcaseCase.Output(await BookcaseCase.Applied(served.Host.Session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 }));
+        var made = Guid.NewGuid();
+        var id = await Post(served, "A box and a name", Box(made), Rename(Guid.NewGuid(), box, "Old"));
+        await Preview(served, id);
+
+        var kept = served.Host.Proposals.Kept(id) ?? throw new InvalidOperationException("No kept preview.");
+        Assert.True(kept.Current);
+        Assert.Equal(0, kept.ShapesLeftOut);
+        var shape = Assert.Single(kept.Shapes);
+        Assert.Equal(made, shape.BodyId);
+        Assert.Equal(12, shape.Triangles.TriangleCount);
+        Assert.Null(served.Host.Proposals.Kept(Guid.NewGuid()));
+
+        Assert.Equal(ProposalStates.Accepted, (await served.Host.Proposals.Accept(id))!.State);
+        var accepted = (await served.Host.Session.Query<Tessellation>(new GetTessellationQuery { BodyId = made })).Result!;
+        Assert.Equal(accepted.Positions, shape.Triangles.Positions);
+        Assert.Equal(accepted.Indices, shape.Triangles.Indices);
+        var closed = served.Host.Proposals.Kept(id) ?? throw new InvalidOperationException("The closed proposal has no preview.");
+        Assert.Empty(closed.Shapes);
+        Assert.Same(kept.Preview, closed.Preview);
+    }
+
+    // ADR-0187 item 1: with no KeepShapes, as engine-api-http, the fork reads no shape, and the answer of the route has no member
+    // for the shapes in each case: a shape is presentation, for the window of the host only (ADR-0007).
+    [NativeManifoldFact]
+    public async Task With_No_KeepShapes_The_Fork_Reads_No_Shape_And_The_Route_Gives_None()
+    {
+        foreach (var keep in new[] { false, true })
+        {
+            await using var served = await Served.Start(Native, Native);
+            served.Host.Proposals.KeepShapes = keep;
+            var id = await Post(served, "Make a box", Box(Guid.NewGuid()));
+            await Preview(served, id);
+            Assert.Equal(keep ? 1 : 0, served.Host.Proposals.Kept(id)!.Shapes.Count);
+
+            using var response = await served.Http.GetAsync($"/proposals/{id}/preview");
+            var body = JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement;
+            Assert.Equal(
+                ["proposalId", "state", "documentVersion", "results", "failedIndex", "failedCode", "bodies", "sketches", "measures", "checks", "error"],
+                body.EnumerateObject().Select(member => member.Name));
+        }
+    }
+
+    // ADR-0187 item 2: the shapes of one preview stay under the bound of the triangles, in the order of the body identifiers; a
+    // body whose shape passes the bound has no shape and counts in ShapesLeftOut. With no bound the fork reads no shape.
+    [NativeManifoldFact]
+    public async Task The_Shapes_Of_One_Preview_Stay_Under_The_Bound_Of_The_Triangles()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = new DocumentSession(Engine.Core.Hosting.EngineHosting.CreateDefault(backend));
+        ForkSource source;
+        try
+        {
+            source = await session.Read((document, _) => ForkSource.Of(document));
+        }
+        finally
+        {
+            session.Close();
+        }
+
+        Command[] commands = [new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 }, new CreateBoxCommand { SizeX = 20, SizeY = 20, SizeZ = 20 }];
+        var all = await DocumentFork.Run(source, commands, Native, shapes: int.MaxValue);
+        Assert.Equal(commands.Select(command => command.CommandId).Order(), all.Shapes!.Select(shape => shape.BodyId));
+        Assert.Equal(0, all.ShapesLeftOut);
+
+        var first = all.Shapes![0].Triangles.TriangleCount;
+        var bounded = await DocumentFork.Run(source, commands, Native, shapes: first);
+        Assert.Equal([all.Shapes[0].BodyId], bounded.Shapes!.Select(shape => shape.BodyId));
+        Assert.Equal(1, bounded.ShapesLeftOut);
+
+        var none = await DocumentFork.Run(source, commands, Native);
+        Assert.Null(none.Shapes);
+        Assert.Equal(0, none.ShapesLeftOut);
+    }
+
+    // ADR-0187 item 3: while a later version of the Document waits for its fork, the kept preview is not current, so the window
+    // says "updating"; when the fork ends, the new preview is current.
+    [NativeManifoldFact]
+    public async Task A_Kept_Preview_Is_Not_Current_While_A_Later_Version_Waits_For_Its_Fork()
+    {
+        var forks = 0;
+        using var gate = new ManualResetEventSlim(true);
+        var blocked = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        await using var served = await Served.Start(() =>
+        {
+            if (Interlocked.Increment(ref forks) > 1 && !gate.IsSet)
+                blocked.TrySetResult();
+            gate.Wait();
+            return new ManifoldGeometryBackend();
+        }, Native);
+        served.Host.Proposals.KeepShapes = true;
+        var box = BookcaseCase.Output(await BookcaseCase.Applied(served.Host.Session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 }));
+        var id = await Post(served, "Make a box", Box(Guid.NewGuid()));
+        await Preview(served, id);
+        Assert.True(served.Host.Proposals.Kept(id)!.Current);
+
+        gate.Reset();
+        await BookcaseCase.Applied(served.Host.Session, new RenameBodyCommand { BodyId = box, NewName = "Later" });
+        var waited = await Task.WhenAny(blocked.Task, Task.Delay(TimeSpan.FromSeconds(30)));
+        var stale = served.Host.Proposals.Kept(id)!;
+        gate.Set();
+        Assert.True(waited == blocked.Task, "The new version started no fork.");
+        Assert.False(stale.Current);
+        Assert.Equal(1, stale.Preview.DocumentVersion);
+        Assert.Single(stale.Shapes);
+
+        await Preview(served, id);
+        var fresh = served.Host.Proposals.Kept(id)!;
+        Assert.True(fresh.Current);
+        Assert.Equal(2, fresh.Preview.DocumentVersion);
+        Assert.Single(fresh.Shapes);
+    }
 }

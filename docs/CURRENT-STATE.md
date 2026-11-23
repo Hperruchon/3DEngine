@@ -13924,3 +13924,49 @@ New tests: 0. The test list holds 3249 (1896 in `Engine.Tests`, 390 in `3DEngine
 in `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product
 milestones and 0 entries follow it.
 The failed runs since the entry v0.443, from the API: none.
+
+## v0.445 — The window shows the preview of a proposal, the new shapes in dashed amber lines with a switch and a panel of the differences (R25, TASK-0462)
+
+On 2026-11-23 the owner answered "all A" in the chat to Q1 to Q6 of the codebase review of 2026-11-23, and ordered "Start R25".
+The branch `r25-preview-window` starts from `origin/main` at `70fb0264` (v0.444). ADR-0187 records the design; it amends
+ADR-0092 item 5 and ADR-0185 items 2 and 5.
+
+**The answers of the owner.** This task is the first task after the review, so it records them (`docs/templates.md`, section 7):
+Q1 A in the order of the roadmap (R25 now, P16 after it); Q2 A, Q3 A, Q4 A and Q6 A in the row P16; Q5 A and Q6 A in the
+History of ADR-0185. No code of Q2 to Q6 is in this task.
+
+**The change.**
+- The shapes (ADR-0187 items 1 and 2). The preview holds records, and the backend of a fork lives only during the fork, so the
+  fork reads the shapes: with `Proposals.KeepShapes`, which the desktop sets in `DesktopSession.Open`, `DocumentFork.Run`
+  queries `GetTessellation` for each body with a new solid before it frees its backend (`PreviewShape`). One preview keeps at
+  most 100,000 triangles, about 2.4 MB; a body above the bound counts in `ShapesLeftOut`. Only an open proposal keeps its
+  shapes, so the queue holds at most about 20 MB. The answer of `GET /proposals/{id}/preview` does not change, and
+  `engine-api-http` reads no shape. The rejected options: a fork in the window, a fork that keeps its backend, moved
+  triangles, and a member of the route.
+- The read (item 3). `Proposals.Kept(id)` gives the last preview with its shapes and `Current`, with the lock of the queue only,
+  so the frame calls it through `IProposalDesk.Preview`.
+- The draw (items 4 and 5). `PreviewMeshes` projects the shapes into a scene of `3DEngine.Core` off the thread of the frame
+  (ADR-0009), and `SceneRenderer` draws their edge lines last with the two edge pipelines of ADR-0109: dashes of 5 pixels in
+  the amber `#ffa040`, at alpha 0.45 behind the scene and 1 in front of it. "Before" draws no shape; "After" does not draw the
+  removed bodies, the changed bodies with a new solid and the hidden ones; "Both" draws the scene and the shapes. No shader
+  changes.
+- The panel (item 6). On a landscape display of at least 1024 by 600, at the lower right above the status line and left of the
+  ring of a body: "Preview of the proposal" ("· updating" while a later version waits), the switch "Before, After, Both" in
+  segments of 44 pixels, the table "Measure, Before, After" of the volumes, "Solver after" with "Plate: under, 6 free", and
+  "Checks that change" with "Bracket · Post: apart → overlapping". A phone, a portrait display, a small window and the sheet
+  page show no panel and draw "Both" (desktop first).
+
+**Proof.** Four new tests in `ProposalPreviewTests` and eighteen in `ProposalPreviewWindowTests`. The desktop host gives the
+window the preview of a bracket that a proposal widens and thickens: its shape equals the tessellation of the bracket after the
+accept, with the volume before and after, the state of "Plate" and the pair with the post from apart to overlapping. The
+pictures at 1280 by 720 show no amber line in "Before", the dashed amber shape in "Both" and "After", and no present bracket in
+"After"; the panel lies on no tool of the ring. A script (`inject.js` in the scratchpad of the session) applied sixteen
+injections, each restored byte for byte (sha256), and each made a named test fail; the table is in TASK-0462. A clean build
+gives 0 warnings, the phone project builds with 0 warnings, `dotnet test` passes 3271 tests, and the write-set check and
+`eng/repo-gates` pass. Not verified: continuous integration has not run, and no picture of the real window was made; the
+pictures come from the image test, with the one `SceneRenderer` and `DesktopUi` of the window.
+
+New tests: 22. The test list holds 3271 (1900 in `Engine.Tests`, 390 in `3DEngine.Tests`, 978 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.444, 1 product milestone and 1
+entry followed it.
+The failed runs since the entry v0.444, from the API: none.
