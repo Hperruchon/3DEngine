@@ -13886,3 +13886,41 @@ New tests: 5. The test list holds 3249 (1896 in `Engine.Tests`, 390 in `3DEngine
 `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.431, 4 product milestones and
 12 entries followed it, so the next product milestone or the next entry makes a codebase review due.
 The failed runs since the entry v0.442, from the API: none.
+
+## v0.444 — The codebase review of 2026-11-23 (governance, TASK-0460)
+
+Four product milestones (K15d, P15a, R18p and P15b) and twelve entries followed v0.431, the version that the third review of
+2026-11-21 examined, so the next product milestone or the next entry needed a review first. The owner ordered "Start the review"
+in the chat on 2026-11-23.
+
+**The review.** `docs/reviews/2026-11-23-codebase-review.md` examines `a708a91a`, the merge of P15b at v0.443.
+- P0.180 fixed ten of the eleven findings of the last review and fixed V230 for its form; V233 holds the form that stays.
+- T4, a high finding since the review of 2026-09-30, is fixed: P0.181 makes the dispatch gate read the desktop host and the phone
+  host.
+- A fork sends no event to a client, frees its backend on each path, and writes nothing to the first log. Nothing new reaches the
+  log, and no new transcendental function came.
+- The pipeline since v0.431 has one red run in the ledger, 45021528072, a race of two test classes that P0.186 removed.
+- No new finding is critical or high.
+- E239 is medium: each fork and each base of a preview makes each boolean of the log again, and their kept results push out the
+  kept booleans of the first Document; ADR-0185 does not name that store.
+- E240, E241, T192, V233, V234, T193, T194, T195 and T196 are low: a cancellation of the queue escapes the route of the preview;
+  the subtract of a void takes no token; no test holds the backends and the stop of a fork; a body that comes back to the
+  section starts a second cut; a failed start of the ground pipeline leaks; two guards of `HostGuardTests` are weaker than
+  ADR-0173 item 4; the gate of the kept booleans misses a nested test class; the test of the path patterns does not bound the
+  count of the expressions; the marker gate does not read each configuration file.
+- TASK-0461 (P0.187) holds the ten findings after the next product phase.
+- The next row of the order is P16, the accept after a preview. The review recommends R25 first (Q1 A), because P16 compares with
+  the result that the person saw, and the window shows no preview before R25. P16 needs the group of a proposal in the log, a
+  change of `Engine.Contracts` (Q2 to Q4).
+- Q5 and Q6 ask the owner about the two open points of P15b: the pairs of a removed body, and no bound of the sum of the checks of
+  one preview. No register entry: the register holds 12 open entries of 15.
+- Open findings: 0 critical, 1 high, 8 medium and 25 low.
+
+**Proof.** Two agents examined the change from v0.431 to v0.443 in the worktree of the review and changed no file. The session
+read each of their findings in the code at its lines. A clean build gives 0 warnings, and `dotnet test` passes 3249 tests.
+`CodebaseReviewGateTests`, the write-set check and `eng/repo-gates` pass. The run on the branch is in the progress of TASK-0460.
+
+New tests: 0. The test list holds 3249 (1896 in `Engine.Tests`, 390 in `3DEngine.Tests`, 960 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product
+milestones and 0 entries follow it.
+The failed runs since the entry v0.443, from the API: none.
