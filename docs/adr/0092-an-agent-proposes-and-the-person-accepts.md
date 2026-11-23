@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0107', '0108', '0110', '0111', '0113', '0130', '0133', '0134', '0135', '0136', '0177', '0185']
+amended-by: ['0107', '0108', '0110', '0111', '0113', '0130', '0133', '0134', '0135', '0136', '0177', '0185', '0187']
 affects:
   - Engine.Api.Http/Proposals.cs
   - Engine.Api.Http/Endpoints/ProposalsEndpoint.cs
@@ -163,3 +163,6 @@ first one.
   no command lines, and the boxes and the values on the paper show the commands.
 - 2026-11-22 · TASK-0456 · ADR-0185 amends item 2: a fifth route, `GET /proposals/{id}/preview`, gives the preview of a
   proposal on a fork of the Document. The window still shows no simulated result (item 5) until R25.
+- 2026-11-23 · TASK-0462 · ADR-0187 amends item 5: the window shows the preview of the shown proposal, the new shapes in dashed
+  amber lines with the switch "Before, After, Both", and a panel with the measures, the state of the solver after the commands
+  and the checks that change.

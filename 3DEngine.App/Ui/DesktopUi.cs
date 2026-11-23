@@ -637,6 +637,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
         FollowSection(bodies);
         // ADR-0092 item 7 (TASK-0326): the waiting proposals of an agent; none on the home screen.
         BeginProposal(proposals);
+        // ADR-0187 item 6 (phase R25, TASK-0462): no panel of the preview until this frame shows one.
+        BeginPreview();
 
         ImGui.NewFrame();
         if (_dropFocus)
@@ -739,6 +741,8 @@ internal sealed unsafe partial class DesktopUi : IDisposable
             Rows(selectedBody);
             // ADR-0092 item 7 (TASK-0326): the proposal of an agent, over the ring, the chips and the rows.
             Proposal(displaySize, selectedBody);
+            // ADR-0187 items 4 and 6 (phase R25, TASK-0462): the panel of the preview of the proposal, at the lower right.
+            PreviewPanel(displaySize, bodies);
             // The review of Codex of v0.252 (TASK-0271): the window of the live sketches is at the upper right too, so while
             // the rows show, they take its place (ADR-0084 item 6); the window of an active sketch shows as before.
             // ADR-0107 (TASK-0330): while a proposal waits, the window of the live sketches does not show, so it covers no end

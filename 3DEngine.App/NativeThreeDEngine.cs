@@ -1104,6 +1104,12 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             });
         }
         _ui.ShowSheetProposal(sheetProposal);
+        // ADR-0187 items 3 and 6 (phase R25, TASK-0462): the last preview of the shown proposal, with the names of the sketches
+        // of this frame for the state of the solver.
+        var preview = proposals is [{ } previewed, ..] && _proposalDesk?.Preview(previewed.Id) is { } kept
+            ? kept with { SketchNames = (_sketches?.Live ?? []).Where(sketch => sketch.Name is not null).ToDictionary(sketch => sketch.SketchId, sketch => sketch.Name!) }
+            : null;
+        _ui.ShowProposalPreview(preview);
 
         // ADR-0102 item 5 (Q3 A): the question shows while a change of project waits for its answer.
         _ui.ShowQuestion(_projects?.Asking ?? false);
@@ -1148,6 +1154,8 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         ApplyPanel(_renderer.LiveBodies);
         // ADR-0101 item 2: a focus that an action of this frame started or ended shows in this frame.
         _renderer.Focus = _actions?.Focus;
+        // ADR-0187 items 4 and 5: the scene draws the preview in the mode of the switch; the sheet page has no scene.
+        _renderer.ProposalPreview = preview is null || pageShown ? null : new PreviewDraw(preview, _ui.PreviewMode);
 
         var ui = _uiRenderer;
         var selected = Selection;
@@ -1214,4 +1222,8 @@ internal interface IProposalDesk
 
     // Closes the proposal with no command.
     ProposalOutcome Reject(Guid id);
+
+    // ADR-0187 item 3 (phase R25, TASK-0462): the last preview of the proposal on a fork of the Document, with the shapes after
+    // its commands, or null before its first preview. No read of the session and no wait, so the frame calls it.
+    PreviewCard? Preview(Guid id);
 }

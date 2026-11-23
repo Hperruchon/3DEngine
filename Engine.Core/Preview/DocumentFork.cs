@@ -23,12 +23,16 @@ public static class DocumentFork
     // A copy that does not replay throws: BackendMismatchException when an entry records another backend (ADR-0015 item 6),
     // and ReplayDivergenceException when an entry does not apply again or gives another version. A factory that throws gives
     // its exception. A cancellation throws OperationCanceledException.
+    //
+    // ADR-0187 item 1 (phase R25, TASK-0462): shapes is the most triangles of the shapes after the commands, for a host that
+    // draws, or 0 for no shape. The fork reads the triangles of each body with a new solid while its backend lives.
     public static async Task<ForkResult> Run(
         ForkSource source,
         IReadOnlyList<Command> commands,
         Func<IGeometryBackend> backends,
         IAssetSource? assets = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        int shapes = 0)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(commands);
@@ -40,6 +44,7 @@ public static class DocumentFork
         BodyDifferences bodies;
         PreviewPlan plan;
         PreviewValues after;
+        (IReadOnlyList<PreviewShape> Shapes, int LeftOut)? drawn = null;
 
         var backend = backends();
         try
@@ -76,6 +81,8 @@ public static class DocumentFork
                 bodies = BodyDifferences.Of(bodiesBefore, bodiesAfter);
                 plan = PreviewPlan.Of(bodiesBefore, bodiesAfter, sketchesBefore, sketchesAfter);
                 after = await PreviewValues.Read(session, plan, after: true, ct).ConfigureAwait(false);
+                if (shapes > 0)
+                    drawn = await PreviewShape.Read(session, plan, bodiesAfter, shapes, ct).ConfigureAwait(false);
             }
             finally
             {
@@ -112,7 +119,7 @@ public static class DocumentFork
         }
 
         var (sketches, measures, checks) = PreviewValues.Differences(plan, after, before);
-        return new ForkResult(source.Version, results, failedIndex, failedCode, bodies, sketches, measures, checks);
+        return new ForkResult(source.Version, results, failedIndex, failedCode, bodies, sketches, measures, checks, drawn?.Shapes, drawn?.LeftOut ?? 0);
     }
 
     // The bodies and the sketches of the Document, as arrays: the function of a read must not keep a reference to the Document.
@@ -173,6 +180,8 @@ public sealed record ForkSource(long Version, IReadOnlyList<LogEntry> Log, strin
 // Item 2: the outcome of the commands of a proposal on a fork at the version DocumentVersion. Results holds the result of each
 // command that ran; FailedIndex and FailedCode name the command that stopped the apply, as in a failed accept.
 // Items 8 to 10 (P15b, TASK-0459): Sketches, Measures and Checks give the state of the solver, the measures and the checks.
+// ADR-0187 item 1 (phase R25, TASK-0462): Shapes holds the shape of each body with a new solid, or null when the caller asked
+// for no shape; ShapesLeftOut counts the bodies whose shape is above the bound of the triangles.
 public sealed record ForkResult(
     long DocumentVersion,
     IReadOnlyList<CommandResult> Results,
@@ -181,7 +190,9 @@ public sealed record ForkResult(
     BodyDifferences Bodies,
     IReadOnlyList<SketchChange> Sketches,
     IReadOnlyList<MeasureChange> Measures,
-    IReadOnlyList<PairChange> Checks);
+    IReadOnlyList<PairChange> Checks,
+    IReadOnlyList<PreviewShape>? Shapes = null,
+    int ShapesLeftOut = 0);
 
 // Item 4 (Q5 A): the bodies that the commands add, remove and change, each list in the order of the body identifiers. A body
 // changes when its record after the commands is not equal to its record before them. A body record has no list, so the

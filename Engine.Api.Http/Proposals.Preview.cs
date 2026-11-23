@@ -19,6 +19,10 @@ namespace Engine.Api.Http;
 // - The cancellation (item 7): a fork that a new version makes old runs to its end, and its preview serves each caller that
 //   asked before its copy of the log. So a stream of commits cannot hold a caller for ever. Only Dispose stops a fork.
 //
+// ADR-0187 (phase R25, TASK-0462): a host that draws sets KeepShapes, so each fork also reads the shape of each body with a
+// new solid (PreviewShape), and the queue keeps the shapes of the last preview of each open proposal for the window (Kept).
+// The answer of the route does not give them.
+//
 // The worker starts with no flow of the execution context, so it carries no token of the serial section of the session and
 // waits for the section like each other caller (DocumentSession, findings E42 and E43). The order of the locks stays the order
 // of DocumentSession: the session first, the lock of the queue second.
@@ -36,6 +40,31 @@ public sealed partial class Proposals
 
     // True when the host gives a backend for each fork.
     public bool MakesPreviews => _forks is not null;
+
+    // ADR-0187 item 1 (TASK-0462): true when each fork reads the shapes after the commands, for a host that draws. A host sets
+    // it before the first proposal; a fork that runs reads the value at its start.
+    public bool KeepShapes
+    {
+        get => Volatile.Read(ref _keepShapes);
+        set => Volatile.Write(ref _keepShapes, value);
+    }
+
+    private bool _keepShapes;
+
+    // ADR-0187 item 3 (TASK-0462): the last preview of a proposal with its shapes, for the frame of the window: no read of the
+    // session and no wait, only the lock of the queue. Null when no proposal of the queue has the identifier, or when its
+    // first preview is not complete. Current is false while a fork computes a preview of a later version, or while a later
+    // version waits for its fork.
+    public KeptPreview? Kept(Guid id)
+    {
+        lock (_lock)
+        {
+            if (Of(id) is not { Preview: { } preview } entry)
+                return null;
+            var current = entry.State != ProposalStates.Open || (entry.Pending is null && !entry.Computing && !_behind);
+            return new KeptPreview(preview, entry.Shapes ?? [], entry.ShapesLeftOut, current);
+        }
+    }
 
     // Item 3: the preview of an open or kept proposal, or null when no proposal of the queue has the identifier. For an open
     // proposal the call waits for a preview of the version of the Document at the call, or of a later version. For a closed
@@ -220,11 +249,13 @@ public sealed partial class Proposals
 
                 foreach (var (entry, source) in jobs)
                 {
-                    var preview = await Compute(entry, source, ct).ConfigureAwait(false);
+                    var (preview, shapes, leftOut) = await Compute(entry, source, ct).ConfigureAwait(false);
                     lock (_lock)
                     {
                         entry.Computing = false;
                         entry.Preview = preview;
+                        // ADR-0187 item 2: only an open proposal keeps its shapes, so at most 8 previews hold shapes.
+                        (entry.Shapes, entry.ShapesLeftOut) = entry.State == ProposalStates.Open ? (shapes, leftOut) : (null, 0);
                         SettleLocked(entry);
                     }
                 }
@@ -251,12 +282,14 @@ public sealed partial class Proposals
     // Item 2: one fork. A fork that cannot replay the copy, or that gets no backend, gives a failed preview with
     // E-API-PREVIEW-FAILED and its cause. Only Dispose stops a fork. P15b (TASK-0459): the fork takes the factory of the host and
     // frees each backend that it takes, the backend of the fork and, when items 8 to 10 need it, the backend of the base.
-    private async Task<ProposalPreview> Compute(Entry entry, ForkSource source, CancellationToken ct)
+    // ADR-0187 item 1 (TASK-0462): with KeepShapes the fork also gives the shapes after the commands, under the bound of
+    // PreviewShape.MostTriangles; a failed preview has no shape.
+    private async Task<(ProposalPreview Preview, IReadOnlyList<PreviewShape>? Shapes, int LeftOut)> Compute(Entry entry, ForkSource source, CancellationToken ct)
     {
         try
         {
-            var fork = await DocumentFork.Run(source, entry.Commands, _forks!, _assets, ct).ConfigureAwait(false);
-            return new ProposalPreview(
+            var fork = await DocumentFork.Run(source, entry.Commands, _forks!, _assets, ct, KeepShapes ? PreviewShape.MostTriangles : 0).ConfigureAwait(false);
+            return (new ProposalPreview(
                 entry.Id,
                 PreviewStates.Ready,
                 fork.DocumentVersion,
@@ -267,11 +300,11 @@ public sealed partial class Proposals
                 fork.Sketches,
                 fork.Measures,
                 fork.Checks,
-                null);
+                null), fork.Shapes, fork.ShapesLeftOut);
         }
         catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
         {
-            return new ProposalPreview(
+            return (new ProposalPreview(
                 entry.Id,
                 PreviewStates.Failed,
                 source.Version,
@@ -282,7 +315,7 @@ public sealed partial class Proposals
                 null,
                 null,
                 null,
-                new ErrorDetail(DiagnosticCodes.ApiPreviewFailed, $"The fork of the Document at the version {source.Version} failed: {ex.Message}"));
+                new ErrorDetail(DiagnosticCodes.ApiPreviewFailed, $"The fork of the Document at the version {source.Version} failed: {ex.Message}")), null, 0);
         }
     }
 
@@ -316,3 +349,8 @@ public sealed record ProposalPreview(
     IReadOnlyList<MeasureChange>? Measures,
     IReadOnlyList<PairChange>? Checks,
     ErrorDetail? Error);
+
+// ADR-0187 item 3 (phase R25, TASK-0462): the last preview of a proposal as the window reads it: the preview of the route, the
+// shapes after the commands (empty with no KeepShapes or for a failed preview), the count of the bodies whose shape is above
+// the bound, and true when no later version of the Document waits for a new preview.
+public sealed record KeptPreview(ProposalPreview Preview, IReadOnlyList<PreviewShape> Shapes, int ShapesLeftOut, bool Current);

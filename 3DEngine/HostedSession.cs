@@ -11,9 +11,18 @@ namespace ThreeDEngine.Desktop;
 // application project does not reference the surface library, which the phone does not have.
 // ADR-0110 item 1 (TASK-0334): each card holds the proposed value of each command too, from the parameters that the queue
 // keeps. ADR-0177 item 1 (phase R30f, TASK-0422): and the sheet item of each command, for the sheet page.
-internal sealed class HostedSession(EngineHost host) : ISessionHost, IProposalDesk
+// ADR-0187 items 1 and 3 (phase R25, TASK-0462): a host that draws asks the queue for the shapes of each preview, and the
+// window reads the last preview of the shown proposal through Preview.
+internal sealed class HostedSession : ISessionHost, IProposalDesk
 {
-    public EngineHost Host { get; } = host;
+    public HostedSession(EngineHost host)
+    {
+        ArgumentNullException.ThrowIfNull(host);
+        Host = host;
+        host.Proposals.KeepShapes = true;
+    }
+
+    public EngineHost Host { get; }
 
     public DocumentSession Session => Host.Session;
 
@@ -32,6 +41,13 @@ internal sealed class HostedSession(EngineHost host) : ISessionHost, IProposalDe
     public async Task<ProposalOutcome> Accept(Guid id) => Outcome(await Host.Proposals.Accept(id).ConfigureAwait(false));
 
     public ProposalOutcome Reject(Guid id) => Outcome(Host.Proposals.Reject(id));
+
+    // ADR-0187 item 3: the last preview of the proposal with its shapes, from the lock of the queue only, or null.
+    public PreviewCard? Preview(Guid id)
+        => Host.Proposals.Kept(id) is not { Preview: var preview } kept
+            ? null
+            : new PreviewCard(preview.ProposalId, preview.DocumentVersion, kept.Current, preview.Error?.Code, preview.FailedIndex, preview.FailedCode,
+                preview.Bodies, preview.Sketches ?? [], preview.Measures ?? [], preview.Checks ?? [], kept.Shapes, kept.ShapesLeftOut);
 
     private static ProposalOutcome Outcome(Proposal? proposal)
         => proposal is null ? ProposalOutcome.Gone
