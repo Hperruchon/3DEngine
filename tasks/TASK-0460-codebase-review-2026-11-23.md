@@ -1,7 +1,7 @@
 ---
 id: 0460
 title: The codebase review of 2026-11-23 is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-23
 depends-on: [0459]
@@ -53,12 +53,12 @@ A review of the code at `a708a91a` (v0.443) is in `docs/reviews/`, and a task ho
 
 - [x] Each finding of the review has its place and its evidence, and the session read each finding of the agents in the code.
 - [x] The measures use the method of the last review.
-- [ ] `CodebaseReviewGateTests`, `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on
+- [x] `CodebaseReviewGateTests`, `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on
       the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch codebase-review-2026-11-23) · v0.444
+Status: Done · commit (the merge of the branch codebase-review-2026-11-23) · v0.444
 
 ## Method
 
@@ -71,3 +71,4 @@ Weakest:    the times of E239 and the status 500 of E240 come from the code and 
 ## Progress
 
 - 2026-11-23: opened after P15b (TASK-0459), branch codebase-review-2026-11-23 from `a708a91a`. Ledger entry v0.444.
+- 2026-11-23: run 45271625268 of `edcbdcc0` passed on each job. Closed at v0.444.
