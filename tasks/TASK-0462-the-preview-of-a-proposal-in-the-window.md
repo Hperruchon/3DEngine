@@ -1,7 +1,7 @@
 ---
 id: 0462
 title: The window shows the preview of a proposal, the new shapes in dashed amber lines with a switch and a panel of the differences
-status: Active
+status: Done
 phase: R25
 opened: 2026-11-23
 depends-on: [0460]
@@ -109,7 +109,7 @@ the route) are in the record.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch r25-preview-window) · v0.445
+Status: Done · commit (the merge of the branch r25-preview-window) · v0.445
 
 ## Method
 
@@ -151,3 +151,4 @@ The first run of the script missed four injections: three did not build (a const
 treats as an error), and a solid line still passed the first test of the dashes, which counted gaps in each row. The test of the
 dashes now samples the points along each feature edge of the new shape, and the switch test now changes to a small window with
 the mode "After". The four injections in a form that builds then made their tests fail.
+- 2026-11-23: run 45283176372 of `074e7cb0` passed on each job. Closed at v0.445.
