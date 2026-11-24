@@ -221,6 +221,49 @@ public sealed class FixedStatusTests
         Assert.DoesNotContain(ui.TakeActions(), action => action is FrameAction);
     }
 
+    // ADR-0188 item 3 (phase P16, TASK-0463): the commands of a proposal are one step of undo in the status too. The window gives
+    // their group and the summary before the accept, so the step of Undo is the summary, and one Undo moves the whole group. A
+    // seed reads the groups of the log, so a new window after an open gives the same steps.
+    [Fact]
+    public async Task The_Step_Of_Undo_Of_A_Proposal_Is_The_Whole_Group()
+    {
+        using var host = new EngineHost(new InProcessMeshBackend());
+        Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1 })).Status);
+        var steps = new StepTexts();
+        using var subscription = await host.Session.Read((document, _) =>
+        {
+            steps.Seed([.. document.Log.Select(entry => (entry.Command.Name, entry.Command.GroupId))]);
+            return host.Subscribe(steps.Take);
+        });
+
+        var group = Guid.NewGuid();
+        Command[] commands = [new NoOpCommand { Echo = "a", GroupId = group }, new NoOpCommand { Echo = "b", GroupId = group }, new NoOpCommand { Echo = "c", GroupId = group }];
+        steps.ExpectGroup(commands.Select(command => command.CommandId), group, "Three steps of an agent");
+        Assert.Null((await host.Session.ApplyGroup(commands, version: 1)).FailedIndex);
+        Assert.Equal((4, "Three steps of an agent"), (steps.LogCount, steps.Undo));
+
+        Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new UndoCommand())).Status);
+        Assert.Equal((5, "Create box"), (steps.LogCount, steps.Undo));
+        Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new RedoCommand())).Status);
+        Assert.Equal((6, "Three steps of an agent"), (steps.LogCount, steps.Undo));
+
+        // A new window seeds from the log: the group has no summary there, so its step has the text of its last command.
+        var seeded = new StepTexts();
+        await host.Session.Read((document, _) =>
+        {
+            seeded.Seed([.. document.Log.Select(entry => (entry.Command.Name, entry.Command.GroupId))]);
+            return 0;
+        });
+        Assert.Equal((6, "No op"), (seeded.LogCount, seeded.Undo));
+        Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new UndoCommand())).Status);
+        await host.Session.Read((document, _) =>
+        {
+            seeded.Seed([.. document.Log.Select(entry => (entry.Command.Name, entry.Command.GroupId))]);
+            return 0;
+        });
+        Assert.Equal((7, "Create box"), (seeded.LogCount, seeded.Undo));
+    }
+
     // Finding V182 of the codebase review of 2026-11-14 (c) (TASK-0367): the count after the last command of a proposal is the
     // count right after its applied event, so a command of another client that commits later does not move it; a command that
     // did not apply gives no count.

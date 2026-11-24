@@ -13970,3 +13970,52 @@ New tests: 22. The test list holds 3271 (1900 in `Engine.Tests`, 390 in `3DEngin
 `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.444, 1 product milestone and 1
 entry followed it.
 The failed runs since the entry v0.444, from the API: none.
+
+## v0.446 — The accept after a preview compares the result and applies a proposal as one group of steps, which the log holds and one Undo reverses (P16, TASK-0463)
+
+On 2026-11-24 the owner ordered "Start P16" in the chat. The branch `p16-accept-after-preview` starts from `origin/main` at
+`65b3c025` (v0.445). ADR-0188 records the design, with the answers of the owner of 2026-11-23 to the codebase review of
+2026-11-23: Q2 A, Q3 A, Q4 A and Q6 A. Q2 A is a change of the public shape of `Engine.Contracts` that the owner approved; the
+record comes in the same commit. ADR-0188 amends ADR-0015 item 3, ADR-0031 items 2 and 4, ADR-0092 items 4 and 6, ADR-0130
+item 4, ADR-0182 item 8, ADR-0185 items 3 and 10, and ADR-0187 items 3 and 6.
+
+**The change.**
+- The group in the log (items 1 and 2, Q2 A). `Command.GroupId` is a new optional member. The accept sets the identifier of the
+  proposal on each of its commands; no route takes the member. An entry of the document file holds `"groupId"` only when the
+  command has a group, so an entry with no group has its bytes of before P16, and the format version stays 1.
+- The unit of undo (items 3 and 4). Consecutive steps of one group are one unit: one `Undo` reverses the whole unit in one commit,
+  and one `Redo` applies it again. The history of the bus, `FeatureList`, `SketchRebuild.InEffect` and the step texts of the
+  window walk the log with the same rule, so an open rebuilds the same units. An `Undo` or a `Redo` with a group is refused with
+  the new code `E-CMD-GROUP-MOVE`.
+- The apply (item 5, Q3 A). `DocumentSession.ApplyGroup` runs the commands of a group in one serial section at the version of
+  the comparison. Each command commits as a step of the group. The first command that does not apply, a command whose
+  identifier the session knows (finding E198) and a handler that throws each give one `Undo` of the group, which the log
+  holds. So the accept applies each command or none, with no rollback of the backend (E21).
+- The comparison (items 6 and 7, Q4 A). At the version of the preview that the person saw, that preview is the result and no
+  fork runs. After a new version the worker of the queue runs the fork again, and `PreviewContent` compares the two results by
+  content, with no version, sequence, time or message. A different result applies nothing: the proposal is open again with the
+  new preview, and its member `held` gives the new code `W-API-PROPOSAL-RESULT-CHANGED`. A commit between the comparison and
+  the apply makes the group stale, and the accept compares again. A result that stops applies nothing and fails the proposal.
+- The bound of the checks of one preview (item 8, Q6 A). The checks of one preview share one bound of 100,000 products, the
+  limit of one check. The check gives the work that it counted before it splits; the first pair above the work that the bound
+  leaves, and each pair after it, has the state `limit`.
+- The window (item 9). The window gives the version of the preview that its panel shows to the accept. The arc says "N
+  commands · 1 step of undo", the outcome says "1 step of undo" or "no command applied", and a changed result gives the note
+  "The result changed: check it" in amber at the top of the panel. The panel ends above the line of the outcome, which now
+  shows beside it.
+- The guide for an agent: the rules, a tested example of `held`, the two new codes and the limits.
+
+**Proof.** 17 new tests in `Engine.Tests` (`GroupHistoryTests`, `ProposalAcceptTests`) and 5 in `3DEngine.ImageTests`; nine
+earlier tests changed for the new behaviour (a failed accept applies nothing, one step of undo). A save and an open keep the
+units, and a log with groups and an Undo of a group replays on a new backend to the same Document and the same steps in effect.
+A script applied 25 injections, each restored byte for byte (sha256); 23 made a named test fail, and TASK-0463 gives the table
+and the reason of the two others. The hash of the determinism probe (`DETERMINISM_HASH_FILE`, `CrossPlatformHashTests`) is
+`068ba4a8…` before and after the change, on this computer. A clean build gives 0 warnings, the phone project builds with 0
+warnings, `dotnet test` passes 3293 tests, and the write-set check and `eng/repo-gates` pass. The picture of the window with the
+note comes from the image test `The_Picture_Of_A_Changed_Result_Shows_The_Note_Over_The_New_Preview`. Not verified: continuous
+integration has not run, and no person used the real window.
+
+New tests: 22. The test list holds 3293 (1917 in `Engine.Tests`, 390 in `3DEngine.Tests`, 983 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 2 (`E-CMD-GROUP-MOVE`, `W-API-PROPOSAL-RESULT-CHANGED`).
+Since the review of v0.444, 2 product milestones and 2 entries followed it.
+The failed runs since the entry v0.445, from the API: none.

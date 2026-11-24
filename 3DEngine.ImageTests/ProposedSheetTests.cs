@@ -274,7 +274,8 @@ public sealed class ProposedSheetTests
                 Assert.Equal(["Front 2:1", "Top 2:1", "Right 2:1"], read.Boxes.Select(box => box.Name));
                 Assert.Equal(["10", "3"], read.Values.Select(value => value.Text));
 
-                var outcome = await desk.Accept(card.Id);
+                // ADR-0188 item 6 (TASK-0463): the person saw the preview of the proposal, so the accept compares with it.
+                var outcome = await desk.Accept(card.Id, (await surface.Host.Proposals.Preview(card.Id))!.DocumentVersion);
                 Assert.Equal("accepted", outcome.State);
                 var after = (await surface.Host.Session.Query<SheetInfo>(new GetSheetQuery { SheetId = Sheet })).Result ?? throw new InvalidOperationException("No sheet after the accept.");
                 foreach (var box in read.Boxes)
@@ -333,7 +334,8 @@ public sealed class ProposedSheetTests
                 var sheet = ProposedSheet.OfCard(card) ?? throw new InvalidOperationException("No proposed sheet.");
                 var read = await ReadOf(surface.Host.Session, card.Id, sheet, await Sketches(surface.Host.Session));
 
-                var outcome = await desk.Accept(card.Id);
+                // ADR-0188 item 6 (TASK-0463): the person saw the preview of the proposal, so the accept compares with it.
+                var outcome = await desk.Accept(card.Id, (await surface.Host.Proposals.Preview(card.Id))!.DocumentVersion);
                 Assert.Equal("accepted", outcome.State);
                 var after = (await surface.Host.Session.Query<SheetInfo>(new GetSheetQuery { SheetId = Sheet })).Result ?? throw new InvalidOperationException("No sheet after the accept.");
                 return ([.. read.Values.Select(value => value.Text)], [.. after.Dimensions.Select(dimension => SvgExport.Value(dimension, "Ø"))]);

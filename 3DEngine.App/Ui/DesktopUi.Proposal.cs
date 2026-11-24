@@ -180,7 +180,8 @@ internal sealed unsafe partial class DesktopUi
         if (shown.Count > ProposalLines)
             lines.Add((ProposalMoreItem, $"and {shown.Count - ProposalLines} more", false));
         var count = Counted(card.Commands.Count, "command");
-        lines.Add((ProposalCountItem, card.Applying ? $"Applying {count}" : $"{count} · {Counted(card.Commands.Count, "step")} of undo", false));
+        // ADR-0188 item 3 (phase P16, TASK-0463): one proposal is one step of undo.
+        lines.Add((ProposalCountItem, card.Applying ? $"Applying {count}" : $"{count} · 1 step of undo", false));
         if (_proposals.Count > 1)
             lines.Add((ProposalPlaceItem, $"1 of {_proposals.Count}", false));
         if (card.Stale)
@@ -824,7 +825,8 @@ internal sealed unsafe partial class DesktopUi
         ProposalGlowRectangle = new Vector4(min.X, min.Y, max.X, max.Y);
     }
 
-    // ADR-0130 item 4: the word of the button of the outcome of an accept, which undoes the steps of the proposal one by one.
+    // ADR-0130 item 4: the word of the button of the outcome of an accept. ADR-0188 item 3 (TASK-0463): one tap undoes the whole
+    // proposal, because its commands are one step of undo.
     public const string ProposalUndoLabel = "Undo";
     public const string ProposalUndoItem = "Proposal:undo";
 
@@ -949,16 +951,22 @@ internal sealed record ProposalCard(Guid Id, string Summary, IReadOnlyList<strin
 
 // ADR-0092 item 6 (TASK-0326): the outcome of an accept or a reject, for the status line: the state of the proposal, the
 // count of the applied commands and of the commands, and for a failed proposal the index and the code of the command that
-// stopped it. A proposal that is no longer open has no state.
-internal sealed record ProposalOutcome(string? State, int Applied, int Count, int? FailedIndex = null, string? FailedCode = null)
+// stopped it. A proposal that is no longer open has no state. ADR-0188 items 3, 6 and 7 (phase P16, TASK-0463): an accepted
+// proposal is one step of undo; a failed proposal applied nothing, because one Undo reversed its group; an accept whose result
+// changed applied nothing, the proposal is open again, and Held gives the code of its note.
+internal sealed record ProposalOutcome(string? State, int Applied, int Count, int? FailedIndex = null, string? FailedCode = null, string? Held = null)
 {
     public static readonly ProposalOutcome Gone = new(null, 0, 0);
 
+    // ADR-0188 item 6: the text of an accept that applied nothing because the result changed.
+    public const string ChangedText = "Not applied: the result changed. Check the new preview, then accept again";
+
     public string Text => State switch
     {
-        "accepted" => $"Proposal accepted: {DesktopUi.Counted(Applied, "command")} applied, {DesktopUi.Counted(Applied, "step")} of undo",
+        "accepted" => $"Proposal accepted: {DesktopUi.Counted(Applied, "command")} applied, 1 step of undo",
         "rejected" => "Proposal rejected: no command applied",
-        "failed" => $"Proposal failed at command {(FailedIndex ?? Applied) + 1} of {Count}{(FailedCode is { } code ? $" ({code})" : string.Empty)}: {DesktopUi.Counted(Applied, "command")} applied",
+        "failed" => $"Proposal failed{(FailedIndex is { } index ? $" at command {index + 1} of {Count}" : string.Empty)}{(FailedCode is { } code ? $" ({code})" : string.Empty)}: no command applied",
+        "open" when Held is not null => ChangedText,
         _ => "The proposal is no longer open",
     };
 

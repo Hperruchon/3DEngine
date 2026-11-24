@@ -175,6 +175,141 @@ public sealed class ProposalPreviewWindowTests
         });
     }
 
+    // ADR-0188 items 3, 6 and 9 (phase P16, TASK-0463): the person renames the bracket after the preview that the window showed,
+    // so the result of the proposal changes. The accept with the version of that preview applies nothing: the outcome says so,
+    // the window gets the new preview with its shapes and the note, and the panel shows the note first. The accept of the new
+    // preview applies the two commands, and one Undo reverses both.
+    [Fact]
+    public async Task An_Accept_Whose_Result_Changed_Shows_The_New_Preview_With_A_Note()
+    {
+        await Hosted(async surface =>
+        {
+            var bracket = await Build(surface.Host.Session);
+            var id = await Post(surface, Proposal(bracket));
+            IProposalDesk desk = new HostedSession(surface.Host);
+            var shown = desk.Preview(id) ?? throw new InvalidOperationException("No preview.");
+            Assert.Null(shown.Held);
+            Assert.Equal(CommandStatus.Applied, (await surface.Host.Session.Apply(new RenameBodyCommand { BodyId = bracket.Body, NewName = "Bracket 2" })).Status);
+            var before = await surface.Host.Session.Read((document, _) => document.Bodies.OrderBy(body => body.Handle.Id).ToArray());
+
+            var held = await desk.Accept(id, shown.Version);
+
+            Assert.Equal(("open", Engine.Core.DiagnosticCodes.ApiProposalResultChanged), (held.State, held.Held));
+            Assert.Equal(ProposalOutcome.ChangedText, held.Text);
+            var card = desk.Preview(id) ?? throw new InvalidOperationException("No preview.");
+            Assert.Equal(Engine.Core.DiagnosticCodes.ApiProposalResultChanged, card.Held);
+            Assert.True(card.Version > shown.Version);
+            Assert.Equal([bracket.Body], card.Shapes.Select(shape => shape.BodyId));
+            Assert.Equal(before, await surface.Host.Session.Read((document, _) => document.Bodies.OrderBy(body => body.Handle.Id).ToArray()));
+            var lines = DesktopUi.PreviewLinesOf(card, Assert.Single(desk.Waiting()), [new LiveBody(bracket.Body, "Extrude", "Bracket 2", true)], "mm");
+            Assert.Equal((DesktopUi.PreviewChangedItem, DesktopUi.PreviewChangedText, true), (lines[0].Item, lines[0].Text, lines[0].Amber));
+
+            var accepted = await desk.Accept(id, card.Version);
+            Assert.Equal(("accepted", 2), (accepted.State, accepted.Applied));
+            Assert.Equal("Proposal accepted: 2 commands applied, 1 step of undo", accepted.Text);
+            Assert.Equal(CommandStatus.Applied, (await surface.Host.Session.Apply(new UndoCommand())).Status);
+            Assert.Equal(before, await surface.Host.Session.Read((document, _) => document.Bodies.OrderBy(body => body.Handle.Id).ToArray()));
+        });
+    }
+
+    // ADR-0188 item 9: the picture of the window after an accept whose result changed, at 1280 by 720: the arc, the new shape in
+    // dashed amber lines and the panel with the note first. The validation layer gives no message.
+    [VulkanImageFact]
+    public async Task The_Picture_Of_A_Changed_Result_Shows_The_Note_Over_The_New_Preview()
+    {
+        var messagesBefore = GraphicsDevice.ValidationMessageCount;
+        const uint width = 1280, height = 720;
+        await Hosted(async surface =>
+        {
+            var bracket = await Build(surface.Host.Session);
+            var id = await Post(surface, Proposal(bracket));
+            var desk = new HostedSession(surface.Host);
+            var shown = desk.Preview(id) ?? throw new InvalidOperationException("No preview.");
+            await surface.Host.Session.Apply(new RenameBodyCommand { BodyId = bracket.Body, NewName = "Bracket 2" });
+            Assert.Equal("open", (await desk.Accept(id, shown.Version)).State);
+            var sketches = new[] { (await surface.Host.Session.Query<SketchInfo>(new GetSketchQuery { SketchId = bracket.Sketch })).Result! };
+            var preview = (desk.Preview(id) ?? throw new InvalidOperationException("No preview.")) with { SketchNames = new Dictionary<Guid, string> { [bracket.Sketch] = "Plate" } };
+
+            using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+            var scene = SessionScene.Create();
+            var camera = scene.Cameras[0];
+            var display = new Vector2(width, height);
+            byte[] picture;
+            using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
+            {
+                using var target = new OffscreenTarget(device, new VkExtent2D(width, height));
+                using var renderer = new SceneRenderer(device, target.RenderPass, desk);
+                using var panelRenderer = new UiRenderer(device, target.RenderPass);
+                var (atlasWidth, atlasHeight, rgba) = ui.FontAtlas();
+                ui.SetFontTexture(panelRenderer.CreateTexture(atlasWidth, atlasHeight, rgba));
+                renderer.Update(scene, camera, (float)width / height);
+                var bounds = renderer.Bounds ?? throw new InvalidOperationException("No bounds.");
+                camera.Frame((bounds.Min.X - 8, bounds.Min.Y, bounds.Min.Z), (bounds.Max.X + 8, bounds.Max.Y, bounds.Max.Z + 15), (float)width / height);
+                renderer.ProposalPreview = new PreviewDraw(preview, PreviewMode.Both);
+                renderer.Update(scene, camera, (float)width / height);
+                await renderer.PreviewMeshes.Preparing;
+                renderer.Update(scene, camera, (float)width / height);
+
+                var cards = ProposedValues.Named(desk.Waiting(), sketches, renderer.LiveBodies, null);
+                var extentOf = renderer.BoxOf(bracket.Body) ?? throw new InvalidOperationException("The bracket has no mesh.");
+                var middle = ((extentOf.Min.X + extentOf.Max.X) / 2, (extentOf.Min.Y + extentOf.Max.Y) / 2, (extentOf.Min.Z + extentOf.Max.Z) / 2);
+                var centre = SketchOverlay.Segment(camera, width, height, middle, middle)?.A ?? throw new InvalidOperationException("The bracket is behind the eye.");
+                var diagonal = SketchOverlay.Segment(camera, width, height, extentOf.Min, extentOf.Max) ?? throw new InvalidOperationException("The bracket is behind the eye.");
+                var data = UiDrawData.Empty;
+                for (var frame = 0; frame < 3; frame++)
+                {
+                    ui.ShowProposalPreview(preview);
+                    ui.ShowProposalOutcome(ProposalOutcome.ChangedText);
+                    ui.Route([]);
+                    data = ui.Frame(1f / 60f, display, Vector2.One, renderer.LiveBodies, bracket.Body, File, ringCentre: centre, ringBody: Vector2.Distance(diagonal.A, diagonal.B) / 2f, proposals: cards);
+                }
+
+                Assert.Equal(DesktopUi.PreviewChangedText, ui.PreviewTexts[DesktopUi.PreviewChangedItem]);
+                var note = ui.ItemRectangle(DesktopUi.PreviewChangedItem) ?? throw new InvalidOperationException("The note has no rectangle.");
+                var title = ui.ItemRectangle(DesktopUi.PreviewTitleItem) ?? throw new InvalidOperationException("The title has no rectangle.");
+                Assert.True(note.Y > title.Y, $"The note {note} is not under the title {title}.");
+                var panel = ui.PreviewRectangle ?? throw new InvalidOperationException("No panel.");
+                var line = ui.ItemRectangle(DesktopUi.ProposalOutcomeItem) ?? throw new InvalidOperationException("No line of the outcome.");
+                Assert.False(Meets(panel, line), $"The panel {panel} lies on the line of the outcome {line}.");
+                picture = target.Render((commandBuffer, framebuffer, extent) => renderer.Record(commandBuffer, framebuffer, extent, scene, camera,
+                    overlay => panelRenderer.Record(overlay, extent, data, 0), bracket.Body));
+            }
+
+            Save(picture, width, height, $"preview-changed-{width}x{height}.png");
+            Assert.True(Amber(picture) > 300, $"The window has {Amber(picture)} amber pixels.");
+        });
+
+        Assert.True(GraphicsDevice.ValidationMessageCount == messagesBefore,
+            $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages:\n"
+            + string.Join("\n", GraphicsDevice.ValidationMessages.Skip(messagesBefore)));
+    }
+
+    // ADR-0188 item 9: the line of the outcome and the panel show together after an accept whose result changed; the panel ends
+    // above that line, and the line ends at the right of the display, so the two never lie on each other. With no line, the panel
+    // ends 6 pixels above the status line, as before.
+    [Theory]
+    [InlineData(1280, 720)]
+    [InlineData(1024, 768)]
+    public void The_Panel_Ends_Above_The_Line_Of_The_Outcome(int width, int height)
+    {
+        var display = new Vector2(width, height);
+        using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+        var proposal = Guid.NewGuid();
+        for (var i = 0; i < 3; i++)
+            Step(ui, display, proposal, Card(proposal) with { Held = Engine.Core.DiagnosticCodes.ApiProposalResultChanged });
+        var alone = ui.PreviewRectangle ?? throw new InvalidOperationException("No panel.");
+        Assert.Equal(DesktopUi.PreviewChangedText, ui.PreviewTexts[DesktopUi.PreviewChangedItem]);
+
+        ui.ShowProposalOutcome(ProposalOutcome.ChangedText);
+        for (var i = 0; i < 3; i++)
+            Step(ui, display, proposal, Card(proposal) with { Held = Engine.Core.DiagnosticCodes.ApiProposalResultChanged });
+        var panel = ui.PreviewRectangle ?? throw new InvalidOperationException("No panel.");
+        var line = ui.ItemRectangle(DesktopUi.ProposalOutcomeItem) ?? throw new InvalidOperationException("No line of the outcome.");
+        Assert.False(Meets(panel, line), $"The panel {panel} lies on the line of the outcome {line}.");
+        Assert.True(panel.W <= line.Y - 6f + 0.5f, $"The panel {panel} does not end 6 pixels above the line {line}.");
+        Assert.True(panel.W < alone.W, $"The panel {panel} did not go up from {alone}.");
+    }
+
     // A preview of one changed body for the tests of the panel, with no host.
     private static readonly Guid Plate = Guid.Parse("87000000-0000-0000-0000-000000000001");
     private static readonly Guid Shown = Guid.Parse("87000000-0000-0000-0000-0000000000a1");

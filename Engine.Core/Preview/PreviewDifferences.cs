@@ -197,9 +197,11 @@ internal sealed class PreviewValues
 
     public Dictionary<(Guid A, Guid B), PairState> Pairs { get; } = [];
 
-    // The values after the commands (after: true) or before them (after: false), each with its query on the session.
-    public static async Task<PreviewValues> Read(DocumentSession session, PreviewPlan plan, bool after, CancellationToken ct)
+    // The values after the commands (after: true) or before them (after: false), each with its query on the session. ADR-0188
+    // item 8 (phase P16, TASK-0463): the checks of the two sides take their work from one bound of the preview.
+    public static async Task<PreviewValues> Read(DocumentSession session, PreviewPlan plan, bool after, PreviewWork work, CancellationToken ct)
     {
+        ArgumentNullException.ThrowIfNull(work);
         var values = new PreviewValues();
         foreach (var id in after ? plan.Sketches : plan.Sketches.Where(plan.SketchesBefore.Contains))
         {
@@ -215,14 +217,22 @@ internal sealed class PreviewValues
             values.Measures[id] = new BodyMeasure(mass.Error is null ? mass.Result : null, mass.Error);
         }
 
-        // Item 10 (Q4 A): one query for each pair, so the bound of work of the check applies to each pair, and a pair above
-        // it has the state limit and does not refuse the other pairs.
+        // Item 10 (Q4 A): one query for each pair, so the bound of work of the check applies to each pair. ADR-0188 item 8 (Q6 A):
+        // the check of a pair may do the work that the bound of the preview leaves, and gives the work that it did. The first
+        // pair that the check refuses for its work, and each pair after it, has the state limit, and the fork does not check it.
         foreach (var (a, b, before, isAfter) in plan.Pairs)
         {
             if (after ? !isAfter : !before)
                 continue;
-            var check = await session.Query<InterferenceInfo>(new CheckInterferenceQuery { BodyIds = $"{a},{b}" }, ct).ConfigureAwait(false);
+            if (work.Spent)
+            {
+                values.Pairs[(a, b)] = PreviewWork.Bounded;
+                continue;
+            }
+
+            var check = await session.Query<InterferenceInfo>(new CheckInterferenceQuery { BodyIds = $"{a},{b}", WorkLimit = work.Left }, ct).ConfigureAwait(false);
             values.Pairs[(a, b)] = PairState.Of(check);
+            work.Take(check);
         }
 
         return values;
@@ -251,6 +261,38 @@ internal sealed class PreviewValues
             .Where(change => change.Differs)
             .ToList();
         return (sketches, measures, checks);
+    }
+}
+
+// ADR-0188 item 8 (phase P16, TASK-0463, Q6 A of the codebase review of 2026-11-23): the bound of the sum of the work of the
+// checks of one preview, after the commands and before them. Each check gives its work before it splits (CheckInterferenceQueryHandler), and
+// the fork adds it here. The bound is the limit of one check, so one preview costs at most the work of one check at its limit,
+// about 13 s for an intersection on the computer of the owner. The first pair that its check refuses for the work, and each
+// pair after it, has the state limit.
+internal sealed class PreviewWork
+{
+    public const long Most = CheckInterferenceQueryHandler.WorkLimit;
+
+    // The state of a pair after the bound: limit, with the code of the bound of work and no check.
+    public static PairState Bounded { get; } = new(PairStates.Limit, null, new ErrorDetail(
+        DiagnosticCodes.CheckWorkLimit,
+        $"The checks of this preview reached the bound of {Most} products of the pieces before this pair (ADR-0188 item 8)."));
+
+    public PreviewWork(long most = Most) => Left = most;
+
+    // The work that the bound leaves, and true after the first pair that the check refused for its work.
+    public long Left { get; private set; }
+
+    public bool Spent { get; private set; }
+
+    // The work of one check: its count when the check ran, or the end of the bound when the check refused the pair for its work.
+    public void Take(QueryResult<InterferenceInfo> check)
+    {
+        ArgumentNullException.ThrowIfNull(check);
+        if (check.Error?.Code == DiagnosticCodes.CheckWorkLimit)
+            Spent = true;
+        else if (check.Result is { } info)
+            Left -= info.Work;
     }
 }
 

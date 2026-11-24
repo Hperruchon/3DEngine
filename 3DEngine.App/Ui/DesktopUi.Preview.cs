@@ -18,6 +18,10 @@ internal sealed unsafe partial class DesktopUi
     public const string PreviewUpdatingText = "updating";
     public const string PreviewTitleItem = "Preview:title";
 
+    // ADR-0188 item 6 (phase P16, TASK-0463): the note of an accept that applied nothing because the result changed.
+    public const string PreviewChangedItem = "Preview:changed";
+    public const string PreviewChangedText = "The result changed: check it";
+
     // Item 6: the least display that shows the panel, and the most rows of each part of the panel.
     internal static readonly Vector2 PreviewLeast = new(1024f, 600f);
     public const int PreviewRows = 4;
@@ -65,6 +69,10 @@ internal sealed unsafe partial class DesktopUi
         ArgumentNullException.ThrowIfNull(proposal);
         ArgumentNullException.ThrowIfNull(bodies);
         var lines = new List<PreviewLine>();
+        // ADR-0188 item 6 (phase P16, TASK-0463): the last accept applied nothing, because the result at the new version of the
+        // Document is not the result that the person saw; this is the new result.
+        if (card.Held is not null)
+            lines.Add(new(PreviewChangedItem, PreviewChangedText, Amber: true));
         if (card.Error is { } error)
         {
             lines.Add(new("Preview:failed", "The preview failed", Amber: true));
@@ -72,7 +80,7 @@ internal sealed unsafe partial class DesktopUi
             return lines;
         }
 
-        // The accept stops at the same command, so the preview says where.
+        // ADR-0188 item 7: the accept applies nothing when a command stops, so the preview says where.
         if (card.FailedIndex is { } failed)
             lines.Add(new("Preview:stop", $"Stops at command {failed + 1} of {proposal.Commands.Count}{(card.FailedCode is { } code ? $" ({code})" : string.Empty)}", Amber: true));
 
@@ -170,6 +178,11 @@ internal sealed unsafe partial class DesktopUi
         var width = CommandLineWidth(displaySize);
         var right = displaySize.X - 16f - _inset.Z;
         var bottom = (_items.TryGetValue(StatusLabel, out var status) ? status.Y : displaySize.Y - 16f - _inset.W - AnchorSize) - 6f;
+        // ADR-0188 item 9 (phase P16, TASK-0463): the line of the outcome of an accept or a reject draws first in the frame, above
+        // the status line; the panel then ends 6 pixels above that line, so the two never lie on each other. An accept whose
+        // result changed keeps the proposal open, so its line and the panel show together.
+        if (_proposalOutcome is not null && _items.TryGetValue(ProposalOutcomeItem, out var outcome))
+            bottom = Math.Min(bottom, (_proposalUndo && _items.TryGetValue(ProposalUndoItem, out var undo) ? Math.Min(outcome.Y, undo.Y) : outcome.Y) - 6f);
         // The panel starts at least 8 pixels under the top bar and the command line, so the lines that do not fit go,
         // and the last line says how many.
         var least = 16f + _inset.Y + Math.Max(TopBarHeight, ImGui.GetFrameHeight()) + 8f;

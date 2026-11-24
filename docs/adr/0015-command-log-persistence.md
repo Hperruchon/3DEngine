@@ -7,7 +7,7 @@ date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0010', '0012']
-amended-by: ['0071']
+amended-by: ['0071', '0188']
 affects:
   - Engine.Contracts/Document.cs
   - Engine.Contracts/LogEntry.cs
@@ -59,7 +59,9 @@ answered its questions Q1 to Q8 on 2026-10-28, with option A for each.
 3. **The entry.** One entry for each applied command, in the order of the log:
    `{"version":1,"backend":{"name":"manifold","version":"3.5.2"},"command":{"name":"CreateBox","schemaVersion":1,"commandId":"…","expectedDocumentVersion":null,"parameters":{…}}}`.
    `version` is `Document.Version` after the command, so the entries count 1, 2, 3 with no gap. The parameters
-   have the names and the types of the declaration of the handler (ADR-0013). A number is a JSON number in the
+   have the names and the types of the declaration of the handler (ADR-0013). ADR-0188 item 2: the entry of a command with a
+   group holds `"groupId":"…"` after `expectedDocumentVersion`; the entry of a command with no group has no such member.
+   A number is a JSON number in the
    shortest form that reads back to the same double, and -0 keeps its sign. A rejected or cancelled command
    writes no entry (ADR-0020 item 1).
 4. **The write is a part of the commit.** The order in the serial section is: the handler, the checks of the
@@ -174,3 +176,5 @@ Register entry R-0025 closes with P8a.
   cuts the new file before its delete (finding E164 of the codebase review of 2026-11-06 (e)).
 - 2026-11-07 · TASK-0263 · Item 9: when the cut and the delete of the new file both fail, the error of the save names
   that file (finding E168 of the codebase review of 2026-11-07).
+- 2026-11-24 · TASK-0463 · ADR-0188 amends item 3: the entry of a command with a group holds the member `groupId`, and an
+  entry with no group keeps its bytes.

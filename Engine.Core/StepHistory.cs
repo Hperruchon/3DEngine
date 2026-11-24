@@ -8,9 +8,11 @@ namespace Engine.Core;
 // CreatedSketches and ChangedSketches do the same for the sketches of the step. ADR-0045
 // item 9: CreatedImages and ChangedImages do the same for the images of the step. ADR-0051
 // item 4: CreatedDatums and ChangedDatums do the same for the datums of the step. ADR-0071 item 5: CreatedReferences
-// does the same for the references of an assembly; a reference never changes.
+// does the same for the references of an assembly; a reference never changes. ADR-0188 item 3 (phase P16, TASK-0463):
+// GroupId is the group of the command of the step, or null.
 internal sealed record Step(
     Guid CommandId,
+    Guid? GroupId,
     IReadOnlyList<BodyRecord> Created,
     IReadOnlyList<BodyRecord> Consumed,
     IReadOnlyList<(BodyRecord Before, BodyRecord After)> Changed,
@@ -30,16 +32,22 @@ internal sealed record Step(
 // depends only on the log, so an open and a replay rebuild the same history: each
 // applies each entry one time, with no look-up in the idempotency cache (finding E75
 // of the second codebase review of 2026-10-28).
+//
+// ADR-0188 item 3 (phase P16, TASK-0463): a unit of undo is the last run of consecutive steps that have one group, or the last
+// step when it has no group. An Undo reverses the whole unit, and a Redo applies the whole last undone unit again. The
+// undone list keeps each unit in the order of its steps, so its last run is the unit that the next Redo applies. The log
+// holds the group of each command, so an open rebuilds the same units. FeatureList and SketchRebuild walk the log with the
+// same rule (UnitStart).
 internal sealed class StepHistory
 {
     private readonly List<Step> _done = [];
     private readonly List<Step> _undone = [];
 
-    // The step that an Undo reverses, or null.
-    public Step? NextUndo => _done.Count > 0 ? _done[^1] : null;
+    // The steps that an Undo reverses, in the order of the log, or null.
+    public IReadOnlyList<Step>? NextUndo => _done.Count > 0 ? _done[UnitStart(_done, step => step.GroupId)..] : null;
 
-    // The step that a Redo applies again, or null.
-    public Step? NextRedo => _undone.Count > 0 ? _undone[^1] : null;
+    // The steps that a Redo applies again, in the order of the log, or null.
+    public IReadOnlyList<Step>? NextRedo => _undone.Count > 0 ? _undone[UnitStart(_undone, step => step.GroupId)..] : null;
 
     // ADR-0031 item 2 (Q3 A): a new step clears the redo list.
     public void Record(Step step)
@@ -48,15 +56,29 @@ internal sealed class StepHistory
         _undone.Clear();
     }
 
-    public void Undone()
+    public void Undone() => Move(_done, _undone);
+
+    public void Redone() => Move(_undone, _done);
+
+    // The last unit of one list goes to the end of the other list, in the order of its steps.
+    private static void Move(List<Step> from, List<Step> to)
     {
-        _undone.Add(_done[^1]);
-        _done.RemoveAt(_done.Count - 1);
+        var start = UnitStart(from, step => step.GroupId);
+        to.AddRange(from[start..]);
+        from.RemoveRange(start, from.Count - start);
     }
 
-    public void Redone()
+    // ADR-0188 item 3: the index of the first step of the last unit of a list that is not empty: the last step when it has no
+    // group, else the first step of the run of consecutive steps with its group at the end of the list.
+    internal static int UnitStart<T>(IReadOnlyList<T> steps, Func<T, Guid?> group)
     {
-        _done.Add(_undone[^1]);
-        _undone.RemoveAt(_undone.Count - 1);
+        ArgumentNullException.ThrowIfNull(steps);
+        ArgumentNullException.ThrowIfNull(group);
+        var start = steps.Count - 1;
+        if (group(steps[start]) is not { } last)
+            return start;
+        while (start > 0 && group(steps[start - 1]) == last)
+            start--;
+        return start;
     }
 }

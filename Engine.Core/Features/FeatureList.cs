@@ -104,16 +104,23 @@ public sealed class FeatureList
             {
                 var command = log[_applied].Command;
                 _logged.Add(command.CommandId);
+                // ADR-0188 item 3 (phase P16, TASK-0463): an Undo and a Redo move the last unit, as StepHistory does: the last run
+                // of consecutive steps of one group, or the last step with no group. The undone list keeps each unit in the order
+                // of its steps.
                 switch (command)
                 {
                     case UndoCommand when _done.Count > 0:
-                        _undone.Add(_done[^1]);
-                        Remove(_done[^1]);
+                        var unit = _done[StepHistory.UnitStart(_done, step => step.GroupId)..];
+                        for (var i = unit.Count - 1; i >= 0; i--)
+                            Remove(unit[i]);
+                        _undone.AddRange(unit);
                         break;
                     case RedoCommand when _undone.Count > 0:
-                        var redone = _undone[^1];
-                        _undone.RemoveAt(_undone.Count - 1);
-                        Add(redone);
+                        var start = StepHistory.UnitStart(_undone, step => step.GroupId);
+                        var redone = _undone[start..];
+                        _undone.RemoveRange(start, redone.Count);
+                        foreach (var step in redone)
+                            Add(step);
                         break;
                     case UndoCommand or RedoCommand:
                         break;

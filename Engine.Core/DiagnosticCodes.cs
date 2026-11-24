@@ -11,6 +11,9 @@ public static class DiagnosticCodes
     // ADR-0031 item 8: an Undo with no step to reverse, and a Redo with no undone step.
     public const string CommandNothingToUndo = "E-CMD-NOTHING-TO-UNDO";
     public const string CommandNothingToRedo = "E-CMD-NOTHING-TO-REDO";
+
+    // ADR-0188 item 4 (phase P16, TASK-0463): an Undo or a Redo with a group; a group holds steps only.
+    public const string CommandGroupMove = "E-CMD-GROUP-MOVE";
     public const string QueryUnknown = "E-QRY-UNKNOWN";
     public const string ApiBadRequest = "E-API-BAD-REQUEST";
     public const string ApiWsInvalidSubscribe = "E-API-WS-INVALID-SUBSCRIBE";
@@ -34,6 +37,10 @@ public static class DiagnosticCodes
 
     // TASK-0456 (phase P15a): the fork of the preview of a proposal could not replay the log of the Document.
     public const string ApiPreviewFailed = "E-API-PREVIEW-FAILED";
+
+    // ADR-0188 item 6 (phase P16, TASK-0463): an accept ran the dry run again, and its result is not the result that the person
+    // saw. Nothing applied, and the proposal waits with the new preview.
+    public const string ApiProposalResultChanged = "W-API-PROPOSAL-RESULT-CHANGED";
     public const string GeomCapMissing = "E-GEOM-CAP-MISSING";
     public const string GeomInvalidParam = "E-GEOM-INVALID-PARAM";
     public const string GeomBodyNotFound = "E-GEOM-BODY-NOT-FOUND";

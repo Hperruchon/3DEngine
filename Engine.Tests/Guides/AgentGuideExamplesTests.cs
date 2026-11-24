@@ -26,7 +26,8 @@ namespace Engine.Tests.Guides;
 // - "json agent-result" (or "text agent-result"): the shape of the answer of the request above it (or the start of an answer
 //   that is not JSON).
 // - "text agent-person": an action of the person in the window, "accept <id>" or "reject <id>". No route does it, so the test
-//   calls Proposals.Accept or Proposals.Reject, as the window does.
+//   calls Proposals.Accept or Proposals.Reject, as the window does. P16 (TASK-0463): "rename <body> name" is a change of the
+//   person in the window, and an accept compares with the last preview of the proposal that the agent read.
 // A text between < and > is a placeholder: the first answer that gives it binds it, a request uses the bound value, and a
 // placeholder that no answer gave is a new UUID.
 public sealed class AgentGuideExamplesTests
@@ -126,6 +127,8 @@ public sealed class AgentGuideExamplesTests
             Assert.True(shape.TryGetProperty(member, out _), $"{GuidePath}, line {preview.Result.Line}: the result of the preview has no member \"{member}\".");
         Assert.NotEqual(0, shape.GetProperty("measures").GetArrayLength());
         Assert.NotEqual(0, shape.GetProperty("checks").GetArrayLength());
+        // Row P16 (TASK-0463): the guide shows an accept that applies nothing because the result changed, with its code.
+        Assert.Contains(steps, step => step.Result is { } result && result.Text.Contains("\"held\": { \"code\": \"W-API-PROPOSAL-RESULT-CHANGED\" }", StringComparison.Ordinal));
         // Row K17 (TASK-0443): the connectors of a body are a step of the measure.
         foreach (var query in new[] { "GetBodyInfo", "GetDistance", "GetMassProperties", "GetConnectors", "CheckInterference", "GetViewLines" })
             Assert.Contains(steps, step => step.Block.Marker == "agent-request" && step.Block.Text.Contains($"\"name\": \"{query}\"", StringComparison.Ordinal));
@@ -203,12 +206,15 @@ public sealed class AgentGuideExamplesTests
             ["sheet"] = JsonDocument.Parse($"\"{sheetId}\"").RootElement.Clone(),
         };
 
+        // ADR-0188 item 6 (TASK-0463): the version of the last preview that the agent read for each proposal. The window shows
+        // the person the same preview, so an accept of the guide compares with it.
+        var seen = new Dictionary<Guid, long>();
         foreach (var step in steps)
         {
             var where = $"{GuidePath}, line {step.Block.Line}";
             if (step.Block.Marker == "agent-person")
             {
-                await Person(host, step.Block.Text, bound, where);
+                await Person(host, step.Block.Text, bound, seen, where);
                 continue;
             }
 
@@ -235,21 +241,35 @@ public sealed class AgentGuideExamplesTests
             var expected = JsonDocument.Parse(step.Result.Text).RootElement.Clone();
             var mismatch = Match(expected, answer, bound, "$");
             Assert.True(mismatch is null, $"{said}\nThe answer does not have the shape of the result block at line {step.Result.Line}: {mismatch}");
+
+            if (step.Block.Text.Split('\n')[0] is var first && first.StartsWith("GET /proposals/", StringComparison.Ordinal) && first.EndsWith("/preview", StringComparison.Ordinal))
+                seen[answer.GetProperty("proposalId").GetGuid()] = answer.GetProperty("documentVersion").GetInt64();
         }
     }
 
-    // The person in the window: "accept <id>" or "reject <id>".
-    private static async Task Person(EngineHost host, string text, Dictionary<string, JsonElement> bound, string where)
+    // The person in the window: "accept <id>" or "reject <id>". ADR-0188 item 6 (TASK-0463): an accept compares with the last
+    // preview that the agent read, as the window compares with the preview that it shows; "rename <body> <name>" is a change of
+    // the person in the window, a RenameBody of the body.
+    private static async Task Person(EngineHost host, string text, Dictionary<string, JsonElement> bound, Dictionary<Guid, long> seen, string where)
     {
-        var parts = text.Trim().Split(' ', 2);
+        // The action, a placeholder that can hold spaces, and the rest of the line.
+        var action = Regex.Match(text.Trim(), "^(\\w+) (<[^<>\"]+>)(?: (.+))?$");
+        string[] parts = action.Success ? [action.Groups[1].Value, action.Groups[2].Value, action.Groups[3].Value] : [text];
         var name = WholePlaceholder.Match(parts.ElementAtOrDefault(1) ?? "");
-        Assert.True(name.Success && bound.ContainsKey(name.Groups[1].Value), $"{where}: an action of the person is \"accept <id>\" or \"reject <id>\" with a bound placeholder, not \"{text}\".");
+        Assert.True(name.Success && bound.ContainsKey(name.Groups[1].Value), $"{where}: an action of the person is \"accept <id>\", \"reject <id>\" or \"rename <id> name\" with a bound placeholder, not \"{text}\".");
         var id = Guid.Parse(bound[name.Groups[1].Value].GetString()!);
+        if (parts[0] == "rename")
+        {
+            var renamed = await host.Session.Apply(new RenameBodyCommand { BodyId = id, NewName = parts.ElementAtOrDefault(2) ?? "" });
+            Assert.True(renamed.Status == CommandStatus.Applied, $"{where}: the person could not rename the body {id}: {renamed.Error?.Code}.");
+            return;
+        }
+
         var closed = parts[0] switch
         {
-            "accept" => await host.Proposals.Accept(id),
+            "accept" => seen.TryGetValue(id, out var version) ? await host.Proposals.Accept(id, version) : await host.Proposals.Accept(id),
             "reject" => host.Proposals.Reject(id),
-            _ => throw new InvalidOperationException($"{where}: the action \"{parts[0]}\" is not accept or reject."),
+            _ => throw new InvalidOperationException($"{where}: the action \"{parts[0]}\" is not accept, reject or rename."),
         };
         Assert.True(closed is not null, $"{where}: the person could not {parts[0]} the proposal {id}; it is not open.");
     }

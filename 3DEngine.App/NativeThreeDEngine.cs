@@ -135,6 +135,9 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
     private readonly IProposalDesk? _proposalDesk;
     private Task<ProposalOutcome>? _proposalAccept;
 
+    // ADR-0188 item 6 (phase P16, TASK-0463): the preview that the panel showed in the last frame, for the next accept.
+    private PreviewCard? _shownPreview;
+
     // ADR-0130 item 4 (phase R18i, TASK-0358): the name of the body that was selected at the accept, for "Applied · Bracket rebuilt".
     private string? _acceptedBody;
 
@@ -180,7 +183,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
         // event counts two times (EngineHost.Subscribe). A document that the host opened holds the log of its file.
         _stepsSubscription = _host.Session.Read((document, _) =>
         {
-            _steps.Seed([.. document.Log.Select(entry => entry.Command.Name)]);
+            _steps.Seed([.. document.Log.Select(entry => (entry.Command.Name, entry.Command.GroupId))]);
             return _host.Subscribe(_steps.Take);
         }).GetAwaiter().GetResult();
         _sketches = new SessionSketches(_host);
@@ -645,11 +648,18 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
                     {
                         foreach (var (command, text) in StepTexts.ProposalTexts(card))
                             _steps.Expect(command, text);
+                        // ADR-0188 item 3 (phase P16, TASK-0463): the commands of the proposal are one step of undo, with the
+                        // identifier of the proposal as their group; a step of several commands has the summary as its text.
+                        if (card.CommandIds is { } ids)
+                            _steps.ExpectGroup(ids, card.Id, ids.Count > 1 ? card.Summary : null);
                     }
 
                     _acceptedBody = _renderer?.LiveBodies.FirstOrDefault(live => live.Id == Selection) is { } chosen ? chosen.Name ?? chosen.Kind : null;
                     _acceptedCommands = _cards?.FirstOrDefault(card => card.Id == accept.Proposal)?.CommandIds;
-                    _proposalAccept = Task.Run(() => desk.Accept(accept.Proposal));
+                    // ADR-0188 item 6: the version of the preview that the panel shows, so the accept compares with the result that
+                    // the person saw; null when the panel shows no preview of this proposal.
+                    var seen = _shownPreview is { } shown && shown.Proposal == accept.Proposal ? shown.Version : (long?)null;
+                    _proposalAccept = Task.Run(() => desk.Accept(accept.Proposal, seen));
                     break;
                 case RejectProposalAction reject when _proposalDesk is { } desk && _proposalAccept is null:
                     _ui.ShowProposalOutcome(desk.Reject(reject.Proposal).Text);
@@ -1110,6 +1120,7 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
             ? kept with { SketchNames = (_sketches?.Live ?? []).Where(sketch => sketch.Name is not null).ToDictionary(sketch => sketch.SketchId, sketch => sketch.Name!) }
             : null;
         _ui.ShowProposalPreview(preview);
+        _shownPreview = preview;
 
         // ADR-0102 item 5 (Q3 A): the question shows while a change of project waits for its answer.
         _ui.ShowQuestion(_projects?.Asking ?? false);
@@ -1217,8 +1228,9 @@ internal interface IProposalDesk
     IReadOnlyList<ProposalCard> Waiting();
 
     // Applies the commands of the proposal in their order, as the commands of a person. The window calls it off the thread of
-    // the frame.
-    Task<ProposalOutcome> Accept(Guid id);
+    // the frame. ADR-0188 item 6 (phase P16, TASK-0463): seen is the version of the preview that the panel showed, or null; the
+    // accept applies only when the result at the version of its apply equals that preview, as one step of undo.
+    Task<ProposalOutcome> Accept(Guid id, long? seen);
 
     // Closes the proposal with no command.
     ProposalOutcome Reject(Guid id);

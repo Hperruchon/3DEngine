@@ -247,6 +247,7 @@ public sealed class CommandBus
         // Undo can give them back.
         var step = new Step(
             command.CommandId,
+            command.GroupId,
             handlerResult.CreatedBodies,
             handlerResult.ConsumedBodies.Select(LiveRecord).ToList(),
             handlerResult.ChangedBodies.Select(body => (LiveRecord(body.Handle), body)).ToList(),
@@ -262,13 +263,13 @@ public sealed class CommandBus
             handlerResult.RemovedSheets.Select(LiveSheet).ToList());
         var committed = Commit(
             command,
-            new Effect(
+            [new Effect(
                 handlerResult.CreatedBodies, handlerResult.ConsumedBodies, [], handlerResult.ChangedBodies,
                 handlerResult.CreatedSketches, [], handlerResult.ChangedSketches,
                 handlerResult.CreatedImages, [], handlerResult.ChangedImages,
                 handlerResult.CreatedDatums, [], handlerResult.ChangedDatums,
                 handlerResult.CreatedReferences, [],
-                handlerResult.CreatedSheets, handlerResult.RemovedSheets, handlerResult.ChangedSheets),
+                handlerResult.CreatedSheets, handlerResult.RemovedSheets, handlerResult.ChangedSheets)],
             handlerResult.Outputs, handlerResult.Diagnostics, stopwatch);
         _history.Record(step);
         return committed;
@@ -314,8 +315,17 @@ public sealed class CommandBus
                 $"The handler of '{command.Name}'@{command.SchemaVersion} gives the move {handlerResult.History} and a list of "
                 + "bodies, sketches, images, datums or references, or a move that does not exist. ADR-0031 item 7: the bus computes the changes of a move.");
 
+        // ADR-0188 item 4 (phase P16, TASK-0463): a group holds steps only. An Undo or a Redo in a group would move a unit that
+        // the group itself builds, and a failed accept could then reverse a step of the person, so the bus refuses it before the
+        // history and the file.
+        if (command.GroupId is { } group)
+            return Reject(command, new ErrorDetail(
+                DiagnosticCodes.CommandGroupMove,
+                $"The command '{command.Name}' has the group {group}. A group holds steps only, so an Undo or a Redo has no group (ADR-0188 item 4)."),
+                stopwatch, handlerResult.Diagnostics);
+
         var undo = handlerResult.History == HistoryMove.Undo;
-        if ((undo ? _history.NextUndo : _history.NextRedo) is not { } step)
+        if ((undo ? _history.NextUndo : _history.NextRedo) is not { } unit)
             return Reject(command, undo
                 ? new ErrorDetail(DiagnosticCodes.CommandNothingToUndo, "The document has no step to undo.")
                 : new ErrorDetail(DiagnosticCodes.CommandNothingToRedo, "The document has no undone step to redo."),
@@ -324,43 +334,46 @@ public sealed class CommandBus
         if (Journal is { } journal && Write(journal, command, handler, handlerResult, stopwatch) is { } refused)
             return refused;
 
-        var outputs = new Outputs(new Dictionary<string, object?> { ["commandId"] = step.CommandId });
+        // ADR-0188 item 3: a unit of a group has several steps. The output commandId gives the last step of the unit, which is the
+        // step of ADR-0031 item 1 for a unit of one step. An Undo reverses the steps from the last to the first, and a Redo
+        // applies them again from the first to the last, each with its changes of ADR-0031 item 4, in one commit.
+        var outputs = new Outputs(new Dictionary<string, object?> { ["commandId"] = unit[^1].CommandId });
         if (undo)
         {
-            var reversed = Commit(
-                command,
-                new Effect(
-                    step.Consumed, [], step.Created.Select(body => body.Handle).ToList(),
-                    step.Changed.Select(change => change.Before).ToList(),
-                    [], step.CreatedSketches.Select(sketch => sketch.Id).ToList(),
-                    step.ChangedSketches.Select(change => change.Before).ToList(),
-                    [], step.CreatedImages.Select(image => image.Id).ToList(),
-                    step.ChangedImages.Select(change => change.Before).ToList(),
-                    [], step.CreatedDatums.Select(datum => datum.Id).ToList(),
-                    step.ChangedDatums.Select(change => change.Before).ToList(),
-                    [], step.CreatedReferences.Select(reference => reference.Id).ToList(),
-                    step.RemovedSheets, step.CreatedSheets.Select(sheet => sheet.Id).ToList(),
-                    step.ChangedSheets.Select(change => change.Before).ToList()),
-                outputs, handlerResult.Diagnostics, stopwatch);
+            var reversed = Commit(command, [.. unit.Reverse().Select(Reversal)], outputs, handlerResult.Diagnostics, stopwatch);
             _history.Undone();
             return reversed;
         }
 
-        var applied = Commit(
-            command,
-            new Effect(
-                step.Created, step.Consumed.Select(body => body.Handle).ToList(), [],
-                step.Changed.Select(change => change.After).ToList(),
-                step.CreatedSketches, [], step.ChangedSketches.Select(change => change.After).ToList(),
-                step.CreatedImages, [], step.ChangedImages.Select(change => change.After).ToList(),
-                step.CreatedDatums, [], step.ChangedDatums.Select(change => change.After).ToList(),
-                step.CreatedReferences, [],
-                step.CreatedSheets, step.RemovedSheets.Select(sheet => sheet.Id).ToList(),
-                step.ChangedSheets.Select(change => change.After).ToList()),
-            outputs, handlerResult.Diagnostics, stopwatch);
+        var applied = Commit(command, [.. unit.Select(Repeat)], outputs, handlerResult.Diagnostics, stopwatch);
         _history.Redone();
         return applied;
     }
+
+    // ADR-0031 item 4: the changes of an Undo of one step.
+    private static Effect Reversal(Step step) => new(
+        step.Consumed, [], step.Created.Select(body => body.Handle).ToList(),
+        step.Changed.Select(change => change.Before).ToList(),
+        [], step.CreatedSketches.Select(sketch => sketch.Id).ToList(),
+        step.ChangedSketches.Select(change => change.Before).ToList(),
+        [], step.CreatedImages.Select(image => image.Id).ToList(),
+        step.ChangedImages.Select(change => change.Before).ToList(),
+        [], step.CreatedDatums.Select(datum => datum.Id).ToList(),
+        step.ChangedDatums.Select(change => change.Before).ToList(),
+        [], step.CreatedReferences.Select(reference => reference.Id).ToList(),
+        step.RemovedSheets, step.CreatedSheets.Select(sheet => sheet.Id).ToList(),
+        step.ChangedSheets.Select(change => change.Before).ToList());
+
+    // ADR-0031 item 4: a Redo of one step gives the changes of its first commit.
+    private static Effect Repeat(Step step) => new(
+        step.Created, step.Consumed.Select(body => body.Handle).ToList(), [],
+        step.Changed.Select(change => change.After).ToList(),
+        step.CreatedSketches, [], step.ChangedSketches.Select(change => change.After).ToList(),
+        step.CreatedImages, [], step.ChangedImages.Select(change => change.After).ToList(),
+        step.CreatedDatums, [], step.ChangedDatums.Select(change => change.After).ToList(),
+        step.CreatedReferences, [],
+        step.CreatedSheets, step.RemovedSheets.Select(sheet => sheet.Id).ToList(),
+        step.ChangedSheets.Select(change => change.After).ToList());
 
     // ADR-0015 item 4: the entry goes into the file before the commit, so each
     // applied command is in the file before its result. A command that the file
@@ -591,20 +604,23 @@ public sealed class CommandBus
     // A subscriber that draws between two events therefore never sees fewer
     // bodies than the result has. Nothing here awaits, therefore nothing here
     // stops in the middle.
+    //
+    // ADR-0188 item 3 (phase P16, TASK-0463): an Undo or a Redo of a unit of several steps gives one effect for each step. The
+    // commit gives command.applied once, then the events of each effect in the order of ADR-0031 item 5, one effect after the
+    // other. A unit of one step gives the events of ADR-0031 item 5, as before.
     private (CommandResult, IReadOnlyList<EventRecord>) Commit(
         Command command,
-        Effect effect,
+        IReadOnlyList<Effect> effects,
         Outputs outputs,
         IReadOnlyList<Diagnostic> diagnostics,
         Stopwatch stopwatch)
     {
-        var (created, consumed, removed, changed) = (effect.Created, effect.Consumed, effect.Removed, effect.Changed);
-        var count = 1 + created.Count + consumed.Count + removed.Count + changed.Count
+        var count = 1 + effects.Sum(effect => effect.Created.Count + effect.Consumed.Count + effect.Removed.Count + effect.Changed.Count
             + effect.CreatedSketches.Count + effect.RemovedSketches.Count + effect.ChangedSketches.Count
             + effect.CreatedImages.Count + effect.RemovedImages.Count + effect.ChangedImages.Count
             + effect.CreatedSheets.Count + effect.RemovedSheets.Count + effect.ChangedSheets.Count
             + effect.CreatedDatums.Count + effect.RemovedDatums.Count + effect.ChangedDatums.Count
-            + effect.CreatedReferences.Count + effect.RemovedReferences.Count;
+            + effect.CreatedReferences.Count + effect.RemovedReferences.Count);
         var appliedSeq = TakeSeqs(count);
         var events = new List<EventRecord>(count)
         {
@@ -618,6 +634,27 @@ public sealed class CommandBus
         _document.AppendCommand(new LogEntry(command, _backend.Identity));
 
         var lastSeq = appliedSeq;
+        foreach (var effect in effects)
+            lastSeq = Apply(command, effect, events, lastSeq);
+
+        var result = new CommandResult(
+            CommandId: command.CommandId,
+            CommandName: command.Name,
+            Status: CommandStatus.Applied,
+            AppliedAtSeq: appliedSeq,
+            DocumentVersion: _document.Version,
+            Outputs: outputs,
+            Diagnostics: diagnostics,
+            Error: null,
+            DurationMs: stopwatch.ElapsedMilliseconds);
+        return (result, events);
+    }
+
+    // The changes of one effect to the Document and their events, after the event with the sequence lastSeq. It gives the
+    // sequence of its last event.
+    private long Apply(Command command, Effect effect, List<EventRecord> events, long lastSeq)
+    {
+        var (created, consumed, removed, changed) = (effect.Created, effect.Consumed, effect.Removed, effect.Changed);
         foreach (var body in created)
         {
             _document.AddBody(body);
@@ -816,17 +853,7 @@ public sealed class CommandBus
             events.Add(Event(lastSeq, command, "sheet.changed", SheetFields(sheet)));
         }
 
-        var result = new CommandResult(
-            CommandId: command.CommandId,
-            CommandName: command.Name,
-            Status: CommandStatus.Applied,
-            AppliedAtSeq: appliedSeq,
-            DocumentVersion: _document.Version,
-            Outputs: outputs,
-            Diagnostics: diagnostics,
-            Error: null,
-            DurationMs: stopwatch.ElapsedMilliseconds);
-        return (result, events);
+        return lastSeq;
     }
 
     // ADR-0153 item 1: the record of a sheet is small, so its event carries it.

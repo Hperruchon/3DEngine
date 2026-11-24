@@ -26,13 +26,25 @@ public static class DocumentFork
     //
     // ADR-0187 item 1 (phase R25, TASK-0462): shapes is the most triangles of the shapes after the commands, for a host that
     // draws, or 0 for no shape. The fork reads the triangles of each body with a new solid while its backend lives.
-    public static async Task<ForkResult> Run(
+    public static Task<ForkResult> Run(
         ForkSource source,
         IReadOnlyList<Command> commands,
         Func<IGeometryBackend> backends,
         IAssetSource? assets = null,
         CancellationToken ct = default,
         int shapes = 0)
+        => Run(source, commands, backends, assets, ct, shapes, PreviewWork.Most);
+
+    // ADR-0188 item 8 (phase P16, TASK-0463): checkWork is the bound of the sum of the work of the checks of the preview. The
+    // host gives PreviewWork.Most; a test gives a smaller bound, so a few small bodies pass it.
+    internal static async Task<ForkResult> Run(
+        ForkSource source,
+        IReadOnlyList<Command> commands,
+        Func<IGeometryBackend> backends,
+        IAssetSource? assets,
+        CancellationToken ct,
+        int shapes,
+        long checkWork)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(commands);
@@ -45,6 +57,8 @@ public static class DocumentFork
         PreviewPlan plan;
         PreviewValues after;
         (IReadOnlyList<PreviewShape> Shapes, int LeftOut)? drawn = null;
+        // ADR-0188 item 8 (phase P16, TASK-0463): one bound of the work of the checks for the two sides of the preview.
+        var work = new PreviewWork(checkWork);
 
         var backend = backends();
         try
@@ -80,7 +94,7 @@ public static class DocumentFork
                 var (bodiesAfter, sketchesAfter) = await session.Read(Records, ct).ConfigureAwait(false);
                 bodies = BodyDifferences.Of(bodiesBefore, bodiesAfter);
                 plan = PreviewPlan.Of(bodiesBefore, bodiesAfter, sketchesBefore, sketchesAfter);
-                after = await PreviewValues.Read(session, plan, after: true, ct).ConfigureAwait(false);
+                after = await PreviewValues.Read(session, plan, after: true, work, ct).ConfigureAwait(false);
                 if (shapes > 0)
                     drawn = await PreviewShape.Read(session, plan, bodiesAfter, shapes, ct).ConfigureAwait(false);
             }
@@ -105,7 +119,7 @@ public static class DocumentFork
                 var session = await Replay(source, baseBackend, assets, ct).ConfigureAwait(false);
                 try
                 {
-                    before = await PreviewValues.Read(session, plan, after: false, ct).ConfigureAwait(false);
+                    before = await PreviewValues.Read(session, plan, after: false, work, ct).ConfigureAwait(false);
                 }
                 finally
                 {

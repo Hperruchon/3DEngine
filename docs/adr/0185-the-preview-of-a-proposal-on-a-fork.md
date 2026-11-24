@@ -7,7 +7,7 @@ date: 2026-11-22
 supersedes: []
 superseded-by: []
 amends: ['0092']
-amended-by: ['0187']
+amended-by: ['0187', '0188']
 affects:
   - Engine.Core/Preview/**
   - Engine.Api.Http/Proposals.cs
@@ -91,7 +91,8 @@ Three constraints remove the other forms of the fork:
 3. **When, and the surface (Q3 A).** The post of a proposal copies the log for its first preview, inside the read that adds it
    to the queue. Each commit (`command.applied`) asks for a new preview of each open proposal. One worker of the queue computes
    the previews one after the other, the oldest proposal first, so at most one fork runs at a time. A burst of commits gives
-   one copy of the log at the last version, not one for each version.
+   one copy of the log at the last version, not one for each version. ADR-0188 item 5: a proposal whose accept runs gets a
+   new preview of each new version too, and the accept waits for it.
    - `GET /proposals/{id}/preview` gives the preview. For an open proposal it waits for a preview of the version of the
      Document at the request, or of a later version. For a closed proposal it gives the last preview, and waits only for a fork
      that computes it now. An identifier of no proposal of the queue gives HTTP 404 with `E-API-PROPOSAL-NOT-FOUND`; a host
@@ -162,6 +163,8 @@ Three constraints remove the other forms of the fork:
     - **One check for each pair.** The fork asks `CheckInterference` with the two bodies of the pair in `bodyIds`. So the
       bound of work of ADR-0182 item 8 applies to each pair: a pair above it has the state `limit`, and the other pairs are
       checked. No intended pair is given (P11 and P13 put them in the Document), so `fault` is true for each overlap.
+    ADR-0188 item 8 (Q6 A): the checks of one preview, after and before the commands, share one bound of 100,000 products;
+    the first pair that its check refuses for the work, and each pair after it, has the state `limit`.
     - **Before.** "Before" is the fork before the first command of the proposal. By the replay rule of ADR-0012 it equals the
       first Document at the version of the copy, so the first Document is not read again and its serial lock is not taken.
       The session of the fork holds the state after the commands, so the fork replays the same copy again in a second
@@ -201,9 +204,8 @@ serves P16, R25, K12 and P15b.
 - The window shows no preview until R25, and the preview has the bodies only until P15b.
 - The code `E-API-PROPOSAL-COMMAND-KNOWN` is now also a code of the preview, where nothing applies.
 - P15b (TASK-0459): the checks are most of the cost of a preview, and one worker computes the previews one after the other.
-  A preview with many pairs near the bound of work of ADR-0182 can take minutes and holds the previews of the other
-  proposals. No bound of the sum of the work of one preview exists; it needs the counts of the pieces before the checks,
-  which only the check computes.
+  Until ADR-0188 item 8 (TASK-0463) a preview with many pairs near the bound of work of ADR-0182 could take minutes; now one
+  preview does at most the work of one check at its limit.
 - P15b: a second replay (the base) runs for each preview that needs a value before the commands, which is each proposal with
   a `Translate`. The base and the fork take more entries in the caches of the kernel that are keyed by the Document.
 - P15b: the rule of the same solid (item 9) trusts that a committed geometry key names one solid (ADR-0059 item 2). A
@@ -231,3 +233,5 @@ serves P16, R25, K12 and P15b.
 - 2026-11-23 · TASK-0462 · ADR-0187 amends items 2 and 5: a host that draws sets `KeepShapes`, the fork then also reads the
   triangles of each body with a new solid before it frees its backend, and the queue keeps them for an open proposal only,
   outside the answer of the route.
+- 2026-11-24 · TASK-0463 · ADR-0188 amends items 3 and 10 and the point of "Bad" on the sum of the checks: a proposal whose
+  accept runs gets a new preview of a new version, and the checks of one preview share one bound of their work (Q6 A).

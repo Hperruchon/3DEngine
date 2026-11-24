@@ -241,7 +241,7 @@ public sealed class PendingChipTests
 
         Assert.Equal("Plate C1  60 → 75 mm", ui.ProposalTexts[DesktopUi.ProposalLineItem(0)]);
         Assert.Equal("Bracket distance  10 → 12 mm", ui.ProposalTexts[DesktopUi.ProposalLineItem(1)]);
-        Assert.Equal("2 commands · 2 steps of undo", ui.ProposalTexts[DesktopUi.ProposalCountItem]);
+        Assert.Equal("2 commands · 1 step of undo", ui.ProposalTexts[DesktopUi.ProposalCountItem]);
     }
 
     // Item 3: a value with no value now in the frame, as the distance of an extrude that is not selected, shows the arrow and

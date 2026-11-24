@@ -1,13 +1,13 @@
 ---
 id: 0187
 title: The preview of a proposal in the window, the new shapes in dashed amber lines with a switch and a panel of the differences
-status: Accepted
+status: Amended
 topic: Clients, agent
 date: 2026-11-23
 supersedes: []
 superseded-by: []
 amends: ['0092', '0185']
-amended-by: []
+amended-by: ['0188']
 affects:
   - Engine.Core/Preview/PreviewShape.cs
   - Engine.Core/Preview/DocumentFork.cs
@@ -75,7 +75,9 @@ the shape after the commands, to draw it in dashed amber lines?
    bodies above the bound, and `Current`. It takes the lock of the queue only, with no read of the session and no wait, so the
    frame calls it as it calls `Waiting`. `Current` is false while a later version of the Document waits for its fork, or while
    that fork runs; the panel then says "updating", and the scene keeps the last shapes until the new ones come.
-   `IProposalDesk.Preview` gives it to the window as a `PreviewCard`. The phone gives no desk (ADR-0092 item 8).
+   `IProposalDesk.Preview` gives it to the window as a `PreviewCard`. The phone gives no desk (ADR-0092 item 8). ADR-0188
+   items 6 and 9: `Kept` also gives the code of the note of an accept that applied nothing, and the window gives the version
+   of the card that its panel showed to the accept.
 4. **The switch "Before, After, Both".** A state of the client (ADR-0007); it sends nothing to the engine. "Before" draws the
    scene as the Document is. "After" does not draw each body that the commands remove, each changed body with a new solid and
    each changed body that the commands hide, and draws the new shapes. "Both" draws the scene as the Document is and the new
@@ -93,6 +95,8 @@ the shape after the commands, to draw it in dashed amber lines?
    line, or less, down to 300 pixels, so that it ends 8 pixels left of each target of a tool of the ring at its height. It
    holds:
    - the title "Preview of the proposal", with "· updating" while the preview is not current;
+   - ADR-0188 items 6 and 9: after an accept that applied nothing because the result changed, the note "The result changed:
+     check it" in amber; the panel then ends 6 pixels above the line of the outcome of the accept;
    - the switch: three segments "Before", "After" and "Both", each 44 pixels high (ADR-0027 item 6), the mode in use in amber;
    - "Stops at command i of n (code)" when the fork stops at a command, as the accept stops (ADR-0092 item 6);
    - the table "Measure, Before, After": the volume of each body that the commands add or change, with groups of three
@@ -148,3 +152,5 @@ authority diagram stays: the host projects a result of the engine into the rende
 
 - 2026-11-23 · TASK-0462 · The record, Accepted, and the slice R25: the shapes of the fork, the read of the window, the switch,
   the draw and the panel.
+- 2026-11-24 · TASK-0463 · ADR-0188 amends items 3 and 6: the window gives the version of the shown preview to the accept, and
+  the panel shows the note of an accept that applied nothing because the result changed.
