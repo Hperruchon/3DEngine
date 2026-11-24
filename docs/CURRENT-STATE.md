@@ -14053,7 +14053,9 @@ the review again, because P16 changed `Proposals.Preview.cs` and `Engine.Core/Pr
 - T194. The gate of the kept booleans judges the innermost type that names a shared member: it must declare a test and carry
   the collection. `ForksOpen` is a shared name. Four new rows: a nested test class, a helper, and two good forms.
 - T195. `PathPatternWorkTests` also bounds the expressions by the distinct patterns that the gate gives to `PathPattern` in the
-  same run (`TaskFiles.PatternsAskedOnThisThread`), and needs at least one pattern.
+  same run (`TaskFiles.PatternsAskedOnThisThread`), and needs at least one pattern. The work covers the open tasks and the
+  three newest tasks of each status (`TaskGovernanceGateTests.GovernedByProblems`), so the count does not depend on an open
+  task.
 - T196. `MarkerGateTests` reads each tracked text file outside `docs/`, `tasks/` and `Engine.Tests/Governance/`, except a
   Markdown document. The root `.gitignore` said "temporary files" of Visual Studio, which the gate now reads; its first line says
   "temp files". The row of `docs/templates.md` section 5 says what the gate reads.
@@ -14072,4 +14074,6 @@ has not run, and no person used the real window.
 New tests: 32. The test list holds 3325 (1943 in `Engine.Tests`, 390 in `3DEngine.Tests`, 989 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 1 (`E-API-HOST-STOPPED`). Since the review of v0.444, 2
 product milestones and 3 entries followed it.
-The failed runs since the entry v0.446, from the API: none.
+The failed runs since the entry v0.446, from the API: run 45359984114 (branch `p0187-review-findings`, the close commit
+`ddc26e7a`). With no open task the gate of governed-by gave no pattern, and the new bound of T195 needs one; TASK-0461 gives
+the correction.

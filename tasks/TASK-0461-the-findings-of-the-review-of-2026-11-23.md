@@ -1,7 +1,7 @@
 ---
 id: 0461
 title: The medium and low findings of the codebase review of 2026-11-23
-status: Done
+status: Active
 phase: P0.187
 opened: 2026-11-23
 depends-on: [0460]
@@ -37,6 +37,7 @@ writes:
     - Engine.Tests/Queries/CheckInterferenceQueryTests.cs
     - Engine.Tests/Governance/KeptBooleanCollectionGateTests.cs
     - Engine.Tests/Governance/PathPatternWorkTests.cs
+    - Engine.Tests/Governance/TaskGovernanceGateTests.cs
     - Engine.Tests/Governance/MarkerGateTests.cs
     - 3DEngine.ImageTests/SectionViewTests.cs
     - docs/adr/0059-references-by-the-identity-of-a-face.md
@@ -100,7 +101,7 @@ Each finding has a correction and a test, or a register entry with its reason.
 - [x] Each finding has a test that fails before its correction, or a register entry (R-0077 for the part of V234 that stays).
 - [x] Each injection of a correction makes a named test fail.
 - [x] The determinism hash of the probe is the hash that v0.446 records.
-- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes. The local
+- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes. The local
   part passes; continuous integration is not run yet.
 
 ## Findings
@@ -115,7 +116,7 @@ Each finding has a correction and a test, or a register entry with its reason.
 | V234 | `GroundPipeline` and `EdgePipeline` make the modules inside the `try` and free the layout of a failed pipeline; R-0077 for `ImageRenderer` | `PipelineStartTests.A_Failed_Start_Of_A_Pipeline_Frees_Each_Object_That_It_Made` | injections 14 and 15 give the old forms; the validation layer names the object |
 | T193 | `Exited` fails a host whose output holds "Now listening on"; ADR-0173 item 4 states the limit of the rule of 60 seconds | `HostGuardTests.Exited_Fails_A_Process_That_Writes_Its_Address_After_The_Exit` | no failure: the test saw the exit first |
 | T194 | The gate judges the innermost type, which must declare a test; `ForksOpen` is a shared name | `KeptBooleanCollectionGateTests.The_Scan_Finds_Each_Class_That_Names_A_Shared_Member` (rows of a nested class and of a helper) | injection 17 gives the old form |
-| T195 | `PathPatternWorkTests` also bounds the expressions by the distinct patterns of the run (`TaskFiles.PatternsAskedOnThisThread`) | `PathPatternWorkTests.The_Gate_Of_Governed_By_Builds_At_Most_One_Expression_For_Each_Pattern` | injection 19 (a key for each call) passed the old bound |
+| T195 | `PathPatternWorkTests` also bounds the expressions by the distinct patterns of the run (`TaskFiles.PatternsAskedOnThisThread`); the work covers the open tasks and the three newest tasks of each status (`TaskGovernanceGateTests.GovernedByProblems`) | `PathPatternWorkTests.The_Gate_Of_Governed_By_Builds_At_Most_One_Expression_For_Each_Pattern` | injection 19 (a key for each call) passed the old bound |
 | T196 | `MarkerGateTests` reads each tracked text file outside `docs/`, `tasks/` and `Engine.Tests/Governance/`, except a Markdown document; the row of `docs/templates.md` section 5 says so | `MarkerGateTests.Every_Impermanence_Marker_In_Live_Code_Carries_A_Register_Identifier`, `MarkerGateTests.The_Gate_Reads_Each_Tracked_Text_File_Outside_The_Records` | the old gate did not read the root `.gitignore` or `eng/*.txt` |
 | V235 | While a proposal waits, the path of the top bar leaves the room of the word; on a narrow landscape display the panel starts under the word | `WaitingWordTests.The_Word_Of_A_Waiting_Proposal_Lies_On_No_Text_And_No_Panel_With_A_Long_Folder` (4 sizes), `WaitingWordTests.The_Picture_Shows_The_Word_Clear_Of_A_Long_Title` | each size failed: the word lay on the panel of the rows |
 
@@ -131,7 +132,7 @@ Each finding has a correction and a test, or a register entry with its reason.
 
 ## Outcome
 
-Status: Done · commit (the merge of the branch p0187-review-findings) · v0.447
+Status: Active · commit (the merge of the branch p0187-review-findings) · v0.447
 
 ## Method
 
@@ -185,3 +186,10 @@ Injection 2 first ran with the test of the eight proposals, which passed: their 
 writes to the store of the first Document finds each result in it first. The first test holds it with the new subtract of its
 third preview.
 - 2026-11-24: run 45358850044 of `52fd0888` passed on each job. Closed at v0.447.
+- 2026-11-24: run 45359984114 of the close commit `ddc26e7a` failed the step "Test" on each operating system:
+  `The_Gate_Of_Governed_By_Builds_At_Most_One_Expression_For_Each_Pattern` said "The gate of governed-by gave no pattern to
+  PathPattern". The close set the status of the last open task to Done, so the gate judged no task and gave no pattern. The
+  local runs had TASK-0461 Active, so they did not show it. The gate now takes a filter of the tasks
+  (`TaskGovernanceGateTests.GovernedByProblems`), and the test gives it the open tasks and the three newest tasks of each
+  status. With no open task the test passes; injection 19 again (a key for each call) made it fail with 143751 expressions
+  for 445 distinct patterns, and the file came back byte for byte (sha256). The task is Active again until a green run.

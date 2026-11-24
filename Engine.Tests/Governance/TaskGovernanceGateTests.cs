@@ -47,10 +47,23 @@ public class TaskGovernanceGateTests
     [Fact]
     public void Each_Open_Task_Lists_Exactly_The_Adrs_Whose_Affects_Intersect_Its_Write_Set()
     {
+        var problems = GovernedByProblems(task => OpenStatuses.Contains(task.Status));
+
+        Assert.True(
+            problems.Count == 0,
+            "governed-by must equal the ADRs in force whose affects intersect writes. See docs/templates.md, "
+            + "section 2. Correct the field, the write set, or the affects field of the ADR.\n  "
+            + string.Join("\n  ", problems));
+    }
+
+    // The work of the gate for each task that the filter keeps. TASK-0461: PathPatternWorkTests also gives the newest tasks of
+    // each status, because when no task is open the gate gives no pattern to PathPattern, and an empty count is not evidence.
+    internal static List<string> GovernedByProblems(Func<WriteSetCheck.TaskRecord, bool> keep)
+    {
         var adrs = AdrsInForce();
         var problems = new List<string>();
 
-        foreach (var task in RepositoryFiles.Tasks().Where(t => OpenStatuses.Contains(t.Status)))
+        foreach (var task in RepositoryFiles.Tasks().Where(keep))
         {
             var written = task.Written.ToArray();
             var expected = adrs
@@ -73,11 +86,7 @@ public class TaskGovernanceGateTests
                 problems.Add($"{task.Id}: governed-by names {string.Join(", ", extra)}, which affect no path in the write set or are not in force");
         }
 
-        Assert.True(
-            problems.Count == 0,
-            "governed-by must equal the ADRs in force whose affects intersect writes. See docs/templates.md, "
-            + "section 2. Correct the field, the write set, or the affects field of the ADR.\n  "
-            + string.Join("\n  ", problems));
+        return problems;
     }
 
     [Fact]

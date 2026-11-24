@@ -44,13 +44,23 @@ public class PathPatternWorkTests
         // and 0. So the expressions of this thread are also at most the distinct patterns that the gate gives to PathPattern in
         // this run, which PathPattern records in the same call, with no second read of a file. The growth of the cache is not
         // bounded by that count, because a test of another class can add patterns at the same time.
+        //
+        // The run 45359984114 of the close of TASK-0461 failed: with no Ready or Active task the gate gives no pattern. So the
+        // work of the gate also covers the three newest tasks of each status, and the count does not depend on an open task.
+        // The identifiers come from the names of the files, which a run does not change. The test does not judge the problems
+        // of the gate; the gate test judges the open tasks.
+        var newest = RepositoryFiles.Tasks()
+            .Select(task => task.Id)
+            .OrderByDescending(id => id, StringComparer.Ordinal)
+            .Take(3)
+            .ToHashSet(StringComparer.Ordinal);
         var asked = new HashSet<string>(StringComparer.Ordinal);
         var kept = TaskFiles.PatternsKept;
         var before = TaskFiles.PatternsBuiltOnThisThread;
         TaskFiles.PatternsAskedOnThisThread = asked;
         try
         {
-            new TaskGovernanceGateTests().Each_Open_Task_Lists_Exactly_The_Adrs_Whose_Affects_Intersect_Its_Write_Set();
+            TaskGovernanceGateTests.GovernedByProblems(task => task.Status is "Ready" or "Active" || newest.Contains(task.Id));
         }
         finally
         {
