@@ -1,7 +1,7 @@
 ---
 id: 0461
 title: The medium and low findings of the codebase review of 2026-11-23
-status: Active
+status: Done
 phase: P0.187
 opened: 2026-11-23
 depends-on: [0460]
@@ -103,7 +103,7 @@ Each finding has a correction and a test, or a register entry with its reason.
 - [x] Each finding has a test that fails before its correction, or a register entry (R-0077 for the part of V234 that stays).
 - [x] Each injection of a correction makes a named test fail.
 - [x] The determinism hash of the probe is the hash that v0.446 records.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes. The local
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes. The local
   part passes; continuous integration is not run yet.
 
 ## Findings
@@ -135,7 +135,7 @@ Each finding has a correction and a test, or a register entry with its reason.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0187-review-findings) · v0.447
+Status: Done · commit (the merge of the branch p0187-review-findings) · v0.447
 
 ## Method
 
@@ -205,3 +205,4 @@ third preview.
   is behind only when no preview, no fork that runs (`Entry.ComputingVersion`) and no copy that waits is at the version of the
   call, so a commit during the group of an accept still gets its copy (ADR-0188 item 5). The new test holds the fork and reads
   `Proposals.Behind` (a new member for the test); injection 25 made it fail 5 times of 5. 1 new test in `Engine.Tests` (1944).
+- 2026-11-24: run 45364709003 of `369d4fd9` passed on each job. Closed at v0.447.
