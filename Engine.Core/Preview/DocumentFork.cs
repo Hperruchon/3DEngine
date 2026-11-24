@@ -100,7 +100,7 @@ public static class DocumentFork
             }
             finally
             {
-                session.Close();
+                Close(session);
             }
         }
         finally
@@ -123,7 +123,7 @@ public static class DocumentFork
                 }
                 finally
                 {
-                    session.Close();
+                    Close(session);
                 }
             }
             finally
@@ -143,9 +143,13 @@ public static class DocumentFork
     // The replay of the copy in a new session on the backend. It applies each entry one time, with no look-up in the
     // idempotency cache, as an open of a document file does (ADR-0015 item 8). Each result still goes into the cache, as in the
     // first session. A replay that throws closes its session.
+    // ADR-0185 item 11, amended by TASK-0461 (finding E239 of the codebase review of 2026-11-23): until Close the new Document is a
+    // fork of the source Document for the kept booleans of the projection, so the replay takes the kept result of each boolean
+    // of the log, and the new results of the fork leave with it.
     private static async Task<DocumentSession> Replay(ForkSource source, IGeometryBackend backend, IAssetSource? assets, CancellationToken ct)
     {
         var session = new DocumentSession(EngineHosting.CreateDefault(backend, source.LengthUnit, source.Kind, assets));
+        Features.KernelProjection.BeginFork(session.DocumentId, source.DocumentId);
         try
         {
             for (var index = 0; index < source.Log.Count; index++)
@@ -174,20 +178,36 @@ public static class DocumentFork
         }
         catch
         {
-            session.Close();
+            Close(session);
             throw;
+        }
+    }
+
+    // The session of a fork closes, and the kept booleans of the fork leave (TASK-0461).
+    private static void Close(DocumentSession session)
+    {
+        try
+        {
+            session.Close();
+        }
+        finally
+        {
+            Features.KernelProjection.EndFork(session.DocumentId);
         }
     }
 }
 
 // Item 2 (Q2 A): the copy of the log of a Document at one version, with its unit and its kind. Of must run inside
 // DocumentSession.Read, so the copy is one state of the log. A log entry does not change, so the copy holds the entries.
+// TASK-0461 (finding E239): DocumentId is the identity of the source Document, whose kept booleans a fork reads.
 public sealed record ForkSource(long Version, IReadOnlyList<LogEntry> Log, string LengthUnit, string Kind)
 {
+    public Guid DocumentId { get; init; }
+
     public static ForkSource Of(Document document)
     {
         ArgumentNullException.ThrowIfNull(document);
-        return new ForkSource(document.Version, [.. document.Log], document.LengthUnit, document.Kind);
+        return new ForkSource(document.Version, [.. document.Log], document.LengthUnit, document.Kind) { DocumentId = document.DocumentId };
     }
 }
 

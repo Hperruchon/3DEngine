@@ -70,6 +70,12 @@ internal sealed unsafe partial class DesktopUi
                 // only, so only there the top bar leaves its width.
                 var commandLeft = CommandLeft(displaySize);
                 var room = commandLeft - 12f - left - ImGui.CalcTextSize(program).X - ImGui.CalcTextSize(UnitText).X - 24f;
+                // Finding V235 (TASK-0461, Q8 A of the owner of 2026-11-24): while a proposal waits, the path leaves the room of
+                // "AGENT IS WAITING", its dot and a gap of 16 pixels, so a long folder is cut at its start and the word keeps its
+                // place left of the command line (ADR-0108 item 6). Until TASK-0461 the folder took that room, and the word went
+                // under the title, where the rows lay on it.
+                if (_proposals.Count > 0)
+                    room -= ImGui.CalcTextSize(AgentWaitingText).X + WaitingDot + 16f;
                 Label(program, quiet: false, pad);
                 ImGui.SameLine(0f, 12f);
                 PathRow(document, body, room, pad);

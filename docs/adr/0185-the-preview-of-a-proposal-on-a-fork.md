@@ -10,6 +10,7 @@ amends: ['0092']
 amended-by: ['0187', '0188']
 affects:
   - Engine.Core/Preview/**
+  - Engine.Core/Features/KernelProjection.cs
   - Engine.Api.Http/Proposals.cs
   - Engine.Api.Http/Proposals.Preview.cs
   - Engine.Api.Http/Endpoints/ProposalsEndpoint.cs
@@ -96,7 +97,9 @@ Three constraints remove the other forms of the fork:
    - `GET /proposals/{id}/preview` gives the preview. For an open proposal it waits for a preview of the version of the
      Document at the request, or of a later version. For a closed proposal it gives the last preview, and waits only for a fork
      that computes it now. An identifier of no proposal of the queue gives HTTP 404 with `E-API-PROPOSAL-NOT-FOUND`; a host
-     with no factory gives HTTP 501 with `E-API-NOT-SUPPORTED`. The host itself calls `Proposals.Preview`.
+     with no factory gives HTTP 501 with `E-API-NOT-SUPPORTED`. The host itself calls `Proposals.Preview`. TASK-0461 (finding
+     E240): a proposal that leaves the queue while the request waits gives its last preview, or HTTP 404 with
+     `E-API-PROPOSAL-NOT-FOUND` when it has none; the stop of the host gives HTTP 503 with the new code `E-API-HOST-STOPPED`.
    - The answer: `proposalId`; `state`, `ready` or `failed`; `documentVersion`, the version that the fork copied; `results`,
      the result of each command that ran, as `GET /proposals/{id}` gives it after an accept; `failedIndex` and `failedCode`;
      `bodies`; `error`, null or `{ code, message }` for a failed preview. Since P15b (TASK-0459) also `sketches` (item 8),
@@ -114,8 +117,10 @@ Three constraints remove the other forms of the fork:
    first Document, its log, its version and its events do not change. No new event kind exists.
 7. **The cancellation.** A fork that a new version makes old runs to its end, and its preview serves each caller that asked
    before its copy of the log; the worker then copies the log again. So a stream of commits cannot hold a caller for ever. The
-   request of a caller can stop its own wait. Only the stop of the host stops a fork, at its next command; the stop waits for
-   the end of the fork, so no fork runs after its host. A command that runs ends first (ADR-0006 section 4).
+   request of a caller can stop its own wait, and the fork goes on for the next caller. Only the stop of the host stops a
+   fork. The fork reads the token of the stop before each entry of the replay and each command, in each query, and at each
+   node of each walk of the check that splits polygons (ADR-0182 item 8); a factory of backends that waits does not read it.
+   The stop waits for the end of the fork, so no fork runs after its host. A command that runs ends first (ADR-0006 section 4).
 8. **P15b: the state of the solver.** For each sketch that the proposal changes, its state after the commands: solved, under
    or over constrained, with its residual, from the records of the fork. The record of P15b decides the form.
 
@@ -186,6 +191,21 @@ Three constraints remove the other forms of the fork:
     burst of commits. Each check resolves its two bodies again, so a body with n pairs is resolved n times. The worst case of
     one pair is the bound of ADR-0182 item 8, about 13 s for an intersection at the limit.
 
+    **The kept booleans (TASK-0461, finding E239 of the codebase review of 2026-11-23).** `KernelProjection` keeps the exact
+    result of each boolean step (a `Subtract`, a `Union` or an `Intersect`) of each Document, at most 256, under the Document and
+    the step (ADR-0059 item 2). The bookcase holds no boolean, so the measures above have none. A fork has a new document
+    identifier, so until TASK-0461 each fork and each base made each exact boolean of the log again, about 3.5 s (Debug) for a
+    subtract of a plate by a sphere, and put its results in the store of the first Document, where 8 proposals and a burst of
+    commits pushed out the results of the person. Now `DocumentFork` opens each session of a fork as a fork of its source
+    (`KernelProjection.BeginFork`, with the identity of the source in `ForkSource`). A fork reads its own store first, then the
+    store of its source with no change of that store, and puts each new result in its own store of at most 256, which leaves
+    when the session of the fork closes (`EndFork`). The kind and the exact operands still decide each hit, so a result of the
+    source answers a step of the fork only when the boolean gives that same result, and a replay gives the same Document. The
+    cost: a fork and a base make only the booleans whose operands differ from the first Document, which are the booleans that
+    the commands of the proposal change; the probe of the review (a cut, then a preview of a rename and of a move) made one and
+    two booleans before TASK-0461 and none after. The store of a fork holds at most 256 results while the fork runs, and one
+    fork runs at a time (item 2).
+
 ## Consequences
 
 **Good:** an agent reads the outcome of its proposal and the bodies that it changes before the person decides, with no change
@@ -198,9 +218,12 @@ serves P16, R25, K12 and P15b.
   log; no limit of the log exists for a fork.
 - The fork knows only the identifiers of the log. The first session also keeps in its idempotency cache the result of each
   refused command, so a command that reuses such an identifier gives another outcome at the accept. The guide says so.
-- The fork has a new document identifier, so the caches of the kernel that are keyed by the Document (`KernelProjection`,
-  `ViewBreps`, `SectionCut`, each with a bound of 64) can take entries of a fork, and push out entries of the first
-  Document. The result does not change; a later read can build again.
+- The fork has a new document identifier, so the caches of the kernel that are keyed by the Document (the kept solids of
+  `KernelProjection`, `ViewBreps`, `SectionCut`, each with a bound of 64) can take entries of a fork, and push out entries of
+  the first Document. The result does not change; a later read can build again. Since TASK-0461 the kept booleans of
+  `KernelProjection` (bound 256) are not in this list: a fork reads the store of its source and keeps its own results apart
+  (item 11). A fork still makes each boolean whose operands the proposal changes, and the store of a fork costs memory while it
+  runs.
 - The window shows no preview until R25, and the preview has the bodies only until P15b.
 - The code `E-API-PROPOSAL-COMMAND-KNOWN` is now also a code of the preview, where nothing applies.
 - P15b (TASK-0459): the checks are most of the cost of a preview, and one worker computes the previews one after the other.
@@ -235,3 +258,8 @@ serves P16, R25, K12 and P15b.
   outside the answer of the route.
 - 2026-11-24 · TASK-0463 · ADR-0188 amends items 3 and 10 and the point of "Bad" on the sum of the checks: a proposal whose
   accept runs gets a new preview of a new version, and the checks of one preview share one bound of their work (Q6 A).
+- 2026-11-24 · TASK-0461 · The findings of the codebase review of 2026-11-23 (phase P0.187). Item 11, "Bad" and "affects"
+  (E239): a fork reads the kept booleans of its source and keeps its own results in a store that leaves with it. Item 3 (E240):
+  HTTP 404 for a proposal that leaves the queue during the wait, and HTTP 503 with `E-API-HOST-STOPPED` for a stop of the host.
+  Item 7 (T192): the text says where the fork reads the token of the stop; `ProposalPreviewTests` now holds items 2, 3, 7 and
+  10 (the backends, one fork for a burst, the stop and the cancel of a wait, a measure and a pair with a refusal).

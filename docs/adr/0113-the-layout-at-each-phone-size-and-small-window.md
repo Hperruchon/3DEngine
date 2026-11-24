@@ -56,7 +56,8 @@ A probe of TASK-0336 at v0.316 drew the window at eleven sizes in four states an
    there; else it starts a new line. A field that a button follows (the filter and "Clear", the name and "Rename") is
    220 pixels wide when the line has room; else it is the room less its label and the button, and at least 120 pixels.
 3. **"AGENT IS WAITING" on a portrait display (fault 2, amends ADR-0092 item 7).** When the word does not fit in the top
-   bar, it goes under the path line of ADR-0100, and the panel starts under the word.
+   bar, it goes under the path line of ADR-0100, and the panel starts under the word. TASK-0461 (finding V235): on a
+   landscape display the word goes under the top bar when it does not fit there, and the panel starts under the word too.
 4. **The command line on a narrow display (fault 3, amends ADR-0098 item 2).** The field is 300 pixels wide, or 30
    percent of the width of the display when that is less, and at least 200 pixels. On a landscape display the panel ends
    12 pixels left of the field.
@@ -91,3 +92,6 @@ the history arc; ADR-0172 item 5 adds them.
 - 2026-11-18 · TASK-0404 · ADR-0163 item 4 amends item 1: a control cut by the bottom of its panel is scrolled out of view,
   the minimum window of the desktop is a size, and a second test applies the rule at each step of a resize.
 - 2026-11-18 · TASK-0418 · ADR-0172 item 5 amends item 1: the minimum window is 360 by 560, and each test has ten states.
+- 2026-11-24 · TASK-0461 · Item 3 (finding V235, the answer Q8 A of the owner of 2026-11-24): on a landscape display with no
+  room for "AGENT IS WAITING" in the top bar, the word is a line of its own under it, and the panel starts under the word, as
+  on a portrait display (phase P0.187).

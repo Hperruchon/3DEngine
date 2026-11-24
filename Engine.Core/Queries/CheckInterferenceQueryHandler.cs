@@ -185,6 +185,7 @@ public sealed class CheckInterferenceQueryHandler : IQueryHandler
     // TASK-0449 (finding E236 of the third codebase review of 2026-11-21): an island in a void is an outer shell inside the box
     // of the shell around the void, and the two share the volume of the island. The voids leave the shared volume first, as a
     // subtract of each void whose box shares a volume with it, so only a volume of material in both shells refuses the body.
+    // TASK-0461 (finding E241 of the codebase review of 2026-11-23): the subtract of a void reads the token too (item 8).
     private static ErrorDetail? Crossing(Body body, CancellationToken ct)
     {
         for (var i = 0; i < body.Shells.Count; i++)
@@ -202,7 +203,7 @@ public sealed class CheckInterferenceQueryHandler : IQueryHandler
                         break;
                     var (low, high) = BoxOf(shared);
                     if (ShareVolume(low, high, hollow.Low, hollow.High))
-                        shared = PlanarBoolean.Subtract(shared, hollow.Solid);
+                        shared = PlanarBoolean.Subtract(shared, hollow.Solid, ct);
                 }
 
                 if (shared is not null)

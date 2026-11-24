@@ -14019,3 +14019,57 @@ New tests: 22. The test list holds 3293 (1917 in `Engine.Tests`, 390 in `3DEngin
 `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 2 (`E-CMD-GROUP-MOVE`, `W-API-PROPOSAL-RESULT-CHANGED`).
 Since the review of v0.444, 2 product milestones and 2 entries followed it.
 The failed runs since the entry v0.445, from the API: none.
+
+## v0.447 — The findings of the codebase review of 2026-11-23: a fork takes the kept booleans of its source, the route of the preview gives an envelope at each end, and the title leaves the room of the waiting word (P0.187, TASK-0461)
+
+On 2026-11-24 the owner ordered "Start P0.187" in the chat, and answered "Q8 A, add it to P0.187": with a long file path, the
+title of the window ran into "AGENT IS WAITING" (the picture `r25-live.png` of the owner). The task records it as V235 (Q8 A,
+2026-11-24). The branch `p0187-review-findings` starts from `origin/main` at `ce8d01ed` (v0.446). The task read each "Where" of
+the review again, because P16 changed `Proposals.Preview.cs` and `Engine.Core/Preview/**` after the review.
+
+**The change.**
+- E239 (medium). Each fork and each base of a preview replays the log in a Document with a new identity, so it made each exact
+  boolean of the log again and put its results in the store of the first Document (256 results). Now `DocumentFork` opens each
+  session of a fork as a fork of its source (`KernelProjection.BeginFork`, `ForkSource.DocumentId`). A fork reads its own store,
+  then the store of its source with no change of that store, and keeps its new results in its own store, which leaves when the
+  session closes. The kind and the exact operands still decide each hit, so a replay gives the same Document. The probe of the
+  review: a preview of a rename of a cut made 1 boolean before and 0 after; a move with a base made 2 before and 0 after; on a
+  host, 8 proposals and 16 commits grew the store of the first Document from 1 to 17 results before, and leave it at 1 now.
+  ADR-0185 items 11 and "Bad" name the store and its cost; ADR-0059 item 2 has a History line.
+- E240. A proposal that leaves the queue while a caller waits gives its last preview or null, so the route gives HTTP 404 with
+  `E-API-PROPOSAL-NOT-FOUND`; a stop of the host gives HTTP 503 with the new code `E-API-HOST-STOPPED`. Before, both escaped the
+  route (the test measured HTTP 500).
+- E241. `PlanarBoolean.Subtract(a, b, CancellationToken)`, and the subtract of a void in the pair check gives `ct`.
+- T192. Six tests in `ProposalPreviewTests` hold ADR-0185 items 2, 3, 7 and 10: a counting factory of backends (each backend
+  freed, at most one at a time), a stop of the host during a held fork, a cancelled wait and then a good one, one more fork for
+  a burst of ten commits, and a body with a fault that gives a measure with an error and a pair with the state `refused`. Item 7
+  and the comment of `StopPreviews` say where the fork reads the token.
+- V233. A body that leaves the section and comes back while its cut runs waits for that cut (`SectionView`, the map of the
+  left cuts); the test of ADR-0184 item 5 holds the case with the same plane and with a new plane.
+- V234. `GroundPipeline` and `EdgePipeline` make their modules inside the `try`, and free the layout when the pipeline fails.
+  `ImageRenderer` makes more objects before its modules, so R-0077 (debt, due 2027-05-23) holds it.
+- T193. `Exited` of `HostGuardTests` fails a host whose output holds "Now listening on" after both outputs end, also when the
+  test sees the exit first; ADR-0173 item 4 states the limit of the rule of 60 seconds for an idle host that uses processor time.
+- T194. The gate of the kept booleans judges the innermost type that names a shared member: it must declare a test and carry
+  the collection. `ForksOpen` is a shared name. Four new rows: a nested test class, a helper, and two good forms.
+- T195. `PathPatternWorkTests` also bounds the expressions by the distinct patterns that the gate gives to `PathPattern` in the
+  same run (`TaskFiles.PatternsAskedOnThisThread`), and needs at least one pattern.
+- T196. `MarkerGateTests` reads each tracked text file outside `docs/`, `tasks/` and `Engine.Tests/Governance/`, except a
+  Markdown document. The root `.gitignore` said "temporary files" of Visual Studio, which the gate now reads; its first line says
+  "temp files". The row of `docs/templates.md` section 5 says what the gate reads.
+- V235 (Q8 A, 2026-11-24). While a proposal waits on a landscape display, the path of the top bar leaves the room of the word,
+  so a long folder is cut at its start and the word keeps its place left of the command line (ADR-0108 item 6). On a display
+  too narrow for that, the word is a line under the top bar and the panel starts under it (ADR-0113 item 3).
+
+**Proof.** Each new test failed before its correction, except the tests of T192, which hold code that was correct (the review
+found no test). A script applied 24 injections, each restored byte for byte (sha256); each made a named test fail, and TASK-0461 gives the
+table. A clean build gives 0 warnings, the phone project builds with 0 warnings, `dotnet test` passes
+3325 tests, and the write-set check and `eng/repo-gates` pass. The hash of the determinism probe (`DETERMINISM_HASH_FILE`,
+`CrossPlatformHashTests`) is `068ba4a8…`, the hash that v0.446 records, on this computer. The picture of the top bar with the
+long folder comes from the image test `The_Picture_Shows_The_Word_Clear_Of_A_Long_Title`. Not verified: continuous integration
+has not run, and no person used the real window.
+
+New tests: 32. The test list holds 3325 (1943 in `Engine.Tests`, 390 in `3DEngine.Tests`, 989 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 1 (`E-API-HOST-STOPPED`). Since the review of v0.444, 2
+product milestones and 3 entries followed it.
+The failed runs since the entry v0.446, from the API: none.

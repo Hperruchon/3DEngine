@@ -35,6 +35,12 @@
     <ProjectReference Include="../3DEngine.Core/3DEngine.Core.csproj" />
   </ItemGroup>
 
+  <!-- Finding V234 of the codebase review of 2026-11-23 (TASK-0461): the image test makes a start of a pipeline fail at each
+       object, so it sees each object freed. -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="3DEngine.ImageTests" />
+  </ItemGroup>
+
   <!-- Phase R14f2 (TASK-0229): the APK of the phone holds this assembly, so the analyzer of platform compatibility (CA1416)
        refuses an API that Android does not have. The third run of the emulator ended on Console.ForegroundColor. -->
   <ItemGroup>

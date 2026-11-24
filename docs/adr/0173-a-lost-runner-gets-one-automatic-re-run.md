@@ -79,6 +79,12 @@ a red run with no fault of the code stops the work until the owner sees it.
    makes progress while it writes a line or uses processor time, and it fails its test only when it does neither for 60
    seconds. A test that protects a refusal at the start fails at once when the host listens before it exits, an order and not
    a time. The read of a file that a killed host still holds tries for 60 seconds.
+   TASK-0461 (finding T193 of the codebase review of 2026-11-23): the order holds also when the test sees the exit first, because
+   a host that exits must have no line "Now listening on" in its output after both outputs end. The limit of the rule of 60
+   seconds: each change of the processor time is progress, so a host that waits with no line and no exit but uses a little
+   processor time does not fail at 60 seconds; TASK-0449 measured 3 minutes 18 seconds for such a host, and the hang limit of the
+   step "Test" stops it. A count of the lines only would fail a host that starts slowly on a loaded runner, which is the fault
+   that TASK-0449 removed.
 
 ## Consequences
 
@@ -136,3 +142,7 @@ a red run with no fault of the code stops the work until the owner sees it.
 - 2026-11-22 · TASK-0455 · Item 4 with no change of an item: the count of the work of the path patterns in
   `PathPatternWorkTests` has a bound that reads no file a second time, the growth of the cache during the gate, so an edit of a
   file during the run does not decide the result; the first test uses a new pattern for each call (phase P0.185).
+- 2026-11-24 · TASK-0461 · Item 4 (finding T193 of the codebase review of 2026-11-23): a host that exits fails its test when
+  its output holds "Now listening on", also when the test sees the exit first; the item states the limit of the rule of 60
+  seconds for a host that waits and uses processor time. Item 4 with no change of an item (T195): the count of the work of the
+  path patterns is also bounded by the distinct patterns that the gate gives to PathPattern in the same run (phase P0.187).

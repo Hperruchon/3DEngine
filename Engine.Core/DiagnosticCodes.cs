@@ -41,6 +41,10 @@ public static class DiagnosticCodes
     // ADR-0188 item 6 (phase P16, TASK-0463): an accept ran the dry run again, and its result is not the result that the person
     // saw. Nothing applied, and the proposal waits with the new preview.
     public const string ApiProposalResultChanged = "W-API-PROPOSAL-RESULT-CHANGED";
+
+    // TASK-0461 (finding E240 of the codebase review of 2026-11-23): the host stopped while a request waited for the preview of
+    // a proposal, so the request gets no preview.
+    public const string ApiHostStopped = "E-API-HOST-STOPPED";
     public const string GeomCapMissing = "E-GEOM-CAP-MISSING";
     public const string GeomInvalidParam = "E-GEOM-INVALID-PARAM";
     public const string GeomBodyNotFound = "E-GEOM-BODY-NOT-FOUND";

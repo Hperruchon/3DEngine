@@ -107,6 +107,9 @@ internal static class ProposalsEndpoint
 
     // ADR-0185 item 3 (TASK-0456): the preview of an open or kept proposal. The route waits for a preview of the version of the
     // Document at the request, or for the last preview of a closed proposal. A host with no backend for a fork gives HTTP 501.
+    // TASK-0461 (finding E240 of the codebase review of 2026-11-23): a proposal that leaves the queue while the request waits
+    // gives HTTP 404, and a stop of the host gives HTTP 503 with E-API-HOST-STOPPED. Until TASK-0461 both escaped the route
+    // as an exception with no error envelope.
     public static async Task<IResult> Preview(string id, EngineHost host, HttpContext context)
     {
         if (!host.Proposals.MakesPreviews)
@@ -116,7 +119,19 @@ internal static class ProposalsEndpoint
                 StatusCodes.Status501NotImplemented);
         if (!Guid.TryParse(id, out var key))
             return NotFound(id);
-        var preview = await host.Proposals.Preview(key, context.RequestAborted).ConfigureAwait(false);
+        ProposalPreview? preview;
+        try
+        {
+            preview = await host.Proposals.Preview(key, context.RequestAborted).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!context.RequestAborted.IsCancellationRequested)
+        {
+            return Failure(
+                DiagnosticCodes.ApiHostStopped,
+                $"The host stopped while the request waited for the preview of the proposal {key}.",
+                StatusCodes.Status503ServiceUnavailable);
+        }
+
         return preview is null ? NotFound(id) : Results.Json(preview, ApiJson.Options);
     }
 

@@ -10,16 +10,22 @@ namespace Engine.Tests.Governance;
 // while A_Sphere_Cuts_A_Hole_Of_One_Name ran, the kept result of its cut left, and the query of the faces made the boolean
 // again. The test counted two booleans and not one.
 //
-// The rule: each test class of Engine.Tests whose source names BooleansOnThisThread, BooleansKept, IsBooleanKept or
-// BooleanLimit carries [Collection("kept booleans")], and Engine.Tests defines that collection with parallel runs off. xUnit
-// then runs those classes after the parallel collections and alone. The gate reads the names in the code, not in a comment
-// or in a text. Another test project runs in its own process, so it shares no store with Engine.Tests.
+// The rule: each type of Engine.Tests whose own code names BooleansOnThisThread, BooleansKept, IsBooleanKept, BooleanLimit or
+// ForksOpen declares a test and carries [Collection("kept booleans")], and Engine.Tests defines that collection with parallel
+// runs off. xUnit then runs those classes after the parallel collections and alone. The gate reads the names in the code, not
+// in a comment or in a text. Another test project runs in its own process, so it shares no store with Engine.Tests.
+//
+// TASK-0461 (finding T194 of the codebase review of 2026-11-23): the gate judges the innermost type that holds each name, not
+// the outermost one. xUnit reads the attribute on the test class itself, so a nested test class in an outer class of the
+// collection ran in parallel and passed the gate. A helper type with no test (static class Counts { ... }) let another class
+// count with no name of the list, so a type that names a shared member must declare a test. The gate does not follow a call:
+// a public member of a test class of the collection can still give a count to another class.
 public class KeptBooleanCollectionGateTests
 {
     private const string CollectionName = "kept booleans";
 
     // The members of the kept results of the projection and of the count of the booleans of the kernel.
-    private static readonly string[] SharedNames = ["BooleansOnThisThread", "BooleansKept", "IsBooleanKept", "BooleanLimit"];
+    private static readonly string[] SharedNames = ["BooleansOnThisThread", "BooleansKept", "IsBooleanKept", "BooleanLimit", "ForksOpen"];
 
     [Fact]
     public void Each_Test_Class_That_Reads_The_Kept_Booleans_Is_In_The_Collection_Kept_Booleans()
@@ -52,10 +58,14 @@ public class KeptBooleanCollectionGateTests
     [Theory]
     [InlineData("class A { void M() { var n = PlanarBoolean.BooleansOnThisThread; } }", "Probe.cs:1 class A")]
     [InlineData("[Collection(\"real host\")]\nclass A { int N => KernelProjection.BooleanLimit; }", "Probe.cs:2 class A")]
-    [InlineData("class A { class B { bool K() => KernelProjection.IsBooleanKept(default, default); } }", "Probe.cs:1 class A")]
+    [InlineData("class A { class B { bool K() => KernelProjection.IsBooleanKept(default, default); } }", "Probe.cs:1 class B")]
     [InlineData("using static Engine.Core.Features.KernelProjection;\nclass A { int N => BooleansKept; }", "Probe.cs:2 class A")]
-    [InlineData("[Collection(\"kept booleans\")]\nclass A { int N => KernelProjection.BooleanLimit; }", "")]
-    [InlineData("[Xunit.CollectionAttribute(\"kept booleans\")]\nclass A { int N => KernelProjection.BooleanLimit; }", "")]
+    [InlineData("[Collection(\"kept booleans\")]\nclass A { [Fact] void T() { var n = KernelProjection.BooleanLimit; } }", "")]
+    [InlineData("[Xunit.CollectionAttribute(\"kept booleans\")]\nclass A { [Theory] void T(int i) { var n = KernelProjection.BooleanLimit + i; } }", "")]
+    [InlineData("[Collection(\"kept booleans\")]\nclass A { [NativeManifoldFact] void T() { var n = KernelProjection.ForksOpen; } }", "")]
+    [InlineData("[Collection(\"kept booleans\")]\nclass A { public class B { [Fact] public void T() { var n = PlanarBoolean.BooleansOnThisThread; } } }", "Probe.cs:2 class B")]
+    [InlineData("[Collection(\"kept booleans\")]\nstatic class Counts { public static long N => PlanarBoolean.BooleansOnThisThread; }", "Probe.cs:2 class Counts")]
+    [InlineData("class A { [Collection(\"kept booleans\")] public class B { [Fact] public void T() { var n = KernelProjection.BooleansKept; } } }", "")]
     [InlineData("// BooleanLimit\nclass A { string S => \"BooleansKept\"; }", "")]
     public void The_Scan_Finds_Each_Class_That_Names_A_Shared_Member(string source, string expected)
     {
@@ -90,7 +100,8 @@ public class KeptBooleanCollectionGateTests
     private static SyntaxTree Parse(string path, string source)
         => CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Preview), path: path);
 
-    // Each outermost type whose code names a shared member and that is not in the collection "kept booleans".
+    // Each innermost type whose code names a shared member and that declares no test or is not in the collection "kept booleans"
+    // (TASK-0461).
     private static List<string> Offences(IEnumerable<(string Path, string Source)> sources)
     {
         var offences = new List<string>();
@@ -99,7 +110,7 @@ public class KeptBooleanCollectionGateTests
             var tree = Parse(path, source);
             var types = tree.GetRoot().DescendantNodes().OfType<IdentifierNameSyntax>()
                 .Where(name => SharedNames.Contains(name.Identifier.ValueText, StringComparer.Ordinal))
-                .Select(name => name.Ancestors().OfType<TypeDeclarationSyntax>().LastOrDefault())
+                .Select(name => name.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault())
                 .Distinct()
                 .ToList();
 
@@ -113,8 +124,13 @@ public class KeptBooleanCollectionGateTests
 
                 var inCollection = type.AttributeLists.SelectMany(list => list.Attributes)
                     .Any(attribute => Name(attribute) == "Collection" && FirstText(attribute) == CollectionName);
-                if (!inCollection)
-                    offences.Add($"{path}:{tree.GetLineSpan(type.Identifier.Span).StartLinePosition.Line + 1} class {type.Identifier.Text} names a shared member and is not in the collection \"{CollectionName}\"");
+                var declaresTest = type.Members.OfType<MethodDeclarationSyntax>()
+                    .Any(method => method.AttributeLists.SelectMany(list => list.Attributes).Any(attribute => Name(attribute).EndsWith("Fact", StringComparison.Ordinal) || Name(attribute).EndsWith("Theory", StringComparison.Ordinal)));
+                var where = $"{path}:{tree.GetLineSpan(type.Identifier.Span).StartLinePosition.Line + 1} class {type.Identifier.Text}";
+                if (!declaresTest)
+                    offences.Add($"{where} names a shared member and declares no test, so another class can count through it; count in the test class");
+                else if (!inCollection)
+                    offences.Add($"{where} names a shared member and is not in the collection \"{CollectionName}\"");
             }
         }
 

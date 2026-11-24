@@ -328,6 +328,19 @@ segments. The test leaves out only that fault of that size, with this identifier
 Exit: the owner says which rule gives way at 640 by 360 (the floor of the inner radius, the width of a segment, the place of the
 ring, or the windows of the top left), and a task removes the exception from `ResponsiveLayoutTests`.
 
+### R-0077 · A failed start of the renderer of the images leaks the objects that it made before the failure
+- class: debt
+- opened: 2026-11-24
+- due: 2027-05-23
+- extended: no
+- refs: `3DEngine.Vulkan/ImageRenderer.cs` (the constructor), `docs/reviews/2026-11-23-codebase-review.md` (V234), TASK-0461
+Finding V234 named `GroundPipeline`, `EdgePipeline` and `ImageRenderer`. TASK-0461 corrected the first two, whose start makes two
+modules, a layout and a pipeline. The start of `ImageRenderer` also makes a layout of descriptor sets, a pool, a sampler and a
+vertex buffer before its modules, so one failure leaks several objects; the correction is not the same small form. A start
+fails only when the device fails, at the start of the window, and the process then stops.
+Exit: a task makes each object of the start of `ImageRenderer` free on a failure, with a test that fails the start at each
+object as `PipelineStartTests` does, or the owner accepts the leak at a failed start.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.

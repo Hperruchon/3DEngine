@@ -12,20 +12,24 @@ public static class PlanarBoolean
 
     // ADR-0057 item 5: a minus b, in the steps of csg.js: the parts of a outside b, and the parts of b inside a, turned.
     // Each part keeps the tag of its face. Null when the result is empty, which the caller refuses.
-    public static KernelSolid? Subtract(KernelSolid a, KernelSolid b)
+    public static KernelSolid? Subtract(KernelSolid a, KernelSolid b) => Subtract(a, b, CancellationToken.None);
+
+    // TASK-0461 (finding E241 of the codebase review of 2026-11-23): the subtract of a void in the pair check gives its token, as
+    // Intersect does (finding E233), and each walk that splits reads it at each node. The token changes no result.
+    public static KernelSolid? Subtract(KernelSolid a, KernelSolid b, CancellationToken cancel)
     {
         ArgumentNullException.ThrowIfNull(a);
         ArgumentNullException.ThrowIfNull(b);
         booleans++;
-        var left = new Bsp(a.Polygons);
-        var right = new Bsp(b.Polygons);
+        var left = new Bsp(a.Polygons, cancel);
+        var right = new Bsp(b.Polygons, cancel);
         left.Invert();
-        left.ClipTo(right);
-        right.ClipTo(left);
+        left.ClipTo(right, cancel);
+        right.ClipTo(left, cancel);
         right.Invert();
-        right.ClipTo(left);
+        right.ClipTo(left, cancel);
         right.Invert();
-        left.Build(right.AllPolygons());
+        left.Build(right.AllPolygons(), cancel);
         left.Invert();
         var polygons = left.AllPolygons();
         if (polygons.Count == 0)

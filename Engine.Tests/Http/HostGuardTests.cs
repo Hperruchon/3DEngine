@@ -157,6 +157,26 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
 
         Assert.Equal(1, host.Process.ExitCode);
         Assert.Contains("loopback", host.Error, StringComparison.Ordinal);
+        Assert.DoesNotContain("Now listening on", host.Output, StringComparison.Ordinal);
+    }
+
+    // TASK-0461 (finding T193 of the codebase review of 2026-11-23, ADR-0173 item 4): Exited fails a process that writes the line
+    // "Now listening on", also when the test sees the exit before the line. Until TASK-0461 such a process passed when the test
+    // saw the exit first: the order of item 4 was a race. Here the shell exits with code 1 at once, and a process that it starts
+    // keeps the output open and writes the line about two seconds later, so the test always sees the exit first.
+    [Fact]
+    public async Task Exited_Fails_A_Process_That_Writes_Its_Address_After_The_Exit()
+    {
+        var start = OperatingSystem.IsWindows()
+            ? new ProcessStartInfo("cmd.exe", "/c start \"\" /b cmd /c \"ping -n 3 127.0.0.1 >nul & echo Now listening on: http://0.0.0.0:5880\" & exit 1")
+            : new ProcessStartInfo("/bin/sh", ["-c", "(sleep 2; echo 'Now listening on: http://0.0.0.0:5880') & exit 1"]);
+        start.RedirectStandardOutput = true;
+        start.RedirectStandardError = true;
+        start.UseShellExecute = false;
+        using var host = new Host(Process.Start(start)!);
+
+        Assert.NotNull(await Record.ExceptionAsync(() => Exited(host)));
+        Assert.Contains("Now listening on", host.Output, StringComparison.Ordinal);
     }
 
     // Before TASK-0051 the host gave no refusal for these two sources. It tried to
@@ -633,6 +653,8 @@ public class HostGuardTests : IClassFixture<WebApplicationFactory<Program>>
 
         await exit;
         Assert.True(await host.Progresses(host.Reads), $"The outputs of the host did not end in {NoProgress.TotalSeconds} s after its exit.");
+        // TASK-0461 (finding T193): a host that listened and then exited before the test saw the line fails here too.
+        Assert.DoesNotContain("Now listening on", host.Output, StringComparison.Ordinal);
     }
 
     // ADR-0173 item 4 (TASK-0449, item 4 of P0.180): no time limit decides a test that passes. A host makes progress while it

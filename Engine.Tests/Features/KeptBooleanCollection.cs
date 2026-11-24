@@ -8,7 +8,8 @@ namespace Engine.Tests.Features;
 // A_Sphere_Cuts_A_Hole_Of_One_Name counted two booleans for this reason.
 //
 // With parallel runs off, xUnit runs this collection after the parallel collections and alone, as the collection "real host"
-// (Engine.Tests/Http/RealHostCollection.cs). KeptBooleanCollectionGateTests holds the rule: each test class whose source
-// names BooleansOnThisThread, BooleansKept, IsBooleanKept or BooleanLimit carries [Collection("kept booleans")].
+// (Engine.Tests/Http/RealHostCollection.cs). KeptBooleanCollectionGateTests holds the rule: each type whose own code names
+// BooleansOnThisThread, BooleansKept, IsBooleanKept, BooleanLimit or ForksOpen declares a test and carries
+// [Collection("kept booleans")] (TASK-0461).
 [CollectionDefinition("kept booleans", DisableParallelization = true)]
 public sealed class KeptBooleanCollection;

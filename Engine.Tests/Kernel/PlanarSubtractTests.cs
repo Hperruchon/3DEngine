@@ -397,4 +397,24 @@ public sealed class PlanarSubtractTests
         Assert.All(tops, face => Assert.Equal([4], face.Loops.Select(loop => loop.Vertices.Count)));
         Assert.All(brep.Faces.SelectMany(face => face.Loops), loop => Assert.Equal(loop.Vertices.Count, loop.Vertices.Distinct().Count()));
     }
+
+    // TASK-0461 (finding E241 of the codebase review of 2026-11-23): a subtract with a token stops at a cancel, as Intersect
+    // does, and a token that is not cancelled changes no polygon of the result.
+    [Fact]
+    public void A_Subtract_With_A_Token_Stops_At_A_Cancel_And_Gives_The_Same_Result_With_No_Cancel()
+    {
+        var (box, tool) = (KernelSolid.Box(A, 4, 4, 4), KernelSolid.Box(B, 2, 2, 8));
+        using var cancel = new CancellationTokenSource();
+        cancel.Cancel();
+
+        Assert.Throws<OperationCanceledException>(() => PlanarBoolean.Subtract(box, tool, cancel.Token));
+        var (plain, token) = (PlanarBoolean.Subtract(box, tool)!, PlanarBoolean.Subtract(box, tool, CancellationToken.None)!);
+        Assert.Equal(plain.Polygons.Count, token.Polygons.Count);
+        for (var i = 0; i < plain.Polygons.Count; i++)
+        {
+            Assert.Equal(plain.Polygons[i].Plane, token.Polygons[i].Plane);
+            Assert.Equal(plain.Polygons[i].Tag, token.Polygons[i].Tag);
+            Assert.Equal(plain.Polygons[i].Vertices, token.Polygons[i].Vertices);
+        }
+    }
 }

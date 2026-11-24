@@ -283,8 +283,9 @@ internal sealed unsafe partial class DesktopUi
 
     // ADR-0093 item 2: the top of the panel, under the top bar. ADR-0100 item 5 (phase R17a, TASK-0314): on a portrait
     // display, under the path line.
-    // ADR-0113 item 3 (phase R19, TASK-0336): and under "AGENT IS WAITING" when it is a line of its own there.
-    private float PanelTop => 16f + _inset.Y + TopBarHeight + 8f + (_portrait ? PathHeight + _waitingLine : 0f);
+    // ADR-0113 item 3 (phase R19, TASK-0336): and under "AGENT IS WAITING" when it is a line of its own there. Finding V235
+    // (TASK-0461): on a landscape display too.
+    private float PanelTop => 16f + _inset.Y + TopBarHeight + 8f + (_portrait ? PathHeight : 0f) + _waitingLine;
 
     // The width of the open images on a display that is wide enough (V142, TASK-0302). Until TASK-0419 the panel had it too.
     private const float PanelWidth = 460f;

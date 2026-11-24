@@ -106,6 +106,12 @@ internal sealed class SectionView
     }
 
     private readonly Dictionary<Guid, Entry> _entries = new();
+
+    // TASK-0461 (finding V233 of the codebase review of 2026-11-23, ADR-0184 item 5): the cut that still runs of each body that
+    // left the section, with the mesh and the plane that it cuts. A body that comes back while that cut runs waits for it, so a
+    // body runs one cut at a time also after "Section" off and on, Escape, or Hide and Show. Until TASK-0461 the body started a
+    // second cut at once. A cut that ends leaves this map at the next frame.
+    private readonly Dictionary<Guid, (Guid Geometry, SectionCut Cut, Task<Prepared> Running)> _leftCuts = new();
     private SectionCut? _cut;
     private double _spacing;
 
@@ -116,7 +122,7 @@ internal sealed class SectionView
     internal Action? Searched { get; init; }
 
     // Complete when each cut that is in progress is complete.
-    internal Task Cuts => Task.WhenAll(_entries.Values.Select(entry => entry.Running));
+    internal Task Cuts => Task.WhenAll(_entries.Values.Select(entry => entry.Running).Concat(_leftCuts.Values.Select(left => left.Running)));
 
     // The count of the cuts that the view started, for a test.
     internal int Started { get; private set; }
@@ -136,6 +142,8 @@ internal sealed class SectionView
     public bool Follow(SectionCut? cut, IReadOnlyList<SectionBody> bodies, ((double X, double Y, double Z) Min, (double X, double Y, double Z) Max)? box, IDictionary<string, GpuMesh> meshes, GraphicsDevice device)
     {
         ArgumentNullException.ThrowIfNull(bodies);
+        foreach (var ended in _leftCuts.Where(left => left.Value.Running.IsCompleted).Select(left => left.Key).ToList())
+            _leftCuts.Remove(ended);
         if (cut is not { } plane)
         {
             _cut = null;
@@ -160,7 +168,11 @@ internal sealed class SectionView
         {
             if (!_entries.TryGetValue(body.Id, out var entry))
             {
-                _entries[body.Id] = new Entry { Geometry = body.Geometry, Cut = plane, RunningGeometry = body.Geometry, RunningCut = plane, Running = Start(body, plane) };
+                // A body that comes back while its last cut runs takes that cut as its running cut: a later frame puts it on the
+                // GPU when its mesh and its plane are the ones of now, or starts the cut of now when it ends (V233).
+                _entries[body.Id] = _leftCuts.Remove(body.Id, out var left)
+                    ? new Entry { Geometry = body.Geometry, Cut = plane, RunningGeometry = left.Geometry, RunningCut = left.Cut, Running = left.Running }
+                    : new Entry { Geometry = body.Geometry, Cut = plane, RunningGeometry = body.Geometry, RunningCut = plane, Running = Start(body, plane) };
                 continue;
             }
 
@@ -292,9 +304,12 @@ internal sealed class SectionView
         return changed;
     }
 
-    // A body that goes: its meshes leave the GPU. A cut of it that still runs ends with no effect.
+    // A body that goes: its meshes leave the GPU. A cut of it that still runs ends with no effect, but the body waits for it if
+    // it comes back first (V233).
     private bool Drop(Guid body, IDictionary<string, GpuMesh> meshes, GraphicsDevice device)
     {
+        if (_entries.TryGetValue(body, out var running) && !running.Running.IsCompleted)
+            _leftCuts[body] = (running.RunningGeometry, running.RunningCut, running.Running);
         var shown = _entries.Remove(body, out var entry) && entry.Shown is not null;
         return Remove(body, meshes, device) || shown;
     }

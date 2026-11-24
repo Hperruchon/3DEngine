@@ -17,7 +17,8 @@ namespace Engine.Api.Http;
 // - The bound (item 5): one preview for each proposal of the queue, so at most 8 open and 32 kept. A closed proposal keeps its
 //   last preview and gets no new one; a proposal that leaves the queue takes its preview with it.
 // - The cancellation (item 7): a fork that a new version makes old runs to its end, and its preview serves each caller that
-//   asked before its copy of the log. So a stream of commits cannot hold a caller for ever. Only Dispose stops a fork.
+//   asked before its copy of the log. So a stream of commits cannot hold a caller for ever. Only Dispose stops a fork: the
+//   replay, each command and each query of the fork, and each walk of the check that splits polygons read the token of the stop.
 //
 // ADR-0187 (phase R25, TASK-0462): a host that draws sets KeepShapes, so each fork also reads the shape of each body with a
 // new solid (PreviewShape), and the queue keeps the shapes of the last preview of each open proposal for the window (Kept).
@@ -70,10 +71,19 @@ public sealed partial class Proposals
     // proposal the call waits for a preview of the version of the Document at the call, or of a later version. For a closed
     // proposal it gives the last preview, and waits only for a fork that computes it now. The window calls this off the thread
     // of the frame.
+    // TASK-0461 (finding E240 of the codebase review of 2026-11-23): a proposal that leaves the queue while the call waits gives
+    // its last preview, or null when it has none, as an identifier that no proposal has. The stop of the host cancels the wait
+    // with OperationCanceledException and no token of the caller; the route gives E-API-HOST-STOPPED for it. Until TASK-0461
+    // a proposal that left the queue cancelled the wait too, and the route gave no error envelope.
     public async Task<ProposalPreview?> Preview(Guid id, CancellationToken ct = default)
     {
         if (_forks is null)
             throw new InvalidOperationException("The host makes no fork of the Document, so it gives no preview (ADR-0185 item 3).");
+        lock (_lock)
+        {
+            if (_stopped)
+                throw new OperationCanceledException("The host stopped, so it gives no preview.");
+        }
 
         var version = await _session.Read((document, _) => document.Version, ct).ConfigureAwait(false);
         Waiter waiter;
@@ -81,7 +91,7 @@ public sealed partial class Proposals
         {
             if (Of(id) is not { } entry)
                 return null;
-            waiter = new Waiter(version, new TaskCompletionSource<ProposalPreview>(TaskCreationOptions.RunContinuationsAsynchronously));
+            waiter = new Waiter(version, new TaskCompletionSource<ProposalPreview?>(TaskCreationOptions.RunContinuationsAsynchronously));
             entry.Waiters.Add(waiter);
             SettleLocked(entry);
             // ADR-0188 item 5: a commit while the group of an accept committed asked for no preview of that proposal, so a caller
@@ -103,6 +113,16 @@ public sealed partial class Proposals
             lock (_lock)
                 Of(id)?.Waiters.Remove(waiter);
             throw;
+        }
+    }
+
+    // Item 7: true after the stop of the host started, for a test that holds a fork until the stop waits for it (TASK-0461).
+    internal bool Stopped
+    {
+        get
+        {
+            lock (_lock)
+                return _stopped;
         }
     }
 
@@ -139,16 +159,12 @@ public sealed partial class Proposals
         KickLocked();
     }
 
-    // Item 5: a proposal that leaves the queue. A caller that waits for its preview gets the last preview, or a cancellation.
+    // Item 5: a proposal that leaves the queue. A caller that waits for its preview gets the last preview, or null (finding
+    // E240, TASK-0461).
     private static void DroppedLocked(Entry entry)
     {
         foreach (var waiter in entry.Waiters)
-        {
-            if (entry.Preview is { } preview)
-                waiter.Done.TrySetResult(preview);
-            else
-                waiter.Done.TrySetCanceled(CancellationToken.None);
-        }
+            waiter.Done.TrySetResult(entry.Preview);
 
         entry.Waiters.Clear();
     }
@@ -171,8 +187,10 @@ public sealed partial class Proposals
             _worker = Task.Run(Work);
     }
 
-    // Item 7: Dispose stops the worker and waits for its end, so no fork runs after the host. A fork stops at its next command;
-    // a command that runs now ends first (ADR-0006 section 4).
+    // Item 7: Dispose stops the worker and waits for its end, so no fork runs after the host. A fork stops at the next read of
+    // the token: before each entry of the replay and each command, in each query of the fork, and at each node of each walk of
+    // the check that splits polygons. A command that runs now ends first (ADR-0006 section 4). A factory of backends that
+    // waits does not read the token, so the stop waits for it (finding T192 of the codebase review of 2026-11-23, TASK-0461).
     private void StopPreviews()
     {
         Task? worker;
@@ -331,7 +349,7 @@ public sealed partial class Proposals
     }
 
     // A caller that waits for a preview of the version Version or later.
-    private sealed record Waiter(long Version, TaskCompletionSource<ProposalPreview> Done);
+    private sealed record Waiter(long Version, TaskCompletionSource<ProposalPreview?> Done);
 }
 
 // ADR-0185 item 3: the states of a preview. Ready: the fork ran the commands, and Results, FailedIndex, FailedCode and Bodies
