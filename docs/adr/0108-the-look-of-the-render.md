@@ -87,3 +87,6 @@ the scene waits.
   "Cmd K" there.
 - 2026-11-20 · TASK-0458 · ADR-0186 items 1 and 2 amend item 1: the ground has the soft light of the render, from
   `#03060b` at the corners to `#0a1a28` at the middle; the clear stays the colour of a plate.
+- 2026-11-24 · TASK-0461 · Item 6 with no change of the item (finding V235, the answer Q8 A of the owner of 2026-11-24): while
+  a proposal waits on a landscape display, the path of the top bar leaves the room of "AGENT IS WAITING", so a long folder is
+  cut at its start and the word keeps its place left of the command line (phase P0.187).

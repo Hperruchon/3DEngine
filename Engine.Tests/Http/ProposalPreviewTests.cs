@@ -796,4 +796,301 @@ public sealed class ProposalPreviewTests
         Assert.Equal(2, fresh.Preview.DocumentVersion);
         Assert.Single(fresh.Shapes);
     }
+
+    // TASK-0461 (finding T192 of the codebase review of 2026-11-23): a factory of backends that counts the backends that it made,
+    // the backends that live now and the most that lived at one time. Each backend of a fork is freed by the fork (item 2).
+    private sealed class Counter
+    {
+        private int _made;
+        private int _live;
+        private int _most;
+
+        public int Made => Volatile.Read(ref _made);
+
+        public int Live => Volatile.Read(ref _live);
+
+        public int Most => Volatile.Read(ref _most);
+
+        public Func<IGeometryBackend> Of(Func<IGeometryBackend> make) => () =>
+        {
+            var backend = make();
+            Interlocked.Increment(ref _made);
+            var live = Interlocked.Increment(ref _live);
+            int most;
+            while ((most = Volatile.Read(ref _most)) < live && Interlocked.CompareExchange(ref _most, live, most) != most)
+            {
+            }
+
+            return new Counted(backend, this);
+        };
+
+        private void Freed() => Interlocked.Decrement(ref _live);
+
+        private sealed class Counted(IGeometryBackend inner, Counter counter) : IGeometryBackend, IDisposable
+        {
+            private int _freed;
+
+            public BackendCapabilities Capabilities => inner.Capabilities;
+
+            public BackendIdentity Identity => inner.Identity;
+
+            public T? TryGet<T>() where T : class => inner.TryGet<T>();
+
+            public void Dispose()
+            {
+                if (Interlocked.Exchange(ref _freed, 1) != 0)
+                    return;
+                (inner as IDisposable)?.Dispose();
+                counter.Freed();
+            }
+        }
+    }
+
+    // A factory that holds each fork until the test opens the gate, and says when the first fork asks for a backend.
+    private sealed class Held : IDisposable
+    {
+        private readonly ManualResetEventSlim _gate = new(false);
+        private readonly TaskCompletionSource _started = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Func<IGeometryBackend> Of(Func<IGeometryBackend> make) => () =>
+        {
+            _started.TrySetResult();
+            _gate.Wait();
+            return make();
+        };
+
+        // The first fork asked for its backend. The limit of 30 s only ends a test that would wait for ever.
+        public async Task Started()
+        {
+            var done = await Task.WhenAny(_started.Task, Task.Delay(TimeSpan.FromSeconds(30)));
+            Assert.True(done == _started.Task, "No fork started in 30 s.");
+        }
+
+        public void Open() => _gate.Set();
+
+        // A scope that opens the gate at its end. A test takes it after the start of its host, so the gate opens before the stop
+        // of the host, which waits for the held fork, also when an assertion fails.
+        public IDisposable Release() => new Opening(this);
+
+        private sealed class Opening(Held held) : IDisposable
+        {
+            public void Dispose() => held.Open();
+        }
+
+        public void Dispose()
+        {
+            _gate.Set();
+            _gate.Dispose();
+        }
+    }
+
+    private static async Task<T> Within<T>(Task<T> task, string what)
+    {
+        var done = await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(30)));
+        Assert.True(done == task, $"{what} did not end in 30 s.");
+        return await task;
+    }
+
+    private static async Task<string?> Code(HttpResponseMessage response)
+        => JsonDocument.Parse(await response.Content.ReadAsStringAsync()).RootElement.GetProperty("error").GetProperty("code").GetString();
+
+    // TASK-0461 (finding E240 of the codebase review of 2026-11-23, item 5): a proposal with no preview that leaves the queue
+    // while a caller waits for its preview gives null, as an identifier that no proposal has, and the route gives HTTP 404 with
+    // E-API-PROPOSAL-NOT-FOUND. The fork of the proposal waits for its backend, so the proposal has no preview when it leaves
+    // after 32 later closed proposals. Until TASK-0461 the wait was cancelled, and the route gave no error envelope.
+    [Fact]
+    public async Task A_Proposal_That_Leaves_The_Queue_While_A_Caller_Waits_Gives_Not_Found()
+    {
+        using var held = new Held();
+        await using var served = await Served.Start(held.Of(() => new InProcessMeshBackend()));
+        using var release = held.Release();
+        var box = BookcaseCase.Output(await BookcaseCase.Applied(served.Host.Session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 }));
+        var gone = await Post(served, "Rename the box", Rename(Guid.NewGuid(), box, "Box"));
+        await held.Started();
+
+        var waiting = served.Host.Proposals.Preview(gone);
+        var route = served.Http.GetAsync($"/proposals/{gone}/preview");
+        Assert.False(waiting.IsCompleted, "The caller did not wait for the fork.");
+        Assert.NotNull(served.Host.Proposals.Reject(gone));
+        for (var i = 0; i < Proposals.MostKept; i++)
+            Assert.NotNull(served.Host.Proposals.Reject(await Post(served, $"Next {i}", Rename(Guid.NewGuid(), box, $"Next {i}"))));
+
+        Assert.Null(served.Host.Proposals.Find(gone));
+        Assert.Null(await Within(waiting, "The wait of the caller"));
+        using var response = await Within(route, "The route");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        Assert.Equal(DiagnosticCodes.ApiProposalNotFound, await Code(response));
+    }
+
+    // TASK-0461 (findings E240 and T192, item 7): the stop of the host while a fork waits for its backend. The stop waits for the
+    // fork, the fork stops at its first read of the token and frees its backend, a caller that waits gets a cancellation, and the
+    // route gives HTTP 503 with E-API-HOST-STOPPED, also for a request after the stop. Until TASK-0461 the route gave no error
+    // envelope, and no test disposed a host during a fork.
+    [Fact]
+    public async Task The_Stop_Of_The_Host_During_A_Fork_Frees_Its_Backend_And_The_Route_Gives_Host_Stopped()
+    {
+        var counter = new Counter();
+        using var held = new Held();
+        await using var served = await Served.Start(counter.Of(held.Of(() => new InProcessMeshBackend())));
+        using var release = held.Release();
+        var box = BookcaseCase.Output(await BookcaseCase.Applied(served.Host.Session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 }));
+        var id = await Post(served, "Rename the box", Rename(Guid.NewGuid(), box, "Box"));
+        await held.Started();
+
+        var waiting = served.Host.Proposals.Preview(id);
+        var route = served.Http.GetAsync($"/proposals/{id}/preview");
+        var stop = Task.Run(served.Host.Dispose);
+        // The gate opens only after the stop started, so the fork always meets the stop. The limit of 30 s only ends a test that
+        // would wait for ever.
+        var started = System.Diagnostics.Stopwatch.StartNew();
+        while (!served.Host.Proposals.Stopped && started.Elapsed < TimeSpan.FromSeconds(30))
+            await Task.Delay(10);
+        Assert.True(served.Host.Proposals.Stopped, "The stop of the host did not start in 30 s.");
+        held.Open();
+        await Within(stop.ContinueWith(_ => true, TaskScheduler.Default), "The stop of the host");
+        await stop;
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Within(waiting, "The wait of the caller"));
+        Assert.Equal(1, counter.Made);
+        Assert.Equal(0, counter.Live);
+        foreach (var request in new[] { route, served.Http.GetAsync($"/proposals/{id}/preview") })
+        {
+            using var response = await Within(request, "The route");
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+            Assert.Equal(DiagnosticCodes.ApiHostStopped, await Code(response));
+        }
+    }
+
+    // TASK-0461 (finding T192, item 2): each backend of a fork is freed, after a preview with a base and after a fork that
+    // cannot replay the log, and at most one backend of a fork lives at a time.
+    [NativeManifoldFact]
+    public async Task Each_Backend_Of_A_Fork_Is_Freed_And_At_Most_One_Lives_At_A_Time()
+    {
+        var counter = new Counter();
+        await using (var served = await Served.Start(counter.Of(Native), Native))
+        {
+            var session = served.Host.Session;
+            BookcaseCase.Output(await BookcaseCase.Applied(session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 }));
+            var far = BookcaseCase.Output(await BookcaseCase.Applied(session, new TranslateCommand { BodyId = BookcaseCase.Output(await BookcaseCase.Applied(session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 })), Dx = 100, Dy = 0, Dz = 0 }));
+            var moved = await Preview(served, await Post(served, "Move the far box", Translate(Guid.NewGuid(), far, 50, 0, 0)));
+            Assert.Equal(PreviewStates.Ready, moved.State);
+            Assert.Equal(2, counter.Made);
+            Assert.Equal(1, counter.Most);
+            Assert.Equal(0, counter.Live);
+        }
+
+        var failing = new Counter();
+        await using (var served = await Served.Start(failing.Of(() => new NullGeometryBackend())))
+        {
+            var box = BookcaseCase.Output(await BookcaseCase.Applied(served.Host.Session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 }));
+            var preview = await Preview(served, await Post(served, "Rename the box", Rename(Guid.NewGuid(), box, "Box")));
+            Assert.Equal(PreviewStates.Failed, preview.State);
+            Assert.Equal(1, failing.Made);
+            Assert.Equal(0, failing.Live);
+        }
+    }
+
+    // TASK-0461 (finding T192, item 7): the request of a caller can stop its own wait, and the fork goes on: a later wait gets
+    // the preview of that fork.
+    [Fact]
+    public async Task A_Cancelled_Wait_Leaves_The_Fork_And_A_Later_Wait_Gets_The_Preview()
+    {
+        using var held = new Held();
+        await using var served = await Served.Start(held.Of(() => new InProcessMeshBackend()));
+        using var release = held.Release();
+        var box = BookcaseCase.Output(await BookcaseCase.Applied(served.Host.Session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 }));
+        var id = await Post(served, "Rename the box", Rename(Guid.NewGuid(), box, "Box"));
+        await held.Started();
+
+        using (var cancel = new CancellationTokenSource())
+        {
+            var first = served.Host.Proposals.Preview(id, cancel.Token);
+            cancel.Cancel();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => first);
+        }
+
+        held.Open();
+        var preview = await Preview(served, id);
+        Assert.Equal(PreviewStates.Ready, preview.State);
+        Assert.Equal(1, preview.DocumentVersion);
+    }
+
+    // TASK-0461 (finding T192, item 3): a burst of commits while a fork runs gives one copy of the log at the last version, so one
+    // more fork, and not one fork for each version.
+    [Fact]
+    public async Task A_Burst_Of_Commits_During_A_Fork_Gives_One_More_Fork_At_The_Last_Version()
+    {
+        var counter = new Counter();
+        using var held = new Held();
+        await using var served = await Served.Start(counter.Of(held.Of(() => new InProcessMeshBackend())));
+        using var release = held.Release();
+        var box = BookcaseCase.Output(await BookcaseCase.Applied(served.Host.Session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 }));
+        var id = await Post(served, "Rename the box", Rename(Guid.NewGuid(), box, "Box"));
+        await held.Started();
+
+        for (var i = 0; i < 10; i++)
+            await BookcaseCase.Applied(served.Host.Session, new RenameBodyCommand { BodyId = box, NewName = $"Person {i}" });
+        held.Open();
+
+        var preview = await Preview(served, id);
+        Assert.Equal(11, preview.DocumentVersion);
+        Assert.Equal(2, counter.Made);
+    }
+
+    // TASK-0461 (run 45362050126 of the branch p0187-review-findings, ADR-0188 item 5): a caller that waits for the first
+    // preview of a new proposal while its fork runs at the version of the call does not mark the queue behind, so the preview of
+    // that fork is current as soon as the caller gets it. Until TASK-0461 the call compared the version with the last preview
+    // only, which a new proposal does not have: the queue was behind, and Kept gave Current false until the worker read the log
+    // again. A slow runner read Kept in that window (ProposalPreviewWindowTests on macOS). The limit of 30 s only ends a test that
+    // would wait for ever.
+    [Fact]
+    public async Task A_Caller_That_Waits_For_A_Fork_At_Its_Version_Does_Not_Mark_The_Queue_Behind()
+    {
+        using var held = new Held();
+        await using var served = await Served.Start(held.Of(() => new InProcessMeshBackend()));
+        using var release = held.Release();
+        var box = BookcaseCase.Output(await BookcaseCase.Applied(served.Host.Session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 }));
+        var id = await Post(served, "Rename the box", Rename(Guid.NewGuid(), box, "Box"));
+        await held.Started();
+
+        var waiting = served.Host.Proposals.Preview(id);
+        var started = System.Diagnostics.Stopwatch.StartNew();
+        while (served.Host.Proposals.WaitersOf(id) == 0 && !waiting.IsCompleted && started.Elapsed < TimeSpan.FromSeconds(30))
+            await Task.Delay(10);
+        Assert.Equal(1, served.Host.Proposals.WaitersOf(id));
+        Assert.False(served.Host.Proposals.Behind, "The fork at the version of the call runs, but the queue is behind.");
+
+        held.Open();
+        var preview = await Within(waiting, "The wait of the caller");
+        Assert.Equal(1, preview!.DocumentVersion);
+        Assert.True(served.Host.Proposals.Kept(id)!.Current, "The preview of the version of the call is not current.");
+    }
+
+    // TASK-0461 (finding T192, item 10): a body that gets a fault from the commands gives a measure with no mass and the refusal
+    // in its error, and its pair with a box has the state refused and the refusal in its error. The second corner of the sketch
+    // moves above the third, so two lines cross and the rebuild gives the extrude a fault.
+    [NativeManifoldFact]
+    public async Task A_Body_With_A_Fault_Gives_A_Measure_With_An_Error_And_A_Pair_With_The_State_Refused()
+    {
+        await using var served = await Served.Start(Native, Native);
+        var session = served.Host.Session;
+        var (sketch, points, _) = await Rectangle(session);
+        var plate = BookcaseCase.Output(await BookcaseCase.Applied(session, new ExtrudeCommand { SketchId = sketch, Distance = 3 }));
+        var far = BookcaseCase.Output(await BookcaseCase.Applied(session, new TranslateCommand { BodyId = BookcaseCase.Output(await BookcaseCase.Applied(session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 })), Dx = 100, Dy = 0, Dz = 0 }));
+
+        var preview = await Preview(served, await Post(served, "Cross two lines", Envelope("MoveSketchPoint", $"{{\"sketchId\":\"{sketch}\",\"pointId\":\"{points[1]}\",\"x\":5,\"y\":12}}")));
+
+        Assert.Equal(PreviewStates.Ready, preview.State);
+        Assert.NotNull(Assert.Single(preview.Bodies!.Changed).After.Fault);
+        var measure = Assert.Single(preview.Measures!);
+        Assert.Equal(plate, measure.BodyId);
+        Assert.NotNull(measure.Before?.Mass);
+        Assert.Null(measure.After.Mass);
+        Assert.Equal(DiagnosticCodes.GeomBodyFaulted, measure.After.Error?.Code);
+        var pair = Pair(preview, plate, far);
+        Assert.Equal(PairStates.Apart, pair.Before?.State);
+        Assert.Equal(PairStates.Refused, pair.After?.State);
+        Assert.Null(pair.After?.Check);
+        Assert.Equal(DiagnosticCodes.GeomBodyFaulted, pair.After?.Error?.Code);
+    }
 }

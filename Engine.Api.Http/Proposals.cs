@@ -318,6 +318,9 @@ public sealed partial class Proposals : IDisposable
 
         public bool Computing { get; set; }
 
+        // TASK-0461 (run 45362050126): the version of the copy of the log that the fork computes now, read while Computing.
+        public long ComputingVersion { get; set; } = -1;
+
         public List<Waiter> Waiters { get; } = new();
 
         // ADR-0187 item 2 (phase R25, TASK-0462): the shapes of the last preview of an open proposal, and the count of the

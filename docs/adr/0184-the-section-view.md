@@ -152,3 +152,5 @@ to learn. The ring of the part has one segment more, so a portrait ring with "Im
 - 2026-11-21 · TASK-0449 · Items 2, 5 and 11: a section follows its datum by its identity (V232), the search of the edge lines
   and the hatch in the task of the cut (V229), one cut at a time for each body (V230), the visible bodies only (V231), and the
   tests of item 5 and of the ring of six segments (T189).
+- 2026-11-24 · TASK-0461 · Item 5 with no change of the item (finding V233 of the codebase review of 2026-11-23): a body that
+  leaves the section and comes back while its cut runs waits for that cut, so it still runs one cut at a time (phase P0.187).

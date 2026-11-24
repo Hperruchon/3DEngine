@@ -135,46 +135,48 @@ public class MarkerGateTests
             }
         }
 
-        // Live configuration. Finding T4 of the codebase review of 2026-09-30
-        // (R-0031, TASK-0320): nuget/.gitignore called the folder feed an interim
-        // bootstrap with no identifier, and until TASK-0320 the gate did not read it.
-        foreach (var name in new[] { "nuget.config", "global.json", "nuget/.gitignore" })
-        {
-            var file = RepositoryFiles.Path(name.Split('/'));
-            if (File.Exists(file))
-                yield return file;
-        }
-
-        // Each workflow. A stale DRAFT in a workflow header is the exact defect
-        // that register entry R-0009 records.
-        var workflows = RepositoryFiles.Path(".github", "workflows");
-        if (Directory.Exists(workflows))
-        {
-            foreach (var file in Directory.EnumerateFiles(workflows, "*.yml"))
-                yield return file;
-        }
-
-        // Each tracked script, shader source and MSBuild file. Finding T13 of the codebase
-        // review of 2026-10-04 (R-0031, TASK-0451): the gate read C#, three configuration
-        // files and the workflows only, so a TODO with no identifier in a script of eng/, in
-        // a project file or in a shader passed. The list of git is the list of the
-        // repository, so a folder that git ignores is not read.
-        foreach (var relative in DependencyDirectionGateTests.TrackedFiles().Where(IsScriptOrBuildFile))
+        // Each tracked text file outside docs/ and tasks/: the configuration, each workflow, each
+        // script, shader source and MSBuild file, the solution, the lists of eng/ and the notes at
+        // the root. Finding T4 of the codebase review of 2026-09-30 (R-0031, TASK-0320):
+        // nuget/.gitignore called the folder feed an interim bootstrap with no identifier. Finding
+        // T13 of the codebase review of 2026-10-04 (TASK-0451): a TODO in a script, a project file
+        // or a shader passed. TASK-0461 (finding T196 of the codebase review of 2026-11-23): the
+        // gate read three named configuration files, the workflows and the files of a list of
+        // extensions, so a TODO with no identifier in the root .gitignore, in eng/android/*.ere, in
+        // eng/*.txt, in .github/CODEOWNERS or in the solution passed. The list of git is the list
+        // of the repository, so a folder that git ignores is not read. A file with a byte 0 in its
+        // first 8000 bytes is not text, as git decides, so a font or a compiled shader is not read.
+        foreach (var relative in DependencyDirectionGateTests.TrackedFiles().Where(IsReadAsText))
         {
             var file = RepositoryFiles.Path(relative.Split('/'));
-            if (File.Exists(file))
+            if (File.Exists(file) && IsText(file))
                 yield return file;
         }
     }
 
-    private static readonly string[] ScriptAndBuildExtensions =
-        [".js", ".mjs", ".cjs", ".sh", ".ps1", ".cmd", ".bat", ".csproj", ".props", ".targets", ".vert", ".frag", ".comp"];
+    // The folders of the records and of the definitions, which the gate does not read (see SCOPE),
+    // and the folder of the worktrees of the agent sessions.
+    private static readonly string[] NotRead = ["docs/", "tasks/", ".claude/", "Engine.Tests/Governance/"];
 
-    internal static bool IsScriptOrBuildFile(string relative)
-        => !relative.StartsWith(".claude/", StringComparison.Ordinal)
-        && ScriptAndBuildExtensions.Contains(System.IO.Path.GetExtension(relative), StringComparer.OrdinalIgnoreCase);
+    // A tracked file that the gate reads as text: each file outside the folders of NotRead, except
+    // a document (a Markdown file, such as CLAUDE.md, which defines the rule, or a note of a
+    // project). A C# source is read with the project that holds it, above, so it is not read a
+    // second time here.
+    internal static bool IsReadAsText(string relative)
+        => !NotRead.Any(folder => relative.StartsWith(folder, StringComparison.Ordinal))
+        && !relative.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)
+        && !relative.EndsWith(".md", StringComparison.OrdinalIgnoreCase);
 
-    // TASK-0451: the files of the forms of T13 are read, and a document is not.
+    private static bool IsText(string file)
+    {
+        using var stream = File.OpenRead(file);
+        var head = new byte[8000];
+        var read = stream.Read(head, 0, head.Length);
+        return Array.IndexOf(head, (byte)0, 0, read) < 0;
+    }
+
+    // TASK-0451 and TASK-0461: the files of the forms of T13 and of T196 are read, and a record,
+    // a document and a C# source of this list are not.
     [Theory]
     [InlineData("eng/report-failed-tests.js", true)]
     [InlineData("eng/manifold-native/build.sh", true)]
@@ -182,11 +184,22 @@ public class MarkerGateTests
     [InlineData("Engine.Core/Engine.Core.csproj", true)]
     [InlineData("Engine.Core/Directory.Build.props", true)]
     [InlineData("3DEngine.Vulkan/Shaders/mesh.frag", true)]
+    [InlineData(".gitignore", true)]
+    [InlineData("nuget/.gitignore", true)]
+    [InlineData("eng/android/dotnet-android.ere", true)]
+    [InlineData("eng/test-floor.txt", true)]
+    [InlineData(".github/CODEOWNERS", true)]
+    [InlineData(".github/workflows/ci.yml", true)]
+    [InlineData("3DEngine.sln", true)]
     [InlineData("docs/register.md", false)]
+    [InlineData("CLAUDE.md", false)]
+    [InlineData("3DEngine/Documentation/Architecture.md", false)]
+    [InlineData("tasks/TASK-0461-the-findings-of-the-review-of-2026-11-23.md", false)]
+    [InlineData("Engine.Tests/Governance/MarkerGateTests.cs", false)]
     [InlineData("Engine.Core/CommandBus.cs", false)]
     [InlineData(".claude/worktrees/a/eng/count-tests.js", false)]
-    public void The_Gate_Reads_Each_Script_Shader_And_Build_File(string relative, bool read)
+    public void The_Gate_Reads_Each_Tracked_Text_File_Outside_The_Records(string relative, bool read)
     {
-        Assert.Equal(read, IsScriptOrBuildFile(relative));
+        Assert.Equal(read, IsReadAsText(relative));
     }
 }

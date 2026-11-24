@@ -36,8 +36,85 @@ internal static class KernelProjection
     // the step and its two operands. The list holds the order of use, the last use first.
     private sealed record KeptBoolean((Guid Document, Guid Step) Key, string Kind, KernelSolid First, KernelSolid Second, KernelSolid? Result);
 
-    private static readonly Dictionary<(Guid Document, Guid Step), LinkedListNode<KeptBoolean>> Booleans = [];
-    private static readonly LinkedList<KeptBoolean> BooleanUse = new();
+    // A store of kept results: at most BooleanLimit, and the result of the oldest use goes first. Each call holds Gate.
+    private sealed class BooleanStore
+    {
+        private readonly Dictionary<(Guid Document, Guid Step), LinkedListNode<KeptBoolean>> _entries = [];
+        private readonly LinkedList<KeptBoolean> _use = new();
+
+        public int Count => _entries.Count;
+
+        public KeptBoolean? Find((Guid Document, Guid Step) key) => _entries.TryGetValue(key, out var node) ? node.Value : null;
+
+        public bool Contains((Guid Document, Guid Step) key) => _entries.ContainsKey(key);
+
+        // The entry goes to the front of the order of use, when the store still holds it.
+        public void Used(KeptBoolean kept)
+        {
+            if (_entries.TryGetValue(kept.Key, out var node) && ReferenceEquals(node.Value, kept))
+            {
+                _use.Remove(node);
+                _use.AddFirst(node);
+            }
+        }
+
+        public void Put(KeptBoolean kept)
+        {
+            if (_entries.Remove(kept.Key, out var old))
+                _use.Remove(old);
+            _entries[kept.Key] = _use.AddFirst(kept);
+            while (_use.Count > BooleanLimit)
+            {
+                _entries.Remove(_use.Last!.Value.Key);
+                _use.RemoveLast();
+            }
+        }
+
+        public void RemoveWhere(Func<(Guid Document, Guid Step), bool> gone)
+        {
+            foreach (var key in _entries.Keys.Where(gone).ToList())
+            {
+                _use.Remove(_entries[key]);
+                _entries.Remove(key);
+            }
+        }
+    }
+
+    // The store of each Document that is not a fork.
+    private static readonly BooleanStore Booleans = new();
+
+    // ADR-0185 item 11, amended by TASK-0461 (finding E239 of the codebase review of 2026-11-23): a fork of a preview replays
+    // the log of its source Document in a new Document with a new identity. So under the key of its own identity a fork found
+    // no kept result: each fork and each base made each boolean of the log again, and its results pushed out the results of
+    // the first Document. Now each open fork has its source and its own store. A fork reads its own store first, then the store
+    // of its source with no change of it, and puts each new result in its own store, which leaves when the fork ends
+    // (EndFork). The kind and the exact operands still decide each hit, so a result of the source answers a step of the fork
+    // only when the boolean gives that same result; a replay gives the same Document with or without the store.
+    private static readonly Dictionary<Guid, (Guid Source, BooleanStore Store)> Forks = [];
+
+    // A fork Document starts: until EndFork, it reads the kept results of the source Document and keeps its own results apart.
+    internal static void BeginFork(Guid fork, Guid source)
+    {
+        lock (Gate)
+            Forks[fork] = (source, new BooleanStore());
+    }
+
+    // The fork Document ends, and its own kept results leave with it.
+    internal static void EndFork(Guid fork)
+    {
+        lock (Gate)
+            Forks.Remove(fork);
+    }
+
+    // The count of the fork Documents that have not ended, for a test.
+    internal static int ForksOpen
+    {
+        get
+        {
+            lock (Gate)
+                return Forks.Count;
+        }
+    }
 
     // The kernel solid of the body in the committed state of the Document, or the reason that the kernel cannot build it.
     // TASK-0454: the walk first removes the kept results of the steps of the Document that are no longer in effect.
@@ -64,28 +141,40 @@ internal static class KernelProjection
     // kernel makes the boolean and the step keeps the new result. So the command, the regeneration and each reader make one
     // boolean for each change of the Document, and a kept result is the result that a new boolean gives. A boolean that throws
     // is not kept. The Document and the step only find the entry; they do not decide that the result answers.
+    // TASK-0461 (finding E239): a fork Document reads its own store, then the store of its source (Forks).
     public static KernelSolid? Boolean(Guid document, Command step, KernelSolid first, KernelSolid second)
     {
         ArgumentNullException.ThrowIfNull(step);
         ArgumentNullException.ThrowIfNull(first);
         ArgumentNullException.ThrowIfNull(second);
         var key = (document, step.CommandId);
-        KeptBoolean? kept;
+        BooleanStore store;
+        KeptBoolean? own;
+        KeptBoolean? source = null;
         lock (Gate)
-            kept = Booleans.TryGetValue(key, out var node) ? node.Value : null;
-        if (kept is not null && kept.Kind == step.Name && Same(kept.First, first) && Same(kept.Second, second))
         {
-            lock (Gate)
+            if (Forks.TryGetValue(document, out var fork))
             {
-                if (Booleans.TryGetValue(key, out var node) && ReferenceEquals(node.Value, kept))
-                {
-                    BooleanUse.Remove(node);
-                    BooleanUse.AddFirst(node);
-                }
+                store = fork.Store;
+                source = Booleans.Find((fork.Source, step.CommandId));
+            }
+            else
+            {
+                store = Booleans;
             }
 
-            return kept.Result;
+            own = store.Find(key);
         }
+
+        if (Answers(own, step, first, second))
+        {
+            lock (Gate)
+                store.Used(own!);
+            return own!.Result;
+        }
+
+        if (Answers(source, step, first, second))
+            return source!.Result;
 
         var result = step switch
         {
@@ -95,32 +184,24 @@ internal static class KernelProjection
             _ => throw new ArgumentException($"The command '{step.Name}' is not a Subtract, a Union or an Intersect.", nameof(step)),
         };
         lock (Gate)
-        {
-            if (Booleans.Remove(key, out var old))
-                BooleanUse.Remove(old);
-            Booleans[key] = BooleanUse.AddFirst(new KeptBoolean(key, step.Name, first, second, result));
-            while (BooleanUse.Count > BooleanLimit)
-            {
-                Booleans.Remove(BooleanUse.Last!.Value.Key);
-                BooleanUse.RemoveLast();
-            }
-        }
+            store.Put(new KeptBoolean(key, step.Name, first, second, result));
 
         return result;
     }
 
+    // A kept result answers a step only for the same kind and the same exact operands.
+    private static bool Answers(KeptBoolean? kept, Command step, KernelSolid first, KernelSolid second)
+        => kept is not null && kept.Kind == step.Name && Same(kept.First, first) && Same(kept.Second, second);
+
     // TASK-0454: the kept results of the steps of the Document that are no longer in effect leave: a step that an undo
     // removed, or a step of a command that did not commit. A read that runs between a command and its commit removes the
-    // result of that command too, and the next reader makes the boolean again.
+    // result of that command too, and the next reader makes the boolean again. TASK-0461: a fork walks its own store only.
     private static void KeepBooleans(Guid document, FeatureGraph graph)
     {
         lock (Gate)
         {
-            foreach (var key in Booleans.Keys.Where(key => key.Document == document && graph.Creator(key.Step)?.CommandId != key.Step).ToList())
-            {
-                BooleanUse.Remove(Booleans[key]);
-                Booleans.Remove(key);
-            }
+            var store = Forks.TryGetValue(document, out var fork) ? fork.Store : Booleans;
+            store.RemoveWhere(key => key.Document == document && graph.Creator(key.Step)?.CommandId != key.Step);
         }
     }
 
@@ -128,7 +209,7 @@ internal static class KernelProjection
     internal static bool IsBooleanKept(Guid document, Guid step)
     {
         lock (Gate)
-            return Booleans.ContainsKey((document, step));
+            return Booleans.Contains((document, step));
     }
 
     // The count of the kept results of the boolean steps, for a test.

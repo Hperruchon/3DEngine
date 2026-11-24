@@ -191,9 +191,25 @@ public static class TaskFiles
     // reads no file for the bound (TASK-0455).
     public static int PatternsKept => Patterns.Count;
 
+    // TASK-0461 (finding T195 of the codebase review of 2026-11-23): while a test sets this
+    // set, it receives each pattern that this thread gives to PathPattern, so the test counts
+    // the distinct patterns of a gate in the same run and reads no file a second time.
+    [ThreadStatic]
+    private static HashSet<string>? asked;
+
+    public static HashSet<string>? PatternsAskedOnThisThread
+    {
+        get => asked;
+        set => asked = value;
+    }
+
     // A path pattern, in the form that docs/templates.md uses. Two stars match
     // each character. One star matches each character except the separator.
-    public static Regex PathPattern(string pattern) => Patterns.GetOrAdd(pattern, Build);
+    public static Regex PathPattern(string pattern)
+    {
+        asked?.Add(pattern);
+        return Patterns.GetOrAdd(pattern, Build);
+    }
 
     private static Regex Build(string pattern)
     {

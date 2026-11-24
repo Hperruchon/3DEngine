@@ -6,6 +6,7 @@ using Engine.Core.Commands;
 using Engine.Core.Features;
 using Engine.Core.Hosting;
 using Engine.Core.Persistence;
+using Engine.Core.Preview;
 using Engine.Core.Queries;
 using Engine.Geometry.Manifold;
 using Engine.Kernel;
@@ -255,6 +256,87 @@ public sealed class KeptBooleanTests : IDisposable
 
     private static string Text(KernelSolid solid)
         => string.Join("\n", solid.Polygons.Select(polygon => $"{polygon.Tag} {polygon.Plane} {string.Join(" ", polygon.Vertices)}")) + $"\n{solid.Volume()}";
+
+    // TASK-0461 (finding E239 of the codebase review of 2026-11-23, ADR-0185 item 11): a fork and a base of a preview replay the
+    // log in a new Document, and take the kept results of the first Document. So a preview makes no boolean of the log again,
+    // and the store of the first Document does not change. A fork keeps its own results in its own store, which leaves with the
+    // fork. Until TASK-0461 the rename made one boolean (the replay), the move made two (the replay and the base), and each fork
+    // added its results to the store of the first Document. The fork runs on the thread of the test, so the count of the
+    // booleans of this thread is the count of the preview.
+    [NativeManifoldFact]
+    public async Task A_Fork_Takes_The_Kept_Results_Of_The_First_Document_And_Adds_None_To_Them()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        var plate = await Body(session, new CreateBoxCommand { SizeX = 20, SizeY = 20, SizeZ = 4 });
+        var tool = await Body(session, new TranslateCommand { BodyId = await Body(session, new CreateBoxCommand { SizeX = 4, SizeY = 4, SizeZ = 10 }), Dx = 4, Dy = 4, Dz = -2 });
+        var step = Guid.NewGuid();
+        var cut = await Body(session, new SubtractCommand { CommandId = step, MinuendBodyId = plate, SubtrahendBodyId = tool });
+        await Faces(session, cut);
+        var post = await Body(session, new TranslateCommand { BodyId = await Body(session, new CreateBoxCommand { SizeX = 4, SizeY = 4, SizeZ = 4 }), Dx = 100, Dy = 0, Dz = 0 });
+        var source = await session.Read((document, _) => ForkSource.Of(document));
+        var kept = KernelProjection.BooleansKept;
+        Func<IGeometryBackend> backends = () => new ManifoldGeometryBackend();
+
+        var start = PlanarBoolean.BooleansOnThisThread;
+        var renamed = await DocumentFork.Run(source, [new RenameBodyCommand { BodyId = cut, NewName = "Plate" }], backends);
+        var rename = PlanarBoolean.BooleansOnThisThread - start;
+        Assert.NotNull(Assert.Single(renamed.Measures).After.Mass);
+
+        start = PlanarBoolean.BooleansOnThisThread;
+        var moved = await DocumentFork.Run(source, [new TranslateCommand { BodyId = post, Dx = 50, Dy = 0, Dz = 0 }], backends);
+        var move = PlanarBoolean.BooleansOnThisThread - start;
+        Assert.NotNull(Assert.Single(moved.Measures).After.Mass);
+
+        Assert.True(rename == 0 && move == 0, $"The rename made {rename} booleans and the move {move}; each boolean of the log is kept.");
+        Assert.Equal(kept, KernelProjection.BooleansKept);
+        Assert.True(KernelProjection.IsBooleanKept(session.DocumentId, step));
+
+        // A new boolean of the proposal is the own result of the fork: it leaves with the fork and pushes out nothing.
+        var box = new CreateBoxCommand { SizeX = 2, SizeY = 2, SizeZ = 20 };
+        var hole = await DocumentFork.Run(source, [box, new SubtractCommand { MinuendBodyId = cut, SubtrahendBodyId = box.CommandId }], backends);
+        Assert.Null(hole.FailedIndex);
+        Assert.Equal(kept, KernelProjection.BooleansKept);
+        Assert.Equal(0, KernelProjection.ForksOpen);
+    }
+
+    // TASK-0461 (finding E239): the probe of the review on a host. Eight proposals with a move and sixteen commits run forks and
+    // bases on the worker of the queue; the kept result of the cut of the first Document stays, and the next read of its faces
+    // makes no boolean.
+    [NativeManifoldFact]
+    public async Task The_Forks_Of_Eight_Proposals_And_Sixteen_Commits_Push_Out_No_Kept_Result_Of_The_First_Document()
+    {
+        using var host = new Engine.Api.Http.EngineHost(new ManifoldGeometryBackend(), forks: () => new ManifoldGeometryBackend());
+        var session = host.Session;
+        var plate = await Body(session, new CreateBoxCommand { SizeX = 20, SizeY = 20, SizeZ = 4 });
+        var tool = await Body(session, new TranslateCommand { BodyId = await Body(session, new CreateBoxCommand { SizeX = 4, SizeY = 4, SizeZ = 10 }), Dx = 4, Dy = 4, Dz = -2 });
+        var step = Guid.NewGuid();
+        var cut = await Body(session, new SubtractCommand { CommandId = step, MinuendBodyId = plate, SubtrahendBodyId = tool });
+        await Faces(session, cut);
+        var kept = KernelProjection.BooleansKept;
+
+        var proposals = new List<Guid>();
+        for (var i = 0; i < Engine.Api.Http.Proposals.MostOpen; i++)
+        {
+            var command = new TranslateCommand { BodyId = cut, Dx = i + 1, Dy = 0, Dz = 0 };
+            var text = new Engine.Api.Http.ProposedCommand("Translate", 1, new Dictionary<string, System.Text.Json.JsonElement>(), command.CommandId, null);
+            var summary = $"Move {i}";
+            var added = await session.Read((document, _) => host.Proposals.Add(summary, [(text, command)], document));
+            proposals.Add(added!.Id);
+        }
+
+        for (var i = 0; i < 16; i++)
+            await Applied(session, new RenameBodyCommand { BodyId = cut, NewName = $"Plate {i}" });
+        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+        foreach (var id in proposals)
+            Assert.Equal(Engine.Api.Http.PreviewStates.Ready, (await host.Proposals.Preview(id, limit.Token))?.State);
+
+        Assert.Equal(kept, KernelProjection.BooleansKept);
+        Assert.True(KernelProjection.IsBooleanKept(session.DocumentId, step), "A fork pushed out the kept result of the cut.");
+        var start = PlanarBoolean.BooleansOnThisThread;
+        await Faces(session, cut);
+        Assert.Equal(0, PlanarBoolean.BooleansOnThisThread - start);
+    }
 
     // The kept results hold no state that the log does not give: the session makes the cut with a datum on a face that it
     // removes, edits the plate two times, reads the faces, undoes and redoes, and a replay of its log in a new session gives

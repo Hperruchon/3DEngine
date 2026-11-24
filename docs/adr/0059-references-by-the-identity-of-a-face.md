@@ -56,7 +56,8 @@ of K4. On 2026-11-05 the owner answered five questions:
    step keeps the new result. A result is a function of that content only, so a kept result is the result that a new
    boolean gives, and the log does not hold it. The projection keeps at most 256 results; the result of the oldest use
    goes first. Each walk from a committed Document first removes the results of its steps that are no longer in
-   effect.
+   effect. A fork of a preview (ADR-0185 item 11, TASK-0461) reads its own results, then the results of its source Document
+   with no change of them, and keeps its own results in a store of at most 256 that leaves with the fork.
 3. **A gone face.** The chain of a feature is the walk from its body through each consumer, a `Translate`, a `Rotate`
    (ADR-0112 item 6) or a `Subtract`, to the live body at its end. A datum with no other fault, whose chain
    holds a `Subtract`, and whose name is not a face of the kernel solid of that end, gets the fault
@@ -110,3 +111,5 @@ of K4. On 2026-11-05 the owner answered five questions:
 - 2026-11-22 · TASK-0454 · Item 2: the projection keeps the result of each boolean step under the Document and the
   step, and takes it only for the same kind and the same operands. The command `Subtract` made the boolean for the
   faults of its datums, and `GetFaces` made it again (TASK-0452); now one `Subtract` and one `GetFaces` make one boolean.
+- 2026-11-24 · TASK-0461 · Item 2: a fork of a preview reads the kept booleans of its source Document and keeps its own in a
+  store that leaves with it (finding E239 of the codebase review of 2026-11-23; ADR-0185 item 11 gives the design and the cost).

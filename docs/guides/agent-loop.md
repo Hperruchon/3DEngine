@@ -594,6 +594,7 @@ status `Rejected`. A request that the surface refuses gives HTTP 4xx with `{ "er
 | `E-CMD-GROUP-MOVE` | The `failedCode` of a proposal with an `Undo` or a `Redo`: a proposal is one group of steps. | Leave the undo to the person; propose the opposite change. |
 | `W-API-PROPOSAL-RESULT-CHANGED` | The `held` of an open proposal: the result changed after the preview that the person saw, and nothing applied. | Read the new preview; the person accepts again. |
 | `E-API-OPEN-PENDING` | The host opens another file (HTTP 503). | Connect again after the start. |
+| `E-API-HOST-STOPPED` | The host stopped while `GET /proposals/{id}/preview` waited (HTTP 503). | Connect again after the start, and post the proposal again. |
 
 Here are three refusals that an agent meets often. The box that `CreateBox` made is not live after the `Translate`:
 

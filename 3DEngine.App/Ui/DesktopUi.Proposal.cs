@@ -54,7 +54,8 @@ internal sealed unsafe partial class DesktopUi
     private IReadOnlyList<ProposalCard> _proposals = [];
 
     // ADR-0113 item 3 (phase R19, TASK-0336): the height of "AGENT IS WAITING" and its gap when it is a line of its own under
-    // the path line of a portrait display, from the last frame; else zero. The panel starts under it.
+    // the path line of a portrait display, from the last frame; else zero. The panel starts under it. Finding V235 (TASK-0461):
+    // also under the top bar of a landscape display with no room for the word.
     private float _waitingLine;
 
     // Item 6: the outcome of the last accept or reject, which the status line gives until the next one.
@@ -788,9 +789,11 @@ internal sealed unsafe partial class DesktopUi
         {
             // ADR-0113 item 3 (phase R19, TASK-0336): on a portrait display the word goes under the path line,
             // and the panel of the next frame starts under the word. Until TASK-0336 the path line covered the word.
+            // Finding V235 (TASK-0461, Q8 A of the owner of 2026-11-24): on a landscape display too narrow for the word beside a
+            // cut title, the panel of the next frame also starts under the word. Until TASK-0461 the rows lay on it.
             var under = _portrait && _items.TryGetValue(PathItem, out var path) ? path.W : title.W;
             at = new Vector2(title.X + dot, under + 4f);
-            _waitingLine = _portrait ? size.Y + 4f : 0f;
+            _waitingLine = size.Y + 4f;
         }
 
         // ADR-0108 item 6: the amber dot before the word.

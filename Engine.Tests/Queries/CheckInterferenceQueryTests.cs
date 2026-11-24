@@ -23,6 +23,28 @@ namespace Engine.Tests.Queries;
 // the native backend, because only that backend moves a body and gives the triangles of a mesh body.
 public sealed class CheckInterferenceQueryTests(ITestOutputHelper output)
 {
+    // TASK-0461 (finding E241 of the codebase review of 2026-11-23, ADR-0182 item 8): each boolean of the kernel in the check
+    // gives the token of the query, so a cancel and the stop of a host that waits for a fork do not wait for a walk with no
+    // token. A test cannot time a cancel inside one walk, so this test reads the calls in the source of the handler. Until
+    // TASK-0461 the subtract of a void gave no token.
+    [Fact]
+    public void Each_Boolean_Of_The_Check_Gives_The_Token_Of_The_Query()
+    {
+        var source = Engine.Tests.Governance.RepositoryFiles.Read("Engine.Core", "Queries", "CheckInterferenceQueryHandler.cs");
+        var calls = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(source).GetRoot().DescendantNodes()
+            .OfType<Microsoft.CodeAnalysis.CSharp.Syntax.InvocationExpressionSyntax>()
+            .Where(call => call.Expression is Microsoft.CodeAnalysis.CSharp.Syntax.MemberAccessExpressionSyntax
+            {
+                Expression: Microsoft.CodeAnalysis.CSharp.Syntax.IdentifierNameSyntax { Identifier.ValueText: "PlanarBoolean" },
+            })
+            .ToList();
+
+        Assert.True(calls.Count >= 2, $"The handler has {calls.Count} calls of PlanarBoolean; the scan found too few.");
+        Assert.All(calls, call => Assert.True(
+            call.ArgumentList.Arguments.Count == 3 && call.ArgumentList.Arguments[2].Expression.ToString() == "ct",
+            $"The call {call} gives no token of the query."));
+    }
+
     private static async Task<CommandResult> Applied(DocumentSession session, Command command)
     {
         var result = await session.Apply(command);

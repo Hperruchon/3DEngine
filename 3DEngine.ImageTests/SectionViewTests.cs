@@ -530,6 +530,32 @@ public sealed class SectionViewTests
                 Assert.Empty(meshes);
                 Assert.Null(view.ShownOf(id));
                 Assert.Equal(6, view.Started);
+
+                // TASK-0461 (finding V233 of the codebase review of 2026-11-23): a body that goes and comes back while its cut runs,
+                // as "Section" off and on or Hide and Show do, starts no second cut. It waits for that cut, which is of its mesh and
+                // its plane, so the cut goes on the GPU and no new cut starts. Until TASK-0461 the body started a second cut at once.
+                Follow(a, wider);
+                Assert.Equal(7, view.Started);
+                Follow(a);
+                Follow(a, wider);
+                Assert.Equal(7, view.Started);
+                held.Complete(6);
+                Assert.True(Follow(a, wider));
+                Assert.Equal((SectionView.KeptId(id), SectionView.CapId(id)), view.Draws(id));
+                Assert.Equal(7, view.Started);
+
+                // With another plane when it comes back, the body starts the cut of that plane when the cut that runs ends.
+                Follow(b, wider);
+                Assert.Equal(8, view.Started);
+                view.Follow(null, [wider], BoxOfTheCuts, meshes, device);
+                Follow(c, wider);
+                Assert.Equal(8, view.Started);
+                held.Complete(7);
+                Follow(c, wider);
+                Assert.Equal(9, view.Started);
+                held.Complete(8);
+                Assert.True(Follow(c, wider));
+                Assert.Equal(SectionMesh.Side.Cut, view.ShownOf(id));
             }
             finally
             {
