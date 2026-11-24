@@ -307,10 +307,11 @@ public sealed class ProposalsEndpointTests : IAsyncLifetime
         Assert.Equal(0, await Version());
     }
 
-    // Item 6: an accept applies the envelopes in their order, as the commands of a person, and gives one step of undo for
-    // each command.
+    // Item 6: an accept applies the envelopes in their order, as the commands of a person. ADR-0188 item 3 (TASK-0463): the
+    // commands are one step of undo, so one Undo reverses the whole proposal. This host makes no fork, so the accept applies
+    // the group with no comparison (ADR-0188 item 6).
     [Fact]
-    public async Task An_Accept_Applies_In_Order_And_Gives_N_Steps_Of_Undo()
+    public async Task An_Accept_Applies_In_Order_And_Gives_One_Step_Of_Undo()
     {
         var id = await Posted("Two boxes", Box(10), Box(20));
         var posted = (await Read(id)).GetProperty("commands").EnumerateArray().Select(command => command.GetProperty("commandId").GetGuid()).ToArray();
@@ -331,21 +332,24 @@ public sealed class ProposalsEndpointTests : IAsyncLifetime
         Assert.Equal(2, read.GetProperty("results").GetArrayLength());
         Assert.Equal("Applied", read.GetProperty("results")[1].GetProperty("status").GetString());
 
-        // Two steps of undo, and no third one.
-        string[] undo = ["{\"name\":\"Undo\",\"schemaVersion\":1,\"parameters\":{}}"];
-        for (var i = 0; i < 2; i++)
-            Assert.Equal("Applied", (await Send(HttpMethod.Post, "/commands", undo[0])).Body.GetProperty("status").GetString());
-        var third = (await Send(HttpMethod.Post, "/commands", undo[0])).Body;
-        Assert.Equal(DiagnosticCodes.CommandNothingToUndo, third.GetProperty("error").GetProperty("code").GetString());
+        // One step of undo, which reverses the two boxes, and no second one.
+        const string undo = "{\"name\":\"Undo\",\"schemaVersion\":1,\"parameters\":{}}";
+        var first = (await Send(HttpMethod.Post, "/commands", undo)).Body;
+        Assert.Equal("Applied", first.GetProperty("status").GetString());
+        Assert.Equal(posted[1], first.GetProperty("outputs").GetProperty("commandId").GetGuid());
+        Assert.Equal(0, await _host.Session.Read((document, _) => document.Bodies.Count));
+        var second = (await Send(HttpMethod.Post, "/commands", undo)).Body;
+        Assert.Equal(DiagnosticCodes.CommandNothingToUndo, second.GetProperty("error").GetProperty("code").GetString());
 
         // A second accept of a closed proposal does nothing.
         Assert.Null(await _host.Proposals.Accept(id));
     }
 
-    // Item 6: the apply stops at the first command that the engine does not apply; the commands before it stay applied,
-    // and the proposal is failed with the index and the code of that command.
+    // Item 6: the apply stops at the first command that the engine does not apply, and the proposal is failed with the index
+    // and the code of that command. ADR-0188 item 5 (TASK-0463, Q3 A): one Undo of the group, which the log holds, reverses the
+    // commands before it, so the accept applies nothing; the Undo leaves no step to undo.
     [Fact]
-    public async Task An_Accept_Stops_At_The_First_Rejected_Command()
+    public async Task An_Accept_Stops_At_The_First_Rejected_Command_And_Applies_Nothing()
     {
         var id = await Posted("A bad box in the middle", Box(10), Box(-1), Box(30));
 
@@ -356,8 +360,11 @@ public sealed class ProposalsEndpointTests : IAsyncLifetime
         Assert.Equal(1, failed.FailedIndex);
         Assert.Equal(DiagnosticCodes.GeomInvalidParam, failed.FailedCode);
         Assert.Equal([CommandStatus.Applied, CommandStatus.Rejected], failed.Results.Select(result => result.Status));
-        Assert.Equal(1, await Version());
-        Assert.Equal(1, await _host.Session.Read((document, _) => document.Bodies.Count));
+        Assert.Equal(2, await Version());
+        Assert.Equal(["CreateBox", "Undo"], await _host.Session.Read((document, _) => document.Log.Select(entry => entry.Command.Name).ToArray()));
+        Assert.Equal(0, await _host.Session.Read((document, _) => document.Bodies.Count));
+        var nothing = (await Send(HttpMethod.Post, "/commands", "{\"name\":\"Undo\",\"schemaVersion\":1,\"parameters\":{}}")).Body;
+        Assert.Equal(DiagnosticCodes.CommandNothingToUndo, nothing.GetProperty("error").GetProperty("code").GetString());
 
         var read = await Read(id);
         Assert.Equal(ProposalStates.Failed, read.GetProperty("state").GetString());
@@ -484,7 +491,8 @@ public sealed class ProposalsEndpointTests : IAsyncLifetime
 
     // Finding E198 (TASK-0331): a command whose identifier the session knows applies nothing, so the accept stops there with
     // E-API-PROPOSAL-COMMAND-KNOWN, and the proposal has no result for it. Until TASK-0331 a later proposal with the
-    // identifier of an applied command was accepted with 1 applied result and no change of the Document.
+    // identifier of an applied command was accepted with 1 applied result and no change of the Document. ADR-0188 item 5
+    // (TASK-0463): the session finds the known command by the version, and one Undo of the group reverses the box before it.
     [Fact]
     public async Task A_Command_That_The_Session_Knows_Fails_The_Accept()
     {
@@ -497,8 +505,8 @@ public sealed class ProposalsEndpointTests : IAsyncLifetime
 
         Assert.Equal((ProposalStates.Failed, 1, DiagnosticCodes.ApiProposalCommandKnown), (failed!.State, failed.FailedIndex, failed.FailedCode));
         Assert.Equal([CommandStatus.Applied], failed.Results.Select(result => result.Status));
-        Assert.Equal(2, await Version());
-        Assert.Equal(2, await _host.Session.Read((document, _) => document.Bodies.Count));
+        Assert.Equal(3, await Version());
+        Assert.Equal(1, await _host.Session.Read((document, _) => document.Bodies.Count));
         var read = await Read(again);
         Assert.Equal(DiagnosticCodes.ApiProposalCommandKnown, read.GetProperty("failedCode").GetString());
         Assert.Equal(1, read.GetProperty("results").GetArrayLength());

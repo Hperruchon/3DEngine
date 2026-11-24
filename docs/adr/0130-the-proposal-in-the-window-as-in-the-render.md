@@ -1,13 +1,13 @@
 ---
 id: 0130
 title: A proposal shows its values in the rows, a pending node on the history arc, a glow on the edges and Undo after an accept
-status: Accepted
+status: Amended
 topic: Clients, rendering
 date: 2026-11-14
 supersedes: []
 superseded-by: []
 amends: ['0092', '0104', '0110']
-amended-by: []
+amended-by: ['0188']
 affects:
   - 3DEngine.App/Ui/DesktopUi.Proposal.cs
   - 3DEngine.App/Ui/DesktopUi.Rows.cs
@@ -49,6 +49,7 @@ work alone until Sunday, with the recommended option for each question.
 4. **After an accept (amends ADR-0092 item 6).** The line over the status line says "Applied · Bracket rebuilt" with the name
    of the body that was selected at the accept, or "Applied · 2 commands" with no selected body, and then the button "Undo"
    in the accent, as high as a target of 44 pixels. A tap on it gives the Undo of the anchors, one step, and the line goes.
+   ADR-0188 item 3: that one step is the whole proposal, because its commands are one group.
    A reject and a failed accept keep their texts of ADR-0092 item 6, with no button.
 5. **No contract change, no engine change.** Each part is presentation (ADR-0007) from the card of the proposal that the
    host reads from the queue, with no read of the session.
@@ -58,9 +59,9 @@ work alone until Sunday, with the recommended option for each question.
 **Good:** the person sees which value changes, where the step goes in the history, and that the window waits, before the
 tap on Accept; after it, one tap undoes the change.
 
-**Bad:** "Undo" undoes one step; a proposal of several commands needs one tap for each. "rebuilt" names the selected body,
-also when the proposal changed another body. The glow is drawn in each frame while a proposal waits. No person used the
-change in the window.
+**Bad:** "Undo" undoes one step; a proposal of several commands needed one tap for each until ADR-0188 made it one step.
+"rebuilt" names the selected body, also when the proposal changed another body. The glow is drawn in each frame while a
+proposal waits. No person used the change in the window.
 
 ## Alternatives considered
 
@@ -74,3 +75,4 @@ change in the window.
 - 2026-11-14 · TASK-0358 · The record, from slice S9 of the study of the gaps to the render, with the recommended option
   under the order of the owner of 2026-11-14.
 - 2026-11-14 · TASK-0358 · Shipped at v0.343.
+- 2026-11-24 · TASK-0463 · ADR-0188 amends item 4: the button Undo after an accept undoes the whole proposal, one step of undo.

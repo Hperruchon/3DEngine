@@ -287,8 +287,8 @@ public sealed class ProposalArcTests
         Assert.True(onTools >= 1, "No point is on a tool of the ring.");
     }
 
-    // Items 3 to 6: the four command lines and "and N more", the count and the steps of undo, "1 of 3" when more proposals
-    // wait, and the line of a stale proposal.
+    // Items 3 to 6: the four command lines and "and N more", the count and the step of undo, "1 of 3" when more proposals
+    // wait, and the line of a stale proposal. ADR-0188 item 3 (TASK-0463): a proposal is one step of undo.
     [Fact]
     public void The_Lines_Show_Four_Commands_The_Count_And_The_Place()
     {
@@ -300,7 +300,7 @@ public sealed class ProposalArcTests
         Assert.Equal(["NoOp 1", "NoOp 2", "NoOp 3", "NoOp 4"], Enumerable.Range(0, DesktopUi.ProposalLines).Select(i => texts[DesktopUi.ProposalLineItem(i)]));
         Assert.Null(ui.ItemRectangle(DesktopUi.ProposalLineItem(4)));
         Assert.Equal("and 2 more", texts[DesktopUi.ProposalMoreItem]);
-        Assert.Equal("6 commands · 6 steps of undo", texts[DesktopUi.ProposalCountItem]);
+        Assert.Equal("6 commands · 1 step of undo", texts[DesktopUi.ProposalCountItem]);
         Assert.Equal("1 of 3", texts[DesktopUi.ProposalPlaceItem]);
         Assert.False(texts.ContainsKey(DesktopUi.ProposalStaleItem));
         Assert.Equal("AGENT · Widen the bracket to 75 mm", texts[DesktopUi.ProposalCaptionItem]);
@@ -342,8 +342,12 @@ public sealed class ProposalArcTests
         Assert.True(Math.Abs(((waiting.Y + waiting.W) / 2f) - ((command.Y + command.W) / 2f)) < 1f, $"The word {waiting} is not in the middle of the height of the command line {command}.");
 
         var outcome = new ProposalOutcome("failed", 1, 3, 1, "E-GEOM-INVALID-PARAM");
-        Assert.Equal("Proposal failed at command 2 of 3 (E-GEOM-INVALID-PARAM): 1 command applied", outcome.Text);
-        Assert.Equal("Proposal accepted: 2 commands applied, 2 steps of undo", new ProposalOutcome("accepted", 2, 2).Text);
+        // ADR-0188 items 3, 6 and 7 (TASK-0463): a failed proposal applied nothing, an accepted one is one step of undo, and an
+        // accept whose result changed says so.
+        Assert.Equal("Proposal failed at command 2 of 3 (E-GEOM-INVALID-PARAM): no command applied", outcome.Text);
+        Assert.Equal("Proposal failed (E-API-PREVIEW-FAILED): no command applied", new ProposalOutcome("failed", 0, 3, null, "E-API-PREVIEW-FAILED").Text);
+        Assert.Equal("Proposal accepted: 2 commands applied, 1 step of undo", new ProposalOutcome("accepted", 2, 2).Text);
+        Assert.Equal(ProposalOutcome.ChangedText, new ProposalOutcome("open", 0, 2, Held: "W-API-PROPOSAL-RESULT-CHANGED").Text);
         Assert.Equal("Proposal rejected: no command applied", new ProposalOutcome("rejected", 0, 2).Text);
         Assert.Equal("The proposal is no longer open", ProposalOutcome.Gone.Text);
 
@@ -602,7 +606,8 @@ public sealed class ProposalArcTests
                 Assert.Equal(["A plate", "A second plate"], waiting.Select(card => card.Summary));
                 Assert.StartsWith("CreateBox", Assert.Single(waiting[0].Commands));
 
-                var accepted = await desk.Accept(waiting[0].Id);
+                // ADR-0188 item 6 (TASK-0463): the person saw the preview of the proposal, so the accept compares with it.
+                var accepted = await desk.Accept(waiting[0].Id, (await surface.Host.Proposals.Preview(waiting[0].Id))!.DocumentVersion);
                 Assert.Equal(("accepted", 1, 1), (accepted.State, accepted.Applied, accepted.Count));
                 var rejected = desk.Reject(waiting[1].Id);
                 Assert.Equal(("rejected", 0), (rejected.State, rejected.Applied));

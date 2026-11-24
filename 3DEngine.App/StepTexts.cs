@@ -13,6 +13,10 @@ namespace ThreeDEngine.Desktop;
 // review of 2026-11-14, TASK-0356): the window expects a text for the identifier of its command, which each event of that
 // command carries (CauseCommandId), so a command of another client with the same name does not take it. The texts are presentation (ADR-0007): they
 // send nothing. The events come inside the commit of the session, on its thread, so each member takes the lock.
+//
+// ADR-0188 item 3 (phase P16, TASK-0463): the steps of one group are one step of undo, as in the history of the bus. The log
+// gives the group of each entry at the seed. An event gives no group, so the window gives the group of the commands of a
+// proposal before it accepts it (ExpectGroup), and the text of that step.
 internal sealed class StepTexts
 {
     private const string Applied = "command.applied";
@@ -25,9 +29,10 @@ internal sealed class StepTexts
     internal const int ExpectedLimit = 32;
 
     private readonly Lock _lock = new();
-    private readonly List<string> _done = [];
-    private readonly List<string> _undone = [];
+    private readonly List<(string Text, Guid? Group)> _done = [];
+    private readonly List<(string Text, Guid? Group)> _undone = [];
     private readonly List<(Guid Command, string Text)> _expected = [];
+    private readonly List<(Guid Command, Guid Group, string? Text)> _grouped = [];
 
     // Finding V182 of the codebase review of 2026-11-14 (c) (TASK-0367): the count of the log right after the applied event of
     // each of the last commands, the newest last, at most ExpectedLimit of them.
@@ -51,7 +56,7 @@ internal sealed class StepTexts
         get
         {
             lock (_lock)
-                return _done.Count > 0 ? _done[^1] : null;
+                return _done.Count > 0 ? _done[^1].Text : null;
         }
     }
 
@@ -60,14 +65,35 @@ internal sealed class StepTexts
     public void Seed(IReadOnlyList<string> log)
     {
         ArgumentNullException.ThrowIfNull(log);
+        Seed([.. log.Select(name => (name, (Guid?)null))]);
+    }
+
+    // ADR-0188 item 3: the name and the group of each entry of the log.
+    public void Seed(IReadOnlyList<(string Name, Guid? Group)> log)
+    {
+        ArgumentNullException.ThrowIfNull(log);
         lock (_lock)
         {
             (_log, _seeded) = (0, true);
             _counts.Clear();
             _done.Clear();
             _undone.Clear();
-            foreach (var name in log)
-                Count(name, Readable(name));
+            foreach (var (name, group) in log)
+                Count(name, Readable(name), group);
+        }
+    }
+
+    // ADR-0188 item 3: the window gives the group of the commands of a proposal before it accepts it, and the text of their
+    // step, or null for the text of each command.
+    public void ExpectGroup(IEnumerable<Guid> commands, Guid group, string? text)
+    {
+        ArgumentNullException.ThrowIfNull(commands);
+        lock (_lock)
+        {
+            foreach (var command in commands)
+                _grouped.Add((command, group, text));
+            if (_grouped.Count > ExpectedLimit)
+                _grouped.RemoveRange(0, _grouped.Count - ExpectedLimit);
         }
     }
 
@@ -106,7 +132,10 @@ internal sealed class StepTexts
     public void Forget()
     {
         lock (_lock)
+        {
             _expected.Clear();
+            _grouped.Clear();
+        }
     }
 
     // Each event of the session after the seed, in the order of the commits.
@@ -182,7 +211,14 @@ internal sealed class StepTexts
             var text = at < 0 ? Readable(name) : _expected[at].Text;
             if (at >= 0)
                 _expected.RemoveAt(at);
-            Count(name, text);
+            Guid? group = null;
+            if (_grouped.FindIndex(grouped => grouped.Command == record.CauseCommandId) is var member and >= 0)
+            {
+                (group, text) = (_grouped[member].Group, _grouped[member].Text ?? text);
+                _grouped.RemoveAt(member);
+            }
+
+            Count(name, text, group);
             if (record.CauseCommandId is { } cause)
             {
                 _counts.Add((cause, _log));
@@ -196,27 +232,39 @@ internal sealed class StepTexts
         }
     }
 
-    // ADR-0031 item 2: an applied command adds one entry to the log and moves the history.
-    private void Count(string name, string text)
+    // ADR-0031 item 2: an applied command adds one entry to the log and moves the history. ADR-0188 item 3: an Undo and a Redo
+    // move the last unit, the run of consecutive steps of one group at the end of the list, or the last step with no group.
+    private void Count(string name, string text, Guid? group)
     {
         _log++;
         switch (name)
         {
             case UndoName when _done.Count > 0:
-                _undone.Add(_done[^1]);
-                _done.RemoveAt(_done.Count - 1);
+                MoveUnit(_done, _undone);
                 break;
             case RedoName when _undone.Count > 0:
-                _done.Add(_undone[^1]);
-                _undone.RemoveAt(_undone.Count - 1);
+                MoveUnit(_undone, _done);
                 break;
             case UndoName or RedoName:
                 break;
             default:
-                _done.Add(text);
+                _done.Add((text, group));
                 _undone.Clear();
                 break;
         }
+    }
+
+    private static void MoveUnit(List<(string Text, Guid? Group)> from, List<(string Text, Guid? Group)> to)
+    {
+        var count = 1;
+        if (from[^1].Group is { } last)
+        {
+            while (count < from.Count && from[^(count + 1)].Group == last)
+                count++;
+        }
+
+        to.AddRange(from.GetRange(from.Count - count, count));
+        from.RemoveRange(from.Count - count, count);
     }
 
     private static string? Name(EventRecord record)

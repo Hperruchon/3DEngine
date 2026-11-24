@@ -61,8 +61,8 @@ public sealed partial class Proposals
         {
             if (Of(id) is not { Preview: { } preview } entry)
                 return null;
-            var current = entry.State != ProposalStates.Open || (entry.Pending is null && !entry.Computing && !_behind);
-            return new KeptPreview(preview, entry.Shapes ?? [], entry.ShapesLeftOut, current);
+            var current = !Waits(entry) || (entry.Pending is null && !entry.Computing && !_behind);
+            return new KeptPreview(preview, entry.Shapes ?? [], entry.ShapesLeftOut, current, entry.Held?.Code);
         }
     }
 
@@ -84,6 +84,11 @@ public sealed partial class Proposals
             waiter = new Waiter(version, new TaskCompletionSource<ProposalPreview>(TaskCreationOptions.RunContinuationsAsynchronously));
             entry.Waiters.Add(waiter);
             SettleLocked(entry);
+            // ADR-0188 item 5: a commit while the group of an accept committed asked for no preview of that proposal, so a caller
+            // that waits for a later version than the last preview asks for a copy of the log itself.
+            // A copy that a fork already takes costs one more read of the log, and nothing else.
+            if (Waits(entry) && entry.Waiters.Contains(waiter) && (entry.Preview?.DocumentVersion ?? -1) < version)
+                _behind = true;
             if (_stopped)
                 waiter.Done.TrySetCanceled(CancellationToken.None);
             KickLocked();
@@ -120,10 +125,15 @@ public sealed partial class Proposals
         KickLocked();
     }
 
+    // ADR-0188 item 5 (phase P16, TASK-0463): an open proposal and a proposal whose accept compares get a preview of each new
+    // version, because the accept compares the result at the version of its apply. While the group of the accept commits, its own
+    // commits ask for no preview of it, so the kept preview stays the result that applied.
+    private static bool Waits(Entry entry) => entry.State == ProposalStates.Open || (entry.State == ProposalStates.Applying && !entry.Committing);
+
     // Item 3: a commit. The action runs inside the commit, so it only marks the queue and starts the worker; it does not wait.
     private void NewVersionLocked()
     {
-        if (_forks is null || !_open.Any(entry => entry.State == ProposalStates.Open))
+        if (_forks is null || !_open.Any(Waits))
             return;
         _behind = true;
         KickLocked();
@@ -149,7 +159,7 @@ public sealed partial class Proposals
     {
         if (entry.Preview is not { } preview)
             return;
-        var last = entry.State != ProposalStates.Open && entry.Pending is null && !entry.Computing;
+        var last = !Waits(entry) && entry.Pending is null && !entry.Computing;
         entry.Waiters.RemoveAll(waiter => (last || preview.DocumentVersion >= waiter.Version) && waiter.Done.TrySetResult(preview));
     }
 
@@ -229,7 +239,7 @@ public sealed partial class Proposals
                 {
                     foreach (var entry in _open.Concat(_closed))
                     {
-                        if (fresh is not null && entry.State == ProposalStates.Open
+                        if (fresh is not null && Waits(entry)
                             && (entry.Pending?.Version ?? entry.Preview?.DocumentVersion ?? -1) < fresh.Version)
                             entry.Pending = fresh;
                         if (entry.Pending is { } source)
@@ -254,8 +264,9 @@ public sealed partial class Proposals
                     {
                         entry.Computing = false;
                         entry.Preview = preview;
-                        // ADR-0187 item 2: only an open proposal keeps its shapes, so at most 8 previews hold shapes.
-                        (entry.Shapes, entry.ShapesLeftOut) = entry.State == ProposalStates.Open ? (shapes, leftOut) : (null, 0);
+                        // ADR-0187 item 2: only an open proposal keeps its shapes, so at most 8 previews hold shapes. ADR-0188 item 6:
+                        // a proposal whose accept runs keeps them too, because an accept that applies nothing shows the new shapes.
+                        (entry.Shapes, entry.ShapesLeftOut) = Waits(entry) ? (shapes, leftOut) : (null, 0);
                         SettleLocked(entry);
                     }
                 }
@@ -352,5 +363,6 @@ public sealed record ProposalPreview(
 
 // ADR-0187 item 3 (phase R25, TASK-0462): the last preview of a proposal as the window reads it: the preview of the route, the
 // shapes after the commands (empty with no KeepShapes or for a failed preview), the count of the bodies whose shape is above
-// the bound, and true when no later version of the Document waits for a new preview.
-public sealed record KeptPreview(ProposalPreview Preview, IReadOnlyList<PreviewShape> Shapes, int ShapesLeftOut, bool Current);
+// the bound, and true when no later version of the Document waits for a new preview. ADR-0188 item 6 (phase P16, TASK-0463):
+// Held is the code of the note of the last accept that applied nothing because the result changed, or null.
+public sealed record KeptPreview(ProposalPreview Preview, IReadOnlyList<PreviewShape> Shapes, int ShapesLeftOut, bool Current, string? Held = null);

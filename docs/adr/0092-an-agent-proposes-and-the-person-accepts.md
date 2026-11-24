@@ -7,7 +7,7 @@ date: 2026-11-08
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0107', '0108', '0110', '0111', '0113', '0130', '0133', '0134', '0135', '0136', '0177', '0185', '0187']
+amended-by: ['0107', '0108', '0110', '0111', '0113', '0130', '0133', '0134', '0135', '0136', '0177', '0185', '0187', '0188']
 affects:
   - Engine.Api.Http/Proposals.cs
   - Engine.Api.Http/Endpoints/ProposalsEndpoint.cs
@@ -107,15 +107,18 @@ The owner chose A for Q1, Q2 and Q4, and B for Q3.
 4. **A proposal.** A proposal has an identifier, its summary, its envelopes, the version of the Document at the post, and a
    state: `open`, `applying`, `accepted`, `rejected`, `withdrawn` or `failed`. A closed proposal keeps the results of the
    commands that ran. When the version of the Document is not the version at the post, the window says "The document
-   changed after the proposal". The accept still runs; an envelope with `expectedDocumentVersion` guards itself.
+   changed after the proposal". The accept still runs; an envelope with `expectedDocumentVersion` guards itself. ADR-0188
+   item 6: an accept whose result differs from the result that the person saw applies nothing, the proposal stays `open`, and
+   its member `held` gives `W-API-PROPOSAL-RESULT-CHANGED`; a `failed` proposal applied nothing (ADR-0188 item 7).
 5. **The preview (Q2 A).** The window shows the summary, the count of the commands and the text of each command: its name
    and its parameters, at most four lines, and "and N more". It shows no simulated result. The pending chip of a value of
    ADR-0082 is a later slice.
 6. **The accept and the undo (Q4 A).** An accept applies the envelopes in their order through the session, as the commands
-   of a person, off the thread of the frame. Each command is one step of undo, and the arc says "N steps of undo". The
-   apply stops at the first command that the engine does not apply: the proposal is `failed`, with the index and the code
-   of that command, and the commands before it stay applied. A reject closes the proposal with no command. The status line
-   gives the outcome.
+   of a person, off the thread of the frame. ADR-0188 items 3, 5 and 7: the commands are one group, one step of undo, and the
+   arc says "N commands · 1 step of undo". The accept applies only when the result equals the result that the person saw, in
+   one serial section. The apply stops at the first command that the engine does not apply: the proposal is `failed`, with
+   the index and the code of that command, and one `Undo` of the group reverses the commands before it, so nothing stays
+   applied. A reject closes the proposal with no command. The status line gives the outcome.
 7. **The place in the window.** On a landscape display the proposal is an amber arc on the band of the ring of the selected
    body, above it, from 235° to 305° (y down), with Reject at its left end and Accept at its right end, each a circle of at
    least 44 pixels. With no selection the arc uses a ring at the centre of the display, with the inner radius of a ring of a
@@ -166,3 +169,6 @@ first one.
 - 2026-11-23 · TASK-0462 · ADR-0187 amends item 5: the window shows the preview of the shown proposal, the new shapes in dashed
   amber lines with the switch "Before, After, Both", and a panel with the measures, the state of the solver after the commands
   and the checks that change.
+- 2026-11-24 · TASK-0463 · ADR-0188 amends items 4 and 6: the accept compares the result with the result that the person saw,
+  applies the commands as one group and one step of undo, applies nothing when a command stops, and holds a changed result
+  with `held`.

@@ -1,13 +1,13 @@
 ---
 id: 0182
 title: The pair check CheckInterference at one position, from the exact solids of the owned kernel
-status: Accepted
+status: Amended
 topic: Kernel, queries, assembly
 date: 2026-11-21
 supersedes: []
 superseded-by: []
 amends: ['0083']
-amended-by: []
+amended-by: ['0188']
 affects:
   - Engine.Core/Queries/CheckInterferenceQuery.cs
   - Engine.Core/Queries/CheckInterferenceQueryHandler.cs
@@ -126,6 +126,10 @@ the contract for a parameter that P11 and P13 replace.
    mesh body. After the solids, the products of the shells are added, with the product of the polygons of the two shells
    and of each void whose box shares a volume with both, and the limit applies again. So a refusal of a body by item 7 can
    come after the refusal of the work.
+
+   **The bound of a preview (TASK-0463, ADR-0188 item 8).** The fork of a preview gives a check a smaller limit, the work that
+   the bound of the preview leaves, and reads the work that the check counted. A client cannot give the limit, and the answer
+   of the query does not change.
 9. **Determinism.** Each step that decides a class uses `+`, `-`, `*`, `/` and comparisons on exact rationals. A double of
    the triangles of a mesh body enters exactly. The gap is one `Math.Sqrt` of the nearest double to an exact square; each other
    value is the nearest double to an exact value. No transcendental function is called.
@@ -169,3 +173,5 @@ check. The two lists are text, which a client must build; a typo gives a refusal
   inner loops (finding E233, Q5 A), and the refusal of a mesh with two outer shells that share a volume (finding E234).
 - 2026-11-21 · TASK-0449 · Items 7 and 8 and "Bad": the voids leave the volume that two outer shells share, so an island in
   a void is checked (finding E236), and the products of the pairs come before the solid of a mesh body (finding E237).
+- 2026-11-24 · TASK-0463 · ADR-0188 amends item 8: the fork of a preview gives the check the work that the bound of the preview
+  leaves, and reads the work that the check counted.

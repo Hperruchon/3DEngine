@@ -76,7 +76,10 @@ public sealed partial class Proposals : IDisposable
         {
             if (_open.Count >= MostOpen)
                 return null;
-            var entry = new Entry(Guid.NewGuid(), summary, [.. commands.Select(command => command.Text)], [.. commands.Select(command => command.Command)], document.Version);
+            // ADR-0188 item 1 (phase P16, TASK-0463): the identifier of the proposal is the group of each of its commands, so the
+            // accept applies them as one step of undo, and the fork of the preview applies the same commands.
+            var id = Guid.NewGuid();
+            var entry = new Entry(id, summary, [.. commands.Select(command => command.Text)], [.. commands.Select(command => command.Command with { GroupId = id })], document.Version);
             _open.Add(entry);
             AddedLocked(entry, document);
             return View(entry);
@@ -97,67 +100,126 @@ public sealed partial class Proposals : IDisposable
         }
     }
 
-    // Item 6: the person accepts the proposal in the window. The envelopes apply in their order through the session, as the
-    // commands of a person, and each one is one step of undo. The apply stops at the first command that the engine does not
-    // apply; the commands before it stay applied, and the proposal is failed with the index and the code of that command.
-    // While it applies, the state is applying, and a second accept or a reject of it is refused. The result is null when the
-    // proposal is not open. The window calls this off the thread of the frame.
-    //
-    // Finding E198 of the codebase review of 2026-11-09 (b) (TASK-0331): a command whose identifier the session knows gets
-    // the cached result of the bus, and nothing applies. Only a commit sends command.applied, so a result with the status
-    // Applied and no such event of its command did not apply now: the apply stops there, and the proposal is failed with
-    // E-API-PROPOSAL-COMMAND-KNOWN and no result for that command. Until TASK-0331 the proposal counted it as applied.
-    public async Task<Proposal?> Accept(Guid id, CancellationToken ct = default)
+    // Item 6, as ADR-0188 items 5 to 7 amend it (phase P16, TASK-0463, row P16 of the roadmap): the person accepts the
+    // proposal in the window. The result that the person saw is the last preview of the queue (this overload), or the preview
+    // of the version that the window gives (the other overload). The result is null when the proposal is not open. While the
+    // accept runs, the state is applying, and a second accept or a reject of it is refused. The window calls this off the thread
+    // of the frame.
+    public Task<Proposal?> Accept(Guid id, CancellationToken ct = default) => Accept(id, last: true, seenVersion: null, ct);
+
+    // ADR-0188 item 6: seenVersion is the version of the preview that the window showed, or null when it showed none. A preview
+    // that the queue no longer keeps counts as none, so the accept shows the new preview and applies nothing.
+    public Task<Proposal?> Accept(Guid id, long? seenVersion, CancellationToken ct = default) => Accept(id, last: false, seenVersion, ct);
+
+    // ADR-0188 items 5 to 7:
+    // - The result at the version now (Q4 A). When the version of the Document is the version of the preview that the person
+    //   saw, that preview is the result, by the replay rule (ADR-0012), and no fork runs. Else the worker of the queue runs the
+    //   fork at the new version, and the accept waits for it.
+    // - The comparison. A result that differs from the result that the person saw, by content (PreviewContent), applies nothing:
+    //   the proposal is open again with the new preview and the note W-API-PROPOSAL-RESULT-CHANGED in Held. A result whose
+    //   commands stop or whose fork failed applies nothing either, and the proposal is failed with the index and the code.
+    // - The apply. DocumentSession.ApplyGroup runs the commands, each with the group of the proposal, in one serial section at the
+    //   version of the result. A commit between the comparison and the apply makes the group stale, and the accept compares
+    //   again, so nothing applies on an old result.
+    // - A failure that the dry run did not give, for example a fault of the backend or a command whose identifier the session
+    //   knows (finding E198): the session reverses the group with one Undo, which the log holds, and the proposal is failed
+    //   (Q3 A). So each command applies, or none.
+    // - A host with no factory of forks gives no preview: the accept applies the group with no comparison.
+    private async Task<Proposal?> Accept(Guid id, bool last, long? seenVersion, CancellationToken ct)
     {
         Entry entry;
+        ProposalPreview? seen;
         lock (_lock)
         {
             if (Of(id) is not { State: ProposalStates.Open } open)
                 return null;
             open.State = ProposalStates.Applying;
+            open.Held = null;
             entry = open;
+            seen = open.Preview is { } kept && (last || kept.DocumentVersion == seenVersion) ? kept : null;
         }
 
         try
         {
-            for (var i = 0; i < entry.Commands.Count; i++)
+            while (true)
             {
+                long? at = null;
+                if (_forks is not null)
+                {
+                    var result = await ResultNow(entry, seen, ct).ConfigureAwait(false);
+                    lock (_lock)
+                    {
+                        if (seen is null || !PreviewContent.Same(seen, result))
+                            return HeldLocked(entry, seen, result);
+                        if (result.Error is not null || result.FailedIndex is not null)
+                        {
+                            (entry.FailedIndex, entry.FailedCode) = (result.FailedIndex, result.FailedCode ?? result.Error?.Code);
+                            return CloseLocked(entry, ProposalStates.Failed);
+                        }
+                    }
+
+                    at = result.DocumentVersion;
+                }
+
+                // The flag ends in the same lock as the close, so no fork starts for this proposal between the two.
                 lock (_lock)
-                    (entry.Running, entry.Committed) = (entry.Commands[i].CommandId, false);
-                var result = await _session.Apply(entry.Commands[i], ct).ConfigureAwait(false);
+                    entry.Committing = true;
+                var outcome = await _session.ApplyGroup(entry.Commands, at, ct).ConfigureAwait(false);
                 lock (_lock)
                 {
-                    entry.Running = null;
-                    if (result.Status == CommandStatus.Applied && !entry.Committed)
-                    {
-                        (entry.FailedIndex, entry.FailedCode) = (i, DiagnosticCodes.ApiProposalCommandKnown);
-                        return CloseLocked(entry, ProposalStates.Failed);
-                    }
-
-                    entry.Results.Add(result);
-                    if (result.Status != CommandStatus.Applied)
-                    {
-                        (entry.FailedIndex, entry.FailedCode) = (i, result.Error?.Code);
-                        return CloseLocked(entry, ProposalStates.Failed);
-                    }
+                    entry.Committing = false;
+                    if (outcome.Stale)
+                        continue;
+                    entry.Results.AddRange(outcome.Results);
+                    if (outcome.FailedIndex is not { } failed)
+                        return CloseLocked(entry, ProposalStates.Accepted);
+                    (entry.FailedIndex, entry.FailedCode) = (failed, outcome.Known ? DiagnosticCodes.ApiProposalCommandKnown : outcome.Results[^1].Error?.Code);
+                    return CloseLocked(entry, ProposalStates.Failed);
                 }
             }
-
-            lock (_lock)
-                return CloseLocked(entry, ProposalStates.Accepted);
         }
         catch
         {
-            // A session that closed, or a cancellation before a command started: the proposal is failed at the command that
-            // did not run, with no code, and the exception goes to the caller.
+            // A session that closed, a cancellation, or a handler that threw (the session reversed the group first): the proposal
+            // is failed with no code, and the exception goes to the caller.
             lock (_lock)
             {
-                entry.FailedIndex = entry.Results.Count;
-                CloseLocked(entry, ProposalStates.Failed);
+                entry.Committing = false;
+                if (entry.State == ProposalStates.Applying)
+                {
+                    entry.FailedIndex = entry.Results.Count;
+                    CloseLocked(entry, ProposalStates.Failed);
+                }
             }
 
             throw;
         }
+    }
+
+    // ADR-0188 item 5 (Q4 A): the result of the commands at the version of the Document now. The preview that the person saw is
+    // the result when its version is the version now; else the accept waits for the preview of the worker at that version or a
+    // later one.
+    private async Task<ProposalPreview> ResultNow(Entry entry, ProposalPreview? seen, CancellationToken ct)
+    {
+        var now = await _session.Read((document, _) => document.Version, ct).ConfigureAwait(false);
+        if (seen is not null && seen.DocumentVersion == now)
+            return seen;
+        return await Preview(entry.Id, ct).ConfigureAwait(false)
+            ?? throw new InvalidOperationException($"The proposal {entry.Id} left the queue while its accept ran.");
+    }
+
+    // ADR-0188 item 6: the result differs from the result that the person saw. The proposal is open again, with the new preview,
+    // which the worker keeps in the queue, and the note.
+    private Proposal HeldLocked(Entry entry, ProposalPreview? seen, ProposalPreview result)
+    {
+        entry.State = ProposalStates.Open;
+        entry.Held = new ErrorDetail(
+            DiagnosticCodes.ApiProposalResultChanged,
+            seen is null
+                ? $"The person saw no preview of the proposal. The preview of the version {result.DocumentVersion} is ready, and nothing applied. Read it, then accept again."
+                : $"The result of the commands at the version {result.DocumentVersion} is not the result of the version {seen.DocumentVersion} that the person saw, and nothing applied. Read the new preview, then accept again.");
+        SettleLocked(entry);
+        return View(entry);
     }
 
     // Item 6: the person rejects the proposal; no command applies. The result is null when the proposal is not open.
@@ -175,9 +237,9 @@ public sealed partial class Proposals : IDisposable
     }
 
     // Item 4: an applied command after the post changes the version of the Document, so each open proposal is stale. The
-    // action runs inside the commit; it takes only the lock of the queue. The commit of the command that an accept applies
-    // marks that command as committed (finding E198). ADR-0185 item 3: a new version asks for a new preview of each open
-    // proposal.
+    // action runs inside the commit; it takes only the lock of the queue. ADR-0185 item 3: a new version asks for a new preview
+    // of each open proposal. ADR-0188 item 5: the session finds a known command of an accept by its version (finding E198), so
+    // the queue no longer marks the commit of each command of an accept.
     private void OnEvent(EventRecord record)
     {
         if (record.Kind != CommandApplied)
@@ -188,8 +250,6 @@ public sealed partial class Proposals : IDisposable
             {
                 if (entry.State == ProposalStates.Open)
                     entry.Stale = true;
-                else if (entry.State == ProposalStates.Applying && entry.Running is { } running && running == record.CauseCommandId)
-                    entry.Committed = true;
             }
 
             NewVersionLocked();
@@ -219,7 +279,7 @@ public sealed partial class Proposals : IDisposable
     }
 
     private static Proposal View(Entry entry)
-        => new(entry.Id, entry.Summary, entry.State, entry.Version, entry.Stale, entry.Texts, [.. entry.Results], entry.FailedIndex, entry.FailedCode);
+        => new(entry.Id, entry.Summary, entry.State, entry.Version, entry.Stale, entry.Texts, [.. entry.Results], entry.FailedIndex, entry.FailedCode, entry.Held);
 
     private sealed class Entry(Guid id, string summary, IReadOnlyList<ProposedCommand> texts, IReadOnlyList<Command> commands, long version)
     {
@@ -243,10 +303,12 @@ public sealed partial class Proposals : IDisposable
 
         public string? FailedCode { get; set; }
 
-        // The identifier of the command that the accept applies now, and true when its commit sent command.applied.
-        public Guid? Running { get; set; }
+        // ADR-0188 item 6 (phase P16, TASK-0463): the note of the last accept that applied nothing because the result changed,
+        // or null. The next accept clears it.
+        public ErrorDetail? Held { get; set; }
 
-        public bool Committed { get; set; }
+        // ADR-0188 item 5: true while the group of the accept commits, so its own commits ask for no preview of the proposal.
+        public bool Committing { get; set; }
 
         // ADR-0185 items 3 and 5: the last preview, the copy of the log that the next preview starts from, true while a fork
         // computes it, and the callers that wait for a preview.
@@ -279,7 +341,9 @@ public static class ProposalStates
 
 // ADR-0092 item 4: a proposal as the routes give it and the window reads it. DocumentVersion is the version of the Document
 // at the post; Stale is true when a command applied after it. Results holds the result of each command that ran, and a failed
-// proposal names the index of the command that stopped it and its code, or no code when the command did not run.
+// proposal names the index of the command that stopped it and its code, or no code when the command did not run. ADR-0188
+// (phase P16, TASK-0463): a failed proposal applied nothing, because one Undo of its group reversed each command that ran.
+// Held is the note of the last accept that applied nothing because the result changed (W-API-PROPOSAL-RESULT-CHANGED), or null.
 public sealed record Proposal(
     Guid Id,
     string Summary,
@@ -289,7 +353,8 @@ public sealed record Proposal(
     IReadOnlyList<ProposedCommand> Commands,
     IReadOnlyList<CommandResult> Results,
     int? FailedIndex,
-    string? FailedCode);
+    string? FailedCode,
+    ErrorDetail? Held = null);
 
 // ADR-0092 item 2: one envelope of a proposal, as the agent posted it, with the name and the version of its handler and the
 // identifier of its command (the identifier of the envelope, or a new one).

@@ -68,6 +68,9 @@ public sealed class CheckInterferenceQueryHandler : IQueryHandler
         // hold the session for minutes. TASK-0449 (finding E237 of the third codebase review of 2026-11-21): the work of the
         // pairs comes first, from the count of the triangles of a mesh body, so a large STL file is refused before its exact
         // volume, its B-Rep and its shells; the work of the shells follows the solid of each mesh body.
+        // ADR-0188 item 8 (phase P16, TASK-0463, Q6 A): the fork of a preview gives a smaller limit, the work that the bound of
+        // the preview leaves, and reads the work of the check in its answer.
+        var limit = Math.Max(0L, Math.Min(WorkLimit, check.WorkLimit));
         var work = 0L;
         for (var i = 0; i < parts.Count; i++)
         {
@@ -75,8 +78,8 @@ public sealed class CheckInterferenceQueryHandler : IQueryHandler
                 work += parts[i].Pieces * parts[j].Pieces;
         }
 
-        if (work > WorkLimit)
-            return Failure(Limit(work));
+        if (work > limit)
+            return Failure(Limit(work, limit));
 
         var bodies = new List<Body>(parts.Count);
         foreach (var part in parts)
@@ -89,8 +92,8 @@ public sealed class CheckInterferenceQueryHandler : IQueryHandler
         }
 
         work += bodies.Sum(body => body.ShellWork);
-        if (work > WorkLimit)
-            return Failure(Limit(work));
+        if (work > limit)
+            return Failure(Limit(work, limit));
 
         foreach (var body in bodies)
         {
@@ -109,7 +112,7 @@ public sealed class CheckInterferenceQueryHandler : IQueryHandler
             }
         }
 
-        return Task.FromResult(QueryHandlerResult.Success(new InterferenceInfo(pairs)));
+        return Task.FromResult(QueryHandlerResult.Success(new InterferenceInfo(pairs) { Work = work }));
     }
 
     // Item 8 (TASK-0438, finding E233): the greatest work of one check, as a sum of products of counts of pieces. On the
@@ -118,8 +121,8 @@ public sealed class CheckInterferenceQueryHandler : IQueryHandler
     // about 0.6 s. The 171 pairs of the bookcase of K10a need 6,156 products.
     internal const long WorkLimit = 100_000;
 
-    private static ErrorDetail Limit(long work) => new(DiagnosticCodes.CheckWorkLimit,
-        $"The check needs {work} products of the pieces of its bodies, above the limit of {WorkLimit}. Give fewer bodies with bodyIds, or bodies with fewer facets.");
+    private static ErrorDetail Limit(long work, long limit) => new(DiagnosticCodes.CheckWorkLimit,
+        $"The check needs {work} products of the pieces of its bodies, above the limit of {limit}. Give fewer bodies with bodyIds, or bodies with fewer facets.");
 
     // TASK-0449 (finding E237): one body of the check before its solid. A body of the kernel has its solid and the count of its
     // polygons; a mesh body has its triangles from the backend and the count of its triangles, which is the count of the

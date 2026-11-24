@@ -156,6 +156,66 @@ public sealed class DocumentSession
         }
     }
 
+    // ADR-0188 item 5 (phase P16, TASK-0463): the commands of one group in one serial section, so no other command comes between
+    // the check of the version and the last command. Each command must have the same group, which is not null. When version is
+    // not null and the Document has another version, nothing applies and the outcome is stale: the caller compares again.
+    //
+    // Each command commits as a step of the group, with its own log entry (Q3 A of the codebase review of 2026-11-23). The apply
+    // stops at the first command that does not apply: a refusal, a cancellation before its handler, or a command whose identifier
+    // the bus knows (finding E198: the bus gives the cached result, and the version does not move). The section then applies one
+    // Undo with no cancellation, which reverses each step of the group that applied (ADR-0188 item 3), and the log holds it.
+    // A handler that throws gets the same Undo, and its exception then goes to the caller. The bus has no rollback of the backend
+    // (finding E21), so a group never needs one.
+    public async Task<GroupOutcome> ApplyGroup(IReadOnlyList<Command> commands, long? version, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(commands);
+        if (commands.Count == 0 || commands[0].GroupId is not { } group || commands.Any(command => command.GroupId != group))
+            throw new ArgumentException("A group holds at least one command, and each command has the same group, which is not null.", nameof(commands));
+
+        RefuseReentry();
+        RefuseClosed();
+        await _serial.WaitAsync(ct).ConfigureAwait(false);
+        Hold();
+        try
+        {
+            if (version is { } expected && _document.Version != expected)
+                return new GroupOutcome(true, _document.Version, [], null, false, null);
+
+            var start = _document.Version;
+            var results = new List<CommandResult>(commands.Count);
+            for (var i = 0; i < commands.Count; i++)
+            {
+                CommandResult result;
+                try
+                {
+                    result = await _commands.Apply(commands[i], ct).ConfigureAwait(false);
+                }
+                catch
+                {
+                    await ReverseGroup(start).ConfigureAwait(false);
+                    throw;
+                }
+
+                var known = result.Status == CommandStatus.Applied && result.DocumentVersion != start + results.Count + 1;
+                if (!known)
+                    results.Add(result);
+                if (known || result.Status != CommandStatus.Applied)
+                    return new GroupOutcome(false, start, results, i, known, await ReverseGroup(start).ConfigureAwait(false));
+            }
+
+            return new GroupOutcome(false, start, results, null, false, null);
+        }
+        finally
+        {
+            Release();
+        }
+    }
+
+    // The Undo of the steps of a group that applied after the version start, or null when none applied. It runs in the section
+    // of the caller and is not cancelled: a commit does not stop (ADR-0006 section 4).
+    private async Task<CommandResult?> ReverseGroup(long start)
+        => _document.Version == start ? null : await _commands.Apply(new Commands.UndoCommand(), CancellationToken.None).ConfigureAwait(false);
+
     public async Task<QueryResult<T>> Query<T>(Query query, CancellationToken ct = default)
     {
         RefuseReentry();
@@ -304,3 +364,15 @@ public sealed class DocumentSession
         _serial.Release();
     }
 }
+
+// ADR-0188 item 5 (phase P16, TASK-0463): the outcome of DocumentSession.ApplyGroup. Stale is true when the Document had another
+// version, and then nothing applied. Version is the version of the Document before the group. Results holds the result of each
+// command that ran, with no result for a known command. FailedIndex names the command that stopped the group, Known is true
+// when the bus knew its identifier, and Undo is the result of the Undo that reversed the group, or null when no step applied.
+public sealed record GroupOutcome(
+    bool Stale,
+    long Version,
+    IReadOnlyList<CommandResult> Results,
+    int? FailedIndex,
+    bool Known,
+    CommandResult? Undo);

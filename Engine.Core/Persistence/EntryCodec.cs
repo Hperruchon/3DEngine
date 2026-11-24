@@ -75,6 +75,10 @@ public static class EntryCodec
                 writer.WriteNumber("expectedDocumentVersion", expected);
             else
                 writer.WriteNull("expectedDocumentVersion");
+            // ADR-0188 item 2 (phase P16, TASK-0463): the group only when the command has one, so an entry with no group has
+            // the bytes of an entry of before P16, and the replay of each older file does not change.
+            if (command.GroupId is { } group)
+                writer.WriteString("groupId", group);
             writer.WriteStartObject("parameters");
             foreach (var (name, value) in parameters.OrderBy(pair => pair.Key, StringComparer.Ordinal))
             {
@@ -170,6 +174,7 @@ public static class EntryCodec
         int schemaVersion;
         Guid commandId;
         long? expected;
+        Guid? group = null;
         Dictionary<string, object?> raw = new(StringComparer.Ordinal);
         ICommandHandler handler;
         try
@@ -185,6 +190,15 @@ public static class EntryCodec
             commandId = command.GetProperty("commandId").GetGuid();
             var expectedElement = command.GetProperty("expectedDocumentVersion");
             expected = expectedElement.ValueKind == JsonValueKind.Null ? null : expectedElement.GetInt64();
+
+            // ADR-0188 item 2: the writer gives the group as a string, and only when the command has one. A null or another kind
+            // of value is not an entry of this writer, so the open refuses it.
+            if (command.TryGetProperty("groupId", out var groupElement))
+            {
+                if (groupElement.ValueKind != JsonValueKind.String)
+                    throw DocumentFileException.Load($"The entry of version {version} gives the groupId as a JSON {groupElement.ValueKind}; the writer gives a string, and no member for a command with no group.");
+                group = groupElement.GetGuid();
+            }
 
             if (!registry.TryFind(name, schemaVersion, out handler))
                 throw DocumentFileException.Load($"The entry of version {version} names the command {name}@{schemaVersion}, which this engine does not have.");
@@ -221,7 +235,10 @@ public static class EntryCodec
         if (!bound.IsSuccess)
             throw DocumentFileException.Load($"The entry of version {version} ({name}) does not bind: {bound.FirstMessage}");
 
-        return new DecodedEntry(version, backend, handler.Create(new CommandInput(bound.Values!, commandId, expected)));
+        // ADR-0188 item 2: the handler builds the command from its parameters (ADR-0016), and the group is a member of the
+        // envelope, as the identifier is.
+        var decoded = handler.Create(new CommandInput(bound.Values!, commandId, expected));
+        return new DecodedEntry(version, backend, group is null ? decoded : decoded with { GroupId = group });
     }
 
     private static string Write(Action<Utf8JsonWriter> body)

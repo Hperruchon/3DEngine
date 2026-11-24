@@ -7,7 +7,7 @@ date: 2026-10-28
 supersedes: []
 superseded-by: []
 amends: ['0006', '0021']
-amended-by: ['0032', '0033', '0037', '0045', '0051', '0071', '0080']
+amended-by: ['0032', '0033', '0037', '0045', '0051', '0071', '0080', '0188']
 affects:
   - Engine.Contracts/Handlers/ICommandHandler.cs
   - Engine.Core/CommandBus.cs
@@ -54,7 +54,9 @@ undo therefore needs no call of the backend and no replay. It changes only the l
    (ADR-0002).
 2. **A step.** Each applied command that is not `Undo` or `Redo` is one step. The Document has one history (Q2).
    `Undo` reverses the last step that is not undone. `Redo` applies again the last step that an `Undo` reversed. A
-   new step clears the redo list, so those undone steps never come back (Q3).
+   new step clears the redo list, so those undone steps never come back (Q3). ADR-0188 item 3: consecutive steps of one
+   group (`Command.GroupId`) are one unit; `Undo` reverses the whole last unit, and `Redo` applies the whole last undone unit
+   again. An `Undo` or a `Redo` with a group is refused with `E-CMD-GROUP-MOVE` (ADR-0188 item 4).
 3. **The record of a step.** At the commit of a step, the command bus records its effect: each body record that it
    created, each body record that it consumed, and each body record that it changed, before and after; and each
    sketch record that it created, and each sketch record that it changed, before and after (ADR-0033 item 10). The bus
@@ -64,6 +66,8 @@ undo therefore needs no call of the backend and no replay. It changes only the l
    consumed live again with its record before the step, and gives each body that the step changed its record
    before the step. It removes each sketch that the step created, and gives each sketch that the step changed its
    record before the step. A `Redo` gives the same changes and the same event kinds as the first commit of the step.
+   ADR-0188 item 3: for a unit of several steps, one commit gives the changes of each step, from the last step to the first for
+   an `Undo` and from the first to the last for a `Redo`, and the output `commandId` gives the last step of the unit.
 5. **The events.** The events of one commit come in this order: `command.applied`, each `body.created`, each
    `body.consumed`, each `body.removed`, then each `body.changed`, then each `sketch.created`, each `sketch.removed`
    and each `sketch.changed` (ADR-0033 item 9). A body that an undo makes live again gives
@@ -125,3 +129,5 @@ are not planned. A register entry records them when a measure shows a need.
 - 2026-11-06 · TASK-0202 · ADR-0071 amends items 3, 4 and 5: a step records its references, an Undo removes them with
   `reference.removed`, and the reference events come after the datum events.
 - 2026-11-06 · TASK-0248 · ADR-0080 amends item 11: Undo and Redo are round anchors at the bottom left, not buttons of the panel.
+- 2026-11-24 · TASK-0463 · ADR-0188 amends items 2 and 4: consecutive steps of one group are one unit of undo, which one
+  `Undo` reverses and one `Redo` applies again; a move with a group is refused.

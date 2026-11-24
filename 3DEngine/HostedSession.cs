@@ -38,18 +38,20 @@ internal sealed class HostedSession : ISessionHost, IProposalDesk
             [.. proposal.Commands.Select(command => ProposedValues.Of(command.Name, command.Parameters))], [.. proposal.Commands.Select(command => command.CommandId)],
             [.. proposal.Commands.Select(command => ProposedSheet.ItemOf(command.Name, command.Parameters, command.CommandId))]))];
 
-    public async Task<ProposalOutcome> Accept(Guid id) => Outcome(await Host.Proposals.Accept(id).ConfigureAwait(false));
+    // ADR-0188 item 6 (phase P16, TASK-0463): seen is the version of the preview that the panel showed, or null.
+    public async Task<ProposalOutcome> Accept(Guid id, long? seen) => Outcome(await Host.Proposals.Accept(id, seen).ConfigureAwait(false));
 
     public ProposalOutcome Reject(Guid id) => Outcome(Host.Proposals.Reject(id));
 
-    // ADR-0187 item 3: the last preview of the proposal with its shapes, from the lock of the queue only, or null.
+    // ADR-0187 item 3: the last preview of the proposal with its shapes, from the lock of the queue only, or null. ADR-0188 item
+    // 6: with the code of the note of an accept that applied nothing because the result changed.
     public PreviewCard? Preview(Guid id)
         => Host.Proposals.Kept(id) is not { Preview: var preview } kept
             ? null
             : new PreviewCard(preview.ProposalId, preview.DocumentVersion, kept.Current, preview.Error?.Code, preview.FailedIndex, preview.FailedCode,
-                preview.Bodies, preview.Sketches ?? [], preview.Measures ?? [], preview.Checks ?? [], kept.Shapes, kept.ShapesLeftOut);
+                preview.Bodies, preview.Sketches ?? [], preview.Measures ?? [], preview.Checks ?? [], kept.Shapes, kept.ShapesLeftOut, kept.Held);
 
     private static ProposalOutcome Outcome(Proposal? proposal)
         => proposal is null ? ProposalOutcome.Gone
-            : new(proposal.State, proposal.Results.Count(result => result.Status == CommandStatus.Applied), proposal.Commands.Count, proposal.FailedIndex, proposal.FailedCode);
+            : new(proposal.State, proposal.Results.Count(result => result.Status == CommandStatus.Applied), proposal.Commands.Count, proposal.FailedIndex, proposal.FailedCode, proposal.Held?.Code);
 }

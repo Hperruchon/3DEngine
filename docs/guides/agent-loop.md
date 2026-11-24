@@ -18,8 +18,9 @@ refused, or an answer does not have its shape, the test fails.
   query reads the Document and changes nothing.
 - **Do not change the Document of a person with `POST /commands`.** That route applies a command at once, with no accept.
   Use it only on a Document that is yours, for example a host that you started for your own work.
-- **An accept of N commands gives N steps of undo.** The apply stops at the first command that the engine does not apply.
-  The commands before it stay applied.
+- **An accept is one step of undo, and applies each command or none.** The accept runs the commands again on the Document as
+  it is. It applies only when the result equals the preview that the person saw, and one `Undo` then reverses the whole
+  proposal. When a command stops, nothing stays applied (ADR-0188).
 - **Each length is in millimetres.** An answer gives a number with no unit (register entry R-0053).
 - **A turn is a quaternion, never an angle.** The command `Rotate` takes `qw`, `qx`, `qy` and `qz`. If you think in
   degrees, compute the sine and the cosine yourself, and send the numbers (determinism rule 2 of `CLAUDE.md`).
@@ -334,8 +335,9 @@ The answer also gives three more differences (ADR-0185 items 8 to 10):
 }
 ```
 
-A command that the fork does not apply stops the preview, as it stops the accept: `failedIndex` and `failedCode` name it, and
-the commands after it do not run. A preview with the state `failed` could not replay the log, and `error` gives the code
+A command that the fork does not apply stops the preview: `failedIndex` and `failedCode` name it, and the commands after it
+do not run. The accept of that proposal then applies nothing and gives the same index and code. An `Undo` or a `Redo` in a
+proposal stops it with `E-CMD-GROUP-MOVE`, because the commands of a proposal are one group of steps. A preview with the state `failed` could not replay the log, and `error` gives the code
 `E-API-PREVIEW-FAILED` and the cause. When the person or another agent changes the Document, read the preview again: the
 proposal has `stale` true, and the new preview runs on the new log.
 
@@ -363,7 +365,7 @@ accept <proposal>
 
 `GET /proposals/{id}` gives the proposal, open or closed. The host keeps the last 32 closed proposals. The state is one of
 `open`, `applying`, `accepted`, `rejected`, `withdrawn` and `failed`. A failed proposal gives `failedIndex` and
-`failedCode`. `results` gives the answer of each command that ran.
+`failedCode`, and applied nothing. `results` gives the answer of each command that ran. `held` is null here (see below).
 
 ```http agent-request
 GET /proposals/<proposal>
@@ -384,7 +386,105 @@ GET /proposals/<proposal>
 ```
 
 The stream of events also gives each change: `body.created` for the box and for the shelf, `body.consumed` for the box that
-`Translate` moved, and `body.changed` for the name.
+`Translate` moved, and `body.changed` for the name. Each entry of the log of the three commands has the member `groupId`,
+the identifier of the proposal. So the three commands are one step of undo, and one `Undo` in the window removes the shelf.
+
+### When the Document changes after the preview
+
+The accept compares the result of the commands at the version of the Document now with the preview that the person saw
+(ADR-0188). At the version of that preview, the preview is the result. After a new version, the host runs the fork again and
+compares the two results by their content: the outcome of each command, the bodies, the sketches, the measures and the checks.
+An equal result applies. A different result applies nothing: the proposal stays `open` with the new preview, and its member
+`held` gives the code `W-API-PROPOSAL-RESULT-CHANGED`. The window shows the new preview, and the person accepts again.
+
+In this example the agent proposes a new name for the shelf and reads the preview.
+
+```http agent-request
+POST /proposals
+Content-Type: application/json
+
+{
+  "summary": "Name the new shelf Middle shelf",
+  "commands": [
+    { "name": "RenameBody", "schemaVersion": 1, "commandId": "<second name>", "parameters": { "bodyId": "<Milieu>", "name": "Middle shelf" } }
+  ]
+}
+```
+
+```json agent-result
+{ "id": "<second proposal>", "state": "open", "held": null }
+```
+
+```http agent-request
+GET /proposals/<second proposal>/preview
+```
+
+```json agent-result
+{
+  "proposalId": "<second proposal>",
+  "state": "ready",
+  "bodies": { "changed": [ { "before": { "name": "Milieu" }, "after": { "name": "Middle shelf" } } ] }
+}
+```
+
+Before the person accepts, the person renames the shelf "Shelf 3" in the window. Then the person accepts the preview that the
+window showed.
+
+```text agent-person
+rename <Milieu> Shelf 3
+```
+
+```text agent-person
+accept <second proposal>
+```
+
+The result now changes the name "Shelf 3", not the name "Milieu" of the preview that the person saw. So nothing applied.
+
+```http agent-request
+GET /proposals/<second proposal>
+```
+
+```json agent-result
+{
+  "id": "<second proposal>",
+  "state": "open",
+  "results": [],
+  "held": { "code": "W-API-PROPOSAL-RESULT-CHANGED" }
+}
+```
+
+The new preview gives the new result. The window shows it with the note "The result changed: check it".
+
+```http agent-request
+GET /proposals/<second proposal>/preview
+```
+
+```json agent-result
+{
+  "proposalId": "<second proposal>",
+  "state": "ready",
+  "bodies": { "changed": [ { "before": { "name": "Shelf 3" }, "after": { "name": "Middle shelf" } } ] }
+}
+```
+
+The person accepts the new preview, and the accept applies.
+
+```text agent-person
+accept <second proposal>
+```
+
+```http agent-request
+GET /proposals/<second proposal>
+```
+
+```json agent-result
+{
+  "id": "<second proposal>",
+  "state": "accepted",
+  "results": [ { "commandName": "RenameBody", "status": "Applied" } ],
+  "held": null
+}
+```
 
 ## 9 Check
 
@@ -491,6 +591,8 @@ status `Rejected`. A request that the surface refuses gives HTTP 4xx with `{ "er
 | `E-API-PROPOSAL-NOT-FOUND` | No open or kept proposal has the identifier (HTTP 404). | Post the proposal again if you need it. |
 | `E-API-PROPOSAL-CLOSED` | A withdraw of a proposal that is not open (HTTP 409). | Read the proposal; the person decided. |
 | `E-API-PROPOSAL-COMMAND-KNOWN` | The `failedCode` of a proposal whose command had a known `commandId`. | Make a new UUID for each command. |
+| `E-CMD-GROUP-MOVE` | The `failedCode` of a proposal with an `Undo` or a `Redo`: a proposal is one group of steps. | Leave the undo to the person; propose the opposite change. |
+| `W-API-PROPOSAL-RESULT-CHANGED` | The `held` of an open proposal: the result changed after the preview that the person saw, and nothing applied. | Read the new preview; the person accepts again. |
 | `E-API-OPEN-PENDING` | The host opens another file (HTTP 503). | Connect again after the start. |
 
 Here are three refusals that an agent meets often. The box that `CreateBox` made is not live after the `Translate`:
@@ -551,12 +653,13 @@ DELETE /proposals/<proposal>
   add, change or remove, and gives only the pairs whose state changes. A pair whose two bodies keep their solids is not
   checked: a rename or a change of the visibility keeps the solid. `GetDistance` and `GetAngle` are not in the preview; ask
   them after the accept. Each pair is one check with its own bound of work, so a large body gives `limit` for its pair and not
-  a refusal of the preview. The window shows the commands of a proposal and not the preview (row R25). On a host with no
+  a refusal of the preview. The checks of one preview also share one bound, the bound of one check: the first pair above the
+  work that it leaves, and each pair after it in the order of the identifiers, has `limit` (ADR-0188 item 8). On a host with no
   backend for a fork the route gives HTTP 501 with `E-API-NOT-SUPPORTED`; the desktop and `engine-api-http` make a fork.
-- **A preview is not a promise.** The accept applies the commands to the Document as it is at the accept, not to the copy of
-  the preview. A change of the Document between the preview and the accept can give another outcome, and so can a
-  `commandId` that the session refused before: the fork knows only the identifiers of the log. Read the preview again just
-  before you ask the person; row P16 makes the accept compare the two results.
+- **A preview is compared, not replayed.** The accept applies only a result equal to the preview that the person saw (section
+  8), so a change of the Document after the preview gives `held`, not another outcome. A `commandId` that the session refused
+  before is the one exception that the fork cannot see: the fork knows only the identifiers of the log. The accept then stops
+  at that command with `E-API-PROPOSAL-COMMAND-KNOWN`, and one `Undo` of the group reverses the commands before it.
 - **Curved faces.** `GetDistance` measures a face of a cylinder, a cone, a sphere or an arc. The body of that face has only
   `Translate` and `Rotate` after its command. It also measures the side of a hole or of a tube that a `Subtract` made. The
   tool of that `Subtract` is a cylinder, a cone or an extrude of one circle. The faces of the body near the hole are across
@@ -595,5 +698,5 @@ DELETE /proposals/<proposal>
   gap.
 - **No person on `engine-api-http`.** That program has no window, so its proposals stay open.
 - **No phone.** The phone has no HTTP surface, so it shows no proposal.
-- **No author in the log.** An accepted command is a command of the person in the log. The log does not record that an
-  agent proposed it.
+- **No author in the log.** An accepted command is a command of the person in the log. Its `groupId` is the identifier of the
+  proposal, but the log does not record that an agent proposed it.

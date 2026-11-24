@@ -6,4 +6,10 @@ public abstract record Command
     public abstract string Name { get; }
     public abstract int SchemaVersion { get; }
     public long? ExpectedDocumentVersion { get; init; }
+
+    // ADR-0188 item 1 (phase P16, TASK-0463): the identifier of the group of the command, or null. The accept of a proposal sets
+    // the identifier of the proposal on each of its commands. The history joins the consecutive steps of one group into one
+    // step of undo. A document file holds the member only when it is not null, so an entry with no group has its bytes of
+    // before P16.
+    public Guid? GroupId { get; init; }
 }

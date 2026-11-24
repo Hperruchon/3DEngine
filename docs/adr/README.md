@@ -28,7 +28,7 @@ names. Do not read all of them.
 | [0012](0012-geometry-backend-wiring.md) | Geometry backend wiring | Amended | Boundary, geometry, contracts | — | 0018, 0021, 0028, 0015, 0033, 0037, 0045, 0051, 0071, 0112, 0181 |
 | [0013](0013-command-query-schema-declaration.md) | Command and query schema declaration | Amended | Contracts, observability | — | 0060 |
 | [0014](0014-manifold-native-interop.md) | Manifold backend native-interop posture | Accepted | Boundary, geometry, native-interop | — | — |
-| [0015](0015-command-log-persistence.md) | The document file | Amended | Persistence, contracts | 0010, 0012 | 0071 |
+| [0015](0015-command-log-persistence.md) | The document file | Amended | Persistence, contracts | 0010, 0012 | 0071, 0188 |
 | [0016](0016-handler-declared-construction.md) | Handler-declared command and query construction | Accepted | Contracts, clients | — | — |
 | [0017](0017-first-party-vulkan-layer.md) | The first-party Vulkan layer | Amended | Boundary, rendering | — | 0022, 0025, 0061 |
 | [0018](0018-tessellation-capability.md) | The tessellation capability | Accepted | Geometry, contracts, rendering | 0012 | — |
@@ -44,7 +44,7 @@ names. Do not read all of them.
 | [0028](0028-body-name-and-visibility.md) | The name and the visibility of a body | Amended | Contracts, geometry | 0012, 0021 | 0037, 0049 |
 | [0029](0029-selection-and-hide-gestures.md) | The selection, the hide gestures and the frame of the camera in the desktop | Amended | Rendering, clients | 0025, 0026, 0027 | 0034, 0053, 0075, 0109, 0124 |
 | [0030](0030-document-file-in-the-desktop.md) | The document file in the desktop and for an agent | Amended | Persistence, deployment | — | 0061, 0071, 0080, 0090, 0102 |
-| [0031](0031-undo-and-redo.md) | Undo and redo as commands of the log | Amended | Contracts, runtime | 0006, 0021 | 0032, 0033, 0037, 0045, 0051, 0071, 0080 |
+| [0031](0031-undo-and-redo.md) | Undo and redo as commands of the log | Amended | Contracts, runtime | 0006, 0021 | 0032, 0033, 0037, 0045, 0051, 0071, 0080, 0188 |
 | [0032](0032-numeric-pad-and-evaluator.md) | The numeric pad, the expression evaluator and the keys of undo and redo | Amended | Clients, rendering | 0026, 0031 | 0034, 0076, 0098 |
 | [0033](0033-sketch-model.md) | The sketch model in the engine | Amended | Contracts, sketch | 0012, 0021, 0031 | 0035, 0045, 0051, 0052 |
 | [0034](0034-sketch-tools.md) | The sketch tools of the desktop | Amended | Clients, sketch | 0026, 0029, 0032 | 0041, 0053, 0084, 0085, 0088, 0096, 0097 |
@@ -97,7 +97,7 @@ names. Do not read all of them.
 | [0089](0089-the-cone-the-sphere-and-the-torus-are-closed-meshes.md) | The cone, the sphere and the torus are closed meshes that the engine makes | Accepted | Geometry, kernel | — | — |
 | [0090](0090-the-answer-of-a-save-lists-its-warnings.md) | The HTTP answer of a save lists its warnings | Accepted | Surface, persistence | 0030 | — |
 | [0091](0091-the-fonts-of-the-redesign.md) | The interface draws with Instrument Sans, and a value on an edge with JetBrains Mono | Amended | Clients, rendering | 0027, 0078 | 0117, 0175 |
-| [0092](0092-an-agent-proposes-and-the-person-accepts.md) | An agent proposes commands, and the person accepts or rejects them | Amended | Surface, clients | — | 0107, 0108, 0110, 0111, 0113, 0130, 0133, 0134, 0135, 0136, 0177, 0185, 0187 |
+| [0092](0092-an-agent-proposes-and-the-person-accepts.md) | An agent proposes commands, and the person accepts or rejects them | Amended | Surface, clients | — | 0107, 0108, 0110, 0111, 0113, 0130, 0133, 0134, 0135, 0136, 0177, 0185, 0187, 0188 |
 | [0093](0093-the-layout-of-the-mix-has-no-panel-chrome.md) | The layout of the mix has a top bar, a panel with no chrome and a status line at the lower right | Amended | Clients, rendering | 0080 | 0099, 0100, 0113, 0124, 0127, 0174 |
 | [0094](0094-a-framed-part-fills-45-percent-of-the-picture.md) | A framed part fills 45 % of the half picture, as in the render of the mix | Accepted | Clients, rendering | 0025 | — |
 | [0095](0095-the-look-of-the-orbit-ring.md) | The ring has the look of the orbit of the render, with a guide, icons and a caption | Amended | Clients, rendering | 0081, 0086 | 0108 |
@@ -135,7 +135,7 @@ names. Do not read all of them.
 | [0127](0127-the-fixed-controls-and-the-status-as-in-the-render.md) | The row of the anchors holds Undo, Redo and the step of Undo, and the status gives the log, the agent and the save | Amended | Clients, rendering | 0083, 0093, 0098 | 0129, 0138 |
 | [0128](0128-a-value-typed-in-the-command-line-goes-to-its-pad.md) | A value typed in the command line goes to the pad of its value, through the evaluator | Accepted | Clients, rendering | 0098 | — |
 | [0129](0129-the-findings-of-the-review-of-2026-11-14.md) | The list of the hidden bodies fits the display, a stuck plate stays at its place, and a step text follows its command | Accepted | Clients, rendering | 0109, 0124, 0125, 0127 | — |
-| [0130](0130-the-proposal-in-the-window-as-in-the-render.md) | A proposal shows its values in the rows, a pending node on the history arc, a glow on the edges and Undo after an accept | Accepted | Clients, rendering | 0092, 0104, 0110 | — |
+| [0130](0130-the-proposal-in-the-window-as-in-the-render.md) | A proposal shows its values in the rows, a pending node on the history arc, a glow on the edges and Undo after an accept | Amended | Clients, rendering | 0092, 0104, 0110 | 0188 |
 | [0131](0131-the-rows-under-the-part-on-a-portrait-display.md) | On a portrait display the rows of a selected body are under the part, and the panel has no controls of a selected body | Amended | Clients, rendering | 0084, 0099 | 0135 |
 | [0132](0132-the-labels-of-the-corner-ring.md) | A label of the corner ring is drawn smaller until it lies on no other label and fits inside the display | Accepted | Clients, rendering | 0081 | — |
 | [0133](0133-the-caption-of-a-proposal-on-its-arc.md) | The caption of a proposal is on the band of its arc, and the command lines under the arc lie on no chip | Amended | Clients, rendering | 0092 | 0134, 0136 |
@@ -187,12 +187,13 @@ names. Do not read all of them.
 | [0179](0179-the-title-block-of-a-sheet.md) | A sheet holds the fields of the title block of ISO 7200, SetSheetTitle gives them, and the frame shows the block, the symbol of the projection and the centring marks | Accepted | Contracts, drawing | 0153, 0155, 0159, 0160, 0161 | — |
 | [0180](0180-the-measure-queries-of-plane-faces.md) | The measure queries GetMassProperties, GetDistance and GetAngle read the exact solid of the owned kernel and the curve of the design | Accepted | Kernel, queries | — | — |
 | [0181](0181-the-union-and-the-intersection-of-two-bodies.md) | The union and the intersection of two bodies, in the form of the subtract | Accepted | Kernel, geometry, commands | 0012, 0057, 0058 | — |
-| [0182](0182-the-pair-check-at-one-position.md) | The pair check CheckInterference at one position, from the exact solids of the owned kernel | Accepted | Kernel, queries, assembly | 0083 | — |
+| [0182](0182-the-pair-check-at-one-position.md) | The pair check CheckInterference at one position, from the exact solids of the owned kernel | Amended | Kernel, queries, assembly | 0083 | 0188 |
 | [0183](0183-the-connectors-of-a-body.md) | The query GetConnectors gives the named datums of a body and the implicit frames of its faces | Accepted | Kernel, queries, assembly | — | — |
 | [0184](0184-the-section-view.md) | The section view of the window, a cut of each body by a plane with a cap | Accepted | Clients, rendering | 0174 | — |
-| [0185](0185-the-preview-of-a-proposal-on-a-fork.md) | The preview of a proposal on a fork of the Document, a replay of a copy of its log off the serial lock | Amended | Surface, agent | 0092 | 0187 |
+| [0185](0185-the-preview-of-a-proposal-on-a-fork.md) | The preview of a proposal on a fork of the Document, a replay of a copy of its log off the serial lock | Amended | Surface, agent | 0092 | 0187, 0188 |
 | [0186](0186-the-soft-light-of-the-ground.md) | The ground of the scene has the soft light of the render, lighter at the middle and darker at the corners | Accepted | Clients, rendering | 0108 | — |
-| [0187](0187-the-preview-of-a-proposal-in-the-window.md) | The preview of a proposal in the window, the new shapes in dashed amber lines with a switch and a panel of the differences | Accepted | Clients, agent | 0092, 0185 | — |
+| [0187](0187-the-preview-of-a-proposal-in-the-window.md) | The preview of a proposal in the window, the new shapes in dashed amber lines with a switch and a panel of the differences | Amended | Clients, agent | 0092, 0185 | 0188 |
+| [0188](0188-the-accept-after-a-preview-and-the-group-in-the-log.md) | The accept after a preview compares the result and applies a proposal as one group of steps, which the log holds and one Undo reverses | Accepted | Contracts, surface, agent | 0015, 0031, 0092, 0130, 0182, 0185, 0187 | — |
 
 ## Topics
 

@@ -17,7 +17,8 @@ internal enum PreviewMode
 // ADR-0187 item 3 (TASK-0462): the preview of the shown proposal as the window reads it from the host (IProposalDesk.Preview):
 // the values of GET /proposals/{id}/preview and the shapes after the commands. Current is false while a later version of the
 // Document waits for its preview. Error is the code of a failed preview, or null. SketchNames gives the name of each sketch
-// of the frame, for the lines of the state of the solver.
+// of the frame, for the lines of the state of the solver. ADR-0188 item 6 (phase P16, TASK-0463): Held is the code of the note
+// of the last accept that applied nothing because the result changed, or null; the window gives Version to the next accept.
 internal sealed record PreviewCard(
     Guid Proposal,
     long Version,
@@ -30,7 +31,8 @@ internal sealed record PreviewCard(
     IReadOnlyList<MeasureChange> Measures,
     IReadOnlyList<PairChange> Checks,
     IReadOnlyList<PreviewShape> Shapes,
-    int ShapesLeftOut)
+    int ShapesLeftOut,
+    string? Held = null)
 {
     public IReadOnlyDictionary<Guid, string> SketchNames { get; init; } = new Dictionary<Guid, string>();
 

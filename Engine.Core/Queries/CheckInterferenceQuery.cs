@@ -17,6 +17,11 @@ public sealed record CheckInterferenceQuery : Query
 
     public string? BodyIds { get; init; }
     public string? IntendedPairs { get; init; }
+
+    // ADR-0188 item 8 (phase P16, TASK-0463, Q6 A of the codebase review of 2026-11-23): the most work that this check may do,
+    // as a sum of products of the counts of the pieces. The fork of a preview gives the work that its bound leaves; a client
+    // cannot give it, because the binder knows no such parameter, so a check of a client has the limit of ADR-0182 item 8.
+    internal long WorkLimit { get; init; } = CheckInterferenceQueryHandler.WorkLimit;
 }
 
 // Item 3: the class of a pair. Apart: a gap above zero. Touching: no shared volume and a gap of zero, on a face, an edge or a
@@ -56,4 +61,9 @@ public sealed record PairCheck(
     CheckBasis Basis);
 
 // The answer of the check: each pair of the bodies, in the order of the bodies.
-public sealed record InterferenceInfo(IReadOnlyList<PairCheck> Pairs);
+public sealed record InterferenceInfo(IReadOnlyList<PairCheck> Pairs)
+{
+    // ADR-0188 item 8 (Q6 A): the work that the check counted before its first split, the sum of ADR-0182 item 8. The fork of a
+    // preview adds it to the work of its other pairs. Internal, so the answer of the query to a client does not change.
+    internal long Work { get; init; }
+}

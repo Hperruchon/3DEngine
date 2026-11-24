@@ -20,6 +20,7 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.CommandBusBusy,        "Error",   "CMD"),
         new(DiagnosticCodes.CommandNothingToUndo,  "Error",   "CMD"), // ADR-0031 item 8, TASK-0093
         new(DiagnosticCodes.CommandNothingToRedo,  "Error",   "CMD"), // ADR-0031 item 8, TASK-0093
+        new(DiagnosticCodes.CommandGroupMove,      "Error",   "CMD"), // TASK-0463
         new(DiagnosticCodes.QueryUnknown,          "Error",   "QRY"),
         new(DiagnosticCodes.ApiBadRequest,         "Error",   "API"),
         new(DiagnosticCodes.ApiWsInvalidSubscribe, "Error",   "API"),
@@ -41,6 +42,7 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.ApiProposalClosed,     "Error",   "API"), // TASK-0326
         new(DiagnosticCodes.ApiProposalCommandKnown, "Error", "API"), // TASK-0331
         new(DiagnosticCodes.ApiPreviewFailed,      "Error",   "API"), // TASK-0456
+        new(DiagnosticCodes.ApiProposalResultChanged, "Warning", "API"), // TASK-0463
         new(DiagnosticCodes.IoBackendMismatch,     "Error",   "IO"),  // ADR-0015 item 6, TASK-0091
         new(DiagnosticCodes.IoNotEncodable,        "Error",   "IO"),  // ADR-0015 item 4, TASK-0091
         new(DiagnosticCodes.IoWriteFailed,         "Error",   "IO"),  // ADR-0015 item 4, TASK-0091

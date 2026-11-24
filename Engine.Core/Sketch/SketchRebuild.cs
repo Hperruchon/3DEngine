@@ -22,33 +22,46 @@ public static class SketchRebuild
     // walk does what StepHistory does: an Undo moves the last step in effect to the undone
     // list, a Redo moves it back, and each other entry is a new step that clears the undone
     // list. It depends only on the log. ADR-0054 item 4: the engine reads FeatureList.InEffect; this walk is the
-    // reference that the tests compare with the fold.
+    // reference that the tests compare with the fold. ADR-0188 item 3 (phase P16, TASK-0463): an Undo and a Redo move the last
+    // unit: the run of consecutive steps of one group at the end of the list, or the last step with no group. This walk finds
+    // the unit with its own loop, so the tests compare two forms of the rule.
     public static HashSet<Guid> InEffect(IReadOnlyList<LogEntry> log)
     {
-        var done = new List<Guid>();
-        var undone = new List<Guid>();
+        var done = new List<(Guid Id, Guid? Group)>();
+        var undone = new List<(Guid Id, Guid? Group)>();
         foreach (var entry in log)
         {
             switch (entry.Command)
             {
                 case UndoCommand when done.Count > 0:
-                    undone.Add(done[^1]);
-                    done.RemoveAt(done.Count - 1);
+                    MoveUnit(done, undone);
                     break;
                 case RedoCommand when undone.Count > 0:
-                    done.Add(undone[^1]);
-                    undone.RemoveAt(undone.Count - 1);
+                    MoveUnit(undone, done);
                     break;
                 case UndoCommand or RedoCommand:
                     break;
                 default:
-                    done.Add(entry.Command.CommandId);
+                    done.Add((entry.Command.CommandId, entry.Command.GroupId));
                     undone.Clear();
                     break;
             }
         }
 
-        return [.. done];
+        return [.. done.Select(step => step.Id)];
+
+        static void MoveUnit(List<(Guid Id, Guid? Group)> from, List<(Guid Id, Guid? Group)> to)
+        {
+            var count = 1;
+            if (from[^1].Group is { } group)
+            {
+                while (count < from.Count && from[^(count + 1)].Group == group)
+                    count++;
+            }
+
+            to.AddRange(from.GetRange(from.Count - count, count));
+            from.RemoveRange(from.Count - count, count);
+        }
     }
 
     // ADR-0049 item 2: the Extrude in effect with the identifier, live or consumed, or null.

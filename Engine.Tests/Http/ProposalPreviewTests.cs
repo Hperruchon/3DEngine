@@ -392,8 +392,9 @@ public sealed class ProposalPreviewTests
                 $"{type.Name} has the members {string.Join(", ", type.GetProperties().Select(property => property.Name))}; SketchContent reads {string.Join(", ", names)} (ADR-0185 item 8).");
     }
 
-    // Item 2 and ADR-0092 item 6: a refused command gives its code, and the commands after it do not run, as in an accept. The
-    // accept of the same proposal then gives the same outcomes.
+    // Item 2 and ADR-0092 item 6: a refused command gives its code, and the commands after it do not run. ADR-0188 item 7
+    // (TASK-0463): the accept of the same proposal gives the same index and code, and applies nothing, because the result that
+    // the person saw stops; no command ran on the Document, so the proposal has no result.
     [NativeManifoldFact]
     public async Task A_Refused_Command_Gives_Its_Code_And_Stops_The_Rest_As_The_Accept_Does()
     {
@@ -426,7 +427,8 @@ public sealed class ProposalPreviewTests
         Assert.Equal(ProposalStates.Failed, accepted!.State);
         Assert.Equal(preview.FailedIndex, accepted.FailedIndex);
         Assert.Equal(preview.FailedCode, accepted.FailedCode);
-        Assert.Equal(preview.Results.Select(result => (result.CommandName, result.Status)), accepted.Results.Select(result => (result.CommandName, result.Status)));
+        Assert.Empty(accepted.Results);
+        Unchanged(before, await Read(served.Host));
     }
 
     // Finding E198 and ADR-0092 item 6: a command whose identifier the log holds does not apply again. The preview stops there
