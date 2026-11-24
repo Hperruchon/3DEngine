@@ -111,7 +111,7 @@ TASK-0462), and ordered "Start P16" in the chat on 2026-11-24:
    bus needs no rollback.
    While the group commits, its own commits ask for no preview of its proposal, so the kept preview stays the result that
    applied (ADR-0185 item 5). A caller that waits for a preview of a version later than the last preview asks for a new copy of
-   the log itself.
+   the log itself, unless a fork that runs or a copy that waits is at that version or later (TASK-0461).
 6. **The comparison (ADR-0157 item 9; Q4 A).** The result that the person saw is the preview of the version that the window
    showed (`Proposals.Accept(id, seenVersion)`), or the last preview of the queue (`Proposals.Accept(id)`). The accept reads the
    version of the Document:
@@ -189,3 +189,6 @@ bytes, so each older file opens and replays as before.
   codebase review of 2026-11-23) and the order "Start P16" of 2026-11-24.
 - 2026-11-24 · TASK-0463 · Amends ADR-0015 item 3, ADR-0031 items 1, 2 and 4, ADR-0092 items 4 and 6, ADR-0130 item 4, ADR-0182
   item 8, ADR-0185 items 3 and 10, and ADR-0187 items 3 and 6.
+- 2026-11-24 · TASK-0461 · Item 5: a caller that waits asks for a new copy of the log only when no preview, no fork that runs
+  and no copy that waits is at its version. The first preview of a new proposal marked the queue behind while its own fork ran,
+  so the window read that preview as not current until the worker read the log again (run 45362050126 on macOS).

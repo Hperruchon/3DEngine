@@ -97,7 +97,11 @@ public sealed partial class Proposals
             // ADR-0188 item 5: a commit while the group of an accept committed asked for no preview of that proposal, so a caller
             // that waits for a later version than the last preview asks for a copy of the log itself.
             // A copy that a fork already takes costs one more read of the log, and nothing else.
-            if (Waits(entry) && entry.Waiters.Contains(waiter) && (entry.Preview?.DocumentVersion ?? -1) < version)
+            // TASK-0461 (run 45362050126 of the branch p0187-review-findings): a fork that runs, or a copy that waits, at the
+            // version of the call covers it, so the queue is not behind. Until TASK-0461 only the last preview counted: the first
+            // preview of a new proposal marked the queue behind while its own fork ran, and Kept gave Current false after that
+            // fork until the worker read the log again.
+            if (Waits(entry) && entry.Waiters.Contains(waiter) && Covered(entry) < version)
                 _behind = true;
             if (_stopped)
                 waiter.Done.TrySetCanceled(CancellationToken.None);
@@ -114,6 +118,27 @@ public sealed partial class Proposals
                 Of(id)?.Waiters.Remove(waiter);
             throw;
         }
+    }
+
+    // TASK-0461: the last version that a preview, a fork that runs or a copy that waits gives the proposal, or -1.
+    private static long Covered(Entry entry)
+        => Math.Max(entry.Preview?.DocumentVersion ?? -1, Math.Max(entry.Pending?.Version ?? -1, entry.Computing ? entry.ComputingVersion : -1));
+
+    // TASK-0461: true while a version came after the last copy of the log, and the count of the callers that wait for the
+    // preview of a proposal, for a test.
+    internal bool Behind
+    {
+        get
+        {
+            lock (_lock)
+                return _behind;
+        }
+    }
+
+    internal int WaitersOf(Guid id)
+    {
+        lock (_lock)
+            return Of(id)?.Waiters.Count ?? 0;
     }
 
     // Item 7: true after the stop of the host started, for a test that holds a fork until the stop waits for it (TASK-0461).
@@ -265,6 +290,7 @@ public sealed partial class Proposals
                             jobs.Add((entry, source));
                             entry.Pending = null;
                             entry.Computing = true;
+                            entry.ComputingVersion = source.Version;
                         }
                     }
 

@@ -1037,6 +1037,35 @@ public sealed class ProposalPreviewTests
         Assert.Equal(2, counter.Made);
     }
 
+    // TASK-0461 (run 45362050126 of the branch p0187-review-findings, ADR-0188 item 5): a caller that waits for the first
+    // preview of a new proposal while its fork runs at the version of the call does not mark the queue behind, so the preview of
+    // that fork is current as soon as the caller gets it. Until TASK-0461 the call compared the version with the last preview
+    // only, which a new proposal does not have: the queue was behind, and Kept gave Current false until the worker read the log
+    // again. A slow runner read Kept in that window (ProposalPreviewWindowTests on macOS). The limit of 30 s only ends a test that
+    // would wait for ever.
+    [Fact]
+    public async Task A_Caller_That_Waits_For_A_Fork_At_Its_Version_Does_Not_Mark_The_Queue_Behind()
+    {
+        using var held = new Held();
+        await using var served = await Served.Start(held.Of(() => new InProcessMeshBackend()));
+        using var release = held.Release();
+        var box = BookcaseCase.Output(await BookcaseCase.Applied(served.Host.Session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 }));
+        var id = await Post(served, "Rename the box", Rename(Guid.NewGuid(), box, "Box"));
+        await held.Started();
+
+        var waiting = served.Host.Proposals.Preview(id);
+        var started = System.Diagnostics.Stopwatch.StartNew();
+        while (served.Host.Proposals.WaitersOf(id) == 0 && !waiting.IsCompleted && started.Elapsed < TimeSpan.FromSeconds(30))
+            await Task.Delay(10);
+        Assert.Equal(1, served.Host.Proposals.WaitersOf(id));
+        Assert.False(served.Host.Proposals.Behind, "The fork at the version of the call runs, but the queue is behind.");
+
+        held.Open();
+        var preview = await Within(waiting, "The wait of the caller");
+        Assert.Equal(1, preview!.DocumentVersion);
+        Assert.True(served.Host.Proposals.Kept(id)!.Current, "The preview of the version of the call is not current.");
+    }
+
     // TASK-0461 (finding T192, item 10): a body that gets a fault from the commands gives a measure with no mass and the refusal
     // in its error, and its pair with a box has the state refused and the refusal in its error. The second corner of the sketch
     // moves above the third, so two lines cross and the rebuild gives the extrude a fault.

@@ -14062,18 +14062,23 @@ the review again, because P16 changed `Proposals.Preview.cs` and `Engine.Core/Pr
 - V235 (Q8 A, 2026-11-24). While a proposal waits on a landscape display, the path of the top bar leaves the room of the word,
   so a long folder is cut at its start and the word keeps its place left of the command line (ADR-0108 item 6). On a display
   too narrow for that, the word is a line under the top bar and the panel starts under it (ADR-0113 item 3).
+- Run 45362050126 (macOS). A caller that waited for the first preview of a new proposal marked the queue behind while the fork
+  of that version ran, so the window read the new preview as not current until the worker read the log again; the race is on
+  `main` since P16. Now the queue is behind only when no preview, no fork that runs and no copy that waits is at the version of
+  the call (ADR-0188 item 5, History). `A_Caller_That_Waits_For_A_Fork_At_Its_Version_Does_Not_Mark_The_Queue_Behind` holds it.
 
 **Proof.** Each new test failed before its correction, except the tests of T192, which hold code that was correct (the review
-found no test). A script applied 24 injections, each restored byte for byte (sha256); each made a named test fail, and TASK-0461 gives the
+found no test). A script applied 25 injections, each restored byte for byte (sha256); each made a named test fail, and TASK-0461 gives the
 table. A clean build gives 0 warnings, the phone project builds with 0 warnings, `dotnet test` passes
-3325 tests, and the write-set check and `eng/repo-gates` pass. The hash of the determinism probe (`DETERMINISM_HASH_FILE`,
+3326 tests, and the write-set check and `eng/repo-gates` pass. The hash of the determinism probe (`DETERMINISM_HASH_FILE`,
 `CrossPlatformHashTests`) is `068ba4a8…`, the hash that v0.446 records, on this computer. The picture of the top bar with the
 long folder comes from the image test `The_Picture_Shows_The_Word_Clear_Of_A_Long_Title`. Not verified: continuous integration
 has not run, and no person used the real window.
 
-New tests: 32. The test list holds 3325 (1943 in `Engine.Tests`, 390 in `3DEngine.Tests`, 989 in `3DEngine.ImageTests`, 3 in
+New tests: 33. The test list holds 3326 (1944 in `Engine.Tests`, 390 in `3DEngine.Tests`, 989 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 1 (`E-API-HOST-STOPPED`). Since the review of v0.444, 2
 product milestones and 3 entries followed it.
 The failed runs since the entry v0.446, from the API: run 45359984114 (branch `p0187-review-findings`, the close commit
-`ddc26e7a`). With no open task the gate of governed-by gave no pattern, and the new bound of T195 needs one; TASK-0461 gives
-the correction.
+`ddc26e7a`): with no open task the gate of governed-by gave no pattern, and the new bound of T195 needs one; run 45362050126
+(branch `p0187-review-findings`, `f7668d9c`, macOS only): a new preview was not current after its fork, because the wait of its
+first preview marked the queue behind. TASK-0461 gives both corrections.

@@ -19,6 +19,7 @@ writes:
     - Engine.Core/Queries/CheckInterferenceQueryHandler.cs
     - Engine.Kernel/PlanarBoolean.cs
     - Engine.Api.Http/Proposals.Preview.cs
+    - Engine.Api.Http/Proposals.cs
     - Engine.Api.Http/Endpoints/ProposalsEndpoint.cs
     - Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs
     - 3DEngine.App/SectionView.cs
@@ -46,6 +47,7 @@ writes:
     - docs/adr/0173-a-lost-runner-gets-one-automatic-re-run.md
     - docs/adr/0184-the-section-view.md
     - docs/adr/0185-the-preview-of-a-proposal-on-a-fork.md
+    - docs/adr/0188-the-accept-after-a-preview-and-the-group-in-the-log.md
     - docs/diagnostics.md
     - docs/guides/agent-loop.md
     - docs/templates.md
@@ -119,6 +121,7 @@ Each finding has a correction and a test, or a register entry with its reason.
 | T195 | `PathPatternWorkTests` also bounds the expressions by the distinct patterns of the run (`TaskFiles.PatternsAskedOnThisThread`); the work covers the open tasks and the three newest tasks of each status (`TaskGovernanceGateTests.GovernedByProblems`) | `PathPatternWorkTests.The_Gate_Of_Governed_By_Builds_At_Most_One_Expression_For_Each_Pattern` | injection 19 (a key for each call) passed the old bound |
 | T196 | `MarkerGateTests` reads each tracked text file outside `docs/`, `tasks/` and `Engine.Tests/Governance/`, except a Markdown document; the row of `docs/templates.md` section 5 says so | `MarkerGateTests.Every_Impermanence_Marker_In_Live_Code_Carries_A_Register_Identifier`, `MarkerGateTests.The_Gate_Reads_Each_Tracked_Text_File_Outside_The_Records` | the old gate did not read the root `.gitignore` or `eng/*.txt` |
 | V235 | While a proposal waits, the path of the top bar leaves the room of the word; on a narrow landscape display the panel starts under the word | `WaitingWordTests.The_Word_Of_A_Waiting_Proposal_Lies_On_No_Text_And_No_Panel_With_A_Long_Folder` (4 sizes), `WaitingWordTests.The_Picture_Shows_The_Word_Clear_Of_A_Long_Title` | each size failed: the word lay on the panel of the rows |
+| Run 45362050126 | A caller that waits marks the queue behind only when no preview, no fork that runs (`Entry.ComputingVersion`) and no copy that waits is at its version (ADR-0188 item 5, History) | `ProposalPreviewTests.A_Caller_That_Waits_For_A_Fork_At_Its_Version_Does_Not_Mark_The_Queue_Behind` | 5 of 5 runs failed: the queue was behind while the fork at the version of the call ran |
 
 ## Progress
 
@@ -181,6 +184,7 @@ test) applied 24 injections, each restored byte for byte (sha256), and each made
 | 22 | `DesktopUi.Fixed.cs` | the path takes the room of the word | `The_Word_Of_A_Waiting_Proposal_Lies_On_No_Text_And_No_Panel_With_A_Long_Folder` (2 sizes) |
 | 23 | `DesktopUi.Panel.cs` | the panel of a landscape display does not start under the word | `The_Word_Of_A_Waiting_Proposal_Lies_On_No_Text_And_No_Panel_With_A_Long_Folder` |
 | 24 | `SchemaDiagnosticsEndpoint.cs` | `/schema/diagnostics` does not give the new code | `SchemaEndpointGateTests.Every_DiagnosticCodes_Constant_Appears_In_Schema_Diagnostics` |
+| 25 | `Proposals.Preview.cs` | the old condition: only the last preview covers the version of the call | `A_Caller_That_Waits_For_A_Fork_At_Its_Version_Does_Not_Mark_The_Queue_Behind` (5 of 5 runs) |
 
 Injection 2 first ran with the test of the eight proposals, which passed: their commands make no new boolean, so a fork that
 writes to the store of the first Document finds each result in it first. The first test holds it with the new subtract of its
@@ -193,3 +197,11 @@ third preview.
   (`TaskGovernanceGateTests.GovernedByProblems`), and the test gives it the open tasks and the three newest tasks of each
   status. With no open task the test passes; injection 19 again (a key for each call) made it fail with 143751 expressions
   for 445 distinct patterns, and the file came back byte for byte (sha256). The task is Active again until a green run.
+- 2026-11-24: run 45362050126 of `f7668d9c` failed on macOS only: `ProposalPreviewWindowTests.The_Host_Gives_The_Window_The_Preview_With_The_Shape_Of_Each_New_Solid`
+  (line 165, `Assert.True(first.Current)`). `Proposals.Preview` marked the queue behind when the version of the call was later
+  than the last preview only. The first preview of a new proposal has no last preview, so a caller that waited for it marked
+  the queue behind while its own fork ran at that version; after the fork, `Kept` gave `Current` false until the worker read
+  the log again, and the slow runner read `Kept` in that window. The race exists on `main` since P16 (v0.446). The queue now
+  is behind only when no preview, no fork that runs (`Entry.ComputingVersion`) and no copy that waits is at the version of the
+  call, so a commit during the group of an accept still gets its copy (ADR-0188 item 5). The new test holds the fork and reads
+  `Proposals.Behind` (a new member for the test); injection 25 made it fail 5 times of 5. 1 new test in `Engine.Tests` (1944).
