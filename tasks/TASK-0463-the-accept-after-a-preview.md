@@ -1,7 +1,7 @@
 ---
 id: 0463
 title: The accept after a preview compares the result and applies a proposal as one group of steps, which the log holds and one Undo reverses
-status: Active
+status: Done
 phase: P16
 opened: 2026-11-24
 depends-on: [0462]
@@ -143,7 +143,7 @@ comparison; one `Undo` of the group at a failure, which needs no rollback of the
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p16-accept-after-preview) · v0.446
+Status: Done · commit (the merge of the branch p16-accept-after-preview) · v0.446
 
 ## Method
 
@@ -197,3 +197,4 @@ between the end of its group and its close, and the kept preview then becomes th
 window of the race is one take of the lock of the queue, and the test did not meet it. The read of `Proposals.Preview` that asks
 for a copy of the log when the last preview is older than the version of the call has no test either; it closes the case of a
 commit while the group of an accept waits for the serial section.
+- 2026-11-24: run 45295782451 of `030dcca4` passed on each job. Closed at v0.446.
