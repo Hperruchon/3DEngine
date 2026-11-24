@@ -154,3 +154,6 @@ authority diagram stays: the host projects a result of the engine into the rende
   the draw and the panel.
 - 2026-11-24 · TASK-0463 · ADR-0188 amends items 3 and 6: the window gives the version of the shown preview to the accept, and
   the panel shows the note of an accept that applied nothing because the result changed.
+- 2026-11-25 · TASK-0464 · The owner answered two points of "Bad" (Q6 A and Q7 A of 2026-11-25): while a preview shows, the
+  outline of the selected body takes a colour apart from the amber of a proposal, and the new shape in "After" gets a faint
+  amber fill. Row R33 does both; no item changes now.

@@ -14082,3 +14082,37 @@ The failed runs since the entry v0.446, from the API: run 45359984114 (branch `p
 `ddc26e7a`): with no open task the gate of governed-by gave no pattern, and the new bound of T195 needs one; run 45362050126
 (branch `p0187-review-findings`, `f7668d9c`, macOS only): a new preview was not current after its fork, because the wait of its
 first preview marked the queue behind. TASK-0461 gives both corrections.
+
+## v0.448 — The answers of the owner of 2026-11-25 to the open questions are a record, with four new rows and their order (P0.188, TASK-0464)
+
+On 2026-11-23 the session gave the owner nine open questions, Q1 to Q9, and P16 (TASK-0463) added three questions on ADR-0188.
+Q8 went into P0.187. On 2026-11-25, after the merge of P0.187 (v0.447), the session wrote the other questions again in the chat.
+The owner answered "all A" and ordered "Start P0.188". The branch `p0188-owner-answers` starts from `origin/main` at `efd1e73a`.
+
+**The record.** No code changes.
+- Q1 A (R-0070): P11.0 decides a model of placements. Each body keeps its shape in its own frame, and a joint or a move changes
+  only a stored placement, so the exact numbers do not grow. Row P11 holds the answer, and the ADR of P11.0 comes with the change
+  of `Engine.Contracts`.
+- Q2 A (R-0070): the owner gives the sizes of the support of the lamp, and K10b builds it. Row K10b holds the answer. The sizes are
+  not given yet, so K10b and R-0070 stay open.
+- Q3 A (R-0072): at 360 pixels with a sheet, "N hidden" leaves the path line, and the ring keeps it as "Show hidden". New row R32a.
+- Q4 A (R-0076): on a landscape phone of 640 by 360, the ring moves away from the windows of the top left, and each segment keeps
+  its 46 pixels. New row R32b.
+- Q5 A (R-0075): two queries for an agent, the sheets and the live bodies with their names, with an ADR. New row P21.
+- Q6 A and Q7 A (ADR-0187 "Bad"): a selection colour apart from the amber during a preview, and a faint amber fill in "After".
+  New row R33, and a History line in ADR-0187.
+- Q9 A: the owner keeps ADR-0155 item 7 (a read of a sheet keeps the B-Rep of each body, and no line) and the plane cut of the
+  owned kernel (ADR-0057 item 10, ADR-0169 item 3). A History line in each of the three ADRs.
+- The questions 1 to 3 of P16, A: the format version stays 1; the accept refuses an `Undo` or a `Redo` (item 4), and the post
+  does not refuse it earlier; an accept after a failed fork applies nothing (item 7). A History line in ADR-0188.
+- The section "Order" puts R32a, R32b, R33 and P21 after P0.188 and before K17. Then K17 and P11, with P11.0 first.
+- Correction: the section "Shipped" of the roadmap had no line for v0.445 (R25), v0.446 (P16) and v0.447 (P0.187). This task adds
+  them, and the line of v0.448.
+
+**Proof.** A clean build gives 0 warnings, `dotnet test` passes 3326 tests, and the write-set check and `eng/repo-gates` pass.
+Not verified: continuous integration has not run.
+
+New tests: 0. The test list holds 3326 (1944 in `Engine.Tests`, 390 in `3DEngine.Tests`, 989 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.444, 2 product milestones and 4
+entries followed it.
+The failed runs since the entry v0.447, from the API: none.

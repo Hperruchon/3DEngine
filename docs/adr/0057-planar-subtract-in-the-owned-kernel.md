@@ -111,3 +111,4 @@ slices. On 2026-11-05 the owner answered four questions:
 - 2026-11-22 · TASK-0454 · No item changes. `PlanarBoolean` counts on each thread the booleans of two solids, each
   subtract, union and intersection, so a test holds that one `Subtract` and one `GetFaces` make one boolean (ADR-0059
   item 2).
+- 2026-11-25 · TASK-0464 · The owner confirmed item 10, the cut of a solid by a plane with a cap (Q9 A of 2026-11-25).
