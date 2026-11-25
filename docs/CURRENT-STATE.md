@@ -14182,3 +14182,41 @@ New tests: 3. The test list holds 3330 (1947 in `Engine.Tests`, 390 in `3DEngine
 product milestones and 6 entries followed it, so a codebase review is due before the next product milestone.
 The failed runs since the entry v0.449, from the API: 45572450735 (`ef3cf2b7`, R32a: the test floor of the image test, corrected
 by `afc898f6`) and 45574730547 (`8fe3fe0f`, the close of R32a: R-0078).
+
+## v0.451 — The codebase review of 2026-11-25 (governance, TASK-0467)
+
+Four product milestones (R25, P16, R32a and K10b) and six entries followed v0.444, the review of 2026-11-23, so the next product
+milestone needed a review first. The owner ordered "Start the review" in the chat on 2026-11-25.
+
+**The review.** `docs/reviews/2026-11-25-codebase-review.md` examines `1975089e`, the merge of K10b at v0.450.
+- P0.187 fixed the ten findings of the last review and V235; E243, V236 and T199 hold the forms of E239, V234 and T195 that
+  stay. R32a fixed V225, a medium finding since 2026-11-21.
+- The change of `Engine.Contracts` (`Command.GroupId`) came with ADR-0188 in the same commit. Nothing new reaches the log except
+  the optional member `groupId`, and no new transcendental function came. The three new codes are in `docs/diagnostics.md`.
+- The pipeline since v0.444 has no red run on `main`; the four failed runs are on branches and in the ledger.
+- No new finding is critical or high.
+- E242 is medium: after a failed accept, one Redo applies the part of the proposal that ran, because the Undo of the group is an
+  ordinary move.
+- T197 is medium: a race of the worker of the queue and the accept decides
+  `A_Commit_That_Does_Not_Change_The_Result_Runs_One_Fork_And_Applies`; it is the cause of R-0078.
+- E243, E244, E245, V236, V237, V238, T198, T199, T200, T201 and T202 are low: a fork pushes out the kept solids of its source; the guide and
+  the registry disagree with the code on a known `commandId`; two rare failures of an accept give a false record; three more
+  pipelines leak at a failed start; the window gives the version of a preview that no panel showed; a test holds a real folder
+  of the owner; a sleep of 300 ms and limits of 30 s in the new tests; the bound of the path patterns passes with a warm cache;
+  K10b checks none of its 8 refused pairs; a guard of 10 s that failed a correct test; a fault of the
+  artifact service that the automatic re-run does not know.
+- TASK-0468 (P0.189) holds the thirteen findings after the next product phase, R32b.
+- Q1 asks if R32b stays next; Q2 asks what a Redo does after a failed accept; Q3 asks if the queue keeps the preview before the
+  last one; Q4 asks if K24 also amends the bound of one preview. No register entry: the register holds 13 open entries of 15.
+- Open findings: 0 critical, 1 high, 8 medium and 27 low.
+
+**Proof.** Two agents examined the change from v0.444 to v0.450 in the worktree of the review and changed no file. The session
+read each of their findings in the code at its lines, and ran the test of R-0078 alone 25 times (25 passed). A clean build gives
+0 warnings, and `dotnet test` passes 3330 tests. `CodebaseReviewGateTests`, the write-set check and `eng/repo-gates` pass. Not
+verified: continuous integration has not run on the branch.
+
+New tests: 0. The test list holds 3330 (1947 in `Engine.Tests`, 390 in `3DEngine.Tests`, 990 in `3DEngine.ImageTests`, 3
+in `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0. This entry is a codebase review, so 0 product
+milestones and 0 entries follow it.
+The failed runs since the entry v0.450, from the API: 45706338430 (`26d32264`, this review: T201 on Windows) and 45707816188 (`d9f34c4f`, this
+review: T202 on Ubuntu).
