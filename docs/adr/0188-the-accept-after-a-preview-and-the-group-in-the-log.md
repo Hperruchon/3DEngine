@@ -192,3 +192,6 @@ bytes, so each older file opens and replays as before.
 - 2026-11-24 · TASK-0461 · Item 5: a caller that waits asks for a new copy of the log only when no preview, no fork that runs
   and no copy that waits is at its version. The first preview of a new proposal marked the queue behind while its own fork ran,
   so the window read that preview as not current until the worker read the log again (run 45362050126 on macOS).
+- 2026-11-25 · TASK-0464 · The owner confirmed three points (the questions 1 to 3 of P16, "all A" of 2026-11-25): the format
+  version stays 1 ("Bad"); item 4 refuses an `Undo` or a `Redo` at the accept, and the post does not refuse it earlier; item 7
+  applies nothing after a failed fork. No item changes.

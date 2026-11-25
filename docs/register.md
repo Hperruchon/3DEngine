@@ -284,6 +284,9 @@ bookcase turned 150 times about a vertical axis through the point (-1700, -200, 
 of the owned kernel has a numerator of 2576 digits; each length changed by less than 1e-12 mm (`GetFaces`: 9.1e-13 mm).
 `docs/proposals/2026-11-21-the-bookcase-case-of-k10.md` gives the table and the numbers. The support of the lamp waits for
 its sizes from the owner (K10b), and the ADR of P11.0 is not written, so the entry stays open.
+Progress 2026-11-25: the owner answered Q1 A and Q2 A (TASK-0464). P11.0 decides a model of placements: each body keeps its
+shape in its own frame, and a move changes only a stored placement, so the numbers do not grow. The owner gives the sizes of
+the support of the lamp, and K10b builds it. The entry stays open until the ADR of P11.0 and the sizes.
 
 ### R-0072 · On a portrait phone of 360 pixels with a sheet, "N hidden" on the path line still goes under "Views"
 - class: question
@@ -298,6 +301,8 @@ pixels (ADR-0100 item 1), its chevron and "2 hidden" need about 160: the test me
 The floor of the file name, the gap of 12 pixels (ADR-0138) and the part on the path line (ADR-0178 item 2) cannot all hold.
 Exit: the owner says which rule gives way at 360 pixels, and a task makes
 `With_A_Sheet_The_Path_Line_And_The_Top_Bar_End_Left_Of_Views` pass at 360 pixels.
+Progress 2026-11-25: the owner answered Q3 A (TASK-0464): at 360 pixels with a sheet, "N hidden" leaves the path line, and
+the ring keeps it as "Show hidden". Row R32a does the exit.
 
 ### R-0075 · The HTTP surface has no query that lists the sheets, and none that gives the live bodies with their names
 - class: question
@@ -312,6 +317,8 @@ with their names: the snapshot of `/events` gives them, and `GetFeatures` gives 
 new shape of `Engine.Contracts`, so it needs an ADR and the owner.
 Exit: the owner says whether to add the two queries; a task adds them with an ADR and the examples of the guide, or the owner
 accepts the snapshot and `sheet.created` as the only sources.
+Progress 2026-11-25: the owner answered Q5 A (TASK-0464): add the two queries. Row P21 does the exit, with an ADR and the
+examples of the guide.
 
 ### R-0076 · On a landscape phone of 640 by 360 the first segment of a ring of six goes under the windows of the top left
 - class: question
@@ -327,6 +334,8 @@ measured its label at (352, 60, 397, 86) under the window (16, 56, 376, 114)). E
 segments. The test leaves out only that fault of that size, with this identifier.
 Exit: the owner says which rule gives way at 640 by 360 (the floor of the inner radius, the width of a segment, the place of the
 ring, or the windows of the top left), and a task removes the exception from `ResponsiveLayoutTests`.
+Progress 2026-11-25: the owner answered Q4 A (TASK-0464): the ring moves away from the windows of the top left, and each
+segment keeps its 46 pixels. Row R32b does the exit.
 
 ### R-0077 · A failed start of the renderer of the images leaks the objects that it made before the failure
 - class: debt

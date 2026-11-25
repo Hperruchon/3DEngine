@@ -108,3 +108,5 @@ one for each live body of each of the last 64 documents.
 - 2026-11-21 · TASK-0446 · Item 7 amended in place, a decision of the session under the standing order of 2026-11-20, for
   the exit of R-0069: the read keeps the B-Rep of each body, and no line. The owner did not answer this change; the owner
   can take it back. R-0069 is closed.
+- 2026-11-25 · TASK-0464 · The owner confirmed item 7 as TASK-0446 amended it (Q9 A of 2026-11-25): the read keeps the
+  B-Rep of each body, and no line.

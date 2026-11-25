@@ -167,3 +167,5 @@ SetSheetViewLines and RemoveSheetView apply to it.
   finite (E221), and the size of a text (E224) (P0.167).
 - 2026-11-21 · TASK-0445 · Item 3: the cut of the owned kernel by a plane gives the cut, with the result of the subtract of
   the box (E222, P0.178); "Consequences" gives the new times.
+- 2026-11-25 · TASK-0464 · The owner confirmed item 3, the cut of the owned kernel by a plane for the section of a sheet
+  (Q9 A of 2026-11-25).
