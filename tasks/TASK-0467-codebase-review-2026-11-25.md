@@ -1,7 +1,7 @@
 ---
 id: 0467
 title: The codebase review of 2026-11-25 is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-25
 depends-on: [0466]
@@ -54,12 +54,12 @@ A review of the code at `1975089e` (v0.450) is in `docs/reviews/`, and a task ho
 
 - [x] Each finding of the review has its place and its evidence, and the session read each finding of the agents in the code.
 - [x] The measures use the method of the last review.
-- [ ] `CodebaseReviewGateTests`, `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on
+- [x] `CodebaseReviewGateTests`, `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on
       the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch codebase-review-2026-11-25) · v0.451
+Status: Done · commit (the merge of the branch codebase-review-2026-11-25) · v0.451
 
 ## Method
 
@@ -78,3 +78,4 @@ Weakest:    the cause of R-0078 (T197) comes from the code; the test passed 25 t
   `EventsHandshakeTests.No_Heartbeat_Comes_Before_The_Subscription_Message` (a guard of 10 s that TASK-0435 kept). The review adds it as T201.
 - 2026-11-25: run 45707816188 of `d9f34c4f` failed on Ubuntu in the step "Keep the determinism hash" ("Failed to
   FinalizeArtifact ... ECONNRESET"); no test failed and no re-run started. The review adds it as T202.
+- 2026-11-25: run 45709101799 of `41367559` passed on each job. Closed at v0.451.
