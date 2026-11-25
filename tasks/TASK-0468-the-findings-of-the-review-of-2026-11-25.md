@@ -20,7 +20,7 @@ This task uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, secti
 
 ## Context
 
-The codebase review of 2026-11-25 (`docs/reviews/2026-11-25-codebase-review.md`, TASK-0467) found two medium and ten low
+The codebase review of 2026-11-25 (`docs/reviews/2026-11-25-codebase-review.md`, TASK-0467) found two medium and eleven low
 findings and no critical or high one. By `docs/templates.md`, section 7, they come after the next product phase.
 
 ## Goal
@@ -32,7 +32,7 @@ Each finding has a correction and a test, or a register entry with its reason.
 1. Medium: E242 (after a failed accept, one `Redo` applies the part of the proposal that ran), with the answer Q2 of the owner.
 2. Medium: T197 (a race of the worker and the accept decides
    `A_Commit_That_Does_Not_Change_The_Result_Runs_One_Fork_And_Applies`), with the answer Q3; the exit of register entry R-0078.
-3. Low: E243, E244, E245, V236, V237, V238, T198, T199, T200, T201.
+3. Low: E243, E244, E245, V236, V237, V238, T198, T199, T200, T201, T202.
 4. ADR-0188 items 5, 7 and 9 and "Bad" say what the code does after the corrections (E242, E245, V237).
 
 ## Scope (out)

@@ -38,7 +38,7 @@ A review of the code at `1975089e` (v0.450) is in `docs/reviews/`, and a task ho
 ## Scope (in)
 
 1. `docs/reviews/2026-11-25-codebase-review.md`, in the form of `docs/templates.md`, section 7.
-2. TASK-0468 (P0.189) for the two medium and ten low findings, after the next product phase. No finding is critical or high,
+2. TASK-0468 (P0.189) for the two medium and eleven low findings, after the next product phase. No finding is critical or high,
    so no task comes before it.
 3. The roadmap row of P0.189, its place in the order, and the line of this review in the list "Shipped".
 
@@ -76,3 +76,5 @@ Weakest:    the cause of R-0078 (T197) comes from the code; the test passed 25 t
 - 2026-11-25: opened after K10b (TASK-0466), branch codebase-review-2026-11-25 from `1975089e`. Ledger entry v0.451.
 - 2026-11-25: run 45706338430 of `26d32264` failed on Windows in
   `EventsHandshakeTests.No_Heartbeat_Comes_Before_The_Subscription_Message` (a guard of 10 s that TASK-0435 kept). The review adds it as T201.
+- 2026-11-25: run 45707816188 of `d9f34c4f` failed on Ubuntu in the step "Keep the determinism hash" ("Failed to
+  FinalizeArtifact ... ECONNRESET"); no test failed and no re-run started. The review adds it as T202.

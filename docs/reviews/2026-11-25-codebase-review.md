@@ -31,18 +31,19 @@ repository: each probe below is a test as text or a trace with its lines. The se
   "each command or none" of ADR-0188 item 5 holds only until the next Redo. T197: a race of the worker of the queue and the
   accept decides `A_Commit_That_Does_Not_Change_The_Result_Runs_One_Fork_And_Applies`; it is the cause of R-0078. **[Observed]**
   by reading; the window path of E242 is **[Inferred]**.
-- **Ten new findings are low.** E243: a fork still pushes out the kept solids of its source. E244: the guide and the
+- **Eleven new findings are low.** E243: a fork still pushes out the kept solids of its source. E244: the guide and the
   diagnostics registry say other things than the code about a known `commandId`. E245: two rare failures of an accept give a
   false record. V236: three more pipelines leak at a failed start. V237: the window gives the accept the version of a preview
   that no panel showed. V238: a test holds a real folder of the computer of the owner. T198: a sleep of 300 ms and limits of
   30 s in the new tests. T199: the bound of T195 still passes with a warm cache. T200: K10b checks none of its 8 refused pairs.
-  T201: a guard of 10 s failed a correct test in the first run of this review. **[Observed]**
+  T201: a guard of 10 s failed a correct test in the first run of this review. T202: the automatic re-run knows one
+  form of a fault of the artifact service, and the second run of this review failed by another form. **[Observed]**
 - **The change of `Engine.Contracts` has its ADR in the same commit.** `Command.GroupId` and ADR-0188 came in `030dcca4`.
   Nothing new reaches the log except the optional member `groupId`, and no new transcendental function came. **[Observed]**
 - **The pipeline since v0.444 has no red run on `main`.** The API gives four failed runs since 2026-11-23, each on a branch and
   each named in the ledger: 45359984114, 45362050126, 45572450735 and 45574730547 (R-0078). **[Observed]** from the API. The
-  first run of this review, 45706338430, failed on Windows by T201.
-- **Open findings: 0 critical, 1 high, 8 medium and 26 low.** **[Observed]**
+  first run of this review, 45706338430, failed on Windows by T201, and the second, 45707816188, failed on Ubuntu by T202.
+- **Open findings: 0 critical, 1 high, 8 medium and 27 low.** **[Observed]**
 
 ## Measures
 
@@ -63,7 +64,7 @@ at `a708a91a` it gives each value of the review of 2026-11-23.
 | Findings: critical | 0 | Each finding that is open at this commit, from any review. The last review gave 0. |
 | Findings: high | 1 | The same method: V141. The last review gave 1. |
 | Findings: medium | 8 | The same method: E6, E13, E19, E21, T32, T37, E242, T197. The last review gave 8; E239 and V225 are fixed. |
-| Findings: low | 26 | The same method: E17, E24, E34, E39, E57, E84, E160, V15, V29, V84, V88, T143, C1, P1, V143, V144, E243, E244, E245, V236, V237, V238, T198, T199, T200, T201. The last review gave 25; nine are fixed. |
+| Findings: low | 27 | The same method: E17, E24, E34, E39, E57, E84, E160, V15, V29, V84, V88, T143, C1, P1, V143, V144, E243, E244, E245, V236, V237, V238, T198, T199, T200, T201, T202. The last review gave 25; nine are fixed. |
 | Lines in the rule files | 4,249 | The ten rule files of `docs/reviews/2026-09-25-rules-review.md`, section 1, that still exist, counted with the method of that section. The last review gave 4,169. |
 | Sentences with "must" | 62 | `grep -o -w -i must` on the same ten files. The last review gave 62. |
 | Sentences with "do not" | 68 | `grep -o -i -E '\bdo not\b'` on the same ten files. The last review gave 65. |
@@ -1203,6 +1204,17 @@ the measures, the solver and the checks that change (R25, ADR-0187). "N hidden" 
   The run shows that a loaded runner can pass 10 s before such an event, so each guard of that list can fail a correct
   test. **[Observed]** for the code, the task and the run; the cause of the delay on the runner is **[Inferred]**.
 - **Correction.** Give each guard of the list of TASK-0435 the limit of 60 s of ADR-0173 item 4. **[Recommended]**
+
+#### T202 · Low · The automatic re-run knows one form of a fault of the artifact service, and a second form keeps a run red · Confirmed
+
+- **Where.** `eng/lost-runner.js` line 26 (`SERVICE_FAULTS`, one pair: "Failed to CreateArtifact" and "Request timeout");
+  `.github/workflows/rerun-lost-runner.yml` lines 6 to 7; ADR-0173.
+- **What.** Run 45707816188 of `d9f34c4f`, a commit of text only, failed on Ubuntu in the step "Keep the determinism hash" with
+  "Failed to FinalizeArtifact: Unable to make request: ECONNRESET". Each test passed on each system. The list does not hold
+  this form, so no re-run started (the API gives one attempt), and a person must push again or start the re-run.
+  **[Observed]** for the code, the annotation and the API.
+- **Correction.** Add the pair "Failed to FinalizeArtifact" and "ECONNRESET", with a test of `eng/lost-runner.js` on the text of
+  this annotation. **[Recommended]**
 
 The rest of the range holds:
 
