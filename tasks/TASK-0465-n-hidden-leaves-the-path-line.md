@@ -12,6 +12,7 @@ writes:
   modify:
     - 3DEngine.App/Ui/DesktopUi.Fixed.cs
     - 3DEngine.ImageTests/ShowHiddenTests.cs
+    - eng/test-floor.txt
     - docs/adr/0178-show-hidden-on-the-ring-of-the-part-and-the-path-line.md
     - docs/roadmap.md
     - docs/register.md
@@ -88,3 +89,5 @@ Weakest:    on a display where the part leaves the path line and the status line
 
 - 2026-11-25: opened on the order of the owner "Start R32a", branch `r32a-hidden-on-ring` from `origin/main` at `f8373f48`
   (v0.448).
+- 2026-11-25: run 45572450735 of `ef3cf2b7` failed on the gate of each system: the new case of 360 pixels is one more image
+  test, and `eng/test-floor.txt` still gave 933 (989 on Linux). The floor is now 934 (990 on Linux).
