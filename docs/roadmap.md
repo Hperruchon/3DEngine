@@ -581,6 +581,10 @@ Therefore each approved objective must have a track here.
   preview gives an envelope at each end, and the title leaves the room of the waiting word. v0.447, TASK-0461.
 - P0.188 — The answers of the owner of 2026-11-25 to the open questions are a record, with the new rows R32a, R32b, R33 and
   P21. v0.448, TASK-0464.
+- R32a — Where the path line has no room for it, "N hidden" leaves the path line, and the ring of the part keeps "Show
+  hidden". v0.449, TASK-0465, ADR-0178.
+- K10b — The support of the lamp is a builder of seven bodies with stand-in sizes, and its gaps are the rows K23 and K24.
+  v0.450, TASK-0466.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -1005,7 +1009,7 @@ boundary and each refused rung.
 | K9c | An ellipse for an end whose axis is neither along nor across the view, the circles of a turned body, and the outline of a cylinder and a cone from its axis (ADR-0143 item 4, ADR-0144). After K9b. TASK-0377. | 1–2 |
 | K10 | The reference case in the engine: the crossbar with its two fixing points, the bracket, the arm and the knob, and the volumes of the lamp, the housing and the cable, with the commands that exist, as a builder in `Engine.Tests`; each missing feature (a revolve, the size of a primitive, a hole) gets its row; a test measures 150 turns of the arm for register entry R-0070; the bookcase of the owner is a second builder (ADR-0126, ADR-0157 items 2 and 12). After P10c. | 2–3 |
 | K10a | The bookcase of the owner as the first case of K10: the table of its 19 bodies from the file of the owner in `docs/proposals/2026-11-21-the-bookcase-case-of-k10.md`, a builder in `Engine.Tests` with the commands that exist, and the measure of 150 turns of a module about a hinge for register entry R-0070 (the choice of the owner of 2026-11-20). TASK-0429. | 1 |
-| K10b | The support of the lamp as the second case of K10: the table of its sizes, its builder, and the rows of its gaps, as row K10 gives them. After the owner gives the sizes (R-0070). On 2026-11-25 the owner answered Q2 A: the owner gives the sizes of the crossbar, of its two fixing points and of the volumes of the lamp. | 1–2 |
+| K10b | The support of the lamp as the second case of K10: the table of its sizes, its builder, and the rows of its gaps, as row K10 gives them. After the owner gives the sizes (R-0070). On 2026-11-25 the owner answered Q2 A: the owner gives the sizes of the crossbar, of its two fixing points and of the volumes of the lamp. The same day the owner chose stand-in sizes until a measure ("use the stand-in sizes, start K10b after R32a"): the builder `LampSupportCase` of seven bodies, the table in `docs/proposals/2026-11-25-the-lamp-support-case-of-k10.md`, and the new rows K23 and K24. TASK-0466. | 1–2 |
 | K11 | The pair check at one position: for each pair of bodies a query gives the class (apart, touching or overlapping), the volume and the box of the overlap, the minimum gap, a mark for an intended contact, and a mark when the answer is exact for a mesh only (ADR-0157 items 5 to 7). The intended pairs are a parameter of the query until P11 and P13 put them in the Document. After K15 and K16. TASK-0436, ADR-0182. | 2–3 |
 | K12 | The travel: a query checks a pivot from one limit to the other on a fork of the Document, sampled with a margin so that no contact between two samples is missed, with the intended contacts exempt, and gives the first contact angle to a stated tolerance; a slider gets one exact sweep (ADR-0126 item 4, ADR-0157 items 5 and 8). After K11, P11 and P15. | 2–3 |
 | K13 | The envelope: a query gives the extent below a reference face over the travel, and names the bodies that the roles exclude. After K12 and P14. | 1–2 |
@@ -1022,6 +1026,8 @@ boundary and each refused rung.
 | K20 | The access of a tool: a query checks that a cylinder on the axis of a screw is free at a stated state of the assembly (ADR-0157 item 14). After K18. | to estimate |
 | K21 | A linear and a grid pattern of a body; a radial pattern records a quaternion for each copy, as `Rotate` does. With P20 each copy is an instance. After P20. | 2 |
 | K22 | The flat chamfer of one edge between two plane faces (kernel boundary: flat chamfer; no edge chain, anti-objective 11). After R24. | to estimate |
+| K23 | A hole command: a hole of a diameter and a depth, through or blind, on a plane face at a point, as one step of the log. K10b makes each hole by a `Subtract` of a cylinder that `CreateCylinder` centres on the origin, so a blind hole needs a computed move. A new command is a new record of the log (ADR-0016), so its ADR comes in the same commit; the ADR decides if the thread waits for P19. After K10b. | to estimate |
+| K24 | The pair check of bodies with holes: the bound of work of ADR-0182 item 8 refuses 8 of the 21 pairs of the case of the lamp (K10b) with `E-CHECK-WORK-LIMIT`, from 126,968 to 2,801,550 products of pieces for one pair, above the limit of 100,000, and 6,133,070 for the whole case. Three of the refused pairs are intended contacts of the mount. The ADR decides between fewer pieces for a body with a hole and a larger bound with a time limit, and amends ADR-0182 item 8; `LampSupportCaseTests` then gives the class of each pair. After K10b; before K12, which checks the travel of the pivot of this case. | to estimate |
 
 ## Track V — Machine vision
 
@@ -1142,6 +1148,8 @@ The tracks are not strictly sequential, but three rules hold:
    ordered "Start P0.188" (TASK-0464). The new rows R32a, R32b, R33 and P21 come after P0.188 and before K17, in that order:
    each one is small, and three of them close a register entry. Then the order of 2026-11-15 continues with K17 and P11,
    P11.0 first on the model of placements of Q1 A. K10b waits for the sizes of the owner (R-0070).
+   The same day the owner chose stand-in sizes for the lamp and ordered K10b after R32a (TASK-0466). K10b found the gaps
+   K23 and K24; K24 comes before K12, because the travel of the pivot needs the pair check of the parts with holes.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase

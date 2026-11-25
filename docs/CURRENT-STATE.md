@@ -14143,3 +14143,42 @@ New tests: 1. The test list holds 3327 (1944 in `Engine.Tests`, 390 in `3DEngine
 `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.444, 3
 product milestones and 5 entries followed it.
 The failed runs since the entry v0.448, from the API: none.
+
+## v0.450 — The support of the lamp is the second case of K10, a builder of seven bodies with stand-in sizes, and its gaps are the rows K23 and K24 (K10b, TASK-0466)
+
+On 2026-11-25 the owner asked for a recommended size of the lamp. The session gave stand-in sizes, and the owner answered "use
+the stand-in sizes, start K10b after R32a". R32a is closed but not merged, so the branch `k10b-lamp-support` starts from its
+close, `8fe3fe0f` (v0.449).
+
+**The change.** `docs/proposals/2026-11-25-the-lamp-support-case-of-k10.md` gives the table: the stand-in sizes of the crossbar
+(a tube of 30 by 30 mm, two holes of 5.5 mm), of the lamp (a cylinder of 70 by 100 mm), of the housing and of the cable, and the
+first sizes of the bracket, the arm and the knob. `LampSupportCase` sends the commands of the seven bodies. A cylinder on an
+axis along x or y is a `CreateCylinder`, a `Rotate` by (1, 1, 0, 0) or (1, 0, 1, 0) and a `Translate`; the turn is exact,
+because `Rotation.FromQuaternion` divides by 2. Each hole is a `Subtract` of a cylinder, and the knob is three cylinders joined
+by two `Union` (K16).
+
+**What the case found.** The pair check of K11 refuses 8 of the 21 pairs with `E-CHECK-WORK-LIMIT`: a body with a hole has many
+pieces, and the pairs need from 126,968 to 2,801,550 products, above the bound of 100,000 of ADR-0182 item 8. The whole case
+needs 6,133,070. Three refused pairs are intended contacts of the mount. New row K24 removes this gap, before K12; new row K23
+gives a hole command. The other gaps already have their rows: P11 (the turn about the pivot), K7 (a revolve), P12 (the size of
+a primitive), P14 (the role of a body), P19 and K18 (the screws). The section "Shipped" gets the lines of R32a and K10b, which
+the close of R32a did not add.
+
+**Proof.** Three new tests in `LampSupportCaseTests`. Each body has its name and the box of the table, exactly for the four
+bodies of plane outside faces and within 0.5 mm for the knob, the lamp and the cable. The mount goes down to z = -32, inside
+the envelope of 60 mm. One check for each pair: the 13 pairs that the check answers have the class of the table (three intended
+contacts touch, ten pairs are apart, no fault), and the 8 others give the refusal. A save and an open give the same bodies.
+With the arm 1 mm longer in the builder, two tests fail: the box of the arm and the class of the arm and the lamp.
+A clean build gives 0 warnings, the phone project builds with 0 warnings, `dotnet test` passes 3330 tests, and the write-set
+check and `eng/repo-gates` pass. Not verified: continuous integration has not run, and no picture of the case in the window was made (the owner denied
+the control of the window in this session).
+
+**A test that fails sometimes.** Run 45574730547 of the close of R32a failed on Ubuntu in
+`ProposalAcceptTests.A_Commit_That_Does_Not_Change_The_Result_Runs_One_Fork_And_Applies` ("open", not "accepted"). The commit
+changed only the task file of R32a, and the other two systems passed. New register entry R-0078 holds it.
+
+New tests: 3. The test list holds 3330 (1947 in `Engine.Tests`, 390 in `3DEngine.Tests`, 990 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.444, 4
+product milestones and 6 entries followed it, so a codebase review is due before the next product milestone.
+The failed runs since the entry v0.449, from the API: 45572450735 (`ef3cf2b7`, R32a: the test floor of the image test, corrected
+by `afc898f6`) and 45574730547 (`8fe3fe0f`, the close of R32a: R-0078).
