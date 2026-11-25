@@ -1,7 +1,7 @@
 ---
 id: 0464
 title: The answers of the owner of 2026-11-25 to the open questions are a record, with four new rows and their order
-status: Active
+status: Done
 phase: P0.188
 opened: 2026-11-25
 depends-on: [0461]
@@ -82,7 +82,7 @@ question on its scope.
 - [x] The new rows name the answer and the register entry that they close, and no row of track R, K, P or V names this task.
 - [x] `docs/register.md` holds 13 open entries of 15, as before.
 - [x] `AdrGateTests`, `TaskGovernanceGateTests`, `RegisterGateTests` and `MarkerGateTests` pass.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes. The local
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes. The local
   part passes; continuous integration is not run yet.
 
 ## Notes for the implementer
@@ -96,7 +96,7 @@ question on its scope.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0188-owner-answers) · v0.448
+Status: Done · commit (the merge of the branch p0188-owner-answers) · v0.448
 
 ## Method
 
@@ -110,3 +110,4 @@ Weakest:    the order of the new rows is a choice of the session, not of the own
 
 - 2026-11-25: opened on the order of the owner "Start P0.188", after the answer "all A", branch `p0188-owner-answers` from
   `origin/main` at `efd1e73a` (v0.447).
+- 2026-11-25: run 45513713961 of `df3f4045` passed on each job. Closed at v0.448.
