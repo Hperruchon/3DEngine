@@ -1,7 +1,7 @@
 ---
 id: 0466
 title: The support of the lamp as the second case of K10, with stand-in sizes, its builder and the rows of its gaps
-status: Active
+status: Done
 phase: K10b
 opened: 2026-11-25
 depends-on: [0465]
@@ -83,7 +83,7 @@ case finds has a roadmap row.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch k10b-lamp-support) · v0.450
+Status: Done · commit (the merge of the branch k10b-lamp-support) · v0.450
 
 ## Method
 
@@ -97,3 +97,4 @@ Weakest:    the stand-in sizes are not measurements, so the case shows the gaps 
 
 - 2026-11-25: opened on the order of the owner "use the stand-in sizes, start K10b after R32a", branch `k10b-lamp-support`
   from the close of R32a.
+- 2026-11-25: run 45576431753 of `edbf5715` passed on each job. Closed at v0.450.
