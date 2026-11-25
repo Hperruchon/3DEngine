@@ -1,7 +1,7 @@
 ---
 id: 0465
 title: Where the path line has no room for it, "N hidden" leaves the path line, and the ring of the part keeps "Show hidden"
-status: Active
+status: Done
 phase: R32a
 opened: 2026-11-25
 depends-on: [0464]
@@ -75,7 +75,7 @@ the part.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch r32a-hidden-on-ring) · v0.449
+Status: Done · commit (the merge of the branch r32a-hidden-on-ring) · v0.449
 
 ## Method
 
@@ -91,3 +91,4 @@ Weakest:    on a display where the part leaves the path line and the status line
   (v0.448).
 - 2026-11-25: run 45572450735 of `ef3cf2b7` failed on the gate of each system: the new case of 360 pixels is one more image
   test, and `eng/test-floor.txt` still gave 933 (989 on Linux). The floor is now 934 (990 on Linux).
+- 2026-11-25: run 45573647660 of `afc898f6` passed on each job. Closed at v0.449.
