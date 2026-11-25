@@ -168,6 +168,11 @@ internal sealed unsafe partial class DesktopUi
         var menu = body is null && document is { Files: true };
         // ADR-0178 item 2 (phase R20e, TASK-0424): the part of the hidden bodies takes its room first, so the file name is cut
         // and keeps its chevron.
+        // R-0072 (phase R32a, TASK-0465, Q3 A of the owner of 2026-11-25): where the room cannot hold the file name at its floor of
+        // 48 pixels (ADR-0100 item 1), its chevron, the gap and the part, the part leaves the path line, and "Show hidden" on the
+        // ring of the part is the way back. Until TASK-0465 the part ran under "Views" on a phone of 360 pixels with a sheet.
+        if (_pathHidden is { } leaving && ImGui.CalcTextSize(Fit(segments[0].Text, 48f)).X +(menu ? FileMark : 0f) + PathHiddenGap + ImGui.CalcTextSize(leaving).X > room - FocusRoom(body))
+            _pathHidden = null;
         var hiddenRoom = _pathHidden is { } part ? ImGui.CalcTextSize(part).X + PathHiddenGap : 0f;
         var texts = PathFit([.. segments.Select(segment => segment.Text)], room - FocusRoom(body) - (menu ? FileMark : 0f) - hiddenRoom, menu ? FileMark : 0f);
         var colours = ImGui.GetStyle().Colors;

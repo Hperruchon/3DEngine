@@ -48,7 +48,10 @@ with "New", "Sketch", "Bodies" and "Images". A second ring for the same state wo
    file name is cut with "..." but keeps its chevron, the target of the file menu (ADR-0174 item 4). A tap on the part opens
    the list of ADR-0124 item 3 under the path line (Q2 A of the owner, 2026-11-20). The part shows on the path line only while
    no body is selected; with a selection the path line gives its room to the segments, and the list closes (finding V226, Q5 A
-   of the codebase review of 2026-11-21).
+   of the codebase review of 2026-11-21). Where the room of the path line cannot hold the file name at its floor (ADR-0100 item 1),
+   its chevron, the gap and the part, 12 pixels left of "Views" (ADR-0138), the part leaves the path line, and "Show hidden"
+   on the ring of the part (item 1) is the way back. An example is a portrait phone of 360 pixels with a sheet (R-0072, Q3 A
+   of the owner of 2026-11-25).
 3. **No contract change, no engine change.** The ring, the segment and the part are states of the client (ADR-0007).
 4. **No code in this record.** Roadmap row R20e (TASK-0424) gives items 1 and 2, with the tests in `ShowHiddenTests` and the
    layout test of ADR-0172.
@@ -75,3 +78,5 @@ of the hidden bodies, and keeps one ring with nothing selected. The owner can co
 - 2026-11-21 · TASK-0424 · Shipped at v0.412.
 - 2026-11-21 · TASK-0431 · Item 2: the part shows on the path line only while no body is selected (finding V226, Q5 A of the
   codebase review of 2026-11-21).
+- 2026-11-25 · TASK-0465 · Item 2: the part leaves the path line where the room cannot hold it with the file name at its floor
+  (R-0072, Q3 A of the owner of 2026-11-25).

@@ -288,22 +288,6 @@ Progress 2026-11-25: the owner answered Q1 A and Q2 A (TASK-0464). P11.0 decides
 shape in its own frame, and a move changes only a stored placement, so the numbers do not grow. The owner gives the sizes of
 the support of the lamp, and K10b builds it. The entry stays open until the ADR of P11.0 and the sizes.
 
-### R-0072 · On a portrait phone of 360 pixels with a sheet, "N hidden" on the path line still goes under "Views"
-- class: question
-- opened: 2026-11-21
-- due: 2027-02-19
-- extended: no
-- refs: `3DEngine.App/Ui/DesktopUi.Fixed.cs` (`PathRow`, `PathFit`), `3DEngine.ImageTests/ShowHiddenTests.cs`, ADR-0100
-  item 1, ADR-0138, ADR-0178 item 2, `docs/reviews/2026-11-21-codebase-review.md` (V225), TASK-0431
-TASK-0431 gives the top bar and the path line the room left of "Views" and "Sheet" (finding V225), which is sufficient at 390
-and 412 pixels. At 360 by 640 pixels with a sheet the path line has about 130 pixels, and the file name at its floor of 48
-pixels (ADR-0100 item 1), its chevron and "2 hidden" need about 160: the test measured the part to 175 and "Views" from 170.
-The floor of the file name, the gap of 12 pixels (ADR-0138) and the part on the path line (ADR-0178 item 2) cannot all hold.
-Exit: the owner says which rule gives way at 360 pixels, and a task makes
-`With_A_Sheet_The_Path_Line_And_The_Top_Bar_End_Left_Of_Views` pass at 360 pixels.
-Progress 2026-11-25: the owner answered Q3 A (TASK-0464): at 360 pixels with a sheet, "N hidden" leaves the path line, and
-the ring keeps it as "Show hidden". Row R32a does the exit.
-
 ### R-0075 · The HTTP surface has no query that lists the sheets, and none that gives the live bodies with their names
 - class: question
 - opened: 2026-11-21
@@ -484,6 +468,26 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0072 · On a portrait phone of 360 pixels with a sheet, "N hidden" on the path line still goes under "Views"
+- class: question
+- opened: 2026-11-21
+- due: 2027-02-19
+- extended: no
+- refs: `3DEngine.App/Ui/DesktopUi.Fixed.cs` (`PathRow`, `PathFit`), `3DEngine.ImageTests/ShowHiddenTests.cs`, ADR-0100
+  item 1, ADR-0138, ADR-0178 item 2, `docs/reviews/2026-11-21-codebase-review.md` (V225), TASK-0431
+TASK-0431 gives the top bar and the path line the room left of "Views" and "Sheet" (finding V225), which is sufficient at 390
+and 412 pixels. At 360 by 640 pixels with a sheet the path line has about 130 pixels, and the file name at its floor of 48
+pixels (ADR-0100 item 1), its chevron and "2 hidden" need about 160: the test measured the part to 175 and "Views" from 170.
+The floor of the file name, the gap of 12 pixels (ADR-0138) and the part on the path line (ADR-0178 item 2) cannot all hold.
+Exit: the owner says which rule gives way at 360 pixels, and a task makes
+`With_A_Sheet_The_Path_Line_And_The_Top_Bar_End_Left_Of_Views` pass at 360 pixels.
+Progress 2026-11-25: the owner answered Q3 A (TASK-0464): at 360 pixels with a sheet, "N hidden" leaves the path line, and
+the ring keeps it as "Show hidden". Row R32a does the exit.
+Closed 2026-11-25 · resolved · TASK-0465, v0.449. The answer Q3 A of the owner of 2026-11-25 lets the part give way. Where the
+room of the path line cannot hold the file name at its floor, its chevron, the gap and "N hidden", the part leaves the path
+line, and "Show hidden" on the ring of the part is the way back (ADR-0178 item 2). The test passes at 360, 390 and 412
+pixels; at 390 and 412 pixels the part stays. With the rule removed, the case of 360 pixels fails.
 
 ### R-0071 · On the sheet page the amber value of a proposed dimension is the value of the design, not of the proposal
 - class: debt

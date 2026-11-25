@@ -14116,3 +14116,30 @@ New tests: 0. The test list holds 3326 (1944 in `Engine.Tests`, 390 in `3DEngine
 `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.444, 2 product milestones and 4
 entries followed it.
 The failed runs since the entry v0.447, from the API: none.
+
+## v0.449 — Where the path line has no room for it, "N hidden" leaves the path line, and the ring of the part keeps "Show hidden" (R32a, TASK-0465)
+
+On 2026-11-25 the owner ordered "Start R32a" after the merge of P0.188. The branch `r32a-hidden-on-ring` starts from
+`origin/main` at `f8373f48` (v0.448). The row does the exit of register entry R-0072 on the answer Q3 A of the owner of
+2026-11-25.
+
+**The change.** On a portrait phone of 360 by 640 pixels with a sheet, "Sheet" is right of "Views", and the path line has about
+130 pixels. The file name at its floor (ADR-0100 item 1), its chevron and "2 hidden" did not fit, so the part ran under "Views".
+Now `DesktopUi.PathRow` compares the room with the file name at its floor, the chevron, the gap of 12 pixels and the part. Where
+the room is less, the part leaves the path line in that frame, the list of the hidden bodies closes, and "Show hidden" on the
+ring of the part is the way back. The floor is the width of the text that `Fit` gives at 48 pixels, because the cut text is
+narrower than 48 pixels; with 48 the part left at 390 pixels too, and the first run of the test found it. ADR-0178 item 2
+says where the part leaves, and register entry R-0072 is closed.
+
+**Proof.** `ShowHiddenTests.With_A_Sheet_The_Path_Line_And_The_Top_Bar_End_Left_Of_Views` has the new case of 360 by 640
+pixels: no part on the path line, the path line and the top bar 12 pixels left of "Views", the file name with its chevron, and
+"Show hidden" on the ring inside the display, whose tap gives the action of "Show all". At 390 and 412 pixels the part stays on
+the path line. With the rule removed, the case of 360 pixels fails ("Expected: False, Actual: True"), and the two other cases
+pass. The 78 tests of `ShowHiddenTests`, `ResponsiveLayoutTests` and `PartRingTests` pass. A clean build gives 0 warnings, the phone project builds with 0 warnings, `dotnet test` passes 3327 tests, and the
+write-set check and `eng/repo-gates` pass. Not verified:
+continuous integration has not run, and no picture of the real window was made.
+
+New tests: 1. The test list holds 3327 (1944 in `Engine.Tests`, 390 in `3DEngine.Tests`, 990 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0. Since the review of v0.444, 3
+product milestones and 5 entries followed it.
+The failed runs since the entry v0.448, from the API: none.
