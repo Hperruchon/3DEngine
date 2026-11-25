@@ -175,12 +175,14 @@ public sealed class ShowHiddenTests
     // Finding V225 of the codebase review of 2026-11-21 (TASK-0431): while a live sheet exists, a portrait display has "Sheet" right
     // of "Views" (ADR-0168 item 1), so "Views" is further left. The part, the path line and the top bar end 12 pixels left of
     // "Views" in that state too (ADR-0138). Until TASK-0431 they kept the room of "Views" only, and "2 hidden" ran under it.
-    // At 360 pixels the file name at its floor of 48 pixels and the part do not fit in the room; register entry R-0072 asks the
-    // owner which rule gives way there.
+    // At 360 pixels the file name at its floor of 48 pixels and the part do not fit in the room. R-0072 (phase R32a, TASK-0465,
+    // Q3 A of the owner of 2026-11-25): there the part leaves the path line, and "Show hidden" on the ring of the part is the way
+    // back (ADR-0178 item 2). At 390 and 412 pixels the part fits, and stays. Until TASK-0465 the case of 360 pixels had no row.
     [Theory]
-    [InlineData(390, 844)]
-    [InlineData(412, 915)]
-    public void With_A_Sheet_The_Path_Line_And_The_Top_Bar_End_Left_Of_Views(int width, int height)
+    [InlineData(360, 640, false)]
+    [InlineData(390, 844, true)]
+    [InlineData(412, 915, true)]
+    public void With_A_Sheet_The_Path_Line_And_The_Top_Bar_End_Left_Of_Views(int width, int height, bool partOnPath)
     {
         var display = new Vector2(width, height);
         using var ui = new DesktopUi("http://127.0.0.1:5180", Document.Millimetre);
@@ -193,10 +195,27 @@ public sealed class ShowHiddenTests
         var views = Box(ui, DesktopUi.ViewsLabel, display);
         var sheet = Box(ui, DesktopUi.SheetLabel, display);
         Assert.True(sheet.X >= views.Z, $"Sheet at {sheet} is not right of Views at {views}.");
-        foreach (var item in new[] { DesktopUi.PathHiddenItem, DesktopUi.PathItem, DesktopUi.TitleItem })
+        Assert.Equal(partOnPath, ui.ItemRectangle(DesktopUi.PathHiddenItem) is not null);
+        var items = partOnPath
+            ? new[] { DesktopUi.PathHiddenItem, DesktopUi.PathItem, DesktopUi.TitleItem }
+            : new[] { DesktopUi.PathItem, DesktopUi.TitleItem };
+        foreach (var item in items)
         {
             var box = Box(ui, item, display);
             Assert.True(box.Z <= views.X - 12f + 0.5f, $"The item {item} at {box} is not 12 pixels left of Views at {views}.");
+        }
+
+        // The file name keeps its chevron, the target of the file menu (ADR-0174 item 4), and the ring of the part keeps the way
+        // back to the hidden bodies, with its label inside the display.
+        Assert.NotNull(ui.ItemRectangle(DesktopUi.PathSegmentItem(PathLevel.Document)));
+        Assert.Contains(DesktopUi.ShowHiddenLabel, ui.RingLabels);
+        var label = Box(ui, DesktopUi.RingTextItem(DesktopUi.ShowHiddenLabel), display);
+        Assert.True(label.X >= 0f && label.Z <= display.X && label.Y >= 0f && label.W <= display.Y, $"The label at {label} is outside the display {display}.");
+        if (!partOnPath)
+        {
+            Assert.Null(ui.ItemRectangle(DesktopUi.HiddenItem));
+            Assert.False(ui.HiddenListOpen);
+            Assert.Equal([new ShowAllAction()], Tap(ui, display, TwoHidden, DesktopUi.RingTextItem(DesktopUi.ShowHiddenLabel)));
         }
     }
 
