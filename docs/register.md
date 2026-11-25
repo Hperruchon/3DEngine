@@ -287,6 +287,9 @@ its sizes from the owner (K10b), and the ADR of P11.0 is not written, so the ent
 Progress 2026-11-25: the owner answered Q1 A and Q2 A (TASK-0464). P11.0 decides a model of placements: each body keeps its
 shape in its own frame, and a move changes only a stored placement, so the numbers do not grow. The owner gives the sizes of
 the support of the lamp, and K10b builds it. The entry stays open until the ADR of P11.0 and the sizes.
+Progress 2026-11-25: the owner chose stand-in sizes until a measure, and K10b (TASK-0466) builds the case with them
+(`docs/proposals/2026-11-25-the-lamp-support-case-of-k10.md`). The entry stays open until the owner gives the measured sizes
+and the ADR of P11.0 decides the model of a move.
 
 ### R-0075 · The HTTP surface has no query that lists the sheets, and none that gives the live bodies with their names
 - class: question
@@ -333,6 +336,18 @@ vertex buffer before its modules, so one failure leaks several objects; the corr
 fails only when the device fails, at the start of the window, and the process then stops.
 Exit: a task makes each object of the start of `ImageRenderer` free on a failure, with a test that fails the start at each
 object as `PipelineStartTests` does, or the owner accepts the leak at a failed start.
+
+### R-0078 · `A_Commit_That_Does_Not_Change_The_Result_Runs_One_Fork_And_Applies` can see the proposal still open
+- class: risk
+- opened: 2026-11-25
+- due: 2026-12-25
+- extended: no
+- refs: `Engine.Tests/Http/ProposalAcceptTests.cs:183`, ADR-0188 item 6, TASK-0463, TASK-0465, TASK-0466
+Run 45574730547 of `8fe3fe0f` (the close of R32a, which changed only its task file) failed on Ubuntu: the accept after a
+NoOp commit gave the state "open", not "accepted" (line 195). The same commit passed on Windows and macOS, and the run of
+the commit before it passed on each system. A preview that the commit starts can race the fork of the accept. A red run of
+`main` stops each merge until a person runs it again.
+Exit: a task finds the race and makes the test give the same answer in each run, or the owner accepts the risk.
 
 ## Accepted compromises
 
