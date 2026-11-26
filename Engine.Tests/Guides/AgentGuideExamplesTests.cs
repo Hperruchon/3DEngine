@@ -130,7 +130,8 @@ public sealed class AgentGuideExamplesTests
         // Row P16 (TASK-0463): the guide shows an accept that applies nothing because the result changed, with its code.
         Assert.Contains(steps, step => step.Result is { } result && result.Text.Contains("\"held\": { \"code\": \"W-API-PROPOSAL-RESULT-CHANGED\" }", StringComparison.Ordinal));
         // Row K17 (TASK-0443): the connectors of a body are a step of the measure.
-        foreach (var query in new[] { "GetBodyInfo", "GetDistance", "GetMassProperties", "GetConnectors", "CheckInterference", "GetViewLines" })
+        // Row P21 (TASK-0471): the lists of the sheets and of the bodies are examples of the guide.
+        foreach (var query in new[] { "GetBodyInfo", "GetDistance", "GetMassProperties", "GetConnectors", "CheckInterference", "GetViewLines", "GetSheets", "GetBodies" })
             Assert.Contains(steps, step => step.Block.Marker == "agent-request" && step.Block.Text.Contains($"\"name\": \"{query}\"", StringComparison.Ordinal));
     }
 

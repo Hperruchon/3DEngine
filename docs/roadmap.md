@@ -590,6 +590,8 @@ Therefore each approved objective must have a track here.
   side by side get smaller. v0.452, TASK-0469, ADR-0113, ADR-0132.
 - R33 — While a preview shows, the selected body has the accent of the theme, apart from the amber of a proposal, and the
   new shape in "After" has a faint amber fill. v0.453, TASK-0470, ADR-0187.
+- P21 — The queries `GetSheets` and `GetBodies` give an agent the live sheets and the live bodies with their names, each list in
+  the order of the log, with an example of each in the guide for an agent. v0.454, TASK-0471, ADR-0189.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -842,7 +844,7 @@ This track removes each condition that blocks other work.
 | P18 | Groups of bodies in the Document: a named set of parts by identity, which can hold groups, rigid by default (ADR-0157 item 1). Its ADR gives the record. After P11. | 1–2 |
 | P19 | A screw as data in the Document: a standard, a size, a pitch, a length and a head, on an axis (ADR-0157). Its ADR gives the record and the tables. After P13. | 2 |
 | P20 | Instances of a body inside one Document: a source and its instances, each with a place and no geometry of its own, and a copy as a new source (ADR-0157 item 1, the second stage). Its ADR decides the model with the result of P11.0. After R24. | to estimate |
-| P21 | Two queries for an agent: the sheets of the Document, and the live bodies with their names (R-0075, Q5 A of 2026-11-25). Each is a new shape of `Engine.Contracts`, so an ADR comes in the same commit, with tested examples in `docs/guides/agent-loop.md` section 12. After P0.188. | 1 |
+| P21 | Two queries for an agent: the sheets of the Document, and the live bodies with their names (R-0075, Q5 A of 2026-11-25). Each is a new shape of `Engine.Contracts`, so an ADR comes in the same commit, with tested examples in `docs/guides/agent-loop.md` section 12. After P0.188. The results are records of `Engine.Core/Queries`, as for `GetConnectors`, so no file of `Engine.Contracts` changes; the new shape is that of the public surface. TASK-0471, ADR-0189. | 1 |
 
 ## Track R — The renderer
 

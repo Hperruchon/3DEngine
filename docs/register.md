@@ -291,22 +291,6 @@ Progress 2026-11-25: the owner chose stand-in sizes until a measure, and K10b (T
 (`docs/proposals/2026-11-25-the-lamp-support-case-of-k10.md`). The entry stays open until the owner gives the measured sizes
 and the ADR of P11.0 decides the model of a move.
 
-### R-0075 · The HTTP surface has no query that lists the sheets, and none that gives the live bodies with their names
-- class: question
-- opened: 2026-11-21
-- due: 2027-02-19
-- extended: no
-- refs: `docs/guides/agent-loop.md` section 12, `docs/CURRENT-STATE.md` entry v0.422,
-  `docs/reviews/2026-11-21-c-codebase-review.md` (T190), TASK-0439, TASK-0449
-Row P17 (TASK-0439) found two gaps when it wrote the guide for an agent. No query and no field of the snapshot gives the sheets
-of the Document, so an agent learns a sheet only from the event `sheet.created` while it listens. No query gives the live bodies
-with their names: the snapshot of `/events` gives them, and `GetFeatures` gives the identifiers with no name. Each new query is a
-new shape of `Engine.Contracts`, so it needs an ADR and the owner.
-Exit: the owner says whether to add the two queries; a task adds them with an ADR and the examples of the guide, or the owner
-accepts the snapshot and `sheet.created` as the only sources.
-Progress 2026-11-25: the owner answered Q5 A (TASK-0464): add the two queries. Row P21 does the exit, with an ADR and the
-examples of the guide.
-
 ### R-0077 · A failed start of the renderer of the images leaks the objects that it made before the failure
 - class: debt
 - opened: 2026-11-24
@@ -348,6 +332,20 @@ status line at 640 by 360. At 844 by 390 the target of "Show hidden" of a ring o
 (483, 326, 828, 374) by about 17 pixels, and its middle does not.
 Exit: a task makes `Faults` check each tool of the ring by its target with no skip, and corrects each fault or records it in an
 ADR, or the owner accepts these cases.
+
+### R-0080 · The snapshot of the events and `CheckInterference` give the bodies in the order of a .NET `Dictionary`
+- class: risk
+- opened: 2026-11-26
+- due: 2026-12-26
+- extended: no
+- refs: `docs/adr/0189-the-lists-of-the-sheets-and-of-the-bodies.md` (Context, Next), ADR-0012 section 6, ADR-0182 item 2,
+  TASK-0471
+`Document.Bodies` and `Document.Sheets` are the values of a .NET `Dictionary`. After a command removes a record, the next record
+takes the free place, so the snapshot of `/events` and `CheckInterference` with no `bodyIds` give an order that a person or an
+agent cannot predict from the log. The order is the same on each replay of one log with one runtime; a new version of .NET can
+change it. Nothing of that order goes into the log. `GetSheets` and `GetBodies` (ADR-0189) give the log order.
+Exit: a task gives the snapshot and `CheckInterference` the log order of ADR-0189 item 3, with its own ADR, or the owner
+accepts the order of the collection.
 
 ## Accepted compromises
 
@@ -483,6 +481,27 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0075 · The HTTP surface has no query that lists the sheets, and none that gives the live bodies with their names
+- class: question
+- opened: 2026-11-21
+- due: 2027-02-19
+- extended: no
+- refs: `docs/guides/agent-loop.md` section 12, `docs/CURRENT-STATE.md` entry v0.422,
+  `docs/reviews/2026-11-21-c-codebase-review.md` (T190), TASK-0439, TASK-0449
+Row P17 (TASK-0439) found two gaps when it wrote the guide for an agent. No query and no field of the snapshot gives the sheets
+of the Document, so an agent learns a sheet only from the event `sheet.created` while it listens. No query gives the live bodies
+with their names: the snapshot of `/events` gives them, and `GetFeatures` gives the identifiers with no name. Each new query is a
+new shape of `Engine.Contracts`, so it needs an ADR and the owner.
+Exit: the owner says whether to add the two queries; a task adds them with an ADR and the examples of the guide, or the owner
+accepts the snapshot and `sheet.created` as the only sources.
+Progress 2026-11-25: the owner answered Q5 A (TASK-0464): add the two queries. Row P21 does the exit, with an ADR and the
+examples of the guide.
+Closed 2026-11-26 · resolved · TASK-0471, v0.454. The query `GetSheets` gives each live sheet with its identifier, its name, its
+paper, its orientation, its projection and the identifier of each view, and the query `GetBodies` gives each live body with
+the fields of `GetBodyInfo`, each list in the order of the log (ADR-0189). Section 12 of the guide shows the two queries, and
+its test sends them to a host. No file of `Engine.Contracts` changes: the shape that this entry called a new shape of
+`Engine.Contracts` is a shape of the public surface, and the results are records of `Engine.Core/Queries`.
 
 ### R-0076 · On a landscape phone of 640 by 360 the first segment of a ring of six goes under the windows of the top left
 - class: question

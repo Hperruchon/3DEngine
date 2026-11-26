@@ -93,6 +93,8 @@ public static class HandlerCatalog
         new GetAngleQueryHandler(),
         new CheckInterferenceQueryHandler(),
         new GetConnectorsQueryHandler(),
+        new GetSheetsQueryHandler(),
+        new GetBodiesQueryHandler(),
     ];
 
     public static void RegisterAll(CommandRegistry commands, QueryRegistry queries, IAssetSource? assets = null)

@@ -123,7 +123,8 @@ GET /events
 }
 ```
 
-The query `GetBodyInfo` gives the kind, the name and the visibility of one body. Each query has the same envelope: a
+The query `GetBodies` gives the same bodies with no WebSocket, and `GetSheets` gives the sheets (section 12). The query
+`GetBodyInfo` gives the kind, the name and the visibility of one body. Each query has the same envelope: a
 name, a version of the schema and the parameters. The answer gives `result`, and `error` is null.
 
 ```http agent-request
@@ -691,13 +692,70 @@ DELETE /proposals/<proposal>
   no step after that command other than `Translate` and `Rotate`. The side of a hole that a `Subtract` made is
   `Curved`, with no axis. A datum keeps the frame of the place where it was made. A later `Translate` or `Rotate` of its
   body does not move it, so compare its frame with the face of its `reference` (ADR-0183 item 3).
-- **No list of the sheets.** No query and no field of the snapshot gives the sheets of the Document. The event
-  `sheet.created` gives the identifier of a new sheet while you listen; for an earlier sheet, ask the person. Register
-  entry R-0075 holds this gap.
-- **No list of the bodies by a query.** The snapshot of `/events` gives each live body with its name. `GetFeatures` gives
-  the identifiers but not the names; then `GetBodyInfo` gives one name for each request. Register entry R-0075 holds this
-  gap.
+- **The lists give no geometry.** `GetSheets` gives no line of a view, and `GetBodies` gives no size and no fault of a body.
+  Read one sheet with `GetSheet`, measure one body with the queries of section 6, and read the faults with `GetFeatures`
+  (see the examples below).
 - **No person on `engine-api-http`.** That program has no window, so its proposals stay open.
 - **No phone.** The phone has no HTTP surface, so it shows no proposal.
 - **No author in the log.** An accepted command is a command of the person in the log. Its `groupId` is the identifier of the
   proposal, but the log does not record that an agent proposed it.
+
+### The lists of the sheets and of the bodies
+
+Two queries give the sheets and the bodies of the Document with no WebSocket (ADR-0189). Each takes no parameter, changes
+nothing and gives no error. Each list is in the order of the log of the command that made each sheet or body. That order
+can differ from the order of the snapshot of `/events`.
+
+`GetSheets` gives each live sheet: its identifier, which each command of a sheet and `GetSheet` take, its name, its paper,
+its orientation, its projection and the identifier of each view in the order of the commands. A removed sheet is not in the
+list.
+
+```http agent-request
+POST /queries
+Content-Type: application/json
+
+{ "name": "GetSheets", "schemaVersion": 1, "parameters": {} }
+```
+
+```json agent-result
+{
+  "result": {
+    "sheets": [
+      {
+        "sheetId": "<sheet>",
+        "name": "Bookcase",
+        "paper": "A4",
+        "landscape": true,
+        "thirdAngle": false,
+        "viewIds": [ "<front view>" ]
+      }
+    ]
+  },
+  "error": null
+}
+```
+
+`GetBodies` gives each live body with the fields of `GetBodyInfo`: the identifier, the kind, the name, the visibility and
+the distance of an extrude, or null. A hidden body is in the list. A body that a command consumed is not: here the box of
+`CreateBox` of section 7 is not in the list, and the middle shelf has the name of the second proposal.
+
+```http agent-request
+POST /queries
+Content-Type: application/json
+
+{ "name": "GetBodies", "schemaVersion": 1, "parameters": {} }
+```
+
+```json agent-result
+{
+  "result": {
+    "bodies": [
+      { "bodyId": "<Cote gauche>", "name": "Cote gauche", "visible": true },
+      { "bodyId": "<Bas>", "kind": "Solid", "name": "Bas", "visible": true },
+      { "bodyId": "<Fond>", "name": "Fond", "visible": true },
+      { "bodyId": "<Milieu>", "kind": "Solid", "name": "Middle shelf", "visible": true, "distance": null }
+    ]
+  },
+  "error": null
+}
+```
