@@ -1,7 +1,7 @@
 ---
 id: 0470
 title: While a preview shows, the selected body has the accent of the theme, and the new shape in "After" has a faint amber fill
-status: Active
+status: Done
 phase: R33
 opened: 2026-11-26
 depends-on: [0462]
@@ -109,7 +109,7 @@ the new shape has a faint amber fill that does not hide its dashed lines.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch r33-preview-colours) · v0.453
+Status: Done · commit (the merge of the branch r33-preview-colours) · v0.453
 
 ## Method
 
@@ -124,3 +124,4 @@ Weakest:    the alpha 0.15 is a choice of the session from the pictures, and no 
 
 - 2026-11-26: opened on the order of the owner "Start R33", branch `r33-preview-colours` from `origin/main` at `64b1c07f`
   (v0.452).
+- 2026-11-26: run 45891292110 of `e8258473` passed on each job. Closed at v0.453.
