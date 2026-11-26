@@ -14322,3 +14322,62 @@ New tests: 3. The test list holds 3336 (1947 in `Engine.Tests`, 391 in `3DEngine
 `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.451, 2 product milestones and 2
 entries followed it.
 The failed runs since the entry v0.452, from the API: none.
+
+## v0.454 — The queries GetSheets and GetBodies give an agent the live sheets and the live bodies with their names (P21, TASK-0471)
+
+On 2026-11-26 the owner ordered "Start P21" after the merge of R33. The branch `p21-agent-queries` starts from `origin/main` at
+`052876d8` (v0.453). The row does the exit of register entry R-0075 on the answer Q5 A of the owner of 2026-11-25 (TASK-0464),
+which approves the two queries. ADR-0189 gives their shape; the owner did not decide the fields and the order.
+
+**The change.** Two queries with no parameter, registered in `HandlerCatalog`, so `/queries`, `/schema/queries` and
+`engine query` reach them with no new route. Each reads the records of the Document only: no capability of the backend, no
+error, nothing in the log, no new diagnostic code.
+- `GetSheets` gives `sheets`: for each live sheet `sheetId`, `name`, `paper`, `landscape`, `thirdAngle` and `viewIds`, the
+  identifier of each view in the order of the record. `GetSheet` keeps the lines, the dimensions and the title block.
+- `GetBodies` gives `bodies`: for each live body the record of `GetBodyInfo`, `bodyId`, `kind`, `name`, `visible` and
+  `distance`. A hidden body and a body with a fault are live; a consumed body and a body of an undone command are not. The
+  geometry key and the fault of the snapshot stay out; `GetFeatures` gives the fault.
+- Each list is in the order of the log of the command that made each sheet or body. The first form took the order of the
+  collection of the Document, as the snapshot of `/events` and `CheckInterference` with no `bodyIds` do. That collection is a
+  .NET `Dictionary`: after a `Translate` consumed a box, a later extrude took its place and came second (A, extrude, C, moved B).
+  The log order (A, C, moved B, extrude) is a property of the Document that an agent can predict. ADR-0189 "Bad" and "Next" say
+  that the surface now has two orders, and that a change of the order of the snapshot needs its own ADR.
+- The result records are in `Engine.Core/Queries`, as for `GetConnectors`. No file of `Engine.Contracts` changes. Correction:
+  row P21 and R-0075 called each query "a new shape of `Engine.Contracts`"; the new shape is that of the public surface. The
+  row now says so.
+- Section 12 of the guide for an agent loses the two limits "No list" and gets the examples of the two queries on the bookcase;
+  section 5 points at them.
+
+**Proof.** The new tests of `DocumentListQueryTests`: an empty Document; the sheets with their views, a rename, a remove and its
+undo, and a sheet made after a remove that comes last although the collection puts it first; the bodies of a `CreateBox`, a
+`CreateCylinder`, a `Translate` and an `Extrude`, each equal to the answer of `GetBodyInfo`, in the log order that differs from
+the order of the collection, and an undo of a `CreateBox`. The test of the guide sends the two new examples to a host and
+requires them. Each injection made a named test fail, and each file was restored byte for byte (sha256):
+- the sheets in the order of the collection, in the reverse order, and each sheet in landscape:
+  `A_Created_Sheet_Is_Listed_With_Its_Record_And_Its_Views_And_A_Removed_Sheet_Is_Not`;
+- no identifier of a view: that test and `Each_Example_Of_The_Guide_Is_Accepted_By_A_Host_And_Gives_Its_Shape`;
+- only the first live record: the test of the sheets, `Each_Live_Body_Is_Listed_With_Its_Name_And_A_Consumed_Body_Is_Not`
+  and the test of the guide;
+- the bodies in the order of the collection, no distance of an extrude, and each body visible: the test of the bodies;
+- no name of a body: the test of the bodies and the test of the guide;
+- an error for an empty list: `An_Empty_Document_Gives_No_Sheet_And_No_Body`;
+- no registration of `GetSheets`, and of `GetBodies`: the empty test, the test of that query and the test of the guide;
+- `GetSheet` in place of `GetSheets` in the guide: the test of the guide and
+  `Each_Block_Of_The_Guide_Is_A_Marked_Example_And_The_Loop_Has_Each_Route`;
+- the old name "Milieu" of the shelf in the example of `GetBodies`: the test of the guide.
+The determinism probe did not run: the two queries write nothing to the log and change no command. A clean build gives 0
+warnings, the phone project builds with 0 warnings, `dotnet test` passes 3282 tests with 57 image tests skipped by
+`CI=true`, `eng/count-tests.js` accepts the counts, and the write-set check and `eng/repo-gates` pass. Not verified:
+continuous integration has not run.
+
+Correction: the entry v0.453 says "`dotnet test` passes TOTAL tests"; the word TOTAL is a placeholder that the entry kept, not
+a count. The report of the session of R33 gives 3336 passed tests in that run (1947 in `Engine.Tests`, 391 in
+`3DEngine.Tests`, 995 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`), with the image tests; this entry did not run them
+again at `e8258473`.
+
+New register entry R-0080 holds the order of the collection of the snapshot and of `CheckInterference` (ADR-0189, Next).
+
+New tests: 3. The test list holds 3339 (1950 in `Engine.Tests`, 391 in `3DEngine.Tests`, 995 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.451, 3 product milestones and 3
+entries followed it.
+The failed runs since the entry v0.453, from the API: none.
