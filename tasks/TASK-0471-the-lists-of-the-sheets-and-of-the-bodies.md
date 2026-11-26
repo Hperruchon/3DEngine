@@ -1,7 +1,7 @@
 ---
 id: 0471
 title: The queries GetSheets and GetBodies give an agent the live sheets and the live bodies with their names
-status: Active
+status: Done
 phase: P21
 opened: 2026-11-26
 depends-on: [0470]
@@ -105,7 +105,7 @@ decisions on their shape:
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p21-agent-queries) · v0.454
+Status: Done · commit (the merge of the branch p21-agent-queries) · v0.454
 
 ## Method
 
@@ -141,3 +141,4 @@ Each of the fourteen injections made a named test fail:
   (v0.453). ADR-0189, the two queries, three tests, two examples of the guide. Ledger entry v0.454.
 - 2026-11-26: before the push, the session added register entry R-0080 (the order of the collection) and the count of
   v0.453 from the report of R33 in the correction of the ledger entry.
+- 2026-11-26: run 45897261147 of `3764d952` passed on each job. Closed at v0.454.
