@@ -64,7 +64,14 @@ A probe of TASK-0336 at v0.316 drew the window at eleven sizes in four states an
 5. **The ring on a short display (fault 4, amends ADR-0081).** On a landscape display the inner radius of the ring of a
    body is at most the half of the height between the top of the display and 8 pixels above the anchors, less the band
    and 16 pixels, and at least 100 pixels, as the ring of a sketch (finding V134). A ring that fits keeps its radius and
-   its place, so the layout of the desktop does not change.
+   its place, so the layout of the desktop does not change. TASK-0469 (phase R32b, the answers Q4 A of the owner of
+   2026-11-25 and A of 2026-11-26): when the target of a tool of the landscape ring of the part meets a window above and
+   left of its centre, the ring moves away from the windows. Each segment keeps its angle and the inner radius keeps its
+   value. The span turns down from its start in steps of 0.01 radians, and at each step the centre moves up or down as
+   little as it can, so that each target is under the windows above the centre and over the windows below it. The first
+   step where each target is in the display and meets no window, and no two labels with their icons meet, gives the place.
+   The labels side by side get smaller (ADR-0132 item 2). With no such step the ring keeps its place. A body ring does not
+   move: its tools leave it (ADR-0119 item 2).
 6. **The text of a proposal in the ring (fault 5).** The caption goes inside the ring when a fixed window covers its
    place above the arc, and the lines inside the ring start under a fixed window that covers the first line.
 7. **The units.** The sizes are in the units of the window that the host gives the frame (`SDL_GetWindowSize`). This
@@ -79,7 +86,8 @@ fails the build. R-0058 closes: no tool of the ring is under a panel from 360 by
 **Bad:** on a narrow portrait display the panel is longer, because rows wrap, and the rows of a selected body are further
 down in the scroll. The panel has no ground and covers the middle of the scene on a portrait display, so the body shows
 under its rows; this record does not change that. The test does not cover the home screen, an active sketch, the pad or
-the history arc; ADR-0172 item 5 adds them.
+the history arc; ADR-0172 item 5 adds them. At 640 by 360 the moved ring of the part has its last tools under its centre,
+over the scene, and their labels are 0.50 to 0.73 of the size of the font (item 5, TASK-0469).
 
 ## History
 
@@ -95,3 +103,7 @@ the history arc; ADR-0172 item 5 adds them.
 - 2026-11-24 · TASK-0461 · Item 3 (finding V235, the answer Q8 A of the owner of 2026-11-24): on a landscape display with no
   room for "AGENT IS WAITING" in the top bar, the word is a line of its own under it, and the panel starts under the word, as
   on a portrait display (phase P0.187).
+- 2026-11-26 · TASK-0469 · Item 5 (phase R32b, register entry R-0076, the answers Q4 A of the owner of 2026-11-25 and A of
+  2026-11-26): the landscape ring of the part moves away from the windows of the top left, each segment keeps its angle, and
+  its labels side by side get smaller. At 640 by 360 its centre goes up 44 to 46 pixels and its span turns down 0.94 to 1.30
+  radians.

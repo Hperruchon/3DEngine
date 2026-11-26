@@ -37,7 +37,11 @@ On 2026-11-14 the owner ordered work alone until Sunday, with the recommended op
    right edge of the display, 4 pixels inside the safe area. Each of two neighbours then takes at most half of the distance
    between them, so no label lies on another, and the clamp to the edge moves none. The target of a tap follows the drawn
    label and its icon, at least 44 pixels on each side (ADR-0116 item 1).
-2. **A landscape ring keeps the size of the font**, because its segments are wider than its labels.
+2. **A landscape ring keeps the size of the font**, because its segments are wider than its labels. A landscape ring that moved
+   away from the windows (ADR-0113 item 5) is the exception: its segments under its centre are side by side, so its labels
+   follow item 1. There a neighbour is at the height of a label when their middles are nearer than the height of the icon,
+   the gap and the label, and 2 pixels, so that no label lies on the icon of its neighbour (TASK-0469, the answer A of the
+   owner of 2026-11-26).
 3. **No contract change.** The labels are presentation (ADR-0007).
 
 ## Consequences
@@ -59,3 +63,6 @@ its icon. No person read it on the S23.
 - 2026-11-14 · TASK-0363 · The record, from gap H4 of the comparison at the other sizes, under the order of the owner of
   2026-11-14.
 - 2026-11-14 · TASK-0363 · Shipped at v0.347.
+- 2026-11-26 · TASK-0469 · Item 2, on the answer A of the owner of 2026-11-26 (phase R32b): the labels of a landscape ring
+  that moved away from the windows get smaller by item 1, with the height of the icon in the test of a neighbour. At 640 by
+  360 the labels of the ring of the part are 0.50 to 0.73 of the size of the font, and "New" keeps the size of the font.
