@@ -30,14 +30,20 @@ Each finding has a correction and a test, or a register entry with its reason.
 ## Scope (in)
 
 1. Medium: E242 (after a failed accept, one `Redo` applies the part of the proposal that ran), with the answer Q2 of the owner.
+   The decided correction (Q2 A of the owner, 2026-11-26): the reversal of a failed group puts nothing on the redo list, and the
+   log marks it, so that each walker of the log agrees. An ADR comes in the first commit of this task.
 2. Medium: T197 (a race of the worker and the accept decides
    `A_Commit_That_Does_Not_Change_The_Result_Runs_One_Fork_And_Applies`), with the answer Q3; the exit of register entry R-0078.
+   The decided correction (Q3 A of the owner, 2026-11-26): keep the product rule of ADR-0188 "Bad", so an accept that names the
+   preview before the last one applies nothing, also when the result is equal. The test holds the fork, so that it gives the
+   same answer in each run, and R-0078 closes then.
 3. Low: E243, E244, E245, V236, V237, V238, T198, T199, T200, T201, T202.
 4. ADR-0188 items 5, 7 and 9 and "Bad" say what the code does after the corrections (E242, E245, V237).
 
 ## Scope (out)
 
-- The answers Q1 to Q4 of the review: the first commit of the next task of each records them. Q4 goes to K24.
+- The answers Q1 to Q4 of the review: the first commit of the next task of each records them. Q4 goes to K24. On 2026-11-26 the
+  owner answered "All A, merge it", and TASK-0469 (R32b) records the four answers.
 - The forbid is `Engine.Contracts/**`: when the answer Q2 needs a mark in the log that changes a contract, stop and ask the owner
   first (`CLAUDE.md`, "Stop and ask").
 - The write set holds only this file now. The task adds the files of each correction, and the ADRs that govern them, when it

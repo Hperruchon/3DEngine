@@ -307,23 +307,6 @@ accepts the snapshot and `sheet.created` as the only sources.
 Progress 2026-11-25: the owner answered Q5 A (TASK-0464): add the two queries. Row P21 does the exit, with an ADR and the
 examples of the guide.
 
-### R-0076 · On a landscape phone of 640 by 360 the first segment of a ring of six goes under the windows of the top left
-- class: question
-- opened: 2026-11-21
-- due: 2027-02-19
-- extended: no
-- refs: `3DEngine.App/Ui/DesktopUi.Ring.cs` (`Layout`), `3DEngine.ImageTests/ResponsiveLayoutTests.cs` (state `SixSegments`),
-  ADR-0113 item 5, ADR-0119 item 2, ADR-0184 "Bad", `docs/reviews/2026-11-21-c-codebase-review.md` (T189), TASK-0449
-TASK-0449 added the ring of the part with six segments (New, Sketch, Bodies, Section, Images and Show hidden) to the layout test,
-as finding T189 asks. At 640 by 360 pixels the inner radius is at its floor of 100, each segment keeps 46 pixels at that
-radius (ADR-0119 item 2), so six segments span more than `RingSpan`, the span of four, and "New" goes under the windows of the top left (the test
-measured its label at (352, 60, 397, 86) under the window (16, 56, 376, 114)). Each other size of the test holds the six
-segments. The test leaves out only that fault of that size, with this identifier.
-Exit: the owner says which rule gives way at 640 by 360 (the floor of the inner radius, the width of a segment, the place of the
-ring, or the windows of the top left), and a task removes the exception from `ResponsiveLayoutTests`.
-Progress 2026-11-25: the owner answered Q4 A (TASK-0464): the ring moves away from the windows of the top left, and each
-segment keeps its 46 pixels. Row R32b does the exit.
-
 ### R-0077 · A failed start of the renderer of the images leaks the objects that it made before the failure
 - class: debt
 - opened: 2026-11-24
@@ -348,6 +331,23 @@ NoOp commit gave the state "open", not "accepted" (line 195). The same commit pa
 the commit before it passed on each system. A preview that the commit starts can race the fork of the accept. A red run of
 `main` stops each merge until a person runs it again.
 Exit: a task finds the race and makes the test give the same answer in each run, or the owner accepts the risk.
+Progress 2026-11-26: the owner answered Q3 A of the codebase review of 2026-11-25 (TASK-0469): keep the rule of ADR-0188 "Bad"
+that an accept which names the preview before the last one applies nothing. P0.189 (TASK-0468) makes the test hold the fork, and
+this entry closes then.
+
+### R-0079 · The layout test skips a tool of the ring under a panel as a control that the panel scrolls out of view
+- class: debt
+- opened: 2026-11-26
+- due: 2027-05-25
+- extended: no
+- refs: `3DEngine.ImageTests/ResponsiveLayoutTests.cs` (`Faults`, `Scrolled`), ADR-0113 item 1, ADR-0163 item 4, TASK-0469
+`Faults` skips each item in the columns of a panel and below it, a tool of the ring too, and it reads the middle of an item, not
+its target. With no skip for a tool of the ring, the state Proposal fails at 360 by 560 to 512 by 560 and at 360 by 640: Hide,
+Focus and Dimensions are under the rows (16, 280, 344, 368 at 360 by 560). Until TASK-0469 the skip also hid "Show hidden" on the
+status line at 640 by 360. At 844 by 390 the target of "Show hidden" of a ring of five or six meets the status line
+(483, 326, 828, 374) by about 17 pixels, and its middle does not.
+Exit: a task makes `Faults` check each tool of the ring by its target with no skip, and corrects each fault or records it in an
+ADR, or the owner accepts these cases.
 
 ## Accepted compromises
 
@@ -483,6 +483,30 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0076 · On a landscape phone of 640 by 360 the first segment of a ring of six goes under the windows of the top left
+- class: question
+- opened: 2026-11-21
+- due: 2027-02-19
+- extended: no
+- refs: `3DEngine.App/Ui/DesktopUi.Ring.cs` (`Layout`), `3DEngine.ImageTests/ResponsiveLayoutTests.cs` (state `SixSegments`),
+  ADR-0113 item 5, ADR-0119 item 2, ADR-0184 "Bad", `docs/reviews/2026-11-21-c-codebase-review.md` (T189), TASK-0449
+TASK-0449 added the ring of the part with six segments (New, Sketch, Bodies, Section, Images and Show hidden) to the layout test,
+as finding T189 asks. At 640 by 360 pixels the inner radius is at its floor of 100, each segment keeps 46 pixels at that
+radius (ADR-0119 item 2), so six segments span more than `RingSpan`, the span of four, and "New" goes under the windows of the top left (the test
+measured its label at (352, 60, 397, 86) under the window (16, 56, 376, 114)). Each other size of the test holds the six
+segments. The test leaves out only that fault of that size, with this identifier.
+Exit: the owner says which rule gives way at 640 by 360 (the floor of the inner radius, the width of a segment, the place of the
+ring, or the windows of the top left), and a task removes the exception from `ResponsiveLayoutTests`.
+Progress 2026-11-25: the owner answered Q4 A (TASK-0464): the ring moves away from the windows of the top left, and each
+segment keeps its 46 pixels. Row R32b does the exit.
+Closed 2026-11-26 · resolved · TASK-0469, v0.452. The answer Q4 A of the owner of 2026-11-25 lets the place of the ring give way,
+and the answer A of 2026-11-26 lets the labels side by side get smaller. When a target of a tool of the landscape ring of the
+part meets a window above and left of its centre, the span turns down and the centre moves up or down, until no target meets a
+window and no two labels meet (ADR-0113 item 5, ADR-0132 item 2). At 640 by 360 the ring of six has its centre 46 pixels
+higher and its span turned 1.30 radians, and "New" is at (430, 156, 475, 182). Each segment keeps its angle of 0.42 radians:
+that is 42 pixels at the inner radius of 100, not 46 as this entry said. `ResponsiveLayoutTests` has no exception, and with
+the rule removed the case of 640 by 360 fails.
 
 ### R-0072 · On a portrait phone of 360 pixels with a sheet, "N hidden" on the path line still goes under "Views"
 - class: question

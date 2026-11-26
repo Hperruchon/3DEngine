@@ -104,8 +104,8 @@ stays, the pad, how the cut is made, the look of the cap, the bodies that the pl
     five panels of the bookcase of K10a, a mesh body, the hatch, and the pictures of the bookcase. The layout test of ADR-0172
     item 5 gets the state Section. TASK-0449 (finding T189): `SectionViewTests` holds the cuts with the hook `RunCut` for item
     5, and the layout test gets the state `SixSegments`, the ring of the part with New, Sketch, Bodies, Section, Images and
-    Show hidden. At 640 by 360 pixels the first segment of that ring goes under the windows of the top left (register entry
-    R-0076).
+    Show hidden. At 640 by 360 pixels that ring moves away from the windows of the top left (ADR-0113 item 5, TASK-0469), and the
+    state has no exception.
 
 ## Consequences
 
@@ -154,3 +154,6 @@ to learn. The ring of the part has one segment more, so a portrait ring with "Im
   tests of item 5 and of the ring of six segments (T189).
 - 2026-11-24 · TASK-0461 · Item 5 with no change of the item (finding V233 of the codebase review of 2026-11-23): a body that
   leaves the section and comes back while its cut runs waits for that cut, so it still runs one cut at a time (phase P0.187).
+- 2026-11-26 · TASK-0469 · Item 11 with no change of the decision: the sentence on 640 by 360 said that the first segment of the
+  ring of six goes under the windows of the top left; the ring now moves away from them (ADR-0113 item 5, phase R32b), and
+  R-0076 is closed.

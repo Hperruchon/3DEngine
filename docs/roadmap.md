@@ -586,6 +586,8 @@ Therefore each approved objective must have a track here.
 - K10b — The support of the lamp is a builder of seven bodies with stand-in sizes, and its gaps are the rows K23 and K24.
   v0.450, TASK-0466.
 - Review — The codebase review of 2026-11-25. v0.451, TASK-0467.
+- R32b — On a landscape phone of 640 by 360 the ring of the part moves away from the windows of the top left, and its labels
+  side by side get smaller. v0.452, TASK-0469, ADR-0113, ADR-0132.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -959,7 +961,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R31a | The left panel leaves (the study of the left panel of 2026-11-18, the choice of the owner "B plus C"): with no selection the ring gives the tools of the part ("New", "Sketch", "Bodies", "Images") with a second level for "New" and "Sketch"; the file name of the path line opens a menu of the four file actions; "Dimensions" and "Hidden too" go to the net of the views; a structure view, folded to one row and with a ground when open, takes the place of the panel (ADR-0174). TASK-0419. | 2–3 |
 | R31b | The rows of the structure view are 30 pixels high for a mouse or a pen and 44 pixels on a phone, with the setting "Compact" or "For touch" (the choice of the owner "B, 30 px" of 2026-11-18); a record that amends ADR-0027 item 6 for lists. After R31a. ADR-0175, TASK-0420. | 1–2 |
 | R32a | At a portrait width of 360 pixels with a sheet, "N hidden" leaves the path line, and the ring keeps it as "Show hidden" (R-0072, Q3 A of 2026-11-25). `With_A_Sheet_The_Path_Line_And_The_Top_Bar_End_Left_Of_Views` passes at 360 pixels, and the record amends ADR-0178 item 2. After P0.188. TASK-0465. | 1 |
-| R32b | On a landscape phone of 640 by 360, a ring of six segments moves away from the windows of the top left, and each segment keeps its 46 pixels (R-0076, Q4 A of 2026-11-25). `ResponsiveLayoutTests` has no exception for the state `SixSegments`, and the record amends the ADR item that places the ring. After R32a. | 1 |
+| R32b | On a landscape phone of 640 by 360, a ring of six segments moves away from the windows of the top left, and each segment keeps its 46 pixels (R-0076, Q4 A of 2026-11-25). `ResponsiveLayoutTests` has no exception for the state `SixSegments`, and the record amends the ADR item that places the ring. After R32a. Done at v0.452: the span turns down and the centre moves up, each segment keeps its angle of 0.42 radians (42 pixels at the inner radius of 100, not 46), and the labels side by side get smaller (the answer A of the owner of 2026-11-26); ADR-0113 item 5 and ADR-0132 item 2. TASK-0469. | 1 |
 | R33 | Two answers of 2026-11-25 to ADR-0187 "Bad": while a preview shows, the outline of the selected body takes a colour apart from the amber of a proposal (Q6 A), and the new shape in "After" has a faint amber fill (Q7 A). After R25. | 1 |
 
 ## Track K — The kernel
@@ -1029,7 +1031,7 @@ boundary and each refused rung.
 | K21 | A linear and a grid pattern of a body; a radial pattern records a quaternion for each copy, as `Rotate` does. With P20 each copy is an instance. After P20. | 2 |
 | K22 | The flat chamfer of one edge between two plane faces (kernel boundary: flat chamfer; no edge chain, anti-objective 11). After R24. | to estimate |
 | K23 | A hole command: a hole of a diameter and a depth, through or blind, on a plane face at a point, as one step of the log. K10b makes each hole by a `Subtract` of a cylinder that `CreateCylinder` centres on the origin, so a blind hole needs a computed move. A new command is a new record of the log (ADR-0016), so its ADR comes in the same commit; the ADR decides if the thread waits for P19. After K10b. | to estimate |
-| K24 | The pair check of bodies with holes: the bound of work of ADR-0182 item 8 refuses 8 of the 21 pairs of the case of the lamp (K10b) with `E-CHECK-WORK-LIMIT`, from 126,968 to 2,801,550 products of pieces for one pair, above the limit of 100,000, and 6,133,070 for the whole case. Three of the refused pairs are intended contacts of the mount. The ADR decides between fewer pieces for a body with a hole and a larger bound with a time limit, and amends ADR-0182 item 8; `LampSupportCaseTests` then gives the class of each pair. After K10b; before K12, which checks the travel of the pivot of this case. | to estimate |
+| K24 | The pair check of bodies with holes: the bound of work of ADR-0182 item 8 refuses 8 of the 21 pairs of the case of the lamp (K10b) with `E-CHECK-WORK-LIMIT`, from 126,968 to 2,801,550 products of pieces for one pair, above the limit of 100,000, and 6,133,070 for the whole case. Three of the refused pairs are intended contacts of the mount. The ADR decides between fewer pieces for a body with a hole and a larger bound with a time limit, and amends ADR-0182 item 8; it also amends ADR-0188 item 8 and decides the bound of one preview with the bound of one pair (the answer Q4 A of the owner of 2026-11-26 to the codebase review of 2026-11-25); `LampSupportCaseTests` then gives the class of each pair. After K10b; before K12, which checks the travel of the pivot of this case. | to estimate |
 
 ## Track V — Machine vision
 
@@ -1155,6 +1157,9 @@ The tracks are not strictly sequential, but three rules hold:
    The codebase review of 2026-11-25 (TASK-0467) comes after K10b and puts P0.189 (TASK-0468), which holds medium and low
    findings, after the next product phase, R32b. Its question Q1 asks the owner if R32b stays next; Q2 to Q4 decide the
    corrections of E242, T197 and the bound of K24.
+   On 2026-11-26 the owner answered "All A, merge it" to Q1 to Q4 of that review. Q1 A: R32b (TASK-0469) is the next product
+   phase, and then R33, P21, K17 and P11; P0.189 comes after R32b. Q2 A and Q3 A decide the corrections of E242 and T197 in
+   TASK-0468, and Q4 A goes to row K24.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase

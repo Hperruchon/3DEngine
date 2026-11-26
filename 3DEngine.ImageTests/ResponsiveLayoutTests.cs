@@ -356,13 +356,65 @@ public sealed class ResponsiveLayoutTests
             }
         }
 
-        // Register entry R-0076 (TASK-0449): on a landscape phone of 640 by 360 the first segment of a ring of six, "New", goes
-        // under the windows of the top left. The owner says which rule of the ring gives way; until then the state keeps each
-        // other fault of that size.
-        if (state == State.SixSegments && (width, height) == (640, 360))
-            faults.RemoveAll(fault => fault.StartsWith("Ring", StringComparison.Ordinal) && fault.Contains(":New (", StringComparison.Ordinal) && fault.Contains("is under the window", StringComparison.Ordinal));
-
+        // Register entry R-0076 (TASK-0449) gave the state SixSegments an exception at 640 by 360: "New" went under the windows of
+        // the top left. TASK-0469 (phase R32b) moves the ring away from them (ADR-0113 item 5), so no state has an exception.
         return faults;
+    }
+
+    // ADR-0113 item 5 (phase R32b, TASK-0469; the answer Q4 A of the owner of 2026-11-25, register entry R-0076): on a landscape
+    // phone of 640 by 360 the ring of the part with five or six segments moves away from the windows of the top left. Each segment
+    // keeps the angle of Layout and the inner radius its floor, the target of each tool is in the display and meets no window, and
+    // no two faces (a label with its icon) meet, because the labels side by side get smaller (ADR-0132 item 2, the answer A of the
+    // owner of 2026-11-26). At 844 by 390 the ring of six meets no window of the top left, so it keeps the start of Layout. Until
+    // TASK-0469 "New" of the ring of six went under the windows of the top left at 640 by 360, and the last tool of a ring of five
+    // or six was on the status line; Faults did not see the second fault, because its rule of a scrolled control skips a tool
+    // under the structure view (register entry R-0079).
+    [Theory]
+    [InlineData(640, 360, State.SixSegments, true)]
+    [InlineData(640, 360, State.Hidden, true)]
+    [InlineData(844, 390, State.SixSegments, false)]
+    public void The_Ring_Of_The_Part_Moves_Away_From_The_Windows_Of_The_Top_Left(int width, int height, State state, bool moves)
+    {
+        using var ui = new DesktopUi(string.Empty, Document.Millimetre);
+        var display = new Vector2(width, height);
+        var images = state == State.SixSegments ? new ImagePanel([], null, 0, null) : null;
+        for (var i = 0; i < 3; i++)
+            ui.Frame(1f / 60f, display, Vector2.One, [Plate, Rib, Back], null, Shelf, imagePanel: images, ringBody: 120f);
+
+        var ring = ui.RingLayoutOfFrame ?? throw new InvalidOperationException($"{width}x{height}: no ring.");
+        var count = state == State.SixSegments ? 6 : 5;
+        Assert.Equal(count, ui.RingLabels.Count);
+        Assert.Equal(100f, ring.Inner);
+        Assert.Equal(DesktopUi.RingSegment, ring.Segment);
+        var start = -((count * DesktopUi.RingSegment) + ((count - 1) * 0.04f)) / 2f;
+        if (moves)
+            Assert.True(ring.Start > start + 0.5f, $"{width}x{height} {state}: the span starts at {ring.Start}, as Layout gives it ({start}).");
+        else
+            Assert.Equal(start, ring.Start, 0.0001f);
+
+        var windows = ui.PanelRectangles.Concat(ui.FixedRectangles).ToList();
+        foreach (var label in ui.RingLabels)
+        {
+            var target = ui.RingTarget(label) ?? throw new InvalidOperationException($"{width}x{height}: no target of {label}.");
+            Assert.True(target.X >= 0f && target.Y >= 0f && target.Z <= width && target.W <= height, $"{width}x{height} {state}: the target of {label} at {Text(target)} goes out of the display.");
+            if (moves)
+                Assert.False(windows.Any(window => Overlap(window, target)), $"{width}x{height} {state}: the target of {label} at {Text(target)} meets the window {Text(windows.FirstOrDefault(window => Overlap(window, target)))}.");
+        }
+
+        // The face of each tool of a moved ring: its label and its icon. A ring that does not move keeps the faces of Layout.
+        if (!moves)
+            return;
+        var faces = ui.RingLabels.Select(label =>
+        {
+            var text = ui.ItemRectangle(DesktopUi.RingTextItem(label)) ?? throw new InvalidOperationException($"{width}x{height}: no label {label}.");
+            var icon = ui.ItemRectangle(DesktopUi.RingIconItem(label)) ?? text;
+            return (Label: label, Box: new Vector4(Math.Min(text.X, icon.X), Math.Min(text.Y, icon.Y), Math.Max(text.Z, icon.Z), Math.Max(text.W, icon.W)));
+        }).ToList();
+        for (var i = 0; i < faces.Count; i++)
+        {
+            for (var j = i + 1; j < faces.Count; j++)
+                Assert.False(Overlap(faces[i].Box, faces[j].Box), $"{width}x{height} {state}: {faces[i].Label} at {Text(faces[i].Box)} meets {faces[j].Label} at {Text(faces[j].Box)}.");
+        }
     }
 
     // ADR-0113 item 1: the pictures for the owner at the phone sizes and the smallest landscape display, with a selected body,

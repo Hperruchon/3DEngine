@@ -30,8 +30,9 @@ internal sealed unsafe partial class DesktopUi
     internal sealed record RingSegmentLayout(string Label, float From, float To);
 
     // The place and the size of the ring for a display: its centre, its inner radius, the angle of its first segment, and
-    // the angle of one segment.
-    internal sealed record RingLayout(Vector2 Centre, float Inner, float Start, float Direction, float Segment = RingSegment)
+    // the angle of one segment. ADR-0113 item 5 (phase R32b, TASK-0469): Moved is true for a landscape ring that moved away from
+    // the windows, whose labels side by side get smaller (ADR-0132 item 2).
+    internal sealed record RingLayout(Vector2 Centre, float Inner, float Start, float Direction, float Segment = RingSegment, bool Moved = false)
     {
         public float Outer => Inner + RingBand;
 
@@ -238,29 +239,100 @@ internal sealed unsafe partial class DesktopUi
         return new Vector4(centre.X - half.X, centre.Y - half.Y, centre.X + half.X, centre.Y + half.Y);
     }
 
+    // ADR-0116 item 1: the target of a tap of a segment of a ring of a body or of the part, from the face of the segment: the box
+    // of its label and of its icon, grown by TargetOf.
+    private Vector4 TargetOfFace(RingLayout ring, RingSegmentLayout segment, (Vector2 Place, Vector2? Icon, bool Plate) face, Vector2 displaySize, IReadOnlyList<string> labels)
+    {
+        var box = FaceBox(ring, segment, face, displaySize, labels);
+        return TargetOf(new Vector2(box.X, box.Y), new Vector2(box.Z, box.W));
+    }
+
+    // The box of the label and of the icon of a segment.
+    private Vector4 FaceBox(RingLayout ring, RingSegmentLayout segment, (Vector2 Place, Vector2? Icon, bool Plate) face, Vector2 displaySize, IReadOnlyList<string> labels)
+    {
+        var text = RingTextSize(ring, segment, displaySize, labels).Text;
+        var (min, max) = (face.Place, face.Place + text);
+        if (face.Icon is { } icon)
+            (min, max) = (Vector2.Min(min, icon - new Vector2(IconHalf)), Vector2.Max(max, icon + new Vector2(IconHalf)));
+        return new Vector4(min.X, min.Y, max.X, max.Y);
+    }
+
+    // ADR-0113 item 5: the most steps of 0.01 radians that the span of a ring turns to move away from the windows, a quarter turn.
+    internal const int AwayTurnSteps = 157;
+
+    // ADR-0113 item 5 (phase R32b, TASK-0469; the answer Q4 A of the owner of 2026-11-25, register entry R-0076): when the target
+    // of a tool of the landscape ring of the part meets a window of the top left of this frame (a window above and left of the
+    // centre), the ring moves away from the windows. Each segment keeps its angle, and the inner radius keeps its value. The span
+    // turns down from its start in steps of 0.01 radians. At each step the centre moves up or down as little as it can, so that
+    // each target is under the bottom of each window above the centre and over the top of each window below it. The first step
+    // where no target meets a window, each target is in the display and no two faces meet gives the place; with no such step
+    // the ring keeps the place of Layout. A ring whose targets meet no window of the top left keeps its place. On the moved ring
+    // the labels side by side get smaller (ADR-0132 item 2, the answer A of the owner of 2026-11-26). Until TASK-0469, at 640 by
+    // 360 "New" of the ring of the part with six segments was under the windows of the top left, and the last tool of a ring of
+    // five or six segments was on the status line.
+    private RingLayout AwayFromWindows(RingLayout ring, IReadOnlyList<string> labels, Vector2 displaySize)
+    {
+        var windows = _panels.Concat(_fixed).ToList();
+        List<(Vector4 Face, Vector4 Target)> Boxes(RingLayout trial) => [.. trial.Segments(labels).Select(segment =>
+        {
+            var face = FaceBox(trial, segment, SegmentFace(trial, segment, displaySize, false, labels), displaySize, labels);
+            return (face, TargetOf(new Vector2(face.X, face.Y), new Vector2(face.Z, face.W)));
+        })];
+        bool Free(RingLayout trial)
+        {
+            var boxes = Boxes(trial);
+            return boxes.All(box => box.Target.X >= 0f && box.Target.Y >= 0f && box.Target.Z <= displaySize.X && box.Target.W <= displaySize.Y
+                    && !windows.Any(window => Meets(window, box.Target)))
+                && boxes.Select((box, i) => boxes.Skip(i + 1).All(other => !Meets(box.Face, other.Face))).All(apart => apart);
+        }
+
+        var topLeft = windows.Where(window => window.W < ring.Centre.Y && window.X < ring.Centre.X).ToList();
+        if (!Boxes(ring).Any(box => topLeft.Any(window => Meets(window, box.Target))))
+            return ring;
+        var above = windows.Where(window => window.W < ring.Centre.Y).Select(window => window.W).DefaultIfEmpty(_inset.Y).Max();
+        var below = windows.Where(window => window.Y > ring.Centre.Y).Select(window => window.Y).DefaultIfEmpty(displaySize.Y - _inset.W).Min();
+        for (var step = 1; step <= AwayTurnSteps; step++)
+        {
+            var turned = ring with { Start = ring.Start + (step * 0.01f), Moved = true };
+            var targets = Boxes(turned).Select(box => box.Target).ToList();
+            var (low, high) = (above - targets.Min(target => target.Y), below - targets.Max(target => target.W));
+            if (low > high)
+                continue;
+            var moved = turned with { Centre = turned.Centre + new Vector2(0f, Math.Clamp(0f, low, high)) };
+            if (Free(moved))
+                return moved;
+        }
+
+        return ring;
+    }
+
     // ADR-0132 item 1 (phase R18l, TASK-0363): on the corner ring of a portrait display the segments near its top are side by
     // side, so a label is drawn smaller, down to RingTextMinimum of the size of the font, until it is no wider than the
     // horizontal distance to the middle of each neighbour that is at its height, and until its half fits between its middle and
     // the right edge of the display. Thus no label lies on another, and the clamp to the edge moves none. Until TASK-0363
-    // "Dimensions" lay on "Focus". A landscape ring keeps the size of the font.
+    // "Dimensions" lay on "Focus". A landscape ring keeps the size of the font, except a ring that moved away from the windows
+    // (ADR-0113 item 5, phase R32b, TASK-0469, the answer A of the owner of 2026-11-26): its segments under its centre are side
+    // by side too, so its labels follow the same rule. A neighbour is at the height of a label there when their middles are
+    // nearer than the height of the icon, the gap and the label, so that no label lies on the icon of its neighbour either.
     internal const float RingTextMinimum = 0.5f;
 
     private (Vector2 Text, float Size) RingTextSize(RingLayout ring, RingSegmentLayout segment, Vector2 displaySize, IReadOnlyList<string> labels)
     {
         var size = ImGui.GetFontSize();
         var text = ImGui.CalcTextSize(SegmentText(segment.Label));
-        if (!Portrait(displaySize) || text.X <= 0f)
+        if ((!Portrait(displaySize) && !ring.Moved) || text.X <= 0f)
             return (text, size);
         var segments = ring.Segments(labels);
         var at = segments.ToList().FindIndex(other => other.Label == segment.Label);
         var middle = ring.Middle(segment);
         var room = 2f * (displaySize.X - _inset.Z - 4f - middle.X);
+        var height = ring.Moved && RingIconLabels.Contains(segment.Label) ? (2f * IconHalf) + IconGap + text.Y : text.Y;
         foreach (var index in new[] { at - 1, at + 1 })
         {
             if (index < 0 || index >= segments.Count)
                 continue;
             var other = ring.Middle(segments[index]);
-            if (Math.Abs(other.Y - middle.Y) < text.Y + 2f)
+            if (Math.Abs(other.Y - middle.Y) < height + 2f)
                 room = Math.Min(room, Math.Abs(other.X - middle.X) - 4f);
         }
 
@@ -269,10 +341,10 @@ internal sealed unsafe partial class DesktopUi
     }
 
     // The place of the label of a segment, the centre of its icon or null, and true when the label has a plate (ADR-0087 item 5).
-    private (Vector2 Place, Vector2? Icon, bool Plate) SegmentFace(RingLayout ring, RingSegmentLayout segment, Vector2 displaySize, bool sketchRing)
+    private (Vector2 Place, Vector2? Icon, bool Plate) SegmentFace(RingLayout ring, RingSegmentLayout segment, Vector2 displaySize, bool sketchRing, IReadOnlyList<string> labels)
     {
         var middle = ring.Middle(segment);
-        var text = RingTextSize(ring, segment, displaySize, _ringLabels).Text;
+        var text = RingTextSize(ring, segment, displaySize, labels).Text;
         // The review of Codex of v0.251 (TASK-0271): a label at the edge of a portrait display stays 4 pixels inside the
         // safe area; until TASK-0271 the label "Sketch on face" of the fourth segment went past the right edge.
         var place = middle - (text / 2f);
@@ -426,19 +498,15 @@ internal sealed unsafe partial class DesktopUi
         var ring = sketchRing
             ? SketchLayout(displaySize, at, labels.Count, size, _sketchWindow?.Z ?? 0f, Portrait(displaySize) ? 0f : 16f + _inset.Y + MinimumControlHeight + 8f)
             : Layout(displaySize, at, labels.Count, size, _inset, _anchorsTop);
+        // ADR-0113 item 5 (phase R32b, TASK-0469): the landscape ring of the part moves away from the windows of the top left.
+        if (!_sketchActive && _partRing && !Portrait(displaySize))
+            ring = AwayFromWindows(ring, labels, displaySize);
         _ring = ring;
         _ringLabels = labels;
         // ADR-0116 item 1 (phase R20a, TASK-0341): the face of each segment, and on a body ring the target of its tap. A ring of a
         // sketch keeps its whole band as the target (ADR-0086).
-        var faces = ring.Segments(labels).Select(segment => (Segment: segment, Face: SegmentFace(ring, segment, displaySize, sketchRing))).ToList();
-        _ringTargets = _sketchActive ? null : faces.ToDictionary(entry => entry.Segment.Label, entry =>
-        {
-            var text = RingTextSize(ring, entry.Segment, displaySize, labels).Text;
-            var (min, max) = (entry.Face.Place, entry.Face.Place + text);
-            if (entry.Face.Icon is { } icon)
-                (min, max) = (Vector2.Min(min, icon - new Vector2(IconHalf)), Vector2.Max(max, icon + new Vector2(IconHalf)));
-            return TargetOf(min, max);
-        });
+        var faces = ring.Segments(labels).Select(segment => (Segment: segment, Face: SegmentFace(ring, segment, displaySize, sketchRing, labels))).ToList();
+        _ringTargets = _sketchActive ? null : faces.ToDictionary(entry => entry.Segment.Label, entry => TargetOfFace(ring, entry.Segment, entry.Face, displaySize, labels));
         // Finding V186 of the codebase review of 2026-11-14 (d) (TASK-0373): while a proposal waits, a tool whose target lies on an
         // end of the arc of the last frame, or on its word, does not show and takes no tap; it shows again after the accept or
         // the reject. The arc takes the tap there first (finding V160), so the tool took no tap before either, and its picture

@@ -14220,3 +14220,60 @@ in `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0. Thi
 milestones and 0 entries follow it.
 The failed runs since the entry v0.450, from the API: 45706338430 (`26d32264`, this review: T201 on Windows) and 45707816188 (`d9f34c4f`, this
 review: T202 on Ubuntu).
+
+## v0.452 — On a landscape phone the ring of the part moves away from the windows of the top left, and its labels side by side get smaller (R32b, TASK-0469)
+
+On 2026-11-26 the owner answered "All A, merge it" to Q1 to Q4 of the codebase review of 2026-11-25 and ordered "Start R32b". The
+branch `r32b-ring-landscape` starts from `origin/main` at `8f0ee112` (v0.451). The row does the exit of register entry R-0076 on
+the answer Q4 A of the owner of 2026-11-25.
+
+**The answers of the review of 2026-11-25.**
+- Q1 A: R32b is the next product phase, then R33, P21, K17 and P11; P0.189 comes after R32b. A sentence in the section "Order" of
+  the roadmap.
+- Q2 A (E242): the reversal of a failed group puts nothing on the redo list, with a mark in the log and an ADR. TASK-0468 records it
+  as the decided correction.
+- Q3 A (T197): keep the rule of ADR-0188 "Bad"; P0.189 makes the test hold the fork, and R-0078 closes then. TASK-0468 records it,
+  and R-0078 has a progress line.
+- Q4 A: the ADR of K24 also amends ADR-0188 item 8. Row K24 holds it.
+
+**The change.** At 640 by 360 the ring of the part with six tools had its inner radius at the floor of 100. "New" was under the
+top bar and the structure view, and "Show hidden" was on the status line; the layout test did not see the second fault, because
+its rule of a scrolled control skips a tool of the ring under the structure view. A move to the right puts "New" under the command
+line, and a turn alone puts the last tools on the status line. Now `DesktopUi.AwayFromWindows` acts when a target of a tool of the
+landscape ring of the part meets a window above and left of its centre. The span turns down in steps of 0.01 radians, and the centre
+moves up or down as little as it can, until each target is in the display and meets no window, and no two labels with their icons
+meet. Each segment keeps its angle of 0.42 radians and the inner radius its 100 pixels.
+
+A first form kept the labels at the size of the font, and the tools under the centre met: "Images" and "Section" by 13 pixels with
+six tools, and "Show hidden" on "Section" by 41 pixels with five. A search of a model of the layout found no place with labels at
+the size of the font. The owner saw the pictures and answered "A: smaller labels" on 2026-11-26. On a moved ring the labels side by
+side follow the rule of the corner ring (ADR-0132 item 1), with the height of the icon in the test of a neighbour. At 640 by 360
+with six tools the centre goes from (320, 184) to (320, 137.6), the start from -1.36 to -0.06 radians, and "New" from
+(352, 60, 397, 86) to (430, 156, 475, 182). The scales of the labels are: New 1.00, Sketch 0.60, Bodies 0.62, Section 0.73,
+Images 0.62 and Show hidden 0.50. With five tools: start -0.19, centre y 139.9, and Sketch 0.52, Bodies 0.53, Section 0.70 and
+Show hidden 0.50. ADR-0113 item 5 and ADR-0132 item 2 hold the rule, and ADR-0184 item 11 loses the sentence on R-0076.
+
+Correction: R-0076 and row R32b said that each segment keeps 46 pixels. The cap of ADR-0119 item 2 is 0.42 radians, which is 42
+pixels at the inner radius of 100. This task keeps the angle.
+
+**Proof.** `ResponsiveLayoutTests` has no exception. The new theory
+`The_Ring_Of_The_Part_Moves_Away_From_The_Windows_Of_The_Top_Left` holds 640 by 360 with six and five tools (each target in the
+display and free of the windows, no two faces meet, 0.42 radians, inner radius 100) and 844 by 390 (the start of `Layout`). With
+the rule removed, three tests fail: the two cases of 640 by 360 and `Each_Control_Stays_In_The_Display_And_Free_For_A_Tap(640,
+360)`, with "New" under (16, 56, 376, 114). With the labels at the size of the font, the same three tests fail. With no test of the
+faces in the search, the case of six fails ("Images" meets "Show hidden"). A dump of the 8,670 layouts of the two theories of each
+size and state, before and after, differs in three only: the ring of the part at 640 by 360 in the states Images, Hidden and
+SixSegments. The 110 tests of `ResponsiveLayoutTests`, `PartRingTests`, `ShowHiddenTests`, `RingToolsTests` and
+`SectionViewTests` pass. A clean build gives 0 warnings, the phone project builds with 0 warnings, `dotnet test` passes 3277 tests
+with 56 image tests skipped by `CI=true`, `eng/count-tests.js` accepts the counts, and the write-set check and `eng/repo-gates`
+pass. Pictures off screen, before and after, are in the folder `r32b\pictures` of the temporary folder of the owner. Not verified:
+continuous integration has not run, and no person read the small labels on the phone.
+
+New register entry R-0079: `Faults` skips a tool of the ring under a panel and reads the middle of an item, not its target. With no
+skip, the state Proposal fails at 360 by 560 to 512 by 560 and at 360 by 640; at 844 by 390 the target of "Show hidden" meets the
+status line by about 17 pixels.
+
+New tests: 3. The test list holds 3333 (1947 in `Engine.Tests`, 390 in `3DEngine.Tests`, 993 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.451, 1 product milestone and 1
+entry followed it.
+The failed runs since the entry v0.451, from the API: none.
