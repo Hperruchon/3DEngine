@@ -1,7 +1,7 @@
 ---
 id: 0469
 title: On a landscape phone the ring of the part moves away from the windows of the top left, and its labels side by side get smaller
-status: Active
+status: Done
 phase: R32b
 opened: 2026-11-26
 depends-on: [0467]
@@ -100,6 +100,10 @@ segment keeps its angle.
 - `SegmentFace` takes the labels as an argument now. Before, it read `_ringLabels`, which is empty while the ring of the frame is
   not set, so a search of a place would not see the neighbours.
 
+## Outcome
+
+Status: Done · commit (the merge of the branch r32b-ring-landscape) · v0.452
+
 ## Method
 
 Mechanical: the test of the owner's case, from the register entry; the boxes of each window and each tool of the frame.
@@ -114,3 +118,4 @@ Weakest:    "Show hidden" is at the half of the size of the font at 640 by 360, 
 - 2026-11-26: opened on the order of the owner "Start R32b", branch `r32b-ring-landscape` from `origin/main` at `8f0ee112`
   (v0.451). The first form moved the ring with labels at the size of the font; the labels side by side met. The owner answered
   "A: smaller labels".
+- 2026-11-26: run 45879225287 of `4b48c5a7` passed on each job. Closed at v0.452.
