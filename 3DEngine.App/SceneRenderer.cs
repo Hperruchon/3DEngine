@@ -47,6 +47,10 @@ internal sealed unsafe class SceneRenderer : IDisposable
     internal const float SelectedEdgeHalfWidth = 1.0f;
     internal const float HiddenDash = 6f;
 
+    // ADR-0109 item 3: the transparent fill of the selected body, the colour of the selection at alpha 0.25. ADR-0187 item 9
+    // (phase R33, TASK-0470): the renderer gives it to highlight.frag; until TASK-0470 it was a constant of the shader.
+    internal static readonly System.Numerics.Vector4 SelectedFill = SelectedEdgeColour with { W = 0.25f };
+
     // The images of the scene, each on a quad (ADR-0043, phase V1a).
     private readonly ImageRenderer _images;
 
@@ -71,7 +75,7 @@ internal sealed unsafe class SceneRenderer : IDisposable
     // ADR-0187 item 5 (phase R25, TASK-0462): the preview of the shown proposal that the window gives before each frame, or
     // null; the meshes of its shapes; and the draws of its shapes in one frame. The new shapes are dashed lines in the amber of
     // a proposal (DesktopUi.DimensionColour, #ffa040), at full alpha where they are in front of the scene and at
-    // PreviewHiddenAlpha behind it, so a shape inside a body still shows.
+    // PreviewHiddenAlpha behind it, so a shape inside a body still shows. Until TASK-0470 a shape had no fill.
     public PreviewDraw? ProposalPreview { get; set; }
 
     private readonly PreviewMeshes _preview = new();
@@ -81,6 +85,15 @@ internal sealed unsafe class SceneRenderer : IDisposable
     internal const float PreviewHalfWidth = 1.0f;
     internal const float PreviewDash = 5f;
     internal const float PreviewHiddenAlpha = 0.45f;
+
+    // ADR-0187 item 9 (phase R33, TASK-0470, Q6 A and Q7 A of 2026-11-25): while a preview shows, the selected body takes the
+    // accent of the theme (Theme.Accent, #30eaff) for its edges and its fill, apart from the amber of a proposal. In the mode
+    // "After" each new shape has a faint fill in the amber of its lines, at PreviewFillAlpha. The accent is packed as Dear
+    // ImGui packs a colour: alpha, blue, green, red from the high byte.
+    internal static readonly System.Numerics.Vector4 PreviewSelectedEdgeColour = new(
+        (Ui.Theme.Accent & 0xFF) / 255f, ((Ui.Theme.Accent >> 8) & 0xFF) / 255f, ((Ui.Theme.Accent >> 16) & 0xFF) / 255f, 1f);
+    internal static readonly System.Numerics.Vector4 PreviewSelectedFill = PreviewSelectedEdgeColour with { W = 0.25f };
+    internal const float PreviewFillAlpha = 0.15f;
 
     // ADR-0187 item 5: the shapes of the preview, for a test.
     internal PreviewMeshes PreviewMeshes => _preview;
@@ -93,7 +106,8 @@ internal sealed unsafe class SceneRenderer : IDisposable
         _executor = new DrawListExecutor(device, _pipeline);
         _highlight = new RenderPipeline(device, renderPass, "mesh.vert", "highlight.frag", highlight: true);
         _highlighter = new DrawListExecutor(device, _highlight);
-        _depth = new RenderPipeline(device, renderPass, "mesh.vert", "highlight.frag", depthOnly: true);
+        // ADR-0187 item 9 (TASK-0470): the depth pipeline writes no colour, so it takes mesh.frag, which reads no tint.
+        _depth = new RenderPipeline(device, renderPass, "mesh.vert", "mesh.frag", depthOnly: true);
         _depthWriter = new DrawListExecutor(device, _depth);
         _edges = new EdgePipeline(device, renderPass, hidden: false);
         _hiddenEdges = new EdgePipeline(device, renderPass, hidden: true);
@@ -288,10 +302,12 @@ internal sealed unsafe class SceneRenderer : IDisposable
 
         if (_selected.Count > 0)
         {
+            // ADR-0187 item 9 (TASK-0470): while a preview shows, the colour of the selection is the accent.
+            var (edge, fill) = ProposalPreview is null ? (SelectedEdgeColour, SelectedFill) : (PreviewSelectedEdgeColour, PreviewSelectedFill);
             _depthWriter.Execute(commandBuffer, extent, _selected, _meshes, projection);
-            _highlighter.Execute(commandBuffer, extent, _selected, _meshes, projection);
-            _hiddenEdges.Execute(commandBuffer, extent, _selected, _meshes, projection, SelectedEdgeColour, SelectedEdgeHalfWidth, HiddenDash);
-            _edges.Execute(commandBuffer, extent, _selected, _meshes, projection, SelectedEdgeColour, SelectedEdgeHalfWidth, 0f);
+            _highlighter.Execute(commandBuffer, extent, _selected, _meshes, projection, fill);
+            _hiddenEdges.Execute(commandBuffer, extent, _selected, _meshes, projection, edge, SelectedEdgeHalfWidth, HiddenDash);
+            _edges.Execute(commandBuffer, extent, _selected, _meshes, projection, edge, SelectedEdgeHalfWidth, 0f);
         }
 
         // ADR-0187 item 5: the new shapes of the preview last, over each body, in dashed amber lines: behind the scene at a lower
@@ -302,6 +318,13 @@ internal sealed unsafe class SceneRenderer : IDisposable
             SceneWalker.Fill(_preview.Scene, camera, Focus is { } shapeFocus ? new FocusList(_previewList, PreviewMeshes.MeshId(shapeFocus)) : _previewList);
             _hiddenEdges.Execute(commandBuffer, extent, _previewList.Records, _meshes, projection, PreviewColour with { W = PreviewHiddenAlpha }, PreviewHalfWidth, PreviewDash);
             _edges.Execute(commandBuffer, extent, _previewList.Records, _meshes, projection, PreviewColour, PreviewHalfWidth, PreviewDash);
+            // ADR-0187 item 9 (TASK-0470): in "After" a faint amber fill, after the lines: the depth of each shape, then one tint
+            // of each pixel where a shape is nearest. The fill has the colour of the lines, so a pixel of a line keeps its colour.
+            if (ProposalPreview.Mode == PreviewMode.After)
+            {
+                _depthWriter.Execute(commandBuffer, extent, _previewList.Records, _meshes, projection);
+                _highlighter.Execute(commandBuffer, extent, _previewList.Records, _meshes, projection, PreviewColour with { W = PreviewFillAlpha });
+            }
         }
 
         overlay?.Invoke(commandBuffer);

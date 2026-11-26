@@ -588,6 +588,8 @@ Therefore each approved objective must have a track here.
 - Review — The codebase review of 2026-11-25. v0.451, TASK-0467.
 - R32b — On a landscape phone of 640 by 360 the ring of the part moves away from the windows of the top left, and its labels
   side by side get smaller. v0.452, TASK-0469, ADR-0113, ADR-0132.
+- R33 — While a preview shows, the selected body has the accent of the theme, apart from the amber of a proposal, and the
+  new shape in "After" has a faint amber fill. v0.453, TASK-0470, ADR-0187.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -962,7 +964,7 @@ The first objective. Each phase ends with something that a person can observe.
 | R31b | The rows of the structure view are 30 pixels high for a mouse or a pen and 44 pixels on a phone, with the setting "Compact" or "For touch" (the choice of the owner "B, 30 px" of 2026-11-18); a record that amends ADR-0027 item 6 for lists. After R31a. ADR-0175, TASK-0420. | 1–2 |
 | R32a | At a portrait width of 360 pixels with a sheet, "N hidden" leaves the path line, and the ring keeps it as "Show hidden" (R-0072, Q3 A of 2026-11-25). `With_A_Sheet_The_Path_Line_And_The_Top_Bar_End_Left_Of_Views` passes at 360 pixels, and the record amends ADR-0178 item 2. After P0.188. TASK-0465. | 1 |
 | R32b | On a landscape phone of 640 by 360, a ring of six segments moves away from the windows of the top left, and each segment keeps its 46 pixels (R-0076, Q4 A of 2026-11-25). `ResponsiveLayoutTests` has no exception for the state `SixSegments`, and the record amends the ADR item that places the ring. After R32a. Done at v0.452: the span turns down and the centre moves up, each segment keeps its angle of 0.42 radians (42 pixels at the inner radius of 100, not 46), and the labels side by side get smaller (the answer A of the owner of 2026-11-26); ADR-0113 item 5 and ADR-0132 item 2. TASK-0469. | 1 |
-| R33 | Two answers of 2026-11-25 to ADR-0187 "Bad": while a preview shows, the outline of the selected body takes a colour apart from the amber of a proposal (Q6 A), and the new shape in "After" has a faint amber fill (Q7 A). After R25. | 1 |
+| R33 | Two answers of 2026-11-25 to ADR-0187 "Bad": while a preview shows, the outline of the selected body takes a colour apart from the amber of a proposal (Q6 A), and the new shape in "After" has a faint amber fill (Q7 A). After R25. Done at v0.453: the accent of the theme (#30eaff) for the edges, the fill and the dimensions of the selected body, and a fill at alpha 0.15 that comes after the dashed lines and has their colour; ADR-0187 item 9. TASK-0470. | 1 |
 
 ## Track K — The kernel
 

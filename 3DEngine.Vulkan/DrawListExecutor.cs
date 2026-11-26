@@ -18,15 +18,19 @@ public sealed unsafe class DrawListExecutor
     }
 
     // Draws each record whose mesh is in the table. A record of an unknown mesh is a
-    // defect of the host, so it throws.
+    // defect of the host, so it throws. ADR-0187 item 9 (phase R33, TASK-0470): a highlight
+    // pipeline takes the colour of its tint, which the executor sets after the bind.
     public void Execute(
         VkCommandBuffer commandBuffer,
         VkExtent2D extent,
         IReadOnlyList<DrawRecord> records,
         IReadOnlyDictionary<string, GpuMesh> meshes,
-        Matrix4x4 projection)
+        Matrix4x4 projection,
+        Vector4? tint = null)
     {
         _pipeline.Bind(commandBuffer, extent);
+        if (tint is { } colour)
+            _pipeline.Tint(commandBuffer, colour);
 
         foreach (var record in records)
         {

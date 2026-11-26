@@ -7,7 +7,7 @@ date: 2026-11-12
 supersedes: []
 superseded-by: []
 amends: ['0056']
-amended-by: ['0129']
+amended-by: ['0129', '0187']
 affects:
   - 3DEngine.App/DimensionOverlay.cs
   - 3DEngine.App/Ui/DesktopUi.Overlay.cs
@@ -45,6 +45,8 @@ owner can change them.
    selection, the colour of its edges in the scene (`SceneRenderer.SelectedEdgeColour`, 1.0, 0.55, 0.1). The dimensions
    of the whole have a neutral grey, the colour of a quiet text of the chrome (#8a939f). The orange of `DimensionColour`
    stays the colour of a pending value and of a proposal.
+   ADR-0187 item 9 amends this item: while a preview of a proposal shows, the edges of the selected body have the accent of
+   the theme (#30eaff), and its dimensions have it too (`PreviewSelectionDimensionColour`).
 2. **The words (amends ADR-0056 item 5).** Each label starts with the word of its box and " · ": "Overall · X 3400 mm"
    for the whole, and "Cote gauche · X 18 mm" for the selected body. A body with no name has its kind and a short
    identifier, as its row (ADR-0029 item 7). A name wider than 180 pixels ends with "...". The value keeps the form of
@@ -107,3 +109,5 @@ session, not a rule of the trade. No person used the change in the window.
   of the arc has the ground of the scene. The scenario of R20c in the window on 2026-11-20 found the arc across "Overall · Y
   400 mm" and a dimension line across "Box" (R-0065); section 4 of the codebase review of 2026-11-20 found the caption and
   the pending text with no ground.
+- 2026-11-26 · TASK-0470 · ADR-0187 item 9 amends item 1: while a preview shows, the dimensions of the selected body have the
+  accent, the colour of its edges then.

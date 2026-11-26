@@ -96,6 +96,37 @@ public sealed class DimensionLabelsTests
         Assert.True(Math.Abs(grey.R - selection.R) + Math.Abs(grey.G - selection.G) + Math.Abs(grey.B - selection.B) > 200, $"The grey {grey} is near the selection {selection}.");
     }
 
+    // Item 1 and ADR-0187 item 9 (phase R33, TASK-0470): while a preview shows, the dimensions of the selected body have the
+    // colour of its edges then, the accent, and no vertex of the frame has the orange of the selection.
+    [Fact]
+    public void While_A_Preview_Shows_The_Selected_Body_Has_The_Colour_Of_Its_Edges_Then()
+    {
+        static (int R, int G, int B) Bytes(uint abgr) => ((int)(abgr & 0xFF), (int)((abgr >> 8) & 0xFF), (int)((abgr >> 16) & 0xFF));
+        var edge = SceneRenderer.PreviewSelectedEdgeColour;
+        Assert.Equal(((int)MathF.Round(edge.X * 255f), (int)MathF.Round(edge.Y * 255f), (int)MathF.Round(edge.Z * 255f)), Bytes(DesktopUi.PreviewSelectionDimensionColour));
+
+        int Orange(PreviewCard? card)
+        {
+            var camera = Camera();
+            var strokes = DimensionOverlay.Of(Whole, Board, camera, Display.X, Display.Y, "mm");
+            using var ui = new DesktopUi("http://127.0.0.1:5180", Engine.Contracts.Document.Millimetre);
+            LiveBody[] bodies = [Panel, new(Guid.Parse("72000000-0000-0000-0000-000000000009"), "Extrude", "Fond", true)];
+            var data = UiDrawData.Empty;
+            for (var frame = 0; frame < 3; frame++)
+            {
+                ui.ShowProposalPreview(card);
+                data = ui.Frame(1f / 60f, Display, Vector2.One, bodies, Panel.Id, dimensions: strokes, ringCentre: Centre(camera, Board), history: Steps);
+            }
+
+            Assert.Equal(card is null ? DesktopUi.SelectionDimensionColour : DesktopUi.PreviewSelectionDimensionColour, ui.SelectionInk);
+            return data.Vertices.Count(vertex => vertex.Colour == DesktopUi.SelectionDimensionColour);
+        }
+
+        var preview = new PreviewCard(Guid.Parse("72000000-0000-0000-0000-0000000000a1"), 1, true, null, null, null, null, [], [], [], [], 0);
+        var (alone, shown) = (Orange(null), Orange(preview));
+        Assert.True(alone > 0 && shown == 0, $"The frame has {alone} vertices in the orange of the selection with no preview, and {shown} with a preview.");
+    }
+
     // Item 3: each plate is outside the outline of its box: the normal of its dimension line separates the plate from each
     // corner of the box on the screen. The plates of this scene do not move off a cover, so the test sees the rule itself.
     [Fact]

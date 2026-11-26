@@ -58,6 +58,21 @@ public class PushConstantInterfaceTests
         Assert.Equal(projection, MemoryMarshal.Read<Matrix4x4>(block.AsSpan(64, 64)));
     }
 
+    // ADR-0187 item 9 (phase R33, TASK-0470): the block of highlight.frag is one vector of four floats, the colour of the tint,
+    // at the offset where RenderPipeline.Tint writes it, after the two matrices of mesh.vert.
+    [Fact]
+    public void The_Tint_Of_The_Highlight_Is_Four_Floats_After_The_Two_Matrices()
+    {
+        var module = Read(ShaderLibrary.Load("highlight.frag"));
+        var block = module.PushConstantBlock();
+
+        var member = Assert.Single(block.Members);
+        Assert.Equal(4u, module.VectorSize(member));
+        Assert.Equal([RenderPipeline.TintOffset], block.Offsets);
+        Assert.Equal(RenderPipeline.PushConstantSize, RenderPipeline.TintOffset);
+        Assert.Equal(4u * sizeof(float), RenderPipeline.TintSize);
+    }
+
     private static Module Read(byte[] spirv)
     {
         var words = MemoryMarshal.Cast<byte, uint>(spirv).ToArray();
@@ -81,6 +96,8 @@ public class PushConstantInterfaceTests
     private sealed class Module
     {
         public Dictionary<uint, (uint Columns, uint Rows)> Matrices { get; } = new();
+
+        public uint VectorSize(uint type) => _vectorSizes.GetValueOrDefault(type);
 
         private readonly Dictionary<uint, uint> _vectorSizes = new();
         private readonly Dictionary<uint, uint[]> _structs = new();

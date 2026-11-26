@@ -6,7 +6,7 @@ topic: Clients, agent
 date: 2026-11-23
 supersedes: []
 superseded-by: []
-amends: ['0092', '0185']
+amends: ['0092', '0109', '0125', '0185']
 amended-by: ['0188']
 affects:
   - Engine.Core/Preview/PreviewShape.cs
@@ -20,6 +20,10 @@ affects:
   - 3DEngine.App/Ui/DesktopUi.cs
   - 3DEngine.App/SceneRenderer.cs
   - 3DEngine.App/NativeThreeDEngine.cs
+  - 3DEngine.App/Ui/DesktopUi.Overlay.cs
+  - 3DEngine.Vulkan/RenderPipeline.cs
+  - 3DEngine.Vulkan/DrawListExecutor.cs
+  - 3DEngine.Vulkan/Shaders/highlight.frag
   - Engine.Tests/Http/ProposalPreviewTests.cs
   - 3DEngine.ImageTests/ProposalPreviewWindowTests.cs
 enforced-by: 3DEngine.ImageTests/ProposalPreviewWindowTests.cs
@@ -87,9 +91,9 @@ the shape after the commands, to draw it in dashed amber lines?
    search of the edges run on the thread pool, so the thread of the frame only puts the meshes on the GPU; the meshes of the
    shown shapes stay until the new ones are ready. `SceneRenderer` draws the edge lines of the shapes after each body, with
    the two edge pipelines of ADR-0109: dashes of 5 pixels, a half width of 1 pixel, in the amber of a proposal, first the
-   hidden pipeline at alpha 0.45 and then the visible pipeline at alpha 1. So a line inside a present body shows, fainter. A
-   shape has no fill. No shader changes. The far plane holds the box of the shapes, but the camera does not frame them. While
-   a focus lasts, only the shape of the body of the focus draws (ADR-0101 item 2). A section does not cut a shape.
+   hidden pipeline at alpha 0.45 and then the visible pipeline at alpha 1. So a line inside a present body shows, fainter. In
+   "After" a shape also has a faint fill (item 9). The far plane holds the box of the shapes, but the camera does not frame
+   them. While a focus lasts, only the shape of the body of the focus draws (ADR-0101 item 2). A section does not cut a shape.
 6. **The panel (amends ADR-0092 item 5).** The window now shows a simulated result. On a landscape display of at least 1024
    by 600, and not on the sheet page, a panel at the lower right, 6 pixels above the status line, has the width of the command
    line, or less, down to 300 pixels, so that it ends 8 pixels left of each target of a tool of the ring at its height. It
@@ -113,6 +117,18 @@ the shape after the commands, to draw it in dashed amber lines?
    then draws "Both". The phone shows no proposal (ADR-0092 item 8).
 8. **No change of the contract.** No change of `Engine.Contracts`, of the log, of a query or of an event kind, and no new
    diagnostic code.
+9. **The colours while a preview shows (R33, TASK-0470; amends ADR-0109 item 3 and ADR-0125 item 1).** The owner answered
+   Q6 A and Q7 A on 2026-11-25 (TASK-0464).
+   - While the window gives a preview to the scene, in each mode, the selected body takes the accent of the theme
+     (`Theme.Accent`, #30eaff) in the place of the orange of the selection (#ff8c1a): its visible and hidden edges, its fill at
+     alpha 0.25 and its dimensions. The accent is the colour of a tool in use (ADR-0108 item 2) and of the selected view of
+     a sheet (ADR-0168 item 2), and of the colours of the theme it is the farthest from the amber. So no new colour comes.
+   - In "After" each shape has a faint fill in the amber of its lines, at alpha 0.15. After the lines, the depth pipeline
+     writes the depth of the shapes, and the highlight pipeline tints one time each pixel where a shape is nearest. The fill
+     has the colour of the lines, so it does not hide a line. "Before" and "Both" have no fill.
+   - The highlight pipeline takes its colour from a push constant of the fragment shader at offset 128, after the two
+     matrices of `mesh.vert`. The depth pipeline takes `mesh.frag`, which reads no colour. Until TASK-0470 the colour was a
+     constant of `highlight.frag`.
 
 ## Consequences
 
@@ -125,11 +141,15 @@ authority diagram stays: the host projects a result of the engine into the rende
 
 - Each fork of the desktop reads the triangles of each body with a new solid, also when the window does not show that
   proposal. A large body costs one copy of up to 100,000 triangles for each commit with open proposals.
-- The orange of the selected body (`#ff8c1a`, ADR-0109) is near the amber of a proposal. In "Both" the edges of the selected
-  body and the new shape differ by the dashes only.
+- While a preview shows, the selected body has the accent, which is also the colour of a tool in use and of the hatch of a
+  cap of a section. The colour of the selection changes when a preview starts and when it ends. Until TASK-0470 the orange
+  of the selected body was near the amber of a proposal, and in "Both" the edges of the two differed by the dashes only.
 - When the room right of the ring is less than 300 pixels, the panel covers a part of the ring of a body, and a tap there goes
   to the panel.
-- A shape has edge lines only, with no fill, so a body behind the new shape shows through it in "After".
+- The fill of a shape in "After" is faint, so a body behind the new shape shows through it, tinted. Until TASK-0470 a shape
+  had no fill.
+- A face of a present body in the plane of a face of a new shape takes the fill in parts only, because the two depths are
+  nearly equal. The fill of a selected body has the same fault (ADR-0109 item 3).
 - The table gives the volume only; the centre of the mass and the faces of the measures do not show.
 - Only the shown proposal, the oldest one, draws its shapes. The scene follows a new preview one frame after the panel.
 - A sketch that the commands add has the name "New sketch", because the frame does not know it.
@@ -157,3 +177,5 @@ authority diagram stays: the host projects a result of the engine into the rende
 - 2026-11-25 · TASK-0464 · The owner answered two points of "Bad" (Q6 A and Q7 A of 2026-11-25): while a preview shows, the
   outline of the selected body takes a colour apart from the amber of a proposal, and the new shape in "After" gets a faint
   amber fill. Row R33 does both; no item changes now.
+- 2026-11-26 · TASK-0470 · R33 (Q6 A and Q7 A): item 9 gives the accent to the selected body while a preview shows and a faint
+  amber fill to a shape in "After"; item 5 and "Bad" follow, and ADR-0109 item 3 and ADR-0125 item 1 get the change.
