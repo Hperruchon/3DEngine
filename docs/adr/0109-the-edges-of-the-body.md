@@ -7,7 +7,7 @@ date: 2026-11-10
 supersedes: []
 superseded-by: []
 amends: ['0029']
-amended-by: ['0121', '0129']
+amended-by: ['0121', '0129', '0187']
 affects:
   - 3DEngine.App/SceneRenderer.cs
   - 3DEngine.App/SessionBodies.cs
@@ -58,6 +58,8 @@ device can have no wide lines.
    hidden edges, behind the stored depth, are dashed lines of 2 pixels in the colour of the selection (6 pixels on, 6
    pixels off). Its visible edges are solid lines of 2 pixels in the same colour. The other bodies, their edges and the
    images draw before the selected body, so a body behind it shows through it.
+   ADR-0187 item 9 amends this item: while a preview of a proposal shows, the colour of the selection is the accent of the
+   theme (#30eaff), for the edges and for the fill. The renderer gives the colour of the fill to `highlight.frag`.
 4. **The order of a frame.** Each body but the selected one, the images, the edges of those bodies, then the depth, the
    fill, the hidden edges and the visible edges of the selected body, then the overlay.
 5. **The cost.** An edge takes 192 bytes on the GPU. A body with more than 100 000 feature edges draws no lines, so an
@@ -86,3 +88,5 @@ frame time on the phone is not measured; register entry R-0061 holds the questio
   thread pool (finding V167), and a triangle of zero area adds no edge (finding V166).
 - 2026-11-14 · TASK-0356 · ADR-0129 item 4 amends item 1: a T-vertex with no sliver, two T-vertices side by side and a
   turned T-vertex add no line (finding V175 of the codebase review of 2026-11-14).
+- 2026-11-26 · TASK-0470 · ADR-0187 item 9 amends item 3: while a preview shows, the selected body has the accent of the
+  theme, and the colour of the fill comes from the draw.

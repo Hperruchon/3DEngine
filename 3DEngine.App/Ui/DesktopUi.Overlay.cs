@@ -145,6 +145,12 @@ internal sealed unsafe partial class DesktopUi
     internal const uint SelectionDimensionColour = 0xFF1A8CFF;
     internal const uint OverallDimensionColour = 0xFF9F938A;
 
+    // ADR-0125 item 1 and ADR-0187 item 9 (phase R33, TASK-0470): while a preview shows, the dimensions of the selected body
+    // take the colour of its edges in the scene then, the accent (SceneRenderer.PreviewSelectedEdgeColour), apart from the
+    // amber of a proposal.
+    internal const uint PreviewSelectionDimensionColour = Theme.Accent;
+    internal uint SelectionInk => _preview is null ? SelectionDimensionColour : PreviewSelectionDimensionColour;
+
     // ADR-0125 item 2: the word before each overall value, and the widest name of the selected body on a plate, in pixels.
     internal const string OverallWord = "Overall";
     internal const float DimensionNameWidth = 180f;
@@ -285,7 +291,7 @@ internal sealed unsafe partial class DesktopUi
             list.AddText(_monoFont, FontSize, min + PillPadding, Ink(mark), text);
         }
 
-        static uint Ink(DimensionOverlay.Mark mark) => mark == DimensionOverlay.Mark.Selected ? SelectionDimensionColour : OverallDimensionColour;
+        uint Ink(DimensionOverlay.Mark mark) => mark == DimensionOverlay.Mark.Selected ? SelectionInk : OverallDimensionColour;
     }
 
     private static uint Colour(SketchOverlay.Mark mark) => mark switch

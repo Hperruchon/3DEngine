@@ -626,6 +626,155 @@ public sealed class ProposalPreviewWindowTests
             + string.Join("\n", GraphicsDevice.ValidationMessages.Skip(messagesBefore)));
     }
 
+    // ADR-0187 item 9 (phase R33, TASK-0470, Q6 A and Q7 A of 2026-11-25): the pictures of the bracket and the post with the
+    // proposal at 1280 by 720. With no preview the selected bracket has the orange of the selection and no accent. While a
+    // preview shows, its edges have the accent and no orange. In "After" each point of the top face of the new shape, away
+    // from each line and from the post, has the faint amber fill over the ground; in "Both" the same points are as in
+    // "Before", with no fill. The fill does not hide the dashed lines. The validation layer gives no message.
+    [VulkanImageFact]
+    public async Task While_A_Preview_Shows_The_Selection_Has_The_Accent_And_After_Has_A_Faint_Amber_Fill()
+    {
+        var messagesBefore = GraphicsDevice.ValidationMessageCount;
+        const uint width = 1280, height = 720;
+        await Hosted(async surface =>
+        {
+            var bracket = await Build(surface.Host.Session);
+            var id = await Post(surface, Proposal(bracket));
+            var desk = new HostedSession(surface.Host);
+            var preview = desk.Preview(id) ?? throw new InvalidOperationException("No preview.");
+            var shape = preview.Shapes[0].Triangles;
+
+            var scene = SessionScene.Create();
+            var camera = scene.Cameras[0];
+            var pictures = new Dictionary<string, byte[]>();
+            using (var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null, synchronizationValidation: true))
+            {
+                using var target = new OffscreenTarget(device, new VkExtent2D(width, height));
+                using var renderer = new SceneRenderer(device, target.RenderPass, desk);
+                renderer.Update(scene, camera, (float)width / height);
+                var bounds = renderer.Bounds ?? throw new InvalidOperationException("No bounds.");
+                camera.Frame((bounds.Min.X - 8, bounds.Min.Y, bounds.Min.Z), (bounds.Max.X + 8, bounds.Max.Y, bounds.Max.Z + 15), (float)width / height);
+
+                async Task Draw(string name, PreviewMode? mode, Guid? selected)
+                {
+                    renderer.ProposalPreview = mode is { } shown ? new PreviewDraw(preview, shown) : null;
+                    renderer.Update(scene, camera, (float)width / height);
+                    await renderer.PreviewMeshes.Preparing;
+                    renderer.Update(scene, camera, (float)width / height);
+                    pictures[name] = target.Render((commandBuffer, framebuffer, extent) => renderer.Record(commandBuffer, framebuffer, extent, scene, camera, null, selected));
+                }
+
+                await Draw("selected", null, bracket.Body);
+                await Draw("selected-both", PreviewMode.Both, bracket.Body);
+                await Draw("before", PreviewMode.Before, null);
+                await Draw("after", PreviewMode.After, null);
+                await Draw("both", PreviewMode.Both, null);
+            }
+
+            foreach (var (name, pixels) in pictures)
+                Save(pixels, width, height, $"preview-colours-{name}-{width}x{height}.png");
+
+            // Q6 A: the colour of the selection.
+            var (orange, accent, amber) = (Bytes(SceneRenderer.SelectedEdgeColour), Bytes(SceneRenderer.PreviewSelectedEdgeColour), Bytes(SceneRenderer.PreviewColour));
+            Assert.True(Distance(accent, amber) > 300, $"The accent {accent} is near the amber {amber}.");
+            var (orangeAlone, accentAlone) = (Near(pictures["selected"], orange), Near(pictures["selected"], accent));
+            Assert.True(orangeAlone > 100 && accentAlone == 0, $"With no preview the selection has {orangeAlone} orange and {accentAlone} accent pixels.");
+            var (orangeShown, accentShown) = (Near(pictures["selected-both"], orange), Near(pictures["selected-both"], accent));
+            Assert.True(orangeShown == 0 && accentShown > 100, $"While a preview shows the selection has {orangeShown} orange and {accentShown} accent pixels.");
+
+            // Q7 A: the fill in "After" only, at the points of the top face that no line and no body covers.
+            var points = TopFacePoints(shape, camera, width, height);
+            Assert.True(points.Count >= 10, $"Only {points.Count} points of the top face are free.");
+            var alpha = SceneRenderer.PreviewFillAlpha;
+            foreach (var (column, row) in points)
+            {
+                var i = ((row * (int)width) + column) * 4;
+                var ground = ThreeDEngine.Desktop.Ui.Theme.GroundAt(column, row, (int)width, (int)height);
+                int Blend(int fill, byte under) => (int)MathF.Round((fill * alpha) + (under * (1 - alpha)));
+                var (r, g, b) = (Blend(amber.R, ground.R), Blend(amber.G, ground.G), Blend(amber.B, ground.B));
+                var after = pictures["after"];
+                Assert.True(Math.Abs(after[i] - r) <= 3 && Math.Abs(after[i + 1] - g) <= 3 && Math.Abs(after[i + 2] - b) <= 3,
+                    $"After, the point ({column}, {row}) is ({after[i]}, {after[i + 1]}, {after[i + 2]}), not the fill ({r}, {g}, {b}) over the ground {ground}.");
+                Assert.True(pictures["both"].AsSpan(i, 4).SequenceEqual(pictures["before"].AsSpan(i, 4)), $"Both, the point ({column}, {row}) has a fill.");
+            }
+
+            // The fill does not hide the dashed lines: about half of the points along the edges of the new shape stay amber.
+            var along = AmberAlong(pictures["after"], width, height, camera, shape);
+            Assert.True(along is > 0.3 and < 0.8, $"{along:P0} of the points along the edges of the new shape are amber after.");
+        });
+
+        Assert.True(GraphicsDevice.ValidationMessageCount == messagesBefore,
+            $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages:\n"
+            + string.Join("\n", GraphicsDevice.ValidationMessages.Skip(messagesBefore)));
+    }
+
+    private static (int R, int G, int B) Bytes(Vector4 colour)
+        => ((int)MathF.Round(colour.X * 255f), (int)MathF.Round(colour.Y * 255f), (int)MathF.Round(colour.Z * 255f));
+
+    private static int Distance((int R, int G, int B) a, (int R, int G, int B) b) => Math.Abs(a.R - b.R) + Math.Abs(a.G - b.G) + Math.Abs(a.B - b.B);
+
+    // The pixels within 12 of a colour in each channel: the middle of a line of that colour.
+    private static int Near(byte[] pixels, (int R, int G, int B) colour)
+    {
+        var count = 0;
+        for (var i = 0; i + 3 < pixels.Length; i += 4)
+        {
+            if (Math.Abs(pixels[i] - colour.R) <= 12 && Math.Abs(pixels[i + 1] - colour.G) <= 12 && Math.Abs(pixels[i + 2] - colour.B) <= 12)
+                count++;
+        }
+
+        return count;
+    }
+
+    // The pixels of a grid of 14 by 14 points on the top face of the shape, each more than 6 pixels from each projected feature
+    // edge of the shape, and outside the box of the post on the screen with 6 pixels of margin.
+    private static List<(int Column, int Row)> TopFacePoints(Engine.Contracts.Geometry.Tessellation shape, ThreeDEngine.Core.Models.Camera camera, uint width, uint height)
+    {
+        var positions = shape.Positions;
+        var (minX, maxX, minY, maxY, top) = (double.MaxValue, double.MinValue, double.MaxValue, double.MinValue, double.MinValue);
+        for (var k = 0; k < positions.Length; k += 3)
+            (minX, maxX, minY, maxY, top) = (Math.Min(minX, positions[k]), Math.Max(maxX, positions[k]), Math.Min(minY, positions[k + 1]), Math.Max(maxY, positions[k + 1]), Math.Max(top, positions[k + 2]));
+        Vector2 Pixel((double X, double Y, double Z) point) => SketchOverlay.Segment(camera, width, height, point, point)?.A ?? throw new InvalidOperationException("A point is behind the eye.");
+
+        var edges = EdgeLines.Feature(positions, shape.Indices)
+            .Select(edge => (A: Pixel((positions[3 * edge.A], positions[(3 * edge.A) + 1], positions[(3 * edge.A) + 2])), B: Pixel((positions[3 * edge.B], positions[(3 * edge.B) + 1], positions[(3 * edge.B) + 2]))))
+            .ToList();
+        // The post is the box of 10 by 10 by 10 at z 15 to 25 on the axis z.
+        var post = new List<Vector2>();
+        foreach (var x in new[] { -5d, 5d })
+        {
+            foreach (var y in new[] { -5d, 5d })
+            {
+                foreach (var z in new[] { 15d, 25d })
+                    post.Add(Pixel((x, y, z)));
+            }
+        }
+
+        var (postMin, postMax) = (post.Aggregate(Vector2.Min) - new Vector2(6), post.Aggregate(Vector2.Max) + new Vector2(6));
+        var points = new List<(int Column, int Row)>();
+        for (var i = 1; i < 15; i++)
+        {
+            for (var j = 1; j < 15; j++)
+            {
+                var at = Pixel((minX + ((maxX - minX) * i / 15), minY + ((maxY - minY) * j / 15), top));
+                if (at.X >= postMin.X && at.X <= postMax.X && at.Y >= postMin.Y && at.Y <= postMax.Y)
+                    continue;
+                if (edges.Any(edge => DistanceToSegment(at, edge.A, edge.B) <= 6f))
+                    continue;
+                points.Add(((int)MathF.Round(at.X), (int)MathF.Round(at.Y)));
+            }
+        }
+
+        return points;
+    }
+
+    private static float DistanceToSegment(Vector2 point, Vector2 a, Vector2 b)
+    {
+        var along = b - a;
+        var k = along.LengthSquared() == 0 ? 0f : Math.Clamp(Vector2.Dot(point - a, along) / along.LengthSquared(), 0f, 1f);
+        return Vector2.Distance(point, a + (along * k));
+    }
+
     // The pixels in the amber of a proposal, #ffa040, with the soft border of a line: red high, green in the middle, blue low.
     private static int Amber(byte[] pixels)
     {

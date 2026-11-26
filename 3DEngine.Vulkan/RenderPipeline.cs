@@ -26,6 +26,10 @@ namespace ThreeDEngine.Vulkan;
 // A depth pipeline (ADR-0109 item 3, phase R18b, TASK-0333) writes the depth of a mesh and no colour, so the transparent
 // fill of the selected body (the highlight pipeline after it) tints each pixel one time, and its hidden edges find their
 // depth.
+//
+// ADR-0187 item 9 (phase R33, TASK-0470): a highlight pipeline has a second push constant range for the fragment shader,
+// the colour of its tint at TintOffset, after the two matrices. Tint sets it after the bind. Until TASK-0470 the colour was a
+// constant of highlight.frag.
 public sealed unsafe class RenderPipeline : IDisposable
 {
     public const VkPrimitiveTopology Topology = VkPrimitiveTopology.TriangleList;
@@ -33,19 +37,25 @@ public sealed unsafe class RenderPipeline : IDisposable
     public const VkFrontFace FrontFace = VkFrontFace.CounterClockwise;
     public const VkCompareOp DepthCompare = VkCompareOp.Greater;
     public const uint PushConstantSize = 2 * 16 * sizeof(float);
+    public const uint TintOffset = PushConstantSize;
+    public const uint TintSize = 4 * sizeof(float);
 
     private readonly GraphicsDevice _device;
+    private readonly bool _tinted;
 
     public RenderPipeline(GraphicsDevice device, VkRenderPass renderPass, string vertexShader, string fragmentShader, bool highlight = false, bool depthOnly = false)
     {
         _device = device;
+        _tinted = highlight;
 
         VkShaderModule vertex = device.CreateShaderModule(ShaderLibrary.Load(vertexShader));
         VkShaderModule fragment = device.CreateShaderModule(ShaderLibrary.Load(fragmentShader));
         try
         {
-            VkPushConstantRange pushConstant = new() { stageFlags = VkShaderStageFlags.Vertex, offset = 0, size = PushConstantSize };
-            VkPipelineLayoutCreateInfo layoutInfo = new() { pushConstantRangeCount = 1, pPushConstantRanges = &pushConstant };
+            VkPushConstantRange* pushConstants = stackalloc VkPushConstantRange[2];
+            pushConstants[0] = new() { stageFlags = VkShaderStageFlags.Vertex, offset = 0, size = PushConstantSize };
+            pushConstants[1] = new() { stageFlags = VkShaderStageFlags.Fragment, offset = TintOffset, size = TintSize };
+            VkPipelineLayoutCreateInfo layoutInfo = new() { pushConstantRangeCount = highlight ? 2u : 1u, pPushConstantRanges = pushConstants };
             device.DeviceApi.vkCreatePipelineLayout(&layoutInfo, null, out VkPipelineLayout layout).CheckResult();
             Layout = layout;
 
@@ -158,6 +168,15 @@ public sealed unsafe class RenderPipeline : IDisposable
         byte* block = stackalloc byte[(int)PushConstantSize];
         WritePushConstants(new Span<byte>(block, (int)PushConstantSize), modelView, projection);
         _device.DeviceApi.vkCmdPushConstants(commandBuffer, Layout, VkShaderStageFlags.Vertex, 0, PushConstantSize, block);
+    }
+
+    // ADR-0187 item 9 (TASK-0470): gives the colour of the tint to the fragment shader of a highlight pipeline (highlight.frag),
+    // red, green, blue and alpha from 0 to 1. The caller sets it after Bind and before the first draw.
+    public void Tint(VkCommandBuffer commandBuffer, Vector4 colour)
+    {
+        if (!_tinted)
+            throw new InvalidOperationException("Only a highlight pipeline has a tint.");
+        _device.DeviceApi.vkCmdPushConstants(commandBuffer, Layout, VkShaderStageFlags.Fragment, TintOffset, TintSize, &colour);
     }
 
     // The bytes of the push constant block of one draw: the model-view matrix at offset

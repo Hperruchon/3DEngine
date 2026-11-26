@@ -14277,3 +14277,48 @@ New tests: 3. The test list holds 3333 (1947 in `Engine.Tests`, 390 in `3DEngine
 `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.451, 1 product milestone and 1
 entry followed it.
 The failed runs since the entry v0.451, from the API: none.
+
+## v0.453 — While a preview shows, the selected body has the accent of the theme, and the new shape in "After" has a faint amber fill (R33, TASK-0470)
+
+On 2026-11-26 the owner ordered "Start R33" after the merge of R32b. The branch `r33-preview-colours` starts from `origin/main`
+at `64b1c07f` (v0.452). The row does the answers Q6 A and Q7 A of the owner of 2026-11-25 to two points of ADR-0187 "Bad".
+
+**The change.** While the window gives a preview to the scene, in each mode, the selected body takes the accent of the theme
+(`Theme.Accent`, #30eaff) in the place of the orange of the selection (#ff8c1a): its visible and hidden edges, its fill at alpha
+0.25 and its dimensions. The accent already marks a tool in use (ADR-0108 item 2) and a selected view of a sheet (ADR-0168
+item 2), and of the colours of the theme it is the farthest from the amber #ffa040 (472 as the sum of the three differences
+of the channels). So no new colour comes. The dimensions follow the edges, because ADR-0125 item 1
+gives them the colour of the edges. In "After" each new shape has a faint fill in the amber of its lines at alpha 0.15. The
+fill comes after the dashed lines: the depth pipeline writes the depth of the shapes, and the highlight pipeline tints one time
+each pixel where a shape is nearest. The fill has the colour of the lines, so it cannot hide them. "Before" and "Both" have no
+fill. The colour of the highlight was a constant of `highlight.frag`; now the shader reads it from a push constant at offset
+128, after the two matrices of `mesh.vert`, and `RenderPipeline.Tint` gives it. The depth pipeline takes `mesh.frag`, which
+reads no colour. `compile.js` compiled the shaders with the compiler of the lock, and only `highlight.frag.spv` changed.
+ADR-0187 item 9 holds the decision, item 5 and "Bad" follow, ADR-0109 item 3 and ADR-0125 item 1 get the change, and the
+index of the ADRs gives the new links.
+
+**Proof.** The new image test `While_A_Preview_Shows_The_Selection_Has_The_Accent_And_After_Has_A_Faint_Amber_Fill`: with no
+preview the selected bracket has orange pixels and no accent; with a preview it has accent pixels and no orange; in "After"
+each free point of the top face of the new shape is the fill over the ground within 3 for each channel; in "Both" those points
+are as in "Before"; about half of the points along the edges stay amber. `DimensionLabelsTests` and
+`PushConstantInterfaceTests` each have one new test. The injections fail as follows:
+- the orange while a preview shows: "939 orange and 0 accent pixels";
+- no fill in "After": the point (667, 303) is (10, 26, 40), the ground, not the fill (47, 46, 44);
+- a fill in "Both" too: "Both, the point (667, 303) has a fill";
+- the dimensions in the orange: "416 vertices in the orange of the selection" with and without a preview;
+- a tint at offset 144: "Expected: [144], Actual: [128]";
+- an opaque fill: the existing picture test of R25 fails, with 11 % of the points along the edges amber.
+A picture with no preview and the bracket selected is the same byte for byte before and after the change. In the picture of
+"After" with no selection, each of the 1,311 amber pixels of the lines stays amber, and a channel moves by 15 at most.
+A clean build gives 0 warnings, the phone project builds with 0 warnings, `dotnet test` passes TOTAL tests, `eng/count-tests.js`
+accepts the counts, and the write-set check and `eng/repo-gates` pass. Pictures off screen, before and after, are in the folder
+`r33\pictures` of the temporary folder of the owner. Not verified: continuous integration has not run, and no person saw the
+colours in the window.
+
+A face of a present body in the plane of a face of a new shape takes the fill in parts only (the top of the post in the
+pictures), because the two depths are nearly equal. The fill of a selected body has the same fault; ADR-0187 "Bad" holds it.
+
+New tests: 3. The test list holds 3336 (1947 in `Engine.Tests`, 391 in `3DEngine.Tests`, 995 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.451, 2 product milestones and 2
+entries followed it.
+The failed runs since the entry v0.452, from the API: none.
