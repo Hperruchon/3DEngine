@@ -179,7 +179,10 @@ public sealed class ProposalAcceptTests
         Assert.Equal(["Shelf"], await Names(served));
     }
 
-    // Item 6 (Q4 A): a commit that does not change the result runs one new fork, and the accept applies.
+    // Item 6 (Q4 A): a commit that does not change the result runs one new fork, and the accept applies. The fork of the version 2
+    // waits until the accept is applying, so the accept reads the preview of the version 1, which the person saw, as the kept
+    // preview (finding T197 of the codebase review of 2026-11-25, R-0078). A fork that ends before the accept reads it makes the
+    // kept preview the preview of the version 2, and the accept then holds the proposal open, by ADR-0188 "Bad" (Q3 A).
     [Fact]
     public async Task A_Commit_That_Does_Not_Change_The_Result_Runs_One_Fork_And_Applies()
     {
@@ -188,9 +191,21 @@ public sealed class ProposalAcceptTests
         var id = await Post(served, "Rename the box", Rename(box, "Shelf"));
         var seen = await Preview(served, id);
         var forks = served.Forks;
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var once = 0;
+        served.BeforeFork = () =>
+        {
+            if (Interlocked.Exchange(ref once, 1) == 0)
+                release.Task.Wait(TimeSpan.FromSeconds(60));
+        };
         await BookcaseCase.Applied(served.Host.Session, new NoOpCommand { Echo = "elsewhere" });
 
-        var accepted = await Accept(served, id, seen.DocumentVersion);
+        var accept = Accept(served, id, seen.DocumentVersion);
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        while (served.Host.Proposals.Find(id)?.State != ProposalStates.Applying && clock.Elapsed < TimeSpan.FromSeconds(60))
+            await Task.Delay(10);
+        release.SetResult();
+        var accepted = await accept;
 
         Assert.Equal(ProposalStates.Accepted, accepted.State);
         Assert.Equal(seen.DocumentVersion + 2, Assert.Single(accepted.Results).DocumentVersion);

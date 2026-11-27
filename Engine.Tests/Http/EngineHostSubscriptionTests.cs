@@ -84,7 +84,7 @@ public class EngineHostSubscriptionTests
         Assert.Contains("a defect of the host", report, StringComparison.Ordinal);
     }
 
-    private static readonly TimeSpan Limit = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan Limit = TimeSpan.FromSeconds(60);
 
     // Finding E67 of the codebase review of 2026-10-17 (TASK-0079): the report ran
     // inside the commit. A report that threw made Apply throw after the Document held

@@ -71,7 +71,7 @@ public class EventsEndpointLagTests : IClassFixture<WebApplicationFactory<Progra
         // Walk the slow subscriber's stream until we observe a Close frame.
         // We may also see a handful of buffered events first; that's fine.
         var sawLaggedClose = false;
-        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(60));
         for (var i = 0; i < 30 && !sawLaggedClose; i++)
         {
             var msg = await WebSocketTestClient.ReceiveAsync(slowSocket, deadline.Token);

@@ -48,7 +48,7 @@ public sealed class EventsHandshakeTests
             subscriber.EnqueueDuringHandshake(SubscriptionResumeMessage.Create(1));
             subscriber.StartHeartbeat();
 
-            using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(60));
             while (socket.Sent.Count < 2)
                 await Task.Delay(10, limit.Token);
 

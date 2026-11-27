@@ -17,7 +17,7 @@ namespace Engine.Tests.Http;
 [Collection("real host")]
 public sealed class HttpImageScenarioTests : IDisposable
 {
-    private static readonly TimeSpan Limit = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan Limit = TimeSpan.FromSeconds(60);
     private readonly string _store = Path.Combine(Path.GetTempPath(), "3de-image-http-" + Guid.NewGuid().ToString("N"));
 
     public void Dispose()

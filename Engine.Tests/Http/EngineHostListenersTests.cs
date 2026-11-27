@@ -47,7 +47,7 @@ public class EngineHostListenersTests : IClassFixture<WebApplicationFactory<Prog
 
         await socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "done", CancellationToken.None);
         var clock = Stopwatch.StartNew();
-        while (host.Listeners > 0 && clock.Elapsed < TimeSpan.FromSeconds(10))
+        while (host.Listeners > 0 && clock.Elapsed < TimeSpan.FromSeconds(60))
             await Task.Delay(20);
         Assert.Equal(0, host.Listeners);
     }

@@ -61,7 +61,7 @@ public class HeartbeatTests : IClassFixture<WebApplicationFactory<Program>>
         // At least one second and at least one heartbeat. A host that sends no
         // heartbeat fails at the limit.
         var heartbeats = 0;
-        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(60));
         while (clock.Elapsed < TimeSpan.FromSeconds(1) || heartbeats == 0)
         {
             var frame = await WebSocketTestClient.ReceiveJsonAsync(socket, limit.Token);

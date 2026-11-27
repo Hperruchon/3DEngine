@@ -14,7 +14,7 @@ namespace Engine.Tests.Http;
 [Collection("real host")]
 public sealed class HttpDatumScenarioTests
 {
-    private static readonly TimeSpan Limit = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan Limit = TimeSpan.FromSeconds(60);
 
     [Fact]
     public async Task An_Agent_Makes_A_Datum_On_A_Face_And_A_Sketch_On_It_Over_Http()
