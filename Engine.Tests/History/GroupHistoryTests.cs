@@ -203,6 +203,73 @@ public sealed class GroupHistoryTests
         }
     }
 
+    // ADR-0190 (TASK-0473, finding E242 of the codebase review of 2026-11-25): the reversal of a failed group is an Undo with the
+    // group, and it puts nothing on the redo list. A Redo after it is refused, and an Undo reverses the step before the group.
+    // The walks of the log, a replay and an open of the file give the same history. Until TASK-0473 the Redo applied the two
+    // first commands of the group, a part of a proposal that no preview showed.
+    [Fact]
+    public async Task A_Redo_After_A_Failed_Group_Applies_Nothing()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), "3de-reversal-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(folder);
+        try
+        {
+            var path = Path.Combine(folder, "reversal.3de");
+            var (session, _) = NewSession();
+            DocumentFile.Create(session, path);
+            await Applied(session, new CreateBoxCommand { SizeX = 9, SizeY = 9, SizeZ = 9 });
+            var before = await Live(session);
+            var group = Guid.NewGuid();
+            var bad = NewGroup(group);
+            bad[2] = new CreateBoxCommand { SizeX = -1, SizeY = 1, SizeZ = 1, GroupId = group };
+
+            var failed = await session.ApplyGroup(bad, version: 1);
+
+            Assert.Equal((2, CommandStatus.Applied), (failed.FailedIndex, failed.Undo?.Status));
+            var log = await session.Read((document, _) => document.Log.ToArray());
+            Assert.Equal(("Undo", group), (log[^1].Command.Name, log[^1].Command.GroupId));
+            Assert.Equal(DiagnosticCodes.CommandNothingToRedo, (await session.Apply(new RedoCommand())).Error?.Code);
+            Assert.Equal(before, await Live(session));
+
+            Guid[] expected = [log[0].Command.CommandId];
+            Assert.Equal(expected, SketchRebuild.InEffect(log).Order());
+            Assert.Equal(expected, FeatureList.Build(log).InEffect.Order());
+            var replay = await Replay.ReplayLog(log, EngineHosting.CreateDefault(new OperationsBackend()).CommandRegistry, new OperationsBackend());
+            Assert.Equal(before, replay.Document.Bodies
+                .Select(body => $"{body.Handle.Id} {body.Kind} {body.Name} {body.Visible} {body.GeometryKey}")
+                .OrderBy(text => text, StringComparer.Ordinal));
+            session.Close();
+
+            var (opened, _) = NewSession();
+            await DocumentFile.Open(opened, path);
+            Assert.Equal(before, await Live(opened));
+            Assert.Equal(DiagnosticCodes.CommandNothingToRedo, (await opened.Apply(new RedoCommand())).Error?.Code);
+            await Applied(opened, new UndoCommand());
+            Assert.Empty(await Live(opened));
+            opened.Close();
+        }
+        finally
+        {
+            Directory.Delete(folder, recursive: true);
+        }
+    }
+
+    // ADR-0190 item 2: an Undo with a group from a client is still refused before the history and the file, also with the group
+    // of the last unit, so only the session marks a reversal.
+    [Fact]
+    public async Task An_Undo_With_A_Group_From_A_Client_Is_Still_Refused()
+    {
+        var (session, _) = NewSession();
+        var group = Guid.NewGuid();
+        foreach (var command in NewGroup(group))
+            await Applied(session, command);
+
+        var refused = await session.Apply(new UndoCommand { GroupId = group });
+
+        Assert.Equal(DiagnosticCodes.CommandGroupMove, refused.Error?.Code);
+        Assert.DoesNotContain(await Log(session), command => command is UndoCommand);
+    }
+
     // Item 3 and ADR-0012: a log with groups, an Undo of a group, an Undo and a Redo replays on a new backend to the same
     // Document, and the three walks of the history (the bus, FeatureList and SketchRebuild) give the same steps in effect.
     [Fact]

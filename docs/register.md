@@ -346,21 +346,6 @@ Exit: a task gives the snapshot and `CheckInterference` the log order of ADR-018
 accepts the order of the collection.
 Progress 2026-11-26: the owner answered "task fixes" (TASK-0472). Row K25 does the exit.
 
-### R-0081 · The mark of the reversal of a failed group in the log gives the field `GroupId` a new meaning on an `Undo`
-- class: question
-- opened: 2026-11-27
-- due: 2027-02-25
-- extended: no
-- refs: `Engine.Contracts/Command.cs` (`GroupId`), `Engine.Core/DocumentSession.cs` (`ReverseGroup`), `Engine.Core/CommandBus.cs`
-  (`Move`), ADR-0188 items 1 and 4, `docs/reviews/2026-11-25-codebase-review.md` (E242), TASK-0468, TASK-0473
-The owner answered Q2 A of the review of 2026-11-25: the reversal of a failed group puts nothing on the redo list, and the log
-marks it, so that each walker of the log agrees. Each walker sees an `Undo` after the steps of a group, also when the person
-undoes an accept that applied, so a mark is necessary. The smallest mark is the group of the proposal on the `Undo` of the
-reversal. That gives the field `GroupId` of `Engine.Contracts` a new meaning, which ADR-0188 item 4 refuses today, and a
-version of the app before the change refuses such an entry at an open, so it cannot open a file of a later version.
-`CLAUDE.md` ("Stop and ask") and the scope of TASK-0468 ask the owner before a new meaning of a field of `Engine.Contracts`.
-Exit: the owner accepts the mark and its cost, or names another mark; TASK-0473 does it with an ADR in the same commit.
-
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
@@ -495,6 +480,25 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0081 · The mark of the reversal of a failed group in the log gives the field `GroupId` a new meaning on an `Undo`
+- class: question
+- opened: 2026-11-27
+- due: 2027-02-25
+- extended: no
+- refs: `Engine.Contracts/Command.cs` (`GroupId`), `Engine.Core/DocumentSession.cs` (`ReverseGroup`), `Engine.Core/CommandBus.cs`
+  (`Move`), ADR-0188 items 1 and 4, `docs/reviews/2026-11-25-codebase-review.md` (E242), TASK-0468, TASK-0473
+The owner answered Q2 A of the review of 2026-11-25: the reversal of a failed group puts nothing on the redo list, and the log
+marks it, so that each walker of the log agrees. Each walker sees an `Undo` after the steps of a group, also when the person
+undoes an accept that applied, so a mark is necessary. The smallest mark is the group of the proposal on the `Undo` of the
+reversal. That gives the field `GroupId` of `Engine.Contracts` a new meaning, which ADR-0188 item 4 refuses today, and a
+version of the app before the change refuses such an entry at an open, so it cannot open a file of a later version.
+`CLAUDE.md` ("Stop and ask") and the scope of TASK-0468 ask the owner before a new meaning of a field of `Engine.Contracts`.
+Exit: the owner accepts the mark and its cost, or names another mark; TASK-0473 does it with an ADR in the same commit.
+Closed 2026-11-27 · decided · ADR-0190, TASK-0473. The owner answered "All A" on 2026-11-27: the `Undo` of the reversal has the
+group of the proposal, and an older app cannot open a file that holds one. The bus takes such an `Undo` from the session and
+from the log only, and each walker of the log puts nothing on its redo list for it. `A_Redo_After_A_Failed_Group_Applies_Nothing`
+fails when the reversal goes to the redo list.
 
 ### R-0078 · `A_Commit_That_Does_Not_Change_The_Result_Runs_One_Fork_And_Applies` can see the proposal still open
 - class: risk

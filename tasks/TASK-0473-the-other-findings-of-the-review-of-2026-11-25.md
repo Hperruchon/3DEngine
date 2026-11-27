@@ -5,10 +5,11 @@ status: Active
 phase: P0.191
 opened: 2026-11-27
 depends-on: [0468]
-governed-by: [0004, 0007, 0013, 0015, 0016, 0017, 0019, 0023, 0025, 0029, 0038, 0072, 0075, 0076, 0077, 0080, 0081, 0082, 0083, 0085, 0086, 0092, 0100, 0101, 0102, 0104, 0105, 0106, 0109, 0110, 0111, 0114, 0116, 0120, 0124, 0127, 0129, 0130, 0137, 0138, 0140, 0153, 0155, 0158, 0163, 0166, 0167, 0168, 0170, 0171, 0174, 0176, 0177, 0179, 0184, 0185, 0187, 0188]
+governed-by: [0004, 0006, 0007, 0008, 0013, 0015, 0016, 0017, 0019, 0020, 0021, 0023, 0025, 0028, 0029, 0031, 0033, 0035, 0037, 0038, 0039, 0045, 0049, 0054, 0055, 0072, 0075, 0076, 0077, 0080, 0081, 0082, 0083, 0085, 0086, 0089, 0092, 0100, 0101, 0102, 0104, 0105, 0106, 0109, 0110, 0111, 0112, 0114, 0116, 0120, 0124, 0127, 0129, 0130, 0137, 0138, 0140, 0153, 0155, 0158, 0163, 0166, 0167, 0168, 0170, 0171, 0174, 0176, 0177, 0179, 0181, 0184, 0185, 0187, 0188, 0190]
 writes:
   create:
     - tasks/TASK-0473-the-other-findings-of-the-review-of-2026-11-25.md
+    - docs/adr/0190-the-reversal-of-a-failed-group-is-marked-in-the-log.md
   modify:
     - Engine.Tests/Http/ProposalAcceptTests.cs
     - Engine.Tests/Http/ProposalPreviewTests.cs
@@ -29,8 +30,14 @@ writes:
     - Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs
     - Engine.Core/DocumentSession.cs
     - Engine.Tests/History/GroupHistoryTests.cs
-  forbid:
-    - Engine.Contracts/**
+    - Engine.Contracts/Command.cs
+    - Engine.Core/CommandBus.cs
+    - Engine.Core/StepHistory.cs
+    - Engine.Core/Features/FeatureList.cs
+    - Engine.Core/Sketch/SketchRebuild.cs
+    - 3DEngine.App/StepTexts.cs
+    - docs/adr/README.md
+  forbid: []
 ---
 
 # TASK-0473 — The other findings of the codebase review of 2026-11-25
@@ -59,7 +66,7 @@ Each finding of this task has a correction and a test, or a register entry with 
 ## Scope (out)
 
 - T197, T201, T202 and E244: TASK-0468 did them. V238: TASK-0472 did it.
-- The forbid is `Engine.Contracts/**` until the owner answers R-0081.
+- Until 2026-11-27 the forbid was `Engine.Contracts/**`, until the owner answered R-0081. The owner answered A ("All A").
 - The write set holds only this file now. The task adds the files of each correction, and the ADRs that govern them, when it
   starts (`docs/templates.md`, section 2).
 
@@ -84,7 +91,8 @@ Status: Active · no commit on `main` yet
 
 Mechanical: the corrections that the review names.
 Judgement:  each choice between the two corrections that the review gives.
-Weakest:    E242 waits for the answer of R-0081, and E243 is not started. The read of the index in `Proposals` has no test of
+Weakest:    E243 is not started. For E242 the walkers `FeatureList`, `SketchRebuild` and `StepTexts` give the same result on a
+            valid log with or without the change, because the bus refuses each `Redo` after a reversal; only the bus test fails. The read of the index in `Proposals` has no test of
             its own: a handler that throws only outside the fork needs a host with a second catalogue. `UiRenderer` still leaks at a failed start (R-0077).
 
 ## Progress
@@ -113,3 +121,9 @@ Weakest:    E242 waits for the answer of R-0081, and E243 is not started. The re
 - 2026-11-27: E245, second half: `ApplyGroup` puts the index of a command whose handler throws on the exception
   (`DocumentSession.FailedIndexKey`), and the accept names that index; until TASK-0473 it named 0. The group test of a handler
   that throws asks for the index 1; without the line the test fails.
+- 2026-11-27: the owner answered "All A" for R-0081 and the questions of P11.0. E242: ADR-0190 (amends ADR-0188 items 1, 3 and 4).
+  The `Undo` that reverses a failed group has the group of the proposal; the bus takes it only from `CommandBus.Reverse` and
+  from an entry of the log; `StepHistory.Reversed` and the three other walkers put nothing on the redo list.
+  `A_Redo_After_A_Failed_Group_Applies_Nothing` (a live session, the walkers, a replay and an open) fails when the reversal goes
+  to the redo list, and `An_Undo_With_A_Group_From_A_Client_Is_Still_Refused` fails when the bus takes a client `Undo` with a
+  group. R-0081 closes.

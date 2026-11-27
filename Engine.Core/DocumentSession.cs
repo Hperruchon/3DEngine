@@ -197,7 +197,7 @@ public sealed class DocumentSession
                 }
                 catch (Exception exception)
                 {
-                    await ReverseGroup(start).ConfigureAwait(false);
+                    await ReverseGroup(start, group).ConfigureAwait(false);
                     exception.Data[FailedIndexKey] = i;
                     throw;
                 }
@@ -206,7 +206,7 @@ public sealed class DocumentSession
                 if (!known)
                     results.Add(result);
                 if (known || result.Status != CommandStatus.Applied)
-                    return new GroupOutcome(false, start, results, i, known, await ReverseGroup(start).ConfigureAwait(false));
+                    return new GroupOutcome(false, start, results, i, known, await ReverseGroup(start, group).ConfigureAwait(false));
             }
 
             return new GroupOutcome(false, start, results, null, false, null);
@@ -218,9 +218,10 @@ public sealed class DocumentSession
     }
 
     // The Undo of the steps of a group that applied after the version start, or null when none applied. It runs in the section
-    // of the caller and is not cancelled: a commit does not stop (ADR-0006 section 4).
-    private async Task<CommandResult?> ReverseGroup(long start)
-        => _document.Version == start ? null : await _commands.Apply(new Commands.UndoCommand(), CancellationToken.None).ConfigureAwait(false);
+    // of the caller and is not cancelled: a commit does not stop (ADR-0006 section 4). ADR-0190 (TASK-0473, finding E242): the
+    // Undo has the group, so the log marks the reversal, and no Redo applies the part of the proposal that ran.
+    private async Task<CommandResult?> ReverseGroup(long start, Guid group)
+        => _document.Version == start ? null : await _commands.Reverse(group).ConfigureAwait(false);
 
     public async Task<QueryResult<T>> Query<T>(Query query, CancellationToken ct = default)
     {

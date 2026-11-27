@@ -1,13 +1,13 @@
 ---
 id: 0188
 title: The accept after a preview compares the result and applies a proposal as one group of steps, which the log holds and one Undo reverses
-status: Accepted
+status: Amended
 topic: Contracts, surface, agent
 date: 2026-11-24
 supersedes: []
 superseded-by: []
 amends: ['0015', '0031', '0092', '0130', '0182', '0185', '0187']
-amended-by: []
+amended-by: ['0190']
 affects:
   - Engine.Contracts/Command.cs
   - Engine.Core/Persistence/EntryCodec.cs
@@ -203,3 +203,5 @@ bytes, so each older file opens and replays as before.
 - 2026-11-27 · TASK-0473 · Item 7: an `Undo` of the group that does not apply gives the code `E-API-PROPOSAL-NOT-REVERSED`, and
   the commands before the failed command stay applied; until TASK-0473 the item said that a failed proposal applied nothing in
   each case (finding E245 of the codebase review of 2026-11-25).
+- 2026-11-27 · TASK-0473 · ADR-0190 amends items 1, 3 and 4: the `Undo` that reverses a failed group has the group of the
+  proposal, the bus takes it from the session and from the log only, and it puts nothing on the redo list (finding E242).

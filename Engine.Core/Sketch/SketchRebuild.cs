@@ -34,7 +34,8 @@ public static class SketchRebuild
             switch (entry.Command)
             {
                 case UndoCommand when done.Count > 0:
-                    MoveUnit(done, undone);
+                    // ADR-0190 item 3 (TASK-0473): the reversal of a failed group puts nothing on the undone list.
+                    MoveUnit(done, entry.Command.GroupId is null ? undone : []);
                     break;
                 case RedoCommand when undone.Count > 0:
                     MoveUnit(undone, done);

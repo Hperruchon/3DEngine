@@ -113,7 +113,9 @@ public sealed class FeatureList
                         var unit = _done[StepHistory.UnitStart(_done, step => step.GroupId)..];
                         for (var i = unit.Count - 1; i >= 0; i--)
                             Remove(unit[i]);
-                        _undone.AddRange(unit);
+                        // ADR-0190 item 3 (TASK-0473): the reversal of a failed group puts nothing on the undone list.
+                        if (command.GroupId is null)
+                            _undone.AddRange(unit);
                         break;
                     case RedoCommand when _undone.Count > 0:
                         var start = StepHistory.UnitStart(_undone, step => step.GroupId);
