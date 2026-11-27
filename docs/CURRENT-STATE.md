@@ -14381,3 +14381,53 @@ New tests: 3. The test list holds 3339 (1950 in `Engine.Tests`, 391 in `3DEngine
 `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.451, 3 product milestones and 3
 entries followed it.
 The failed runs since the entry v0.453, from the API: none.
+
+## v0.455 — The rewrite of the history removes the folder of the owner, and the answers of the owner of 2026-11-26 give the rows R34, R35 and K25 (P0.190, TASK-0472)
+
+The codebase review of 2026-11-25 found V238: a test held the folder of the owner, with the user name of Windows, in a public
+repository. On 2026-11-26 the owner answered "rewrite the history". The session gave two facts: each commit already names the
+owner as its author, and a rewrite gives each later commit a new id, which the records cite. The owner answered "Rewrite
+anyway". The same evening the owner answered the other open points and gave a standing order until 09:00 on 2026-11-27.
+
+**The rewrite.** The session worked in a mirror copy of the repository. `git fast-export --all --signed-commits=verbatim` gave
+the history; with no option, the export drops the signature that GitHub put on the first commit, and each id then changes. A
+Node.js filter replaced 28 texts of the folder or of the user name with `owner`, which has the same length. `git fast-import`
+gave a new repository: 1665 commits and 491 references as before, 329 commits with their old id and 1336 with a new id, the same
+author, committer, dates and message for each commit, and one commit only that changes by itself, the first that held the folder
+(2026-10-27). `git fsck` passes. On `main` 10 lines in 5 files change. `ProjectPathTests`, `WaitingWordTests` and
+`eng/repo-gates` passed on the new tip. The push sent the 436 heads that moved, with a lease on the old id of each head; GitHub
+refused none, and each head and tag on GitHub then agreed with the new copy. The tip of `main` went from `2cb2cf0c` to
+`a715d982`, with the same tree apart from the 10 lines.
+
+**The map.** `docs/history-map-2026-11-26.txt` gives each old id and its new id. Each record before this entry cites the old ids:
+a record is permanent, and the map translates it.
+
+**What the rewrite does not remove.** GitHub keeps each old commit by its id until GitHub removes the objects that no reference
+holds, and the runs of continuous integration of the old ids stay. The 10 references of the pull requests of July and the 4 tags
+did not move; each one is older than the folder. The clones and the worktrees on the computer of the owner keep the old
+history: a branch made before the rewrite must not be merged, because it brings each old commit back.
+
+**The answers.** R-0056: "give the phone project files"; new row R34. ADR-0189: "let's move on"; it stays Accepted. R-0080: "task
+fixes"; new row K25. R-0070: the owner asked what to measure; the entry holds the list. R-0059: the owner asked how to install the
+app; the app writes no size of its window to the log, so new row R35 adds it, and the same run gives R-0061. TASK-0468 (P0.189)
+no longer does V238.
+
+**The order.** The standing order of 2026-11-26: P0.190, then P0.189 (TASK-0468), then P11.0, each merged after green
+continuous integration, until 09:00 on 2026-11-27. The section "Order" said that K17 comes after P21, but K17 is done since
+v0.427 (TASK-0443). This entry corrects it: the order continues with P11.
+
+**Proof.** `AdrGateTests`, `TaskGovernanceGateTests`, `RegisterGateTests` and `MarkerGateTests` pass, and the write-set check
+and `eng/repo-gates` pass. A clean build gives 0 warnings, and `dotnet test` passes 3339 tests with the image tests. Not
+verified: continuous integration has not run on this branch.
+
+New tests: 0. The test list holds 3339 (1950 in `Engine.Tests`, 391 in `3DEngine.Tests`, 995 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.451, 3 product milestones and 4
+entries followed it.
+The failed runs since the entry v0.454, from the API: before the push of the rewrite, none; the runs 45897261147 and
+45898420989 (P21) and 45899469533 (`main` at `2cb2cf0c`) were green. Run 45901171956 of `main` at `a715d982` is red in one job
+only, "Write set of the governing task": the step "Build the judge from main" builds the judge from the tip of `main` before
+the push, and after the rewrite that tip, `2cb2cf0c`, is not in the history, so the step refuses, as it must. The three gates
+and the hash of determinism passed. The merge of this task is the next push to `main`, with `a715d982` as the tip before it,
+so its run judges the job again. The push of the 436 heads also started a run of CI and of the two native builds on each
+head, about 1035 runs; the CI run of each old branch is red because the branch is behind `main`. No task merges those
+branches.

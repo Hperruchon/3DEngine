@@ -54,3 +54,5 @@ Each finding has a correction and a test, or a register entry with its reason.
 - [ ] Each finding has a test that fails before its correction, or a register entry.
 - [ ] Each injection of a correction makes a named test fail.
 - [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- 2026-11-26: V238 is done by P0.190 (TASK-0472): on the order of the owner the history of git was rewritten, and no version
+  of a file holds the folder of the owner. This task does not change `WaitingWordTests` for V238.
