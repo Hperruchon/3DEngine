@@ -5,7 +5,7 @@ status: Active
 phase: P0.191
 opened: 2026-11-27
 depends-on: [0468]
-governed-by: [0025, 0185, 0187, 0188]
+governed-by: [0007, 0017, 0019, 0023, 0025, 0029, 0038, 0072, 0075, 0076, 0077, 0080, 0081, 0082, 0083, 0085, 0086, 0092, 0100, 0101, 0102, 0104, 0105, 0106, 0109, 0110, 0111, 0114, 0116, 0120, 0124, 0127, 0129, 0130, 0137, 0138, 0140, 0163, 0166, 0167, 0168, 0170, 0171, 0174, 0176, 0177, 0184, 0185, 0187, 0188]
 writes:
   create:
     - tasks/TASK-0473-the-other-findings-of-the-review-of-2026-11-25.md
@@ -15,6 +15,14 @@ writes:
     - 3DEngine.ImageTests/ProposalPreviewWindowTests.cs
     - Engine.Tests/Governance/PathPatternWorkTests.cs
     - Engine.Tests/Governance/TaskGovernanceGateTests.cs
+    - Engine.Tests/Assembly/LampSupportCaseTests.cs
+    - eng/test-floor.txt
+    - 3DEngine.App/NativeThreeDEngine.cs
+    - docs/adr/0188-the-accept-after-a-preview-and-the-group-in-the-log.md
+    - 3DEngine.Vulkan/RenderPipeline.cs
+    - 3DEngine.Vulkan/OverlayRenderer.cs
+    - 3DEngine.ImageTests/PipelineStartTests.cs
+    - docs/register.md
   forbid:
     - Engine.Contracts/**
 ---
@@ -58,6 +66,8 @@ Each finding of this task has a correction and a test, or a register entry with 
 ## Notes for the implementer
 
 - Read the section "3 Review of the code" of the review for the place, the probe and the correction of each finding.
+- `governed-by` names each ADR whose `affects` holds a file of the write set. The 42 ADRs of `3DEngine.App/NativeThreeDEngine.cs`
+  come from one comment of V237 in that file; this task changes no code of the window.
 - E242 can start only after the answer of R-0081. E243, E245, V236, V237, T198, T199 and T200 need no answer.
 
 ## Outcome
@@ -68,7 +78,7 @@ Status: Active · no commit on `main` yet
 
 Mechanical: the corrections that the review names.
 Judgement:  each choice between the two corrections that the review gives.
-Weakest:    E242 waits for the answer of R-0081, and E243, E245, V236, V237 and T200 are not started.
+Weakest:    E242 waits for the answer of R-0081, and E243 and E245 are not started. `UiRenderer` still leaks at a failed start (R-0077).
 
 ## Progress
 
@@ -81,3 +91,11 @@ Weakest:    E242 waits for the answer of R-0081, and E243, E245, V236, V237 and 
   with no sleep; an `ApplyGroup` that ignores the version makes
   `A_Commit_Between_The_Comparison_And_The_Apply_Makes_The_Accept_Compare_Again` fail; the limits of 30 s of the new tests are
   60 s (ADR-0173 item 4). Not merged: the other findings are open.
+- 2026-11-27: V237: the comment of the accept in `NativeThreeDEngine` and ADR-0188 item 9 say that the version is the version
+  of the preview of the last frame, because the frame draws the shapes also when no panel shows; a version only when the panel
+  shows would hold each accept on a portrait phone. The code does not change. T200: `Each_Pair_That_The_Bound_Refuses_Shares_No_Volume`
+  intersects the two bodies of each of the 8 refused pairs and asks for no shared volume; a shaft of the knob of 7 mm gives
+  31.76 mm³ for the bracket and the knob, and the test fails. Row K24 already names ADR-0188 item 8 (TASK-0469).
+- 2026-11-27: V236: `RenderPipeline` and `OverlayRenderer` have the form of TASK-0461, and `PipelineStartTests` fails each of
+  their starts at each object; `UiRenderer` makes a set layout, a pool and a sampler before its modules, as `ImageRenderer` does,
+  so R-0077 now holds it.

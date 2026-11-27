@@ -6,7 +6,8 @@ namespace ThreeDEngine.ImageTests;
 // TASK-0461 (finding V234 of the codebase review of 2026-11-23): a start of the ground pipeline (ADR-0186) or of an edge
 // pipeline (ADR-0109) that fails at one of its objects frees each object that it made before. The validation layer gives a
 // message for each object that a device still holds when it is destroyed, so the count of its messages does not grow. Until
-// TASK-0461 a failed module leaked the other module, and a failed pipeline leaked its layout.
+// TASK-0461 a failed module leaked the other module, and a failed pipeline leaked its layout. TASK-0473 (finding V236 of the
+// codebase review of 2026-11-25) adds the three pipelines of the scene (`SceneRenderer`) and the overlay, with the same form.
 [Collection(DearImGui.Collection)]
 public sealed class PipelineStartTests
 {
@@ -27,6 +28,10 @@ public sealed class PipelineStartTests
             Assert.Throws<InvalidOperationException>(() => new GroundPipeline(device, target.RenderPass, Fail));
             Assert.Throws<InvalidOperationException>(() => new EdgePipeline(device, target.RenderPass, hidden: false, Fail));
             Assert.Throws<InvalidOperationException>(() => new EdgePipeline(device, target.RenderPass, hidden: true, Fail));
+            Assert.Throws<InvalidOperationException>(() => new RenderPipeline(device, target.RenderPass, "mesh.vert", "mesh.frag", highlight: false, depthOnly: false, Fail));
+            Assert.Throws<InvalidOperationException>(() => new RenderPipeline(device, target.RenderPass, "mesh.vert", "highlight.frag", highlight: true, depthOnly: false, Fail));
+            Assert.Throws<InvalidOperationException>(() => new RenderPipeline(device, target.RenderPass, "mesh.vert", "mesh.frag", highlight: false, depthOnly: true, Fail));
+            Assert.Throws<InvalidOperationException>(() => new OverlayRenderer(device, target.RenderPass, Fail));
         }
 
         Assert.True(GraphicsDevice.ValidationMessageCount == messagesBefore,

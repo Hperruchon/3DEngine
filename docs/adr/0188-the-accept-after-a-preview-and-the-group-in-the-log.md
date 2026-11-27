@@ -141,8 +141,9 @@ TASK-0462), and ordered "Start P16" in the chat on 2026-11-24:
    order of the plan, has the state `limit`, and the fork does not check it. So one preview costs at most the work of one check
    at its limit, about 13 s for an intersection on the computer of the owner. A client cannot give the limit: the query has no
    such parameter, and its answer does not change.
-9. **The window (amends ADR-0187 items 3 and 6).** The window gives the accept the version of the preview that its panel
-   showed. `Proposals.Kept` gives the code of the note of a held accept, and the panel shows the note first. The line of the
+9. **The window (amends ADR-0187 items 3 and 6).** The window gives the accept the version of the preview that its last frame
+   showed. The frame draws the shapes of "Both" also when no panel shows (a portrait display, under 1024 by 600, or the sheet
+   page, ADR-0187 item 6), so the shapes count as the preview that the person saw, without the measures and the checks. `Proposals.Kept` gives the code of the note of a held accept, and the panel shows the note first. The line of the
    outcome of an accept or a reject and the panel can now show together, so the panel ends 6 pixels above that line when it
    shows, and else 6 pixels above the status line.
 
@@ -195,3 +196,6 @@ bytes, so each older file opens and replays as before.
 - 2026-11-25 · TASK-0464 · The owner confirmed three points (the questions 1 to 3 of P16, "all A" of 2026-11-25): the format
   version stays 1 ("Bad"); item 4 refuses an `Undo` or a `Redo` at the accept, and the post does not refuse it earlier; item 7
   applies nothing after a failed fork. No item changes.
+- 2026-11-27 · TASK-0473 · Item 9: the window gives the version of the preview of its last frame, also when no panel shows,
+  because the frame draws the shapes; until TASK-0473 the item said "that its panel showed" (finding V237 of the codebase
+  review of 2026-11-25). The code does not change.

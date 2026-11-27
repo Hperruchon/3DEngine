@@ -656,8 +656,10 @@ public sealed class NativeThreeDEngine : IThreeDEngine, IDisposable
 
                     _acceptedBody = _renderer?.LiveBodies.FirstOrDefault(live => live.Id == Selection) is { } chosen ? chosen.Name ?? chosen.Kind : null;
                     _acceptedCommands = _cards?.FirstOrDefault(card => card.Id == accept.Proposal)?.CommandIds;
-                    // ADR-0188 item 6: the version of the preview that the panel shows, so the accept compares with the result that
-                    // the person saw; null when the panel shows no preview of this proposal.
+                    // ADR-0188 items 6 and 9: the version of the preview that the last frame showed, so the accept compares with the
+                    // result that the person saw; null when the frame showed no preview of this proposal. The frame draws the shapes
+                    // of "Both" also when no panel shows (a portrait display, under 1024 by 600, the sheet page), and the shapes count
+                    // (finding V237 of the codebase review of 2026-11-25, TASK-0473).
                     var seen = _shownPreview is { } shown && shown.Proposal == accept.Proposal ? shown.Version : (long?)null;
                     _proposalAccept = Task.Run(() => desk.Accept(accept.Proposal, seen));
                     break;

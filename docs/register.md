@@ -312,6 +312,10 @@ vertex buffer before its modules, so one failure leaks several objects; the corr
 fails only when the device fails, at the start of the window, and the process then stops.
 Exit: a task makes each object of the start of `ImageRenderer` free on a failure, with a test that fails the start at each
 object as `PipelineStartTests` does, or the owner accepts the leak at a failed start.
+Progress 2026-11-27: finding V236 of the codebase review of 2026-11-25 named three more starts (TASK-0473). `RenderPipeline`
+and `OverlayRenderer` now have the form of TASK-0461, with `PipelineStartTests`. `UiRenderer` makes a set layout, a pool and a
+sampler before its modules, as `ImageRenderer` does, so this entry also holds it: the exit covers `ImageRenderer` and
+`UiRenderer`.
 
 ### R-0079 · The layout test skips a tool of the ring under a panel as a control that the panel scrolls out of view
 - class: debt

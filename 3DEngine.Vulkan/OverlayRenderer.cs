@@ -24,16 +24,30 @@ public sealed unsafe class OverlayRenderer : IDisposable
     private readonly Dictionary<int, GpuBuffer> _slots = new();
 
     public OverlayRenderer(GraphicsDevice device, VkRenderPass renderPass)
+        : this(device, renderPass, fail: null)
+    {
+    }
+
+    // TASK-0473 (finding V236 of the codebase review of 2026-11-25): the form of TASK-0461. The modules are made inside the try,
+    // and a pipeline that fails frees its layout, so a failed start frees each object that it made. A test gives fail, which
+    // runs before each object ("vertex", "fragment", "layout", "pipeline") and can throw there.
+    internal OverlayRenderer(GraphicsDevice device, VkRenderPass renderPass, Action<string>? fail)
     {
         _device = device;
         var api = device.DeviceApi;
 
-        VkShaderModule vertex = device.CreateShaderModule(ShaderLibrary.Load("overlay.vert"));
-        VkShaderModule fragment = device.CreateShaderModule(ShaderLibrary.Load("overlay.frag"));
+        VkShaderModule vertex = default;
+        VkShaderModule fragment = default;
+        var made = false;
         try
         {
+            fail?.Invoke("vertex");
+            vertex = device.CreateShaderModule(ShaderLibrary.Load("overlay.vert"));
+            fail?.Invoke("fragment");
+            fragment = device.CreateShaderModule(ShaderLibrary.Load("overlay.frag"));
             VkPushConstantRange pushConstant = new() { stageFlags = VkShaderStageFlags.Vertex | VkShaderStageFlags.Fragment, offset = 0, size = PushConstantSize };
             VkPipelineLayoutCreateInfo layoutInfo = new() { pushConstantRangeCount = 1, pPushConstantRanges = &pushConstant };
+            fail?.Invoke("layout");
             api.vkCreatePipelineLayout(&layoutInfo, null, out VkPipelineLayout layout).CheckResult();
             Layout = layout;
 
@@ -98,14 +112,20 @@ public sealed unsafe class OverlayRenderer : IDisposable
                 };
 
                 VkPipeline pipeline;
+                fail?.Invoke("pipeline");
                 api.vkCreateGraphicsPipelines(VkPipelineCache.Null, 1, &pipelineInfo, &pipeline).CheckResult();
                 Pipeline = pipeline;
+                made = true;
             }
         }
         finally
         {
-            api.vkDestroyShaderModule(vertex);
-            api.vkDestroyShaderModule(fragment);
+            if (!made && Layout.IsNotNull)
+                api.vkDestroyPipelineLayout(Layout);
+            if (vertex.IsNotNull)
+                api.vkDestroyShaderModule(vertex);
+            if (fragment.IsNotNull)
+                api.vkDestroyShaderModule(fragment);
         }
     }
 

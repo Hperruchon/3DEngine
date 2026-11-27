@@ -155,6 +155,48 @@ public sealed class LampSupportCaseTests : IDisposable
         Assert.All(contacts, key => Assert.True(Classes.ContainsKey(key), $"{key} is not in the table."));
     }
 
+    // TASK-0473 (finding T200 of the codebase review of 2026-11-25): the bound of work refuses the check of 8 pairs, so the test
+    // above checks them by their boxes only. Here each of the 8 pairs shares no volume: the intersection of its two bodies is
+    // refused with "share no volume", or it gives a body of no volume (Manifold gives a flat solid for two bodies that touch on
+    // a face, ADR-0181 item 3). A builder that moves the shaft of the knob into the arm or into the lug gives a volume, and this
+    // test fails. An Undo after each intersection gives the two bodies back for the next pair.
+    [NativeManifoldFact]
+    public async Task Each_Pair_That_The_Bound_Refuses_Shares_No_Volume()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        var built = await LampSupportCase.Build(session);
+        var refused = Classes.Where(entry => entry.Value is null).Select(entry => entry.Key).ToHashSet(StringComparer.Ordinal);
+        var names = built.Keys.ToList();
+        var checkedPairs = 0;
+        for (var i = 0; i < names.Count; i++)
+        {
+            for (var j = i + 1; j < names.Count; j++)
+            {
+                var key = Key(names[i], names[j]);
+                if (!refused.Contains(key))
+                    continue;
+                var command = new Engine.Core.Commands.IntersectCommand { FirstBodyId = built[names[i]], SecondBodyId = built[names[j]] };
+                var result = await session.Apply(command);
+                checkedPairs++;
+                if (result.Status != CommandStatus.Applied)
+                {
+                    Assert.True(result.Error?.Code == DiagnosticCodes.GeomNativeOp && result.Error.Message.Contains("share no volume", StringComparison.Ordinal),
+                        $"{key}: the intersection gave {result.Error?.Code} {result.Error?.Message}");
+                    continue;
+                }
+
+                var mass = await session.Query<MassProperties>(new GetMassPropertiesQuery { BodyId = command.CommandId });
+                Assert.True(mass.Error is null, $"{key}: {mass.Error?.Code} {mass.Error?.Message}");
+                Assert.True(Math.Abs(mass.Result!.Volume) < 1e-6, $"{key}: the two bodies share {mass.Result.Volume} mm³.");
+                Assert.Equal(CommandStatus.Applied, (await session.Apply(new Engine.Core.Commands.UndoCommand())).Status);
+            }
+        }
+
+        session.Close();
+        Assert.Equal(8, checkedPairs);
+    }
+
     // A key of a pair that does not depend on the order of the two names.
     private static string Key(string a, string b) => string.CompareOrdinal(a, b) < 0 ? $"{a} · {b}" : $"{b} · {a}";
 
