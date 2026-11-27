@@ -1,7 +1,7 @@
 ---
 id: 0468
 title: The medium and low findings of the codebase review of 2026-11-25
-status: Active
+status: Done
 phase: P0.189
 opened: 2026-11-25
 depends-on: [0472]
@@ -107,7 +107,7 @@ register entry with its reason.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0189-findings) · v0.456
+Status: Done · commit (the merge of the branch p0189-findings) · v0.456
 
 ## Method
 
@@ -123,3 +123,4 @@ Weakest:    The test of T197 shows the order that the rule of ADR-0188 "Bad" nee
 - 2026-11-26: V238 is done by P0.190 (TASK-0472).
 - 2026-11-27: started under the standing order of 2026-11-26, branch `p0189-findings` from the close of P0.190 (`297d9cff`).
   The scope keeps T197, T201, T202 and E244; TASK-0473 gets the other findings, and R-0081 asks the owner about E242.
+- 2026-11-27: run 45941449136 of `4b5e0121` passed on each job. Closed at v0.456.
