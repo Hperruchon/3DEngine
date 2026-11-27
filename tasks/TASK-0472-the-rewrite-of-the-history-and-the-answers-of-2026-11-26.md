@@ -1,7 +1,7 @@
 ---
 id: 0472
 title: The rewrite of the history and the answers of the owner of 2026-11-26 are a record, with three new rows and their order
-status: Active
+status: Done
 phase: P0.190
 opened: 2026-11-26
 depends-on: [0471]
@@ -107,7 +107,7 @@ task of P0.189 hold the answers of 2026-11-26, so that a later session opens eac
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0190-owner-answers) · v0.455
+Status: Done · commit (the merge of the branch p0190-owner-answers) · v0.455
 
 ## Method
 
@@ -122,3 +122,4 @@ Weakest:    GitHub keeps each old commit by its id until GitHub removes the obje
 
 - 2026-11-26: opened on the answers of the owner and the standing order of the evening, branch `p0190-owner-answers` from
   `origin/main` at `a715d982` (v0.454, the tip of `main` after the rewrite).
+- 2026-11-27: run 45940188942 of `439159b2` passed on each job. Closed at v0.455.
