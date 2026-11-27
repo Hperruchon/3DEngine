@@ -41,6 +41,7 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.ApiProposalNotFound,   "Error",   "API"), // TASK-0326
         new(DiagnosticCodes.ApiProposalClosed,     "Error",   "API"), // TASK-0326
         new(DiagnosticCodes.ApiProposalCommandKnown, "Error", "API"), // TASK-0331
+        new(DiagnosticCodes.ApiProposalNotReversed, "Error", "API"), // TASK-0473
         new(DiagnosticCodes.ApiPreviewFailed,      "Error",   "API"), // TASK-0456
         new(DiagnosticCodes.ApiProposalResultChanged, "Warning", "API"), // TASK-0463
         new(DiagnosticCodes.ApiHostStopped,        "Error",   "API"), // TASK-0461

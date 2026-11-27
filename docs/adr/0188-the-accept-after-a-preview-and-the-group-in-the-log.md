@@ -1,13 +1,13 @@
 ---
 id: 0188
 title: The accept after a preview compares the result and applies a proposal as one group of steps, which the log holds and one Undo reverses
-status: Accepted
+status: Amended
 topic: Contracts, surface, agent
 date: 2026-11-24
 supersedes: []
 superseded-by: []
 amends: ['0015', '0031', '0092', '0130', '0182', '0185', '0187']
-amended-by: []
+amended-by: ['0190']
 affects:
   - Engine.Contracts/Command.cs
   - Engine.Core/Persistence/EntryCodec.cs
@@ -131,7 +131,8 @@ TASK-0462), and ordered "Start P16" in the chat on 2026-11-24:
 7. **A result that stops (amends ADR-0092 items 4 and 6).** When the equal result stops at a command (`failedIndex`), or the
    fork failed (`E-API-PREVIEW-FAILED`), the accept applies nothing, and the proposal is `failed` with that index and that code.
    A failed proposal applied nothing: its `results` give the result of each command that ran before an `Undo` of the group
-   reversed it. The arc says "N commands · 1 step of undo", and an accepted proposal says "Proposal accepted: N commands
+   reversed it. When that `Undo` does not apply, for example after a failed write of the file, the commands before the failed
+   command stay applied, and the code is `E-API-PROPOSAL-NOT-REVERSED`. The arc says "N commands · 1 step of undo", and an accepted proposal says "Proposal accepted: N commands
    applied, 1 step of undo" (amends ADR-0130 item 4: the button Undo undoes the whole proposal).
 8. **The bound of the checks of one preview (Q6 A; amends ADR-0182 item 8 and ADR-0185 item 10).** The fork gives each check of
    a pair the work that the bound of the preview leaves, 100,000 products of the counts of the pieces (the limit of one check)
@@ -141,8 +142,9 @@ TASK-0462), and ordered "Start P16" in the chat on 2026-11-24:
    order of the plan, has the state `limit`, and the fork does not check it. So one preview costs at most the work of one check
    at its limit, about 13 s for an intersection on the computer of the owner. A client cannot give the limit: the query has no
    such parameter, and its answer does not change.
-9. **The window (amends ADR-0187 items 3 and 6).** The window gives the accept the version of the preview that its panel
-   showed. `Proposals.Kept` gives the code of the note of a held accept, and the panel shows the note first. The line of the
+9. **The window (amends ADR-0187 items 3 and 6).** The window gives the accept the version of the preview that its last frame
+   showed. The frame draws the shapes of "Both" also when no panel shows (a portrait display, under 1024 by 600, or the sheet
+   page, ADR-0187 item 6), so the shapes count as the preview that the person saw, without the measures and the checks. `Proposals.Kept` gives the code of the note of a held accept, and the panel shows the note first. The line of the
    outcome of an accept or a reject and the panel can now show together, so the panel ends 6 pixels above that line when it
    shows, and else 6 pixels above the status line.
 
@@ -195,3 +197,11 @@ bytes, so each older file opens and replays as before.
 - 2026-11-25 · TASK-0464 · The owner confirmed three points (the questions 1 to 3 of P16, "all A" of 2026-11-25): the format
   version stays 1 ("Bad"); item 4 refuses an `Undo` or a `Redo` at the accept, and the post does not refuse it earlier; item 7
   applies nothing after a failed fork. No item changes.
+- 2026-11-27 · TASK-0473 · Item 9: the window gives the version of the preview of its last frame, also when no panel shows,
+  because the frame draws the shapes; until TASK-0473 the item said "that its panel showed" (finding V237 of the codebase
+  review of 2026-11-25). The code does not change.
+- 2026-11-27 · TASK-0473 · Item 7: an `Undo` of the group that does not apply gives the code `E-API-PROPOSAL-NOT-REVERSED`, and
+  the commands before the failed command stay applied; until TASK-0473 the item said that a failed proposal applied nothing in
+  each case (finding E245 of the codebase review of 2026-11-25).
+- 2026-11-27 · TASK-0473 · ADR-0190 amends items 1, 3 and 4: the `Undo` that reverses a failed group has the group of the
+  proposal, the bus takes it from the session and from the log only, and it puts nothing on the redo list (finding E242).

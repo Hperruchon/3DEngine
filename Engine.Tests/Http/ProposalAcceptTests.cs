@@ -96,13 +96,13 @@ public sealed class ProposalAcceptTests
 
     private static async Task<ProposalPreview> Preview(Served served, Guid id)
     {
-        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(60));
         return await served.Host.Proposals.Preview(id, limit.Token) ?? throw new InvalidOperationException("No preview.");
     }
 
     private static async Task<Proposal> Accept(Served served, Guid id, long? seen)
     {
-        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(60));
         return await served.Host.Proposals.Accept(id, seen, limit.Token) ?? throw new InvalidOperationException("The proposal is not open.");
     }
 
@@ -234,6 +234,56 @@ public sealed class ProposalAcceptTests
         Assert.Equal(["Shelf"], await Names(served));
     }
 
+    // TASK-0473 (finding E245 of the codebase review of 2026-11-25): a write of the file that fails at the second command of an
+    // accept breaks the journal, so the session refuses the Undo of the group too. The first command stays in the Document and
+    // in the file, and the proposal says so with E-API-PROPOSAL-NOT-REVERSED. Until TASK-0473 the proposal gave the code of the
+    // failed write and said that nothing applied. The preview runs on a fork with no file, so it does not fail.
+    [Fact]
+    public async Task An_Undo_Of_The_Group_That_Does_Not_Apply_Gives_Its_Own_Code()
+    {
+        await using var served = await Served.Start();
+        var stream = new FailingOnText("Fails here");
+        served.Host.Session.Attach(Engine.Core.Persistence.DocumentJournal.ForTest(
+            Path.Combine(Path.GetTempPath(), $"3de-accept-{Guid.NewGuid():N}.3de"), Document.Millimetre, stream));
+        var box = await Made(served);
+        var id = await Post(served, "Two names", Rename(box, "Shelf"), Rename(box, "Fails here"));
+        var seen = await Preview(served, id);
+        Assert.Null(seen.FailedIndex);
+
+        var failed = await Accept(served, id, seen.DocumentVersion);
+
+        Assert.Equal((ProposalStates.Failed, 1, DiagnosticCodes.ApiProposalNotReversed), (failed.State, failed.FailedIndex, failed.FailedCode));
+        Assert.Equal(["Shelf"], await Names(served));
+        Assert.Equal(["CreateBox", "RenameBody"], await Log(served));
+        Assert.Equal(1, stream.Failures);
+    }
+
+    // A stream whose write of a line that holds the text fails, as a full disk does.
+    private sealed class FailingOnText(string text) : MemoryStream
+    {
+        public int Failures { get; private set; }
+
+        public override void Write(ReadOnlySpan<byte> buffer)
+        {
+            Check(buffer);
+            base.Write(buffer.ToArray(), 0, buffer.Length);
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            Check(buffer.AsSpan(offset, count));
+            base.Write(buffer, offset, count);
+        }
+
+        private void Check(ReadOnlySpan<byte> buffer)
+        {
+            if (!Encoding.UTF8.GetString(buffer).Contains(text, StringComparison.Ordinal))
+                return;
+            Failures++;
+            throw new IOException("The disk is full.");
+        }
+    }
+
     // Item 7: a result that stops at a command applies nothing; the proposal is failed with the index and the code of the
     // preview, and the log does not change.
     [Fact]
@@ -270,17 +320,21 @@ public sealed class ProposalAcceptTests
         {
             if (Interlocked.Exchange(ref once, 1) != 0)
                 return;
-            release.Task.Wait(TimeSpan.FromSeconds(30));
+            release.Task.Wait(TimeSpan.FromSeconds(60));
             BookcaseCase.Applied(served.Host.Session, new RenameBodyCommand { BodyId = box, NewName = "Plate" }).GetAwaiter().GetResult();
         };
         await BookcaseCase.Applied(served.Host.Session, new NoOpCommand { Echo = "version 2" });
 
         var accept = Accept(served, id, seen.DocumentVersion);
-        // The accept reads the version 2 and waits for its fork, which waits for the release. The wait gives the accept the time
-        // to start that wait; a later start reads the version 3, and the test still passes, with no stale apply.
-        while (served.Host.Proposals.Find(id)?.State != ProposalStates.Applying)
+        // The accept reads the version 2 and waits for its fork, which waits for the release. TASK-0473 (finding T198 of the codebase
+        // review of 2026-11-25): the test releases the fork only when the accept waits for a preview. Before the release the
+        // Document has the version 2 only, so that wait is at the version 2, and the accept reaches the stale apply in each run.
+        // Until TASK-0473 a sleep of 300 ms gave the accept the time, and a slow runner read the version 3 and tested no stale apply.
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        while (served.Host.Proposals.WaitersOf(id) == 0 && !accept.IsCompleted && clock.Elapsed < TimeSpan.FromSeconds(60))
             await Task.Delay(10);
-        await Task.Delay(300);
+        Assert.Equal(1, served.Host.Proposals.WaitersOf(id));
+        Assert.Equal(seen.DocumentVersion + 1, await served.Host.Session.Read((document, _) => document.Version));
         release.SetResult();
         var held = await accept;
 

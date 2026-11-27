@@ -173,21 +173,27 @@ public sealed partial class Proposals : IDisposable
                     entry.Results.AddRange(outcome.Results);
                     if (outcome.FailedIndex is not { } failed)
                         return CloseLocked(entry, ProposalStates.Accepted);
-                    (entry.FailedIndex, entry.FailedCode) = (failed, outcome.Known ? DiagnosticCodes.ApiProposalCommandKnown : outcome.Results[^1].Error?.Code);
+                    // TASK-0473 (finding E245 of the codebase review of 2026-11-25): an Undo of the group that did not apply, for
+                    // example after a failed write of the file, leaves the commands before the failed command applied, so the code
+                    // says it. Until TASK-0473 the proposal said that nothing applied.
+                    (entry.FailedIndex, entry.FailedCode) = (failed, outcome.Undo is { Status: not CommandStatus.Applied }
+                        ? DiagnosticCodes.ApiProposalNotReversed
+                        : outcome.Known ? DiagnosticCodes.ApiProposalCommandKnown : outcome.Results[^1].Error?.Code);
                     return CloseLocked(entry, ProposalStates.Failed);
                 }
             }
         }
-        catch
+        catch (Exception exception)
         {
             // A session that closed, a cancellation, or a handler that threw (the session reversed the group first): the proposal
-            // is failed with no code, and the exception goes to the caller.
+            // is failed with no code, and the exception goes to the caller. TASK-0473 (finding E245): the index is the command
+            // that threw, which the session puts on the exception.
             lock (_lock)
             {
                 entry.Committing = false;
                 if (entry.State == ProposalStates.Applying)
                 {
-                    entry.FailedIndex = entry.Results.Count;
+                    entry.FailedIndex = exception.Data[DocumentSession.FailedIndexKey] is int index ? index : entry.Results.Count;
                     CloseLocked(entry, ProposalStates.Failed);
                 }
             }
@@ -346,6 +352,7 @@ public static class ProposalStates
 // at the post; Stale is true when a command applied after it. Results holds the result of each command that ran, and a failed
 // proposal names the index of the command that stopped it and its code, or no code when the command did not run. ADR-0188
 // (phase P16, TASK-0463): a failed proposal applied nothing, because one Undo of its group reversed each command that ran.
+// TASK-0473 (finding E245): the one exception is the code E-API-PROPOSAL-NOT-REVERSED, when that Undo did not apply.
 // Held is the note of the last accept that applied nothing because the result changed (W-API-PROPOSAL-RESULT-CHANGED), or null.
 public sealed record Proposal(
     Guid Id,

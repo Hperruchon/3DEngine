@@ -49,6 +49,9 @@ public sealed class CommandBus
     // above is.
     private readonly StepHistory _history = new();
 
+    // ADR-0190 item 2 (TASK-0473): the group whose reversal the session applies now (Reverse), or null.
+    private Guid? _reversal;
+
     // ADR-0033 item 5: each sketch identifier that a commit of this bus created, as the
     // set of handles above does for the bodies.
     private readonly HashSet<Guid> _createdSketches = [];
@@ -119,6 +122,21 @@ public sealed class CommandBus
     // 2026-10-28). The result still goes into the cache, as in a live session.
     internal Task<CommandResult> ApplyEntry(Command command, CancellationToken ct = default)
         => Apply(command, lookUp: false, ct);
+
+    // ADR-0190 item 2 (TASK-0473, finding E242): the Undo of the steps of a failed group, with the group of the proposal, so the
+    // log marks it. The session calls it in its serial section, with no cancellation (ADR-0188 item 5).
+    internal async Task<CommandResult> Reverse(Guid group)
+    {
+        _reversal = group;
+        try
+        {
+            return await Apply(new Commands.UndoCommand { GroupId = group }, CancellationToken.None).ConfigureAwait(false);
+        }
+        finally
+        {
+            _reversal = null;
+        }
+    }
 
     private async Task<CommandResult> Apply(Command command, bool lookUp, CancellationToken ct)
     {
@@ -231,7 +249,7 @@ public sealed class CommandBus
             return Reject(command, handlerResult.Error!, stopwatch, handlerResult.Diagnostics);
 
         if (handlerResult.History != HistoryMove.None)
-            return Move(command, handler, handlerResult, stopwatch);
+            return Move(command, handler, handlerResult, stopwatch, entry);
 
         RefuseWrongBodyLists(command, handlerResult);
         RefuseWrongSketchLists(command, handlerResult);
@@ -302,7 +320,8 @@ public sealed class CommandBus
         Command command,
         ICommandHandler handler,
         CommandHandlerResult handlerResult,
-        Stopwatch stopwatch)
+        Stopwatch stopwatch,
+        bool entry)
     {
         if (handlerResult.History is not (HistoryMove.Undo or HistoryMove.Redo)
             || handlerResult.CreatedBodies.Count + handlerResult.ConsumedBodies.Count + handlerResult.ChangedBodies.Count
@@ -317,18 +336,28 @@ public sealed class CommandBus
 
         // ADR-0188 item 4 (phase P16, TASK-0463): a group holds steps only. An Undo or a Redo in a group would move a unit that
         // the group itself builds, and a failed accept could then reverse a step of the person, so the bus refuses it before the
-        // history and the file.
-        if (command.GroupId is { } group)
+        // history and the file. ADR-0190 items 1 and 2 (TASK-0473, finding E242): the one exception is the reversal of a failed
+        // group, an Undo with the group of the proposal. The session applies it (Reverse), and an open or a replay applies it as
+        // an entry of the log: the bus refused each other Undo with a group before the file, so each such entry is a reversal.
+        var undo = handlerResult.History == HistoryMove.Undo;
+        var reversal = undo && command.GroupId is { } marked && (entry || _reversal == marked);
+        if (command.GroupId is { } group && !reversal)
             return Reject(command, new ErrorDetail(
                 DiagnosticCodes.CommandGroupMove,
                 $"The command '{command.Name}' has the group {group}. A group holds steps only, so an Undo or a Redo has no group (ADR-0188 item 4)."),
                 stopwatch, handlerResult.Diagnostics);
 
-        var undo = handlerResult.History == HistoryMove.Undo;
         if ((undo ? _history.NextUndo : _history.NextRedo) is not { } unit)
             return Reject(command, undo
                 ? new ErrorDetail(DiagnosticCodes.CommandNothingToUndo, "The document has no step to undo.")
                 : new ErrorDetail(DiagnosticCodes.CommandNothingToRedo, "The document has no undone step to redo."),
+                stopwatch, handlerResult.Diagnostics);
+
+        // ADR-0190 item 2: a reversal reverses the steps of its own group only.
+        if (reversal && unit[^1].GroupId != command.GroupId)
+            return Reject(command, new ErrorDetail(
+                DiagnosticCodes.CommandGroupMove,
+                $"The Undo of the group {command.GroupId} reverses the steps of that group only, and the last unit of the history has another group (ADR-0190 item 2)."),
                 stopwatch, handlerResult.Diagnostics);
 
         if (Journal is { } journal && Write(journal, command, handler, handlerResult, stopwatch) is { } refused)
@@ -341,7 +370,11 @@ public sealed class CommandBus
         if (undo)
         {
             var reversed = Commit(command, [.. unit.Reverse().Select(Reversal)], outputs, handlerResult.Diagnostics, stopwatch);
-            _history.Undone();
+            // ADR-0190 item 3: the reversal of a failed group puts nothing on the redo list.
+            if (reversal)
+                _history.Reversed();
+            else
+                _history.Undone();
             return reversed;
         }
 

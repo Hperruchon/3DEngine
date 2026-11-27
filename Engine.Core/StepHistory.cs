@@ -60,6 +60,14 @@ internal sealed class StepHistory
 
     public void Redone() => Move(_undone, _done);
 
+    // ADR-0190 item 3 (TASK-0473, finding E242): the reversal of a failed group removes its unit and puts nothing on the redo
+    // list, so no Redo applies a part of a proposal that no preview showed.
+    public void Reversed()
+    {
+        var start = UnitStart(_done, step => step.GroupId);
+        _done.RemoveRange(start, _done.Count - start);
+    }
+
     // The last unit of one list goes to the end of the other list, in the order of its steps.
     private static void Move(List<Step> from, List<Step> to)
     {

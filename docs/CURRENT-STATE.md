@@ -14471,3 +14471,54 @@ New tests: 1 (`A_Reset_Of_The_Artifact_Service_Gets_A_Re_Run`). The test list ho
 opens). New diagnostic codes: 0. Since the review of v0.451, 3 product milestones and 5 entries followed it.
 The failed runs since the entry v0.455, from the API: none. Run 45940188942 of P0.190 was green; the run of its close and the
 run of its merge into `main` ran after this entry was written.
+
+## v0.457 — After a failed accept no Redo applies a part of the proposal, and six low findings of the review of 2026-11-25 are corrected (P0.191, TASK-0473)
+
+TASK-0473 holds the findings of the codebase review of 2026-11-25 that TASK-0468 and TASK-0472 did not do: E242 (medium), and
+E243, E245, V236, V237, T198, T199 and T200 (low).
+
+**E242 (ADR-0190).** When command k of an accepted proposal did not apply, the session reversed the steps 0 to k−1 with one
+`Undo`, and the unit went to the redo list, so the next `Redo` applied a part of the proposal that no preview showed. The owner
+answered Q2 A on 2026-11-26 and R-0081 A on 2026-11-27. The `Undo` of the reversal now has the group of the proposal in
+`GroupId`. The bus takes such an `Undo` only from `CommandBus.Reverse` and from an entry of the log; each other `Undo` or `Redo`
+with a group is still refused with `E-CMD-GROUP-MOVE`. `StepHistory.Reversed`, `FeatureList`, `SketchRebuild` and `StepTexts`
+put nothing on the redo list for it. ADR-0190 amends ADR-0188 items 1, 3 and 4, and the comment of `GroupId` in
+`Engine.Contracts/Command.cs` says so. The format version stays 1: an app of before TASK-0473 cannot open a file that holds a
+reversal, a cost that the owner accepted. A file of before TASK-0473 keeps its old behaviour. R-0081 closes.
+
+**E245.** When the `Undo` of the group of an accept does not apply, the proposal is failed with the new code
+`E-API-PROPOSAL-NOT-REVERSED`, not with the code of the first failure. When a handler throws, `ApplyGroup` puts the index of
+that command on the exception (`DocumentSession.FailedIndexKey`), and the accept names it; until this task it named 0.
+
+**V236.** `RenderPipeline` and `OverlayRenderer` free each object that they made before a failed start, in the form of
+TASK-0461, and `PipelineStartTests` fails each of their starts at each object. `UiRenderer` makes a set layout, a pool and a
+sampler before its modules, as `ImageRenderer` does, so R-0077 now holds it too.
+
+**V237.** The accept of the window gives the version of the preview of the last frame. The frame draws the shapes also when no
+panel shows, and a version only when the panel shows would hold each accept on a portrait phone. The comment in
+`NativeThreeDEngine` and ADR-0188 item 9 now say so. The code does not change.
+
+**T198.** The test of a stale group releases the fork when the accept waits for a preview at the version 2, with no sleep, and the
+limits of the new tests are 60 s (ADR-0173 item 4). **T199.** The gate of `governed-by` gives the texts that it can ask for, and
+the test asks that each asked text is one of them, so a warm cache cannot hide a second expression for one pattern. **T200.**
+`Each_Pair_That_The_Bound_Refuses_Shares_No_Volume` intersects the two bodies of each of the 8 refused pairs of K10b.
+
+**E243 goes to the register.** A fork still pushes the kept solids of its source out of the cache of 64. Only the cost changes, and
+the owner chose on 2026-11-27 to land this task with the finding open. New entry R-0082 holds it, with the probe and the correction
+of the review as its exit.
+
+**Proof.** A clean build gives 0 warnings, and `dotnet test` passes 3344 tests with the image tests. Each correction has an
+injection that makes a named test fail: a reversal that goes to the redo list fails `A_Redo_After_A_Failed_Group_Applies_Nothing`,
+a bus that takes a client `Undo` with a group fails `An_Undo_With_A_Group_From_A_Client_Is_Still_Refused`, an accept that does
+not read the `Undo` fails `An_Undo_Of_The_Group_That_Does_Not_Apply_Gives_Its_Own_Code`, a shaft of the knob of 7 mm fails
+`Each_Pair_That_The_Bound_Refuses_Shares_No_Volume`, and an `ApplyGroup` that ignores the version fails
+`A_Commit_Between_The_Comparison_And_The_Apply_Makes_The_Accept_Compare_Again`. Run 46070477589 of `da6d32d5` passed on each
+job. Not verified by a test: on a valid log the walkers `FeatureList`, `SketchRebuild` and `StepTexts` give the same result with
+or without the change, because the bus refuses each `Redo` after a reversal. The read of the index in `Proposals` has no test of
+its own.
+
+New tests: 4 (`A_Redo_After_A_Failed_Group_Applies_Nothing`, `An_Undo_With_A_Group_From_A_Client_Is_Still_Refused`,
+`An_Undo_Of_The_Group_That_Does_Not_Apply_Gives_Its_Own_Code`, `Each_Pair_That_The_Bound_Refuses_Shares_No_Volume`). The test
+list holds 3344 (1955 in `Engine.Tests`, 391 in `3DEngine.Tests`, 995 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`).
+Open entries: 13 of 15 (R-0081 closes, R-0082 opens). New diagnostic codes: 1 (`E-API-PROPOSAL-NOT-REVERSED`). Since the review
+of v0.451, 3 product milestones and 6 entries followed it. The failed runs since the entry v0.456, from the API: none.

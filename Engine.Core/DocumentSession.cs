@@ -166,6 +166,11 @@ public sealed class DocumentSession
     // Undo with no cancellation, which reverses each step of the group that applied (ADR-0188 item 3), and the log holds it.
     // A handler that throws gets the same Undo, and its exception then goes to the caller. The bus has no rollback of the backend
     // (finding E21), so a group never needs one.
+    // TASK-0473 (finding E245 of the codebase review of 2026-11-25): the exception of a handler that throws in a group holds the
+    // index of its command under this key, so a caller names the command that threw. Until TASK-0473 the accept named the index
+    // 0 for each command that threw, because its list of results was still empty.
+    public const string FailedIndexKey = "Engine.Core.DocumentSession.FailedIndex";
+
     public async Task<GroupOutcome> ApplyGroup(IReadOnlyList<Command> commands, long? version, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(commands);
@@ -190,9 +195,10 @@ public sealed class DocumentSession
                 {
                     result = await _commands.Apply(commands[i], ct).ConfigureAwait(false);
                 }
-                catch
+                catch (Exception exception)
                 {
-                    await ReverseGroup(start).ConfigureAwait(false);
+                    await ReverseGroup(start, group).ConfigureAwait(false);
+                    exception.Data[FailedIndexKey] = i;
                     throw;
                 }
 
@@ -200,7 +206,7 @@ public sealed class DocumentSession
                 if (!known)
                     results.Add(result);
                 if (known || result.Status != CommandStatus.Applied)
-                    return new GroupOutcome(false, start, results, i, known, await ReverseGroup(start).ConfigureAwait(false));
+                    return new GroupOutcome(false, start, results, i, known, await ReverseGroup(start, group).ConfigureAwait(false));
             }
 
             return new GroupOutcome(false, start, results, null, false, null);
@@ -212,9 +218,10 @@ public sealed class DocumentSession
     }
 
     // The Undo of the steps of a group that applied after the version start, or null when none applied. It runs in the section
-    // of the caller and is not cancelled: a commit does not stop (ADR-0006 section 4).
-    private async Task<CommandResult?> ReverseGroup(long start)
-        => _document.Version == start ? null : await _commands.Apply(new Commands.UndoCommand(), CancellationToken.None).ConfigureAwait(false);
+    // of the caller and is not cancelled: a commit does not stop (ADR-0006 section 4). ADR-0190 (TASK-0473, finding E242): the
+    // Undo has the group, so the log marks the reversal, and no Redo applies the part of the proposal that ran.
+    private async Task<CommandResult?> ReverseGroup(long start, Guid group)
+        => _document.Version == start ? null : await _commands.Reverse(group).ConfigureAwait(false);
 
     public async Task<QueryResult<T>> Query<T>(Query query, CancellationToken ct = default)
     {

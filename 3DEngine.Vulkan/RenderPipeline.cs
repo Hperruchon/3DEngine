@@ -44,18 +44,33 @@ public sealed unsafe class RenderPipeline : IDisposable
     private readonly bool _tinted;
 
     public RenderPipeline(GraphicsDevice device, VkRenderPass renderPass, string vertexShader, string fragmentShader, bool highlight = false, bool depthOnly = false)
+        : this(device, renderPass, vertexShader, fragmentShader, highlight, depthOnly, fail: null)
+    {
+    }
+
+    // TASK-0473 (finding V236 of the codebase review of 2026-11-25): the form of TASK-0461. The modules are made inside the try,
+    // and a pipeline that fails frees its layout, so a failed start frees each object that it made. Until TASK-0473 a failed
+    // module leaked the other module, and a failed pipeline leaked the layout. A test gives fail, which runs before each object
+    // ("vertex", "fragment", "layout", "pipeline") and can throw there.
+    internal RenderPipeline(GraphicsDevice device, VkRenderPass renderPass, string vertexShader, string fragmentShader, bool highlight, bool depthOnly, Action<string>? fail)
     {
         _device = device;
         _tinted = highlight;
 
-        VkShaderModule vertex = device.CreateShaderModule(ShaderLibrary.Load(vertexShader));
-        VkShaderModule fragment = device.CreateShaderModule(ShaderLibrary.Load(fragmentShader));
+        VkShaderModule vertex = default;
+        VkShaderModule fragment = default;
+        var made = false;
         try
         {
+            fail?.Invoke("vertex");
+            vertex = device.CreateShaderModule(ShaderLibrary.Load(vertexShader));
+            fail?.Invoke("fragment");
+            fragment = device.CreateShaderModule(ShaderLibrary.Load(fragmentShader));
             VkPushConstantRange* pushConstants = stackalloc VkPushConstantRange[2];
             pushConstants[0] = new() { stageFlags = VkShaderStageFlags.Vertex, offset = 0, size = PushConstantSize };
             pushConstants[1] = new() { stageFlags = VkShaderStageFlags.Fragment, offset = TintOffset, size = TintSize };
             VkPipelineLayoutCreateInfo layoutInfo = new() { pushConstantRangeCount = highlight ? 2u : 1u, pPushConstantRanges = pushConstants };
+            fail?.Invoke("layout");
             device.DeviceApi.vkCreatePipelineLayout(&layoutInfo, null, out VkPipelineLayout layout).CheckResult();
             Layout = layout;
 
@@ -125,14 +140,20 @@ public sealed unsafe class RenderPipeline : IDisposable
                 };
 
                 VkPipeline pipeline;
+                fail?.Invoke("pipeline");
                 device.DeviceApi.vkCreateGraphicsPipelines(VkPipelineCache.Null, 1, &pipelineInfo, &pipeline).CheckResult();
                 Handle = pipeline;
+                made = true;
             }
         }
         finally
         {
-            device.DeviceApi.vkDestroyShaderModule(vertex);
-            device.DeviceApi.vkDestroyShaderModule(fragment);
+            if (!made && Layout.IsNotNull)
+                device.DeviceApi.vkDestroyPipelineLayout(Layout);
+            if (vertex.IsNotNull)
+                device.DeviceApi.vkDestroyShaderModule(vertex);
+            if (fragment.IsNotNull)
+                device.DeviceApi.vkDestroyShaderModule(fragment);
         }
     }
 

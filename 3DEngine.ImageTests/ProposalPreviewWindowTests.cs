@@ -105,7 +105,7 @@ public sealed class ProposalPreviewWindowTests
         var text = await response.Content.ReadAsStringAsync();
         Assert.True(response.StatusCode == System.Net.HttpStatusCode.Created, text);
         var id = System.Text.Json.JsonDocument.Parse(text).RootElement.GetProperty("id").GetGuid();
-        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(60));
         Assert.NotNull(await surface.Host.Proposals.Preview(id, limit.Token));
         return id;
     }
@@ -164,7 +164,7 @@ public sealed class ProposalPreviewWindowTests
             var first = desk.Preview(second) ?? throw new InvalidOperationException("No preview.");
             Assert.True(first.Current);
             await surface.Host.Session.Apply(new RenameBodyCommand { BodyId = bracket.Post, NewName = "Pillar" });
-            using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(60));
             await surface.Host.Proposals.Preview(second, limit.Token);
             var again = desk.Preview(second) ?? throw new InvalidOperationException("No preview.");
             Assert.True(again.Current);

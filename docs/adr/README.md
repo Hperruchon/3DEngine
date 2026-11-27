@@ -193,8 +193,9 @@ names. Do not read all of them.
 | [0185](0185-the-preview-of-a-proposal-on-a-fork.md) | The preview of a proposal on a fork of the Document, a replay of a copy of its log off the serial lock | Amended | Surface, agent | 0092 | 0187, 0188 |
 | [0186](0186-the-soft-light-of-the-ground.md) | The ground of the scene has the soft light of the render, lighter at the middle and darker at the corners | Accepted | Clients, rendering | 0108 | — |
 | [0187](0187-the-preview-of-a-proposal-in-the-window.md) | The preview of a proposal in the window, the new shapes in dashed amber lines with a switch and a panel of the differences | Amended | Clients, agent | 0092, 0109, 0125, 0185 | 0188 |
-| [0188](0188-the-accept-after-a-preview-and-the-group-in-the-log.md) | The accept after a preview compares the result and applies a proposal as one group of steps, which the log holds and one Undo reverses | Accepted | Contracts, surface, agent | 0015, 0031, 0092, 0130, 0182, 0185, 0187 | — |
+| [0188](0188-the-accept-after-a-preview-and-the-group-in-the-log.md) | The accept after a preview compares the result and applies a proposal as one group of steps, which the log holds and one Undo reverses | Amended | Contracts, surface, agent | 0015, 0031, 0092, 0130, 0182, 0185, 0187 | 0190 |
 | [0189](0189-the-lists-of-the-sheets-and-of-the-bodies.md) | The queries GetSheets and GetBodies give the live sheets and the live bodies of the Document in the order of the log | Accepted | Surface, agent | — | — |
+| [0190](0190-the-reversal-of-a-failed-group-is-marked-in-the-log.md) | The reversal of a failed group is an Undo with the group of the proposal, and it puts nothing on the redo list | Accepted | History, agent | 0188 | — |
 
 ## Topics
 

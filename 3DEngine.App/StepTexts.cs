@@ -240,7 +240,10 @@ internal sealed class StepTexts
         switch (name)
         {
             case UndoName when _done.Count > 0:
-                MoveUnit(_done, _undone);
+                // ADR-0190 item 3 (TASK-0473): the reversal of a failed group, which the log marks with its group, puts nothing on
+                // the undone list. An event gives no group, so a live reversal moves the unit there; the bus then refuses the next
+                // Redo, so no event moves it back, and the text of the next Undo is the same.
+                MoveUnit(_done, group is null ? _undone : []);
                 break;
             case RedoName when _undone.Count > 0:
                 MoveUnit(_undone, _done);
