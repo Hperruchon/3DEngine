@@ -37,6 +37,7 @@ writes:
     - Engine.Core/Sketch/SketchRebuild.cs
     - 3DEngine.App/StepTexts.cs
     - docs/adr/README.md
+    - docs/CURRENT-STATE.md
   forbid: []
 ---
 
@@ -60,7 +61,8 @@ Each finding of this task has a correction and a test, or a register entry with 
    owner, 2026-11-26): the reversal of a failed group puts nothing on the redo list, and the log marks it, so that each walker
    of the log agrees. The mark waits for the answer of the owner to R-0081, because the smallest mark gives the field `GroupId`
    of `Engine.Contracts` a new meaning. An ADR comes in the same commit as the mark. Add the test of the probe of the review.
-2. Low: E243, E245, V236, V237, T198, T199 and T200, each with the correction that the review recommends.
+2. Low: E243, E245, V236, V237, T198, T199 and T200, each with the correction that the review recommends. On 2026-11-27 the
+   owner moved E243 to register entry R-0082.
 3. ADR-0188 items 5, 7 and 9 and "Bad" say what the code does after the corrections (E242, E245, V237).
 
 ## Scope (out)
@@ -85,13 +87,13 @@ Each finding of this task has a correction and a test, or a register entry with 
 
 ## Outcome
 
-Status: Active · no commit on `main` yet
+Status: Active · commit (the merge of the branch p0191-findings) · v0.457
 
 ## Method
 
 Mechanical: the corrections that the review names.
 Judgement:  each choice between the two corrections that the review gives.
-Weakest:    E243 is not started. For E242 the walkers `FeatureList`, `SketchRebuild` and `StepTexts` give the same result on a
+Weakest:    E243 has no correction; R-0082 holds it. For E242 the walkers `FeatureList`, `SketchRebuild` and `StepTexts` give the same result on a
             valid log with or without the change, because the bus refuses each `Redo` after a reversal; only the bus test fails. The read of the index in `Proposals` has no test of
             its own: a handler that throws only outside the fork needs a host with a second catalogue. `UiRenderer` still leaks at a failed start (R-0077).
 
@@ -127,3 +129,5 @@ Weakest:    E243 is not started. For E242 the walkers `FeatureList`, `SketchRebu
   `A_Redo_After_A_Failed_Group_Applies_Nothing` (a live session, the walkers, a replay and an open) fails when the reversal goes
   to the redo list, and `An_Undo_With_A_Group_From_A_Client_Is_Still_Refused` fails when the bus takes a client `Undo` with a
   group. R-0081 closes.
+- 2026-11-28: the owner answered "Move E243, merge" on 2026-11-27. E243 changes only a cost, so register entry R-0082 holds
+  it with its probe and its correction as the exit. Ledger entry v0.457.

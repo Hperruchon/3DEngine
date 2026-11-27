@@ -346,6 +346,22 @@ Exit: a task gives the snapshot and `CheckInterference` the log order of ADR-018
 accepts the order of the collection.
 Progress 2026-11-26: the owner answered "task fixes" (TASK-0472). Row K25 does the exit.
 
+### R-0082 · A fork still pushes the kept solids of its source out of the cache of 64
+- class: debt
+- opened: 2026-11-28
+- due: 2027-05-27
+- extended: no
+- refs: `Engine.Core/Features/KernelProjection.cs` (`Kept`, `KeptOrder`, `OfRecord`, `EndFork`),
+  `docs/reviews/2026-11-25-codebase-review.md` (E243), TASK-0473
+The kept solids of `OfRecord` have the key `(document.DocumentId, record.GeometryKey)` in one queue of `CacheSize` 64. Each fork
+and each base of a preview adds its solids under its own identity, so they push out the solids of the first Document, and
+`EndFork` does not remove them. P0.187 gave the kept booleans a store for each fork (E239); the kept solids keep the old form.
+Only the cost changes: the next read of the first Document builds its solids again. No result changes. The owner chose on
+2026-11-27 to land TASK-0473 with this finding in the register.
+Exit: a task makes a fork read a solid of its source by its key, as `Boolean` does, and keep its own solids in a store that
+`EndFork` removes, with the probe of E243 as a test (`IsKept(main, key)` stays true after one `DocumentFork`), or the owner
+accepts the cost.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.
