@@ -53,6 +53,7 @@ it is not correct and it must not be used.
 | `docs/diagnostics.md` | The diagnostic code registry. A code is never removed and never changes meaning. |
 | `docs/roadmap.md` | The tracks and the phases. The menu, not the ledger. Read it to find the next task. |
 | `docs/CURRENT-STATE.md` | What is built today. The authority for "does X exist". |
+| `docs/history-map-2026-11-26.txt` | The map from each old commit id to its new id after the rewrite of the history of 2026-11-26 (TASK-0472). The records before that date cite the old ids. |
 | `docs/android-test-sheet.md` | The test of the owner on the reference phone: build, install, the steps and a table of results (ADR-0061, ADR-0073, TASK-0227). The row R14e closes after it. |
 | `docs/demo-stl-test-sheet.md` | The run of the owner for the demonstration "Open the same STL on desktop and Android": setup, six steps, ten criteria and an observation sheet for the S23 (ADR-0083, TASK-0266). The rows P9c to P9e close after it. |
 | `docs/guides/agent-loop.md` | The guide for an agent on the HTTP surface: the loop read, measure, propose and check, with the bookcase of K10a as its example, the refusals and the limits (ADR-0157 item 13, TASK-0439). `Engine.Tests/Guides/AgentGuideExamplesTests.cs` sends each example of the guide to a host. |

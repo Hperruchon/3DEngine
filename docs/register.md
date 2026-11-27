@@ -231,6 +231,7 @@ refuses each save and each open, and the home screen of the phone shows "Import 
 Android gives a content address, not a path. The owner put the phone out of the scope of P9g (Q4 A, 2026-11-08).
 Exit: a phase gives the phone a project file through the document picker, or the owner accepts a phone with no project
 file and moves this entry to the accepted compromises.
+Progress 2026-11-26: the owner answered "give the phone project files" (TASK-0472). Row R34 does the exit.
 
 ### R-0059 · The unit of the size of the window on the phone is not known
 - class: question
@@ -245,6 +246,8 @@ pixels, a control of 44 pixels is about 2 millimetres high on that screen, and t
 This session did not read the value on the phone or on the emulator; the numbers come from general knowledge.
 Exit: a run on the S23 Ultra or on the emulator records the size that the window gives, and ADR-0113 adds that size to its
 list, with a scale of the user interface if the size is in pixels.
+Progress 2026-11-26: the owner asked how to install the app for this run (TASK-0472). The app writes no size of its window
+to the log, so row R35 adds it first.
 
 ### R-0061 · The cost of the edge lines on the phone is not measured
 - class: question
@@ -257,6 +260,8 @@ ADR-0109 measured the edge lines on the computer of the owner only: no change of
 edges on a slower processor. This session did not run the APK with the lines.
 Exit: a run on the S23 Ultra or on the emulator records the frame time and the time of the upload of a large mesh, and
 ADR-0109 adds them, with a lower limit of edges if they are too slow.
+Progress 2026-11-26: the owner asked how to install the app for this run (TASK-0472). The app writes no size of its window
+and no time of a frame to the log, so row R35 adds them first; the same run then gives the values of R-0059 and of this entry.
 
 ### R-0070 · K10 waits for the sizes of the two validation cases, and the model of a move of a part is not decided
 - class: question
@@ -290,6 +295,10 @@ the support of the lamp, and K10b builds it. The entry stays open until the ADR 
 Progress 2026-11-25: the owner chose stand-in sizes until a measure, and K10b (TASK-0466) builds the case with them
 (`docs/proposals/2026-11-25-the-lamp-support-case-of-k10.md`). The entry stays open until the owner gives the measured sizes
 and the ADR of P11.0 decides the model of a move.
+Progress 2026-11-26: the owner asked what to measure (TASK-0472). The list: the outer section, the shape and the wall of the
+crossbar; the distance of the two fixing points, their hole and its thread, and their place on the crossbar; the diameter,
+the length, the point and the means of attachment and the weight of the lamp head; the size and the place of the housing;
+the diameter and the path of the cable and its smallest bend; the real range of the tilt and the direction of 0 degrees.
 
 ### R-0077 · A failed start of the renderer of the images leaks the objects that it made before the failure
 - class: debt
@@ -346,6 +355,7 @@ agent cannot predict from the log. The order is the same on each replay of one l
 change it. Nothing of that order goes into the log. `GetSheets` and `GetBodies` (ADR-0189) give the log order.
 Exit: a task gives the snapshot and `CheckInterference` the log order of ADR-0189 item 3, with its own ADR, or the owner
 accepts the order of the collection.
+Progress 2026-11-26: the owner answered "task fixes" (TASK-0472). Row K25 does the exit.
 
 ## Accepted compromises
 
