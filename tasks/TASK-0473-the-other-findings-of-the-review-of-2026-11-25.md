@@ -1,7 +1,7 @@
 ---
 id: 0473
 title: The other findings of the codebase review of 2026-11-25
-status: Active
+status: Done
 phase: P0.191
 opened: 2026-11-27
 depends-on: [0468]
@@ -74,9 +74,9 @@ Each finding of this task has a correction and a test, or a register entry with 
 
 ## Acceptance criteria
 
-- [ ] Each finding has a test that fails before its correction, or a register entry.
-- [ ] Each injection of a correction makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] Each finding has a test that fails before its correction, or a register entry.
+- [x] Each injection of a correction makes a named test fail.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Notes for the implementer
 
@@ -87,7 +87,7 @@ Each finding of this task has a correction and a test, or a register entry with 
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0191-findings) · v0.457
+Status: Done · commit (the merge of the branch p0191-findings) · v0.457
 
 ## Method
 
@@ -131,3 +131,4 @@ Weakest:    E243 has no correction; R-0082 holds it. For E242 the walkers `Featu
   group. R-0081 closes.
 - 2026-11-28: the owner answered "Move E243, merge" on 2026-11-27. E243 changes only a cost, so register entry R-0082 holds
   it with its probe and its correction as the exit. Ledger entry v0.457.
+- 2026-11-28: run 46083547079 of `0dbb03d9` passed on each job. Closed at v0.457.
