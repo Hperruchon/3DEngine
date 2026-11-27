@@ -183,16 +183,17 @@ public sealed partial class Proposals : IDisposable
                 }
             }
         }
-        catch
+        catch (Exception exception)
         {
             // A session that closed, a cancellation, or a handler that threw (the session reversed the group first): the proposal
-            // is failed with no code, and the exception goes to the caller.
+            // is failed with no code, and the exception goes to the caller. TASK-0473 (finding E245): the index is the command
+            // that threw, which the session puts on the exception.
             lock (_lock)
             {
                 entry.Committing = false;
                 if (entry.State == ProposalStates.Applying)
                 {
-                    entry.FailedIndex = entry.Results.Count;
+                    entry.FailedIndex = exception.Data[DocumentSession.FailedIndexKey] is int index ? index : entry.Results.Count;
                     CloseLocked(entry, ProposalStates.Failed);
                 }
             }

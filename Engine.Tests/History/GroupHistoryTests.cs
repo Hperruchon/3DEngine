@@ -304,6 +304,8 @@ public sealed class GroupHistoryTests
             version: 0));
 
         Assert.Equal("A fault of the backend.", thrown.Message);
+        // TASK-0473 (finding E245 of the codebase review of 2026-11-25): the exception names the index of the command that threw.
+        Assert.Equal(1, thrown.Data[DocumentSession.FailedIndexKey]);
         Assert.Equal(before, await Live(session));
         Assert.Equal(["CreateBox", "Undo"], (await Log(session)).Select(command => command.Name));
     }

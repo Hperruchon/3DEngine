@@ -166,6 +166,11 @@ public sealed class DocumentSession
     // Undo with no cancellation, which reverses each step of the group that applied (ADR-0188 item 3), and the log holds it.
     // A handler that throws gets the same Undo, and its exception then goes to the caller. The bus has no rollback of the backend
     // (finding E21), so a group never needs one.
+    // TASK-0473 (finding E245 of the codebase review of 2026-11-25): the exception of a handler that throws in a group holds the
+    // index of its command under this key, so a caller names the command that threw. Until TASK-0473 the accept named the index
+    // 0 for each command that threw, because its list of results was still empty.
+    public const string FailedIndexKey = "Engine.Core.DocumentSession.FailedIndex";
+
     public async Task<GroupOutcome> ApplyGroup(IReadOnlyList<Command> commands, long? version, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(commands);
@@ -190,9 +195,10 @@ public sealed class DocumentSession
                 {
                     result = await _commands.Apply(commands[i], ct).ConfigureAwait(false);
                 }
-                catch
+                catch (Exception exception)
                 {
                     await ReverseGroup(start).ConfigureAwait(false);
+                    exception.Data[FailedIndexKey] = i;
                     throw;
                 }
 
