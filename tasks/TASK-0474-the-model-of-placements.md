@@ -50,7 +50,7 @@ keeps the identity and the exact shape of a body, with an ADR in the same commit
 ## Acceptance criteria
 
 - [x] The proposal gives each fact with its file, and each question with a recommended option.
-- [ ] The owner answers Q1 to Q7, and the first commit after the answers records them.
+- [x] The owner answers Q1 to Q7, and the first commit after the answers records them.
 - [ ] The ADR and the change of `Engine.Contracts` are in one commit, with a test of each reader.
 - [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
@@ -74,3 +74,7 @@ Weakest:    The list of the readers of the geometry in section 4 of the proposal
 ## Progress
 
 - 2026-11-27: opened under the standing order of 2026-11-26; the proposal with the questions Q1 to Q7.
+- 2026-11-27: the owner answered "All A" for Q1 to Q7: a new command `PlaceBody` with an absolute placement, and the body
+  keeps its handle; a quaternion and an offset, seven doubles; the frame and the placement of the first body for a boolean; a
+  placement also for a mesh body; `Rotate` and `Translate` keep their meaning; the ADR, the field, the command and the test of
+  each reader in one commit, then the joints; and a new measure of the case of K10a with `PlaceBody`. This commit records them.
