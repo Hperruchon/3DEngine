@@ -46,7 +46,13 @@ public class PathPatternWorkTests
         // bounded by that count, because a test of another class can add patterns at the same time.
         //
         // The run 45359984114 of the close of TASK-0461 failed: with no Ready or Active task the gate gives no pattern. So the
-        // work of the gate also covers the three newest tasks of each status, and the count does not depend on an open task.
+        // work of the gate also covers the three newest tasks, of any status, and the count does not depend on an open task.
+        // Until TASK-0473 this comment said "the three newest tasks of each status"; the code takes three tasks in all.
+        //
+        // TASK-0473 (finding T199 of the codebase review of 2026-11-25): with a warm cache this thread builds 0 expressions, and
+        // the bound above passes for each form of the key; a call site that makes a distinct text for each path raises asked and
+        // built together. So each text that the gate asks for must also be a text of the gate: a pattern of the field affects of
+        // an ADR in force or a path that a kept task writes, from the same objects that the gate reads one time.
         // The identifiers come from the names of the files, which a run does not change. The test does not judge the problems
         // of the gate; the gate test judges the open tasks.
         var newest = RepositoryFiles.Tasks()
@@ -57,10 +63,11 @@ public class PathPatternWorkTests
         var asked = new HashSet<string>(StringComparer.Ordinal);
         var kept = TaskFiles.PatternsKept;
         var before = TaskFiles.PatternsBuiltOnThisThread;
+        var texts = new HashSet<string>(StringComparer.Ordinal);
         TaskFiles.PatternsAskedOnThisThread = asked;
         try
         {
-            TaskGovernanceGateTests.GovernedByProblems(task => task.Status is "Ready" or "Active" || newest.Contains(task.Id));
+            TaskGovernanceGateTests.GovernedByProblems(task => task.Status is "Ready" or "Active" || newest.Contains(task.Id), texts);
         }
         finally
         {
@@ -71,6 +78,12 @@ public class PathPatternWorkTests
         var added = TaskFiles.PatternsKept - kept;
 
         Assert.True(asked.Count > 0, "The gate of governed-by gave no pattern to PathPattern; an empty count is not evidence.");
+        var strange = asked.Except(texts, StringComparer.Ordinal).Take(3).ToArray();
+        Assert.True(
+            strange.Length == 0,
+            $"The gate of governed-by gave PathPattern {asked.Count} distinct texts, and {asked.Count(text => !texts.Contains(text))} of "
+            + $"them are no pattern of an ADR in force and no path of a kept task, for example {string.Join(", ", strange)}. Give "
+            + "PathPattern the pattern itself, so that the cache keeps one expression for each pattern.");
         Assert.True(
             built <= added && built <= asked.Count,
             $"The gate of governed-by built {built} expressions for {asked.Count} distinct patterns, and the cache kept {added} new "

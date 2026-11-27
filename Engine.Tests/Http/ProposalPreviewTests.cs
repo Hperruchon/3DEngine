@@ -98,7 +98,7 @@ public sealed class ProposalPreviewTests
     // wait for it.
     private static async Task<ProposalPreview> Preview(Served served, Guid id)
     {
-        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(60));
         ProposalPreview? preview;
         try
         {
@@ -529,13 +529,13 @@ public sealed class ProposalPreviewTests
         });
         var box = BookcaseCase.Output(await BookcaseCase.Applied(served.Host.Session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 }));
         var id = await Post(served, "Rename the box", Rename(Guid.NewGuid(), box, "Box"));
-        var forked = await Task.WhenAny(started.Task, Task.Delay(TimeSpan.FromSeconds(30)));
+        var forked = await Task.WhenAny(started.Task, Task.Delay(TimeSpan.FromSeconds(60)));
         if (forked != started.Task)
             gate.Set();
         Assert.True(forked == started.Task, "The post of a proposal started no fork.");
 
         var apply = served.Host.Session.Apply(new RenameBodyCommand { BodyId = box, NewName = "Person" });
-        var done = await Task.WhenAny(apply, Task.Delay(TimeSpan.FromSeconds(30)));
+        var done = await Task.WhenAny(apply, Task.Delay(TimeSpan.FromSeconds(60)));
         gate.Set();
         Assert.True(done == apply, "A command of the person waited for a fork: the fork holds the serial lock.");
         Assert.Equal(CommandStatus.Applied, (await apply).Status);
@@ -782,7 +782,7 @@ public sealed class ProposalPreviewTests
 
         gate.Reset();
         await BookcaseCase.Applied(served.Host.Session, new RenameBodyCommand { BodyId = box, NewName = "Later" });
-        var waited = await Task.WhenAny(blocked.Task, Task.Delay(TimeSpan.FromSeconds(30)));
+        var waited = await Task.WhenAny(blocked.Task, Task.Delay(TimeSpan.FromSeconds(60)));
         var stale = served.Host.Proposals.Kept(id)!;
         gate.Set();
         Assert.True(waited == blocked.Task, "The new version started no fork.");
@@ -862,7 +862,7 @@ public sealed class ProposalPreviewTests
         // The first fork asked for its backend. The limit of 30 s only ends a test that would wait for ever.
         public async Task Started()
         {
-            var done = await Task.WhenAny(_started.Task, Task.Delay(TimeSpan.FromSeconds(30)));
+            var done = await Task.WhenAny(_started.Task, Task.Delay(TimeSpan.FromSeconds(60)));
             Assert.True(done == _started.Task, "No fork started in 30 s.");
         }
 
@@ -886,7 +886,7 @@ public sealed class ProposalPreviewTests
 
     private static async Task<T> Within<T>(Task<T> task, string what)
     {
-        var done = await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(30)));
+        var done = await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(60)));
         Assert.True(done == task, $"{what} did not end in 30 s.");
         return await task;
     }
@@ -943,7 +943,7 @@ public sealed class ProposalPreviewTests
         // The gate opens only after the stop started, so the fork always meets the stop. The limit of 30 s only ends a test that
         // would wait for ever.
         var started = System.Diagnostics.Stopwatch.StartNew();
-        while (!served.Host.Proposals.Stopped && started.Elapsed < TimeSpan.FromSeconds(30))
+        while (!served.Host.Proposals.Stopped && started.Elapsed < TimeSpan.FromSeconds(60))
             await Task.Delay(10);
         Assert.True(served.Host.Proposals.Stopped, "The stop of the host did not start in 30 s.");
         held.Open();
@@ -1055,7 +1055,7 @@ public sealed class ProposalPreviewTests
 
         var waiting = served.Host.Proposals.Preview(id);
         var started = System.Diagnostics.Stopwatch.StartNew();
-        while (served.Host.Proposals.WaitersOf(id) == 0 && !waiting.IsCompleted && started.Elapsed < TimeSpan.FromSeconds(30))
+        while (served.Host.Proposals.WaitersOf(id) == 0 && !waiting.IsCompleted && started.Elapsed < TimeSpan.FromSeconds(60))
             await Task.Delay(10);
         Assert.Equal(1, served.Host.Proposals.WaitersOf(id));
         Assert.False(served.Host.Proposals.Behind, "The fork at the version of the call runs, but the queue is behind.");

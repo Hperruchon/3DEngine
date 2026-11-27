@@ -58,14 +58,20 @@ public class TaskGovernanceGateTests
 
     // The work of the gate for each task that the filter keeps. TASK-0461: PathPatternWorkTests also gives the newest tasks of
     // each status, because when no task is open the gate gives no pattern to PathPattern, and an empty count is not evidence.
-    internal static List<string> GovernedByProblems(Func<WriteSetCheck.TaskRecord, bool> keep)
+    //
+    // Finding T199 of the codebase review of 2026-11-25 (TASK-0473): when texts is not null, the gate adds each text that it can
+    // give to PathPattern, from the same objects and with no second read of a file: each pattern of the field affects of an ADR
+    // in force and each path that a kept task writes. PatternsIntersect asks for the expression of both texts of a pair.
+    internal static List<string> GovernedByProblems(Func<WriteSetCheck.TaskRecord, bool> keep, HashSet<string>? texts = null)
     {
         var adrs = AdrsInForce();
         var problems = new List<string>();
+        texts?.UnionWith(adrs.SelectMany(adr => adr.Affects));
 
         foreach (var task in RepositoryFiles.Tasks().Where(keep))
         {
             var written = task.Written.ToArray();
+            texts?.UnionWith(written);
             var expected = adrs
                 .Where(a => a.Affects.Any(pattern => written.Any(path => RepositoryFiles.PatternsIntersect(pattern, path))))
                 .Select(a => a.Id)

@@ -96,13 +96,13 @@ public sealed class ProposalAcceptTests
 
     private static async Task<ProposalPreview> Preview(Served served, Guid id)
     {
-        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(60));
         return await served.Host.Proposals.Preview(id, limit.Token) ?? throw new InvalidOperationException("No preview.");
     }
 
     private static async Task<Proposal> Accept(Served served, Guid id, long? seen)
     {
-        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var limit = new CancellationTokenSource(TimeSpan.FromSeconds(60));
         return await served.Host.Proposals.Accept(id, seen, limit.Token) ?? throw new InvalidOperationException("The proposal is not open.");
     }
 
@@ -270,17 +270,21 @@ public sealed class ProposalAcceptTests
         {
             if (Interlocked.Exchange(ref once, 1) != 0)
                 return;
-            release.Task.Wait(TimeSpan.FromSeconds(30));
+            release.Task.Wait(TimeSpan.FromSeconds(60));
             BookcaseCase.Applied(served.Host.Session, new RenameBodyCommand { BodyId = box, NewName = "Plate" }).GetAwaiter().GetResult();
         };
         await BookcaseCase.Applied(served.Host.Session, new NoOpCommand { Echo = "version 2" });
 
         var accept = Accept(served, id, seen.DocumentVersion);
-        // The accept reads the version 2 and waits for its fork, which waits for the release. The wait gives the accept the time
-        // to start that wait; a later start reads the version 3, and the test still passes, with no stale apply.
-        while (served.Host.Proposals.Find(id)?.State != ProposalStates.Applying)
+        // The accept reads the version 2 and waits for its fork, which waits for the release. TASK-0473 (finding T198 of the codebase
+        // review of 2026-11-25): the test releases the fork only when the accept waits for a preview. Before the release the
+        // Document has the version 2 only, so that wait is at the version 2, and the accept reaches the stale apply in each run.
+        // Until TASK-0473 a sleep of 300 ms gave the accept the time, and a slow runner read the version 3 and tested no stale apply.
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        while (served.Host.Proposals.WaitersOf(id) == 0 && !accept.IsCompleted && clock.Elapsed < TimeSpan.FromSeconds(60))
             await Task.Delay(10);
-        await Task.Delay(300);
+        Assert.Equal(1, served.Host.Proposals.WaitersOf(id));
+        Assert.Equal(seen.DocumentVersion + 1, await served.Host.Session.Read((document, _) => document.Version));
         release.SetResult();
         var held = await accept;
 

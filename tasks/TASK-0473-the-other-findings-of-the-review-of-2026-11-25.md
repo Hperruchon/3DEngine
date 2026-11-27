@@ -1,15 +1,20 @@
 ---
 id: 0473
 title: The other findings of the codebase review of 2026-11-25
-status: Ready
+status: Active
 phase: P0.191
 opened: 2026-11-27
 depends-on: [0468]
-governed-by: []
+governed-by: [0025, 0185, 0187, 0188]
 writes:
   create:
     - tasks/TASK-0473-the-other-findings-of-the-review-of-2026-11-25.md
-  modify: []
+  modify:
+    - Engine.Tests/Http/ProposalAcceptTests.cs
+    - Engine.Tests/Http/ProposalPreviewTests.cs
+    - 3DEngine.ImageTests/ProposalPreviewWindowTests.cs
+    - Engine.Tests/Governance/PathPatternWorkTests.cs
+    - Engine.Tests/Governance/TaskGovernanceGateTests.cs
   forbid:
     - Engine.Contracts/**
 ---
@@ -57,14 +62,22 @@ Each finding of this task has a correction and a test, or a register entry with 
 
 ## Outcome
 
-Status: Ready · no commit yet
+Status: Active · no commit on `main` yet
 
 ## Method
 
 Mechanical: the corrections that the review names.
 Judgement:  each choice between the two corrections that the review gives.
-Weakest:    not started.
+Weakest:    E242 waits for the answer of R-0081, and E243, E245, V236, V237 and T200 are not started.
 
 ## Progress
 
 - 2026-11-27: opened by TASK-0468 with the findings that it did not do.
+- 2026-11-27: under the standing order of 2026-11-26, branch `p0191-findings` from `ea2f4dac` (v0.456). T199: the gate of
+  governed-by gives the texts that it can ask for, from the objects that it reads one time, and the test asks that each asked
+  text is one of them; an injection that gives a distinct text for each path makes
+  `The_Gate_Of_Governed_By_Builds_At_Most_One_Expression_For_Each_Pattern` fail, and the comment says "the three newest tasks,
+  of any status". T198: the test of a stale group releases the fork only when the accept waits for a preview, at the version 2,
+  with no sleep; an `ApplyGroup` that ignores the version makes
+  `A_Commit_Between_The_Comparison_And_The_Apply_Makes_The_Accept_Compare_Again` fail; the limits of 30 s of the new tests are
+  60 s (ADR-0173 item 4). Not merged: the other findings are open.
