@@ -234,6 +234,56 @@ public sealed class ProposalAcceptTests
         Assert.Equal(["Shelf"], await Names(served));
     }
 
+    // TASK-0473 (finding E245 of the codebase review of 2026-11-25): a write of the file that fails at the second command of an
+    // accept breaks the journal, so the session refuses the Undo of the group too. The first command stays in the Document and
+    // in the file, and the proposal says so with E-API-PROPOSAL-NOT-REVERSED. Until TASK-0473 the proposal gave the code of the
+    // failed write and said that nothing applied. The preview runs on a fork with no file, so it does not fail.
+    [Fact]
+    public async Task An_Undo_Of_The_Group_That_Does_Not_Apply_Gives_Its_Own_Code()
+    {
+        await using var served = await Served.Start();
+        var stream = new FailingOnText("Fails here");
+        served.Host.Session.Attach(Engine.Core.Persistence.DocumentJournal.ForTest(
+            Path.Combine(Path.GetTempPath(), $"3de-accept-{Guid.NewGuid():N}.3de"), Document.Millimetre, stream));
+        var box = await Made(served);
+        var id = await Post(served, "Two names", Rename(box, "Shelf"), Rename(box, "Fails here"));
+        var seen = await Preview(served, id);
+        Assert.Null(seen.FailedIndex);
+
+        var failed = await Accept(served, id, seen.DocumentVersion);
+
+        Assert.Equal((ProposalStates.Failed, 1, DiagnosticCodes.ApiProposalNotReversed), (failed.State, failed.FailedIndex, failed.FailedCode));
+        Assert.Equal(["Shelf"], await Names(served));
+        Assert.Equal(["CreateBox", "RenameBody"], await Log(served));
+        Assert.Equal(1, stream.Failures);
+    }
+
+    // A stream whose write of a line that holds the text fails, as a full disk does.
+    private sealed class FailingOnText(string text) : MemoryStream
+    {
+        public int Failures { get; private set; }
+
+        public override void Write(ReadOnlySpan<byte> buffer)
+        {
+            Check(buffer);
+            base.Write(buffer.ToArray(), 0, buffer.Length);
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            Check(buffer.AsSpan(offset, count));
+            base.Write(buffer, offset, count);
+        }
+
+        private void Check(ReadOnlySpan<byte> buffer)
+        {
+            if (!Encoding.UTF8.GetString(buffer).Contains(text, StringComparison.Ordinal))
+                return;
+            Failures++;
+            throw new IOException("The disk is full.");
+        }
+    }
+
     // Item 7: a result that stops at a command applies nothing; the proposal is failed with the index and the code of the
     // preview, and the log does not change.
     [Fact]

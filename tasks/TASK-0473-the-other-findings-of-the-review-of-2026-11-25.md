@@ -5,7 +5,7 @@ status: Active
 phase: P0.191
 opened: 2026-11-27
 depends-on: [0468]
-governed-by: [0007, 0017, 0019, 0023, 0025, 0029, 0038, 0072, 0075, 0076, 0077, 0080, 0081, 0082, 0083, 0085, 0086, 0092, 0100, 0101, 0102, 0104, 0105, 0106, 0109, 0110, 0111, 0114, 0116, 0120, 0124, 0127, 0129, 0130, 0137, 0138, 0140, 0163, 0166, 0167, 0168, 0170, 0171, 0174, 0176, 0177, 0184, 0185, 0187, 0188]
+governed-by: [0004, 0007, 0013, 0016, 0017, 0019, 0023, 0025, 0029, 0038, 0072, 0075, 0076, 0077, 0080, 0081, 0082, 0083, 0085, 0086, 0092, 0100, 0101, 0102, 0104, 0105, 0106, 0109, 0110, 0111, 0114, 0116, 0120, 0124, 0127, 0129, 0130, 0137, 0138, 0140, 0153, 0155, 0158, 0163, 0166, 0167, 0168, 0170, 0171, 0174, 0176, 0177, 0179, 0184, 0185, 0187, 0188]
 writes:
   create:
     - tasks/TASK-0473-the-other-findings-of-the-review-of-2026-11-25.md
@@ -23,6 +23,10 @@ writes:
     - 3DEngine.Vulkan/OverlayRenderer.cs
     - 3DEngine.ImageTests/PipelineStartTests.cs
     - docs/register.md
+    - docs/diagnostics.md
+    - Engine.Core/DiagnosticCodes.cs
+    - Engine.Api.Http/Proposals.cs
+    - Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs
   forbid:
     - Engine.Contracts/**
 ---
@@ -78,7 +82,8 @@ Status: Active · no commit on `main` yet
 
 Mechanical: the corrections that the review names.
 Judgement:  each choice between the two corrections that the review gives.
-Weakest:    E242 waits for the answer of R-0081, and E243 and E245 are not started. `UiRenderer` still leaks at a failed start (R-0077).
+Weakest:    E242 waits for the answer of R-0081, E243 is not started, and the second half of E245 (the index of a command
+            that throws) is open. `UiRenderer` still leaks at a failed start (R-0077).
 
 ## Progress
 
@@ -99,3 +104,7 @@ Weakest:    E242 waits for the answer of R-0081, and E243 and E245 are not start
 - 2026-11-27: V236: `RenderPipeline` and `OverlayRenderer` have the form of TASK-0461, and `PipelineStartTests` fails each of
   their starts at each object; `UiRenderer` makes a set layout, a pool and a sampler before its modules, as `ImageRenderer` does,
   so R-0077 now holds it.
+- 2026-11-27: E245, first half: when the `Undo` of the group of an accept does not apply, the proposal is failed with the new
+  code `E-API-PROPOSAL-NOT-REVERSED`, registered in `docs/diagnostics.md`; ADR-0188 item 7 and the comment of `Proposal` say
+  so. `An_Undo_Of_The_Group_That_Does_Not_Apply_Gives_Its_Own_Code` breaks the file at the second command; without the read of
+  the `Undo` the test gets `E-IO-WRITE-FAILED`. The second half, the index of a command whose handler throws, is open.

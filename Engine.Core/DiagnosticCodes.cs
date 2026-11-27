@@ -35,6 +35,10 @@ public static class DiagnosticCodes
     public const string ApiProposalClosed = "E-API-PROPOSAL-CLOSED";
     public const string ApiProposalCommandKnown = "E-API-PROPOSAL-COMMAND-KNOWN";
 
+    // TASK-0473 (finding E245 of the codebase review of 2026-11-25): an accept stopped at a command, and the Undo of its group
+    // did not apply, so the commands before that command stay in the Document and in the file.
+    public const string ApiProposalNotReversed = "E-API-PROPOSAL-NOT-REVERSED";
+
     // TASK-0456 (phase P15a): the fork of the preview of a proposal could not replay the log of the Document.
     public const string ApiPreviewFailed = "E-API-PREVIEW-FAILED";
 

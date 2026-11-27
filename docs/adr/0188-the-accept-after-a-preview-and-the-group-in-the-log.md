@@ -131,7 +131,8 @@ TASK-0462), and ordered "Start P16" in the chat on 2026-11-24:
 7. **A result that stops (amends ADR-0092 items 4 and 6).** When the equal result stops at a command (`failedIndex`), or the
    fork failed (`E-API-PREVIEW-FAILED`), the accept applies nothing, and the proposal is `failed` with that index and that code.
    A failed proposal applied nothing: its `results` give the result of each command that ran before an `Undo` of the group
-   reversed it. The arc says "N commands · 1 step of undo", and an accepted proposal says "Proposal accepted: N commands
+   reversed it. When that `Undo` does not apply, for example after a failed write of the file, the commands before the failed
+   command stay applied, and the code is `E-API-PROPOSAL-NOT-REVERSED`. The arc says "N commands · 1 step of undo", and an accepted proposal says "Proposal accepted: N commands
    applied, 1 step of undo" (amends ADR-0130 item 4: the button Undo undoes the whole proposal).
 8. **The bound of the checks of one preview (Q6 A; amends ADR-0182 item 8 and ADR-0185 item 10).** The fork gives each check of
    a pair the work that the bound of the preview leaves, 100,000 products of the counts of the pieces (the limit of one check)
@@ -199,3 +200,6 @@ bytes, so each older file opens and replays as before.
 - 2026-11-27 · TASK-0473 · Item 9: the window gives the version of the preview of its last frame, also when no panel shows,
   because the frame draws the shapes; until TASK-0473 the item said "that its panel showed" (finding V237 of the codebase
   review of 2026-11-25). The code does not change.
+- 2026-11-27 · TASK-0473 · Item 7: an `Undo` of the group that does not apply gives the code `E-API-PROPOSAL-NOT-REVERSED`, and
+  the commands before the failed command stay applied; until TASK-0473 the item said that a failed proposal applied nothing in
+  each case (finding E245 of the codebase review of 2026-11-25).
