@@ -313,21 +313,6 @@ fails only when the device fails, at the start of the window, and the process th
 Exit: a task makes each object of the start of `ImageRenderer` free on a failure, with a test that fails the start at each
 object as `PipelineStartTests` does, or the owner accepts the leak at a failed start.
 
-### R-0078 · `A_Commit_That_Does_Not_Change_The_Result_Runs_One_Fork_And_Applies` can see the proposal still open
-- class: risk
-- opened: 2026-11-25
-- due: 2026-12-25
-- extended: no
-- refs: `Engine.Tests/Http/ProposalAcceptTests.cs:183`, ADR-0188 item 6, TASK-0463, TASK-0465, TASK-0466
-Run 45574730547 of `8fe3fe0f` (the close of R32a, which changed only its task file) failed on Ubuntu: the accept after a
-NoOp commit gave the state "open", not "accepted" (line 195). The same commit passed on Windows and macOS, and the run of
-the commit before it passed on each system. A preview that the commit starts can race the fork of the accept. A red run of
-`main` stops each merge until a person runs it again.
-Exit: a task finds the race and makes the test give the same answer in each run, or the owner accepts the risk.
-Progress 2026-11-26: the owner answered Q3 A of the codebase review of 2026-11-25 (TASK-0469): keep the rule of ADR-0188 "Bad"
-that an accept which names the preview before the last one applies nothing. P0.189 (TASK-0468) makes the test hold the fork, and
-this entry closes then.
-
 ### R-0079 · The layout test skips a tool of the ring under a panel as a control that the panel scrolls out of view
 - class: debt
 - opened: 2026-11-26
@@ -356,6 +341,21 @@ change it. Nothing of that order goes into the log. `GetSheets` and `GetBodies` 
 Exit: a task gives the snapshot and `CheckInterference` the log order of ADR-0189 item 3, with its own ADR, or the owner
 accepts the order of the collection.
 Progress 2026-11-26: the owner answered "task fixes" (TASK-0472). Row K25 does the exit.
+
+### R-0081 · The mark of the reversal of a failed group in the log gives the field `GroupId` a new meaning on an `Undo`
+- class: question
+- opened: 2026-11-27
+- due: 2027-02-25
+- extended: no
+- refs: `Engine.Contracts/Command.cs` (`GroupId`), `Engine.Core/DocumentSession.cs` (`ReverseGroup`), `Engine.Core/CommandBus.cs`
+  (`Move`), ADR-0188 items 1 and 4, `docs/reviews/2026-11-25-codebase-review.md` (E242), TASK-0468, TASK-0473
+The owner answered Q2 A of the review of 2026-11-25: the reversal of a failed group puts nothing on the redo list, and the log
+marks it, so that each walker of the log agrees. Each walker sees an `Undo` after the steps of a group, also when the person
+undoes an accept that applied, so a mark is necessary. The smallest mark is the group of the proposal on the `Undo` of the
+reversal. That gives the field `GroupId` of `Engine.Contracts` a new meaning, which ADR-0188 item 4 refuses today, and a
+version of the app before the change refuses such an entry at an open, so it cannot open a file of a later version.
+`CLAUDE.md` ("Stop and ask") and the scope of TASK-0468 ask the owner before a new meaning of a field of `Engine.Contracts`.
+Exit: the owner accepts the mark and its cost, or names another mark; TASK-0473 does it with an ADR in the same commit.
 
 ## Accepted compromises
 
@@ -491,6 +491,25 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0078 · `A_Commit_That_Does_Not_Change_The_Result_Runs_One_Fork_And_Applies` can see the proposal still open
+- class: risk
+- opened: 2026-11-25
+- due: 2026-12-25
+- extended: no
+- refs: `Engine.Tests/Http/ProposalAcceptTests.cs:183`, ADR-0188 item 6, TASK-0463, TASK-0465, TASK-0466
+Run 45574730547 of `8fe3fe0f` (the close of R32a, which changed only its task file) failed on Ubuntu: the accept after a
+NoOp commit gave the state "open", not "accepted" (line 195). The same commit passed on Windows and macOS, and the run of
+the commit before it passed on each system. A preview that the commit starts can race the fork of the accept. A red run of
+`main` stops each merge until a person runs it again.
+Exit: a task finds the race and makes the test give the same answer in each run, or the owner accepts the risk.
+Progress 2026-11-26: the owner answered Q3 A of the codebase review of 2026-11-25 (TASK-0469): keep the rule of ADR-0188 "Bad"
+that an accept which names the preview before the last one applies nothing. P0.189 (TASK-0468) makes the test hold the fork, and
+this entry closes then.
+Closed 2026-11-27 · resolved · TASK-0468, v0.456. The test holds the fork of the version of the `NoOp` until the accept is
+applying, so the accept reads the preview that the person saw as the kept preview, and the fork of the version 2 ends only
+then. The order of the worker and the accept is now the order of the test, in each run. A release of the fork before the
+accept reads it gives the state "open" in each run, as ADR-0188 "Bad" says (Q3 A of the owner).
 
 ### R-0075 · The HTTP surface has no query that lists the sheets, and none that gives the live bodies with their names
 - class: question

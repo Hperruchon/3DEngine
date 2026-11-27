@@ -659,9 +659,11 @@ DELETE /proposals/<proposal>
   work that it leaves, and each pair after it in the order of the identifiers, has `limit` (ADR-0188 item 8). On a host with no
   backend for a fork the route gives HTTP 501 with `E-API-NOT-SUPPORTED`; the desktop and `engine-api-http` make a fork.
 - **A preview is compared, not replayed.** The accept applies only a result equal to the preview that the person saw (section
-  8), so a change of the Document after the preview gives `held`, not another outcome. A `commandId` that the session refused
-  before is the one exception that the fork cannot see: the fork knows only the identifiers of the log. The accept then stops
-  at that command with `E-API-PROPOSAL-COMMAND-KNOWN`, and one `Undo` of the group reverses the commands before it.
+  8), so a change of the Document after the preview gives `held`, not another outcome. A `commandId` that the session knows
+  from before is the one exception that the fork cannot see: the fork knows only the identifiers of the log. The accept stops
+  at that command, and one `Undo` of the group reverses the commands before it. When the session applied that `commandId`, the
+  proposal is failed with `E-API-PROPOSAL-COMMAND-KNOWN`. When the session refused it, the bus gives the refusal again, and the
+  proposal is failed with the code of that refusal, for example `E-GEOM-INVALID-PARAM`. Give each command a new `commandId`.
 - **Curved faces.** `GetDistance` measures a face of a cylinder, a cone, a sphere or an arc. The body of that face has only
   `Translate` and `Rotate` after its command. It also measures the side of a hole or of a tube that a `Subtract` made. The
   tool of that `Subtract` is a cylinder, a cone or an extrude of one circle. The faces of the body near the hole are across

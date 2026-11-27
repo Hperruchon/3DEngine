@@ -16,7 +16,7 @@ namespace Engine.Tests.Http;
 [Collection("real host")]
 public class HttpSketchScenarioTests
 {
-    private static readonly TimeSpan Limit = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan Limit = TimeSpan.FromSeconds(60);
 
     [Fact]
     public async Task An_Agent_Builds_A_Sketch_Over_Http_And_Reads_It_With_Its_Residuals()

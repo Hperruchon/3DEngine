@@ -18,7 +18,7 @@ namespace Engine.Tests.Http;
 [Collection("real host")]
 public class EngineHostStopTests
 {
-    private static readonly TimeSpan Limit = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan Limit = TimeSpan.FromSeconds(60);
 
     [Fact]
     public async Task A_Stop_Frees_The_Backend_Only_After_The_Running_Command_Ends()

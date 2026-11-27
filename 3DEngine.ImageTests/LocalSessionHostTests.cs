@@ -60,7 +60,7 @@ public sealed class LocalSessionHostTests
 
         await sink.Append(Event(1));
 
-        Assert.StartsWith(DiagnosticCodes.ApiSubscriptionRemoved, await reported.Task.WaitAsync(TimeSpan.FromSeconds(10)));
+        Assert.StartsWith(DiagnosticCodes.ApiSubscriptionRemoved, await reported.Task.WaitAsync(TimeSpan.FromSeconds(60)));
     }
 
     // A subscription after Dispose gets no later event.

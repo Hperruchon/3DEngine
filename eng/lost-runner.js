@@ -23,7 +23,9 @@ const LOST = "was not acquired by Runner";
 // annotation holds. Run 44831092608 failed on macOS in the step "Keep the determinism hash" with "Failed to CreateArtifact:
 // Failed to make request after 5 attempts: Request timeout: /twirp/github.actions.results.api.v1.ArtifactService/CreateArtifact".
 // A failed set-up of an action ("Set up job") has no known text yet, so it is no step of the service.
-const SERVICE_FAULTS = [["Failed to CreateArtifact", "Request timeout"]];
+// P0.189 (finding T202 of the codebase review of 2026-11-25): run 45707816188 failed on Ubuntu in the same step with "Failed to
+// FinalizeArtifact: Unable to make request: ECONNRESET".
+const SERVICE_FAULTS = [["Failed to CreateArtifact", "Request timeout"], ["Failed to FinalizeArtifact", "ECONNRESET"]];
 
 // The names of the steps of a workflow that upload or download an artifact, from its text: each step "- name:" whose "uses:"
 // is actions/upload-artifact or actions/download-artifact. The workflow of the default branch gives the names, so a step that

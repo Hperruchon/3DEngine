@@ -24,7 +24,7 @@ namespace Engine.Tests.Http;
 [Collection("real host")]
 public class DesktopSurfaceTests
 {
-    private static readonly TimeSpan Limit = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan Limit = TimeSpan.FromSeconds(60);
 
     // ADR-0173 item 4: a stop that does not end in 60 s waits for ever.
     private static readonly TimeSpan Hang = TimeSpan.FromSeconds(60);

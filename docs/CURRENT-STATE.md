@@ -14431,3 +14431,43 @@ and the hash of determinism passed. The merge of this task is the next push to `
 so its run judges the job again. The push of the 436 heads also started a run of CI and of the two native builds on each
 head, about 1035 runs; the CI run of each old branch is red because the branch is behind `main`. No task merges those
 branches.
+
+## v0.456 — The test of an accept holds the fork, the guards of an event that must come wait 60 s, and the re-run knows the reset of the artifact service (P0.189, TASK-0468)
+
+TASK-0468 holds the medium and low findings of the codebase review of 2026-11-25. Under the standing order of 2026-11-26 it does
+four of them, and row P0.191 (TASK-0473) gets each other finding. V238 is done by P0.190.
+
+**T197 (R-0078).** `A_Commit_That_Does_Not_Change_The_Result_Runs_One_Fork_And_Applies` read the preview at the version 1, applied
+a `NoOp` and accepted with the version 1. When the fork of the version 2 ended before the accept read the kept preview, the
+accept held the proposal open, by ADR-0188 "Bad"; that was the red run 45574730547. The owner kept the rule (Q3 A). The test now
+holds that fork with `BeforeFork` until the proposal is `Applying`, and then releases it, so the accept reads the preview that
+the person saw in each run. R-0078 closes.
+
+**T201.** Run 45706338430 showed that a loaded runner can pass 10 s before an event that must come. Each guard of that list of
+TASK-0435 gets the limit of 60 s of ADR-0173 item 4: 16 guards in 16 files, from 10 s, 15 s and 30 s. A guard ends only a wait
+for ever, so a longer limit changes no result of a correct test.
+
+**T202.** `eng/lost-runner.js` knew one form of a fault of the artifact service. It now also knows "Failed to FinalizeArtifact"
+with "ECONNRESET", the text of run 45707816188. `A_Reset_Of_The_Artifact_Service_Gets_A_Re_Run` gives the saved run that text,
+and two texts with half of the pair stay red.
+
+**E244.** The guide for an agent said that a `commandId` that the session refused before gives `E-API-PROPOSAL-COMMAND-KNOWN`.
+The bus keeps the refusal in its cache, so the proposal is failed with the code of that refusal. Section 12 of the guide now says
+what the code does, and the row of the registry has a dated note that replaces its first claim, with no change of the meaning of
+the code.
+
+**E242 waits for the owner.** The owner answered Q2 A: the reversal of a failed group puts nothing on the redo list, and the log
+marks it. The smallest mark is the group of the proposal on the `Undo` of the reversal, and that gives the field `GroupId` of
+`Engine.Contracts` a new meaning. An older app then refuses a newer file at an open. The scope of TASK-0468 and `CLAUDE.md`
+("Stop and ask") need the owner first, so new register entry R-0081 holds the question, and TASK-0473 does E242 after the answer.
+
+**Proof.** A clean build gives 0 warnings, and `dotnet test` passes 3340 tests with the image tests. The injection of the order of run
+45574730547 makes `A_Commit_That_Does_Not_Change_The_Result_Runs_One_Fork_And_Applies` fail with "open", and the removal of the
+pair of the reset makes `A_Reset_Of_The_Artifact_Service_Gets_A_Re_Run` fail. The write-set check and `eng/repo-gates` pass. Not
+verified: continuous integration has not run on this branch.
+
+New tests: 1 (`A_Reset_Of_The_Artifact_Service_Gets_A_Re_Run`). The test list holds 3340 (1951 in `Engine.Tests`, 391 in
+`3DEngine.Tests`, 995 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 13 of 15 (R-0078 closes, R-0081
+opens). New diagnostic codes: 0. Since the review of v0.451, 3 product milestones and 5 entries followed it.
+The failed runs since the entry v0.455, from the API: none. Run 45940188942 of P0.190 was green; the run of its close and the
+run of its merge into `main` ran after this entry was written.

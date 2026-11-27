@@ -100,6 +100,25 @@ public sealed class LostRunnerTests
         => Assert.Equal((true, "a known fault of the GitHub service failed \"Gate on macos-latest\" in the step \"Keep the determinism hash\""),
             Decide(Saved("artifact-service-timeout")));
 
+    // P0.189 (finding T202 of the codebase review of 2026-11-25): run 45707816188 failed only in the upload of the determinism
+    // hash on Ubuntu, with a reset of the connection to the artifact service. The saved run with the text of that annotation gets
+    // the one re-run; a reset in another step of the artifact, or another fault of the finalize, stays red.
+    [Fact]
+    public void A_Reset_Of_The_Artifact_Service_Gets_A_Re_Run()
+    {
+        static Action<JsonNode> Message(string text) => run =>
+        {
+            var (_, notes) = Job(run, "Gate on macos-latest");
+            var note = notes.Single(note => (string)note!["message"]! == CreateArtifactTimeout)!;
+            note["message"] = text;
+        };
+
+        Assert.Equal((true, "a known fault of the GitHub service failed \"Gate on macos-latest\" in the step \"Keep the determinism hash\""),
+            DecideChanged("artifact-service-timeout", Message("Failed to FinalizeArtifact: Unable to make request: ECONNRESET")));
+        Assert.False(DecideChanged("artifact-service-timeout", Message("Failed to FinalizeArtifact: Unable to make request: ETIMEDOUT")).Rerun);
+        Assert.False(DecideChanged("artifact-service-timeout", Message("Failed to CreateArtifact: Unable to make request: ECONNRESET")).Rerun);
+    }
+
     // TASK-0435: a fault of the service together with a fault of the code stays red: a failed test of another job, a failed test
     // of the same job, a crash, a failed upload with another message, a second annotation of a failure, an upload with no
     // annotation, a step that ci.yml does not give as an upload, a message with half of the known texts, and a second attempt.

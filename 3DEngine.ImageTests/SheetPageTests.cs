@@ -173,7 +173,7 @@ public sealed class SheetPageTests
         var seen = Interlocked.Read(ref version);
         gate.Set();
         IReadOnlyList<string> texts = [];
-        Assert.True(SpinWait.SpinUntil(() => (texts = queue.Poll()).Count > 0, TimeSpan.FromSeconds(30)), "The command did not end.");
+        Assert.True(SpinWait.SpinUntil(() => (texts = queue.Poll()).Count > 0, TimeSpan.FromSeconds(60)), "The command did not end.");
         Assert.Equal(["Moved the view."], texts);
         var (_, pending) = cache.Read(seen, sheet, Read);
         Assert.False(pending);

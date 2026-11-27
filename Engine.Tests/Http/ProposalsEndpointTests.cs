@@ -443,7 +443,7 @@ public sealed class ProposalsEndpointTests : IAsyncLifetime
             gate.Wait();
             return 0;
         }));
-        Assert.True(entered.Wait(TimeSpan.FromSeconds(10)));
+        Assert.True(entered.Wait(TimeSpan.FromSeconds(60)));
 
         var accept = _host.Proposals.Accept(id);
         try

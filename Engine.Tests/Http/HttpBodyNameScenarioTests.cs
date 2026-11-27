@@ -14,7 +14,7 @@ namespace Engine.Tests.Http;
 [Collection("real host")]
 public class HttpBodyNameScenarioTests
 {
-    private static readonly TimeSpan Limit = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan Limit = TimeSpan.FromSeconds(60);
 
     [Fact]
     public async Task A_Rename_And_A_Hide_Over_Http_Reach_The_Query_And_The_Event_Stream()
