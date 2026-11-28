@@ -14897,3 +14897,26 @@ New tests: 14 in `Engine.Tests/Commands/JointTests.cs`. The test list holds 3421
 `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 11 of 15. New diagnostic codes: 8.
 Since the review of v0.459, 2 product milestones and 11 entries followed it. The failed runs since the entry v0.469, from the
 API: none.
+
+## v0.471 — The second codebase review of 2026-11-28 (governance, TASK-0487)
+
+Twelve entries follow v0.458, the version that the review of 2026-11-28 examined, so the next entry needed a review.
+`docs/reviews/2026-11-28-b-codebase-review.md` examines `5cfc55a5`, the merge of P11a. Two agents read the range
+`1a112239..5cfc55a5` and changed no file in the repository; the session read each of their findings in the code.
+
+The range fixed each finding of the last review (E246, V239, E247, E248, E249, E250, V240, T203, T204 and T205) and four older
+ones (E243, V236, E160 and E57); E6 and E17 are smaller. No new finding is critical or high. Two are medium: E251, the table of
+the placements of a step of P11a is keyed by the command identifier, which a log can hold two times; and E252, the check of the
+charset of a request passes a quoted charset and does not refuse `utf-7`. Five are low: E253, E254, E255, T206 and T207.
+TASK-0488 (P0.201) holds the seven after the next product phase, P11b. Question Q1 asks if a joint whose parent is not live
+still holds its child.
+
+A correction of the entry v0.469: it named `DesktopSessionTests` as the test that calls `DesktopSurface.Start`; the test that
+calls it is `3DEngine.ImageTests/ProjectPathTests.cs`.
+
+**Proof.** `CodebaseReviewGateTests` passes, `dotnet test` passes, and the write-set check and `eng/repo-gates` pass. Not
+verified: continuous integration has not run on this commit; the probes of E251 and E252 ran outside the repository.
+
+New tests: 0. The test list holds 3421 (2027 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 11 of 15. New diagnostic codes: 0. Open findings: 0 critical, 1 high, 8 medium and 19
+low. The failed runs since the entry v0.470, from the API: none.

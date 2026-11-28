@@ -622,6 +622,7 @@ Therefore each approved objective must have a track here.
 - P0.200 — The comment of `DatumReference` names each feature of a datum. v0.469, TASK-0486.
 - P11a — A joint connects two bodies of a part in a tree with no solver, and `AddJoint`, `SetJointValue` and `RemoveJoint`
   place the child and each body under it. v0.470, TASK-0479, ADR-0193.
+- Review — The second codebase review of 2026-11-28. v0.471, TASK-0487.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -838,6 +839,7 @@ This track removes each condition that blocks other work.
 | P0.198 | The time limit of the subscribe frame is 30 seconds (ADR-0005 section 5): with 10 seconds main run 46113600404 failed on Windows. After P0.197. TASK-0484. | 1 |
 | P0.199 | A query result of another type than the caller asks for gives `E-QRY-RESULT-TYPE` (finding E17, R-0028). After P0.198. TASK-0485. | 1 |
 | P0.200 | The comment of `DatumReference` names each feature that a datum resolves on (finding E160). After P0.199. TASK-0486. | 1 |
+| P0.201 | The medium and low findings of the second codebase review of 2026-11-28 (E251, E252, E253, E254, E255, T206, T207: the placements of a step keyed by a command identifier that a log can hold two times, two charsets that the check passes, a pivot value on a limit, the child of a joint whose parent is not live, a cancellation of the reversal of a group, the tests of the joints that check records only, and a wall-clock limit of the subscribe frame in the tests). After P11b. TASK-0488. | 1–2 |
 | P0.173 | A run of the pipeline is red only for a fault of the code, after four red runs of 2026-11-21 with no fault of the code (the order of the owner "Start P0.173"): no time decides a test (a count of the work, an order with 60 s against a wait for ever, or no limit), a crash of a test host gives a dump on each system and the report of the runtime as its cause, and a known fault of the artifact service in an upload or a download gets the one automatic re-run of ADR-0173. TASK-0435. | 1 |
 | P0.168 | A run of the pipeline is red only for a fault of the code: one automatic re-run of a job whose macOS runner GitHub did not give, and no time limit that decides the test of a report that blocks (the question of the owner of 2026-11-18 on the failed runs). It can come at any place in the order. TASK-0417. | 1 |
 | P0.169 | The layout of small windows and of each state (the review of the responsive layout of 2026-11-18 and the answers of the owner, Q1 to Q4 A): the rows beside the ring, the pad and the images as fixed parts of the layout, the rows and the ring of a sketch, the history arc and the home screen inside the display, ten states in the layout test, and the desktop window down to 360 by 560 (ADR-0172). TASK-0418. | 1–2 |
@@ -1222,6 +1224,9 @@ The tracks are not strictly sequential, but three rules hold:
    owner if K25 comes before R34 and R35, because R34 and R35 need a check on the phone.
    The standing order of 2026-11-28 answers Q1 A and Q2 A of that review (TASK-0476): after P0.192, K25 is the next product
    phase, then P0.193, then R34 and R35.
+   After P11a (TASK-0479) the second codebase review of 2026-11-28 (TASK-0487) finds no critical or high finding, so P0.201
+   (TASK-0488), which holds the medium and low findings, comes after the next product phase, P11b. R34 and R35 follow, when
+   the owner can check the phone. Its question Q1 asks the owner if a joint whose parent is not live still holds its child.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase
