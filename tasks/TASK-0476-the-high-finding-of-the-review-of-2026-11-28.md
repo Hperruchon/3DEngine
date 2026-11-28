@@ -1,7 +1,7 @@
 ---
 id: 0476
 title: The high finding of the codebase review of 2026-11-28, the centre of a placed cut
-status: Ready
+status: Active
 phase: P0.192
 opened: 2026-11-28
 depends-on: [0475]
@@ -9,7 +9,8 @@ governed-by: []
 writes:
   create:
     - tasks/TASK-0476-the-high-finding-of-the-review-of-2026-11-28.md
-  modify: []
+  modify:
+    - docs/roadmap.md
   forbid:
     - Engine.Contracts/**
 ---
@@ -23,6 +24,11 @@ This task uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, secti
 The codebase review of 2026-11-28 (`docs/reviews/2026-11-28-codebase-review.md`, TASK-0475) found one high finding, E246: the
 design mass of a cut gives a wrong centre when a body of the chain is a `Subtract` by a tool with no curve and has its own
 `PlaceBody`. By `docs/templates.md`, section 7, a high finding comes before the next product phase.
+
+The answers to the questions of the review are answered by the standing order of 2026-11-28 ("same as every previous week":
+the recommended option of each question). Q1 A: K25 is the next product phase, before R34 and R35, because R34 and R35 need a
+check on the phone and K25 closes R-0080 before its date. Q2 A: TASK-0477 corrects E249 with a scale of each quaternion by an
+exact power of two before a product. The owner can change each answer at the final report of 2026-11-29.
 
 ## Goal
 
@@ -47,7 +53,7 @@ design mass of a cut gives a wrong centre when a body of the chain is a `Subtrac
 
 ## Outcome
 
-Status: Ready · no commit on `main` yet
+Status: Active · no commit on `main` yet
 
 ## Method
 
@@ -58,3 +64,5 @@ Weakest:    none yet.
 ## Progress
 
 - 2026-11-28: opened by TASK-0475.
+- 2026-11-28: started under the standing order of 2026-11-28; this commit records the answers Q1 A and Q2 A of the review, in
+  this file and in the order of the roadmap.

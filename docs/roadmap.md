@@ -1192,6 +1192,8 @@ The tracks are not strictly sequential, but three rules hold:
    (TASK-0474) the codebase review of 2026-11-28 (TASK-0475) puts P0.192 (TASK-0476), which holds the high finding E246, before
    the next product phase, and P0.193 (TASK-0477), which holds the medium and low findings, after it. Its question Q1 asks the
    owner if K25 comes before R34 and R35, because R34 and R35 need a check on the phone.
+   The standing order of 2026-11-28 answers Q1 A and Q2 A of that review (TASK-0476): after P0.192, K25 is the next product
+   phase, then P0.193, then R34 and R35.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase
