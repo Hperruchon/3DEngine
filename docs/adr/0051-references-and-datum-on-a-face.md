@@ -148,3 +148,5 @@ The owner gave the order "start K0" on 2026-11-02 and answered eight questions o
 - 2026-11-05 · TASK-0185 · ADR-0059 amends items 2 and 8: a face of a subtrahend turns, and a gone face gives a
   fault.
 - 2026-11-10 · TASK-0335 · ADR-0112 item 7 amends item 2: each `Rotate` before the place turns the origin and the axes of the carrier.
+- 2026-11-28 · TASK-0486 · No change of a decision. The comment of `DatumReference` names each feature that a reference of item 1
+  resolves on (a box, a cylinder, a cone and an extrude) and the sphere and the torus, which give a reason (finding E160).
