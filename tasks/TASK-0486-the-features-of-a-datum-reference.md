@@ -1,7 +1,7 @@
 ---
 id: 0486
 title: The comment of DatumReference names each feature that a datum resolves on
-status: Active
+status: Done
 phase: P0.200
 opened: 2026-11-28
 depends-on: [0485]
@@ -43,11 +43,11 @@ The comment names each feature that a datum resolves on, and the two features th
 ## Acceptance criteria
 
 - [x] The comment agrees with `DatumResolver.Form` (`Engine.Core/Sketch/DatumResolver.cs`).
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0200-datum-comment) · v0.469
+Status: Done · commit (the merge of the branch p0200-datum-comment) · v0.469
 
 ## Method
 
@@ -58,3 +58,4 @@ Weakest:    no test reads a comment, so a later primitive can make it false agai
 ## Progress
 
 - 2026-11-28: opened under the standing order of 2026-11-28, after P0.199. Ledger v0.469.
+- 2026-11-28: run 46141631186 of `516d0424` passed on each job. Closed at v0.469.
