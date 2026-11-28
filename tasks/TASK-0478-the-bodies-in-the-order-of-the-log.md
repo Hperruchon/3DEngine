@@ -1,7 +1,7 @@
 ---
 id: 0478
 title: The snapshot of the events and CheckInterference give the live bodies in the order of the log
-status: Active
+status: Done
 phase: K25
 opened: 2026-11-28
 depends-on: [0476]
@@ -57,11 +57,11 @@ The snapshot, the check and `GetBodies` give the live bodies in one order, the o
 ## Acceptance criteria
 
 - [x] A test fails when the snapshot or the check takes the order of the collection.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch k25-log-order) · v0.461
+Status: Done · commit (the merge of the branch k25-log-order) · v0.461
 
 ## Method
 
@@ -77,3 +77,4 @@ Weakest:    the test shows the order of the collection only with the .NET of tod
   gives the order; the snapshot, `CheckInterference` and `GetBodies` take it. `A_Body_In_The_Free_Place_Of_A_Consumed_One_Comes_In_The_Order_Of_The_Log`
   fails when the snapshot takes `doc.Bodies` (line 48) and when the check takes `document.Bodies` (line 50). R-0080 closes.
   Ledger entry v0.461.
+- 2026-11-28: run 46095867274 of `ff89a2ed` passed on each job. Closed at v0.461.
