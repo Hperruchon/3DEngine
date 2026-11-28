@@ -104,6 +104,7 @@ public static class HandlerCatalog
         new GetConnectorsQueryHandler(),
         new GetSheetsQueryHandler(),
         new GetJointsQueryHandler(), // ADR-0193 item 7, TASK-0479
+        new CheckTravelQueryHandler(), // ADR-0195, TASK-0490
         new GetBodiesQueryHandler(),
     ];
 

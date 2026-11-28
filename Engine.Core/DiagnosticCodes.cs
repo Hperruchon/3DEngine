@@ -208,6 +208,10 @@ public static class DiagnosticCodes
     // is above its limit, so that it does not hold the session for minutes.
     public const string CheckWorkLimit = "E-CHECK-WORK-LIMIT";
 
+    // ADR-0195 item 5 (phase K12a, TASK-0490): a travel of a joint that is not a pivot with limits, or a tolerance that is not a
+    // finite length above zero.
+    public const string CheckTravelInvalid = "E-CHECK-TRAVEL-INVALID";
+
     // ADR-0193 item 8 (phase P11a, TASK-0479): the commands of a joint.
     public const string JointIdInUse = "E-JOINT-ID-IN-USE";
     public const string JointNotFound = "E-JOINT-NOT-FOUND";

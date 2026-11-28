@@ -200,6 +200,7 @@ names. Do not read all of them.
 | [0192](0192-the-bodies-of-the-snapshot-and-of-the-check-in-the-order-of-the-log.md) | The snapshot of the events and CheckInterference give the live bodies in the order of the log | Accepted | Contracts, events, assembly | 0012, 0182, 0189 | — |
 | [0193](0193-the-joints-of-a-part.md) | A joint connects two bodies of a part in a tree with no solver, and its commands place the child and each body under it | Amended | Contracts, geometry, assembly | 0157, 0191 | 0194 |
 | [0194](0194-the-loose-state-the-intended-pairs-and-the-snap-by-connectors.md) | A joint is tight or loose, each joint is an intended pair of the check, and PlaceByConnectors places a child one time | Accepted | Contracts, geometry, assembly | 0182, 0193 | — |
+| [0195](0195-the-travel-of-a-pivot.md) | The query CheckTravel turns a pivot from limit to limit in memory and gives its first contact, with a step that passes no contact | Accepted | Kernel, queries, assembly | — | — |
 
 ## Topics
 

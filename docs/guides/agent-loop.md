@@ -39,6 +39,9 @@ refused, or an answer does not have its shape, the test fails.
   you move its child with `PlaceBody`; "tight" puts it back at the value of the joint. `PlaceByConnectors` takes the fields of
   the bodies and the connectors of `AddJoint`, places the child on the parent one time, and records no joint. `CheckInterference`
   takes the two bodies of each joint as an intended pair (ADR-0194).
+- **Check that a pivot can turn.** `CheckTravel` takes `jointId` and an optional `tolerance` (0.01 mm by default). It turns the
+  child and the bodies under it from the lower to the upper limit with no change of the Document, and gives `free`, or the first
+  `contact` with the pair and its gap; no contact comes before it (ADR-0195).
 - **Give each command a new identifier.** The identifier `commandId` is a UUID. The body that a command makes has the
   identifier of that command, so a later command of the same proposal can name it. The session keeps the last 1024
   identifiers: a command with a known identifier does not apply again, and gives the earlier answer.
