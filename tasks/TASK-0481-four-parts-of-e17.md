@@ -1,7 +1,7 @@
 ---
 id: 0481
 title: Four parts of finding E17, the text of a refused body, two closes of the event stream and an option as a name
-status: Active
+status: Done
 phase: P0.195
 opened: 2026-11-28
 depends-on: [0480]
@@ -67,11 +67,11 @@ subscribe frame gets a close, and an option in the place of a name is a usage er
 ## Acceptance criteria
 
 - [x] Each part has a test that fails when its correction is undone.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0195-host-findings) · v0.464
+Status: Done · commit (the merge of the branch p0195-host-findings) · v0.464
 
 ## Method
 
@@ -93,3 +93,4 @@ Weakest:    the time limit is a new rule of ADR-0005 section 5 that the owner di
   two full runs failed the lag test of Kestrel with the same broken connection: on Windows an abort can discard a close frame
   that the client did not read. The pump and the endpoint now wait for the answer of the client, at most 2 seconds
   (`Subscriber.CloseWait`); 25 runs of the socket tests and three full runs passed. Ledger v0.464.
+- 2026-11-28: run 46105563719 of `2ae4482b` passed on each job. Closed at v0.464.
