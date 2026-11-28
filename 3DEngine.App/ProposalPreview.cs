@@ -42,7 +42,9 @@ internal sealed record PreviewCard(
     public IReadOnlySet<Guid> Replaced => Bodies is not { } bodies
         ? new HashSet<Guid>()
         : [.. bodies.Removed.Select(body => body.Handle.Id),
-           .. bodies.Changed.Where(change => change.Before.GeometryKey != change.After.GeometryKey || !Equals(change.Before.Fault, change.After.Fault) || !change.After.Visible)
+           // ADR-0191 item 5 (phase P11.0, TASK-0474): a new placement is a new solid too.
+           .. bodies.Changed.Where(change => change.Before.GeometryKey != change.After.GeometryKey || !Equals(change.Before.Fault, change.After.Fault)
+               || !Equals(change.Before.Placement, change.After.Placement) || !change.After.Visible)
                .Select(change => change.After.Handle.Id)];
 
     // The name of a body of the preview: the name or the kind of its record after the commands, or before them for a removed

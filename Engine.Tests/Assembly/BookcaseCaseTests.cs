@@ -248,6 +248,96 @@ public sealed class BookcaseCaseTests(ITestOutputHelper output) : IDisposable
         }
     }
 
+    // ADR-0191 item 5 and the answer Q7 A of the owner (phase P11.0, TASK-0474): the measure above again with PlaceBody. Each
+    // of the 150 turns is one absolute PlaceBody of the module, as a joint or an agent gives it: the client computes the
+    // quaternion of n turns, (115 - i)^n with BigInteger divided by 115^n, and the offset h - R h of the turn about the hinge
+    // h, in doubles. The body keeps its handle and its shape, so the owned kernel applies one placement to the box of the
+    // builder, and the exact numbers grow by one product, not by one product for each turn. The test asserts the box within
+    // the bound of the test above, the bodies, the commands and the replay, and that the longest numerator of a coordinate has
+    // fewer than 200 digits (2576 after 150 Rotate steps). It writes the times and the sizes to the output.
+    [NativeManifoldFact]
+    public async Task One_Hundred_And_Fifty_Placements_Of_A_Module_About_Its_Hinge_Keep_Its_Box_And_Small_Numbers()
+    {
+        const int Turns = 150;
+        const string Name = "Module 1 - volume indicatif";
+        (double X, double Y) hinge = (-1700, -200);
+
+        var path = Path.Combine(_folder, "placements" + DocumentFile.Extension);
+        SortedDictionary<string, Aabb> boxes;
+        List<BodyRecord> records;
+        Guid body;
+        long version;
+        using (var backend = new ManifoldGeometryBackend())
+        {
+            var session = NewSession(backend);
+            DocumentFile.Create(session, path);
+            body = (await BookcaseCase.Build(session))[Name];
+            var before = await Boxes(session);
+
+            var clock = Stopwatch.StartNew();
+            BigInteger re = 1, im = 0;
+            for (var n = 1; n <= Turns; n++)
+            {
+                (re, im) = ((re * 115) + im, (im * 115) - re);
+                var scale = BigInteger.Pow(115, n);
+                var (qw, qz) = (new Rational(re, scale).ToDouble(), new Rational(-im, scale).ToDouble());
+                var (rx, ry, _) = Rotation.FromQuaternion(qw, 0, 0, -qz)!.Value.Apply(hinge.X, hinge.Y, 0);
+                Assert.Equal(body, BookcaseCase.Output(await BookcaseCase.Applied(session, new PlaceBodyCommand
+                {
+                    BodyId = body, Qw = qw, Qx = 0, Qy = 0, Qz = -qz, Dx = hinge.X - rx, Dy = hinge.Y - ry, Dz = 0,
+                })));
+            }
+
+            var time = clock.Elapsed;
+            boxes = await Boxes(session);
+            records = await session.Read((document, _) => document.Bodies.OrderBy(b => b.Handle.Id).ToList());
+            version = await session.Read((document, _) => document.Version);
+            clock.Restart();
+            var (solid, reason) = await session.Read((document, _) => KernelProjection.Of(document, body));
+            var kernelTime = clock.Elapsed;
+            Assert.True(solid is not null, reason);
+            var faces = await session.Query<FacesInfo>(new GetFacesQuery { BodyId = body });
+            Assert.True(faces.Error is null, faces.Error?.Message);
+            session.Close();
+
+            foreach (var (name, box) in before.Where(pair => pair.Key != Name))
+                Assert.Equal(box, boxes[name]);
+            var digits = solid!.Polygons.SelectMany(polygon => polygon.Vertices).SelectMany(v => new[] { v.X, v.Y, v.Z })
+                .Max(c => BigInteger.Abs(c.Numerator).ToString(CultureInfo.InvariantCulture).Length);
+            Report(solid, faces.Result!, before[Name], boxes[Name], time, kernelTime, "the 150 placements (150 commands)");
+            Assert.True(digits < 200, $"The longest numerator of a coordinate has {digits} digits.");
+        }
+
+        // 19 bodies stay, the module with its first handle. The log holds 57 commands of the builder and 150 placements.
+        Assert.Equal(19, records.Count);
+        Assert.Equal(57 + Turns, version);
+        Assert.Contains(records, record => record.Handle.Id == body && record.Name == Name && record.Placement is not null);
+
+        var expected = ExactBox(hinge, 800, 400, 1000, Turns);
+        var actual = boxes[Name];
+        double[] got = [actual.MinX, actual.MinY, actual.MinZ, actual.MaxX, actual.MaxY, actual.MaxZ];
+        double[] want = [expected.MinX, expected.MinY, expected.MinZ, expected.MaxX, expected.MaxY, expected.MaxZ];
+        output.WriteLine($"The largest difference between a bound of the box and the exact turn: {Enumerable.Range(0, 6).Max(i => Math.Abs(got[i] - want[i])).ToString("R", CultureInfo.InvariantCulture)} mm.");
+        for (var i = 0; i < 6; i++)
+            Assert.True(Math.Abs(got[i] - want[i]) <= 1e-6, $"Bound {i} of the placed module is {got[i]:R}, and the exact turn gives {want[i]:R}.");
+
+        using (var backend = new ManifoldGeometryBackend())
+        {
+            var replay = NewSession(backend);
+            var clock = Stopwatch.StartNew();
+            var warnings = await DocumentFile.Open(replay, path);
+            var replayTime = clock.Elapsed;
+            var replayed = await replay.Read((document, _) => document.Bodies.OrderBy(b => b.Handle.Id).ToList());
+            var reboxes = await Boxes(replay);
+            replay.Close();
+
+            output.WriteLine($"The replay of the {version} commands of the log: {replayTime.TotalMilliseconds.ToString("F0", CultureInfo.InvariantCulture)} ms.");
+            Assert.Empty(warnings);
+            Assert.Equal(records, replayed);
+            Assert.Equal(boxes, reboxes);
+        }
+    }
+
     // The box of a box of the sizes x, y and z, with its front left edge on the hinge, after n turns of the exact turn
     // about -z. The complex number (115 - i)^2 / 13226 is the turn; its power n gives the cosine and the sine of n turns.
     private static Aabb ExactBox((double X, double Y) hinge, long x, long y, long z, int n)
@@ -268,7 +358,7 @@ public sealed class BookcaseCaseTests(ITestOutputHelper output) : IDisposable
     // The output of the measure: the time of the turns, the change of each length of the box, and the size of the exact
     // numbers of the owned kernel. No public query gives the exact numbers; the test reads the solid of the owned kernel
     // through the internal KernelProjection, as GetFacesTests does.
-    private void Report(KernelSolid solid, FacesInfo faces, Aabb start, Aabb end, TimeSpan time, TimeSpan kernelTime)
+    private void Report(KernelSolid solid, FacesInfo faces, Aabb start, Aabb end, TimeSpan time, TimeSpan kernelTime, string turns = "the 150 turns (450 commands)")
     {
         var vertices = solid.Polygons.SelectMany(polygon => polygon.Vertices).ToList();
         var coordinates = vertices.SelectMany(v => new[] { v.X, v.Y, v.Z }).ToList();
@@ -292,7 +382,7 @@ public sealed class BookcaseCaseTests(ITestOutputHelper output) : IDisposable
 
         var edgeChange = faces.Edges.Max(e => new[] { 800.0, 400.0, 1000.0 }.Min(n => Math.Abs(e.Length - n)));
         var f = CultureInfo.InvariantCulture;
-        output.WriteLine($"The time of the 150 turns (450 commands): {time.TotalMilliseconds.ToString("F0", f)} ms.");
+        output.WriteLine($"The time of {turns}: {time.TotalMilliseconds.ToString("F0", f)} ms.");
         output.WriteLine($"The time of the first read of the solid of the owned kernel after the turns: {kernelTime.TotalMilliseconds.ToString("F0", f)} ms.");
         output.WriteLine($"The box at the start: {Text(start)}. The box after the turns: {Text(end)}.");
         output.WriteLine($"The size of the box on z: {(end.MaxZ - end.MinZ).ToString("R", f)} (1000 at the start).");

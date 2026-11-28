@@ -13,4 +13,6 @@ public sealed record GetBodyInfoQuery : Query
 
 // The result of GetBodyInfo. Name is null when the body has no name. Distance is the distance in
 // effect of the extrude whose handle is the body, or null for each other body (ADR-0049 item 7).
-public sealed record BodyInfo(Guid BodyId, string Kind, string? Name, bool Visible, double? Distance = null);
+// ADR-0191 item 8 (phase P11.0, TASK-0474): the placement of the body, null at the identity, so a client that moves a body
+// with the absolute PlaceBody reads where the body is.
+public sealed record BodyInfo(Guid BodyId, string Kind, string? Name, bool Visible, double? Distance = null, BodyPlacement? Placement = null);

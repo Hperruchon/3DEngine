@@ -7,7 +7,7 @@ date: 2026-10-29
 supersedes: []
 superseded-by: []
 amends: ['0012', '0021', '0028', '0031', '0036']
-amended-by: ['0039', '0049', '0055']
+amended-by: ['0039', '0049', '0055', '0191']
 affects:
   - Engine.Contracts/BodyRecord.cs
   - Engine.Core/Sketch/**
@@ -131,3 +131,5 @@ body, and the edit is never refused.
 - 2026-11-03 · TASK-0174 · ADR-0055 item 2 amends item 5: a live extrude is the end of its own chain, and the
   regeneration takes each end in the log order of the command that creates it; the fault of a live extrude has the form
   of the fault of a chain.
+- 2026-11-28 · TASK-0474 · ADR-0191 amends item 8: `body.created` and `body.changed` also give the member `placement`, the seven numbers of the placement of the
+  body or null at the identity.

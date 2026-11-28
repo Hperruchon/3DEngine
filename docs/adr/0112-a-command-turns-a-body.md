@@ -7,7 +7,7 @@ date: 2026-11-10
 supersedes: []
 superseded-by: []
 amends: ['0012', '0039', '0051', '0058', '0059', '0060']
-amended-by: ['0114']
+amended-by: ['0114', '0191']
 affects:
   - Engine.Contracts/Geometry/Rotation.cs
   - Engine.Contracts/Geometry/ITransformOps.cs
@@ -119,3 +119,5 @@ the frame of a datum on a face (ADR-0051) and the check of a gone face (ADR-0059
 - 2026-11-10 · TASK-0335 · Shipped at v0.318.
 - 2026-11-10 · TASK-0339 · ADR-0114 item 1 amends item 2: a quaternion with s below 2^-969 gives no turn, and Rotate
   refuses it with E-GEOM-QUATERNION-TOO-SMALL (finding E201, the answer A of the owner).
+- 2026-11-28 · TASK-0474 · ADR-0191 amends item 1: a mesh body of an STL file takes a placement with `PlaceBody`; `Rotate` still refuses it. A `Rotate` of a
+  placed body turns its shape in its place.

@@ -25,8 +25,10 @@ internal static class KernelProjection
     // Finding E135 of the codebase review of 2026-11-05 (b) (TASK-0192): the key was the geometry key alone, which is
     // unique in one Document only (a client chooses the command identifier of a box), so two sessions in one process
     // read the solid of each other. The key holds the identity of the Document too.
-    private static readonly Dictionary<(Guid Document, Guid Key), KernelSolid> Kept = [];
-    private static readonly Queue<(Guid Document, Guid Key)> KeptOrder = new();
+    // ADR-0191 item 5 (phase P11.0, TASK-0474): the key also holds the placement of the solid, null for the shape in the frame
+    // of the body, so a PlaceBody, which keeps the geometry key, does not give the solid of the old placement.
+    private static readonly Dictionary<(Guid Document, Guid Key, BodyPlacement? Placement), KernelSolid> Kept = [];
+    private static readonly Queue<(Guid Document, Guid Key, BodyPlacement? Placement)> KeptOrder = new();
 
     // ADR-0059 item 2, amended by TASK-0454 (phase P0.184): the count of the kept results of the boolean steps; the result of
     // the oldest use goes first.
@@ -127,12 +129,23 @@ internal static class KernelProjection
     }
 
     // The kernel solid of the body in one state of the Document: state gives the sketch and the distance of an extrude, and
-    // frameOf the frame of a datum.
+    // frameOf the frame of a datum. ADR-0191 item 5: the solid is in the frame of the Document, with the placement of the body.
     public static (KernelSolid? Solid, string? Reason) Of(
         Guid document, FeatureGraph graph, Guid body, Func<ExtrudeCommand, DatumResolver.ExtrudeState> state, Func<Guid, DatumFrame?> frameOf)
     {
         ArgumentNullException.ThrowIfNull(graph);
-        return Solid(document, graph, body, state, frameOf);
+        var (solid, reason) = Solid(document, graph, body, state, frameOf);
+        return (solid is null ? null : Placements.Apply(graph.Placement(body), solid), reason);
+    }
+
+    // ADR-0191 item 6: the kernel solid of the body in the committed state, in the frame of the body, with no placement. A
+    // boolean reads its operands in this form.
+    public static (KernelSolid? Solid, string? Reason) Local(Document document, Guid body)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        var graph = FeatureGraph.Of(document);
+        KeepBooleans(document.DocumentId, graph);
+        return Solid(document.DocumentId, graph, body, Committed(document), id => DatumResolver.Frame(document, id));
     }
 
     // ADR-0059 item 2, amended by TASK-0454: the result of a boolean step (a Subtract, a Union or an Intersect) of the Document
@@ -242,20 +255,22 @@ internal static class KernelProjection
     // ADR-0059 item 2: the solid of a live body with no fault, kept under its geometry key. A rebuild gives a body a new
     // key (ADR-0037 item 2), and a key comes from the command and the body (ADR-0037 item 3), so a committed key names
     // one solid. A body with a fault keeps the solid of an earlier state, so it gives no solid.
-    public static (KernelSolid? Solid, string? Reason) OfRecord(Document document, BodyRecord record)
+    // ADR-0191 item 5: the solid is in the frame of the Document, with the placement of the record; local gives the solid in the
+    // frame of the body (item 6).
+    public static (KernelSolid? Solid, string? Reason) OfRecord(Document document, BodyRecord record, bool local = false)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(record);
         if (record.Fault is { } fault)
             return (null, $"The body '{record.Handle.Id}' has the fault {fault.Code}, so its solid comes from an earlier state.");
-        var key = (document.DocumentId, record.GeometryKey);
+        var key = (document.DocumentId, record.GeometryKey, local ? null : record.Placement);
         lock (Gate)
         {
             if (Kept.TryGetValue(key, out var kept))
                 return (kept, null);
         }
 
-        var (solid, reason) = Of(document, record.Handle.Id);
+        var (solid, reason) = local || record.Placement is null ? Local(document, record.Handle.Id) : Of(document, record.Handle.Id);
         if (solid is null)
             return (null, reason);
         lock (Gate)
@@ -271,11 +286,21 @@ internal static class KernelProjection
         return (solid, null);
     }
 
+    // ADR-0191 item 6 (phase P11.0, TASK-0474): the two operands of a boolean in the frame of the first body: the shape of the
+    // first, and the shape of the second with its placement in that frame. The walk of a boolean step reads them in the same
+    // form, so the kept result of the step answers a later read.
+    internal static (KernelSolid? First, KernelSolid? Second) Operands(Document document, BodyRecord first, BodyRecord second)
+    {
+        var a = OfRecord(document, first, local: true).Solid;
+        var b = OfRecord(document, second, local: true).Solid;
+        return (a, b is null ? null : Placements.Apply(Placements.Relative(Placements.Of(first), Placements.Of(second)), b));
+    }
+
     // True when the projection keeps a solid of the Document under the key, for a test of item 2.
     internal static bool IsKept(Guid document, Guid key)
     {
         lock (Gate)
-            return Kept.ContainsKey((document, key));
+            return Kept.Keys.Any(kept => kept.Document == document && kept.Key == key);
     }
 
     // ADR-0059 item 3: the names of the faces of a solid.
@@ -308,10 +333,33 @@ internal static class KernelProjection
     // of its faces: the base, the axis and the radius of a cylinder or a cone, and the centre and the radius of a sphere. The
     // walk is the walk of the solid: a Translate moves each curve, a Rotate turns it with the exact turn of the solid, and a
     // Subtract keeps the curves of the two bodies, as it keeps their tags. A torus and a box give no curve.
+    // ADR-0191 item 5: the curves are in the frame of the Document, with the placement of the body.
     public static IReadOnlyDictionary<FaceTag, Drawing.SideCurve> Curves(Document document, Guid body)
     {
         ArgumentNullException.ThrowIfNull(document);
-        return CurvesOf(FeatureGraph.Of(document), body, Committed(document), id => DatumResolver.Frame(document, id));
+        var graph = FeatureGraph.Of(document);
+        return Moved(CurvesOf(graph, body, Committed(document), id => DatumResolver.Frame(document, id)), graph.Placement(body));
+    }
+
+    // ADR-0191 item 5: each curve with the placement: the base as a point, the axis as a direction.
+    private static Dictionary<FaceTag, Drawing.SideCurve> Moved(Dictionary<FaceTag, Drawing.SideCurve> curves, BodyPlacement placement)
+        => Placements.Moves(placement)
+            ? curves.ToDictionary(entry => entry.Key, entry => entry.Value with { Base = Placements.Point(placement, entry.Value.Base), Axis = Placements.Direction(placement, entry.Value.Axis) })
+            : curves;
+
+    // ADR-0191 items 5 and 6: the placement of an operand at the step that consumes it. A Translate and a Rotate move the shape
+    // of the operand in its place; a boolean takes its second operand in the frame of the first.
+    private static BodyPlacement AtStep(FeatureGraph graph, Guid operand, Command step)
+    {
+        var at = graph.Order(step.CommandId);
+        var placement = graph.Placement(operand, at);
+        return step switch
+        {
+            SubtractCommand or UnionCommand or IntersectCommand when Pair(step) is var (first, second) && operand == second
+                => Placements.Relative(graph.Placement(first, at), placement),
+            SubtractCommand or UnionCommand or IntersectCommand => BodyPlacement.Identity,
+            _ => placement,
+        };
     }
 
     private static Dictionary<FaceTag, Drawing.SideCurve> CurvesOf(
@@ -340,25 +388,25 @@ internal static class KernelProjection
             case TranslateCommand translate:
             {
                 var offset = Vector3R.FromDoubles(translate.Dx, translate.Dy, translate.Dz);
-                return CurvesOf(graph, translate.BodyId, state, frameOf).ToDictionary(entry => entry.Key, entry => entry.Value with { Base = entry.Value.Base + offset });
+                return Moved(CurvesOf(graph, translate.BodyId, state, frameOf), AtStep(graph, translate.BodyId, translate)).ToDictionary(entry => entry.Key, entry => entry.Value with { Base = entry.Value.Base + offset });
             }
             case RotateCommand rotate when RotateCommandHandler.Turn(rotate) is { } r:
             {
                 var (x, y, z) = (Vector3R.FromDoubles(r.Xx, r.Xy, r.Xz), Vector3R.FromDoubles(r.Yx, r.Yy, r.Yz), Vector3R.FromDoubles(r.Zx, r.Zy, r.Zz));
                 Vector3R Map(Vector3R q) => (x * q.X) + (y * q.Y) + (z * q.Z);
-                return CurvesOf(graph, rotate.BodyId, state, frameOf).ToDictionary(entry => entry.Key, entry => entry.Value with { Base = Map(entry.Value.Base), Axis = Map(entry.Value.Axis) });
+                return Moved(CurvesOf(graph, rotate.BodyId, state, frameOf), AtStep(graph, rotate.BodyId, rotate)).ToDictionary(entry => entry.Key, entry => entry.Value with { Base = Map(entry.Value.Base), Axis = Map(entry.Value.Axis) });
             }
             case SubtractCommand subtract:
             {
                 var curves = CurvesOf(graph, subtract.MinuendBodyId, state, frameOf);
-                foreach (var (tag, curve) in CurvesOf(graph, subtract.SubtrahendBodyId, state, frameOf))
+                foreach (var (tag, curve) in Moved(CurvesOf(graph, subtract.SubtrahendBodyId, state, frameOf), AtStep(graph, subtract.SubtrahendBodyId, subtract)))
                     curves.TryAdd(tag, curve);
                 return curves;
             }
             // ADR-0181 item 6 (phase K16, TASK-0433): a Union and an Intersect keep the curves of the two bodies, as they keep
             // their tags. The step is a method of its own, so the frame of this recursive method stays small.
             case UnionCommand or IntersectCommand:
-                return PairCurves(graph, Pair(graph.Creator(handle)!), state, frameOf);
+                return PairCurves(graph, graph.Creator(handle)!, state, frameOf);
             default:
                 return [];
         }
@@ -407,23 +455,35 @@ internal static class KernelProjection
         public Vector3R Point(Vector3R q) => Direction(q) + Offset;
     }
 
+    // ADR-0191 item 5: the map holds the placement of the body.
     public static Placement? Placed(Document document, Guid body)
     {
         ArgumentNullException.ThrowIfNull(document);
-        return PlacedOf(FeatureGraph.Of(document), body);
+        var graph = FeatureGraph.Of(document);
+        return Compose(PlacedOf(graph, body), graph.Placement(body));
     }
+
+    // ADR-0191 item 5: the map, then the placement.
+    private static Placement? Compose(Placement? map, BodyPlacement placement)
+        => map is null || !Placements.Moves(placement)
+            ? map
+            : map with
+            {
+                X = Placements.Direction(placement, map.X), Y = Placements.Direction(placement, map.Y), Z = Placements.Direction(placement, map.Z),
+                Offset = Placements.Point(placement, map.Offset),
+            };
 
     private static Placement? PlacedOf(FeatureGraph graph, Guid handle)
     {
         switch (graph.Creator(handle))
         {
             case TranslateCommand translate:
-                return PlacedOf(graph, translate.BodyId) is { } moved
+                return Compose(PlacedOf(graph, translate.BodyId), AtStep(graph, translate.BodyId, translate)) is { } moved
                     ? moved with { Offset = moved.Offset + Vector3R.FromDoubles(translate.Dx, translate.Dy, translate.Dz) }
                     : null;
             case RotateCommand rotate when RotateCommandHandler.Turn(rotate) is { } r:
             {
-                if (PlacedOf(graph, rotate.BodyId) is not { } turned)
+                if (Compose(PlacedOf(graph, rotate.BodyId), AtStep(graph, rotate.BodyId, rotate)) is not { } turned)
                     return null;
                 var (x, y, z) = (Vector3R.FromDoubles(r.Xx, r.Xy, r.Xz), Vector3R.FromDoubles(r.Yx, r.Yy, r.Yz), Vector3R.FromDoubles(r.Zx, r.Zy, r.Zz));
                 Vector3R Map(Vector3R q) => (x * q.X) + (y * q.Y) + (z * q.Z);
@@ -490,7 +550,7 @@ internal static class KernelProjection
             case TranslateCommand translate:
             {
                 var (solid, reason) = Solid(document, graph, translate.BodyId, state, frameOf);
-                return (solid?.Translate(Vector3R.FromDoubles(translate.Dx, translate.Dy, translate.Dz)), reason);
+                return (Moved(graph, translate.BodyId, translate, solid)?.Translate(Vector3R.FromDoubles(translate.Dx, translate.Dy, translate.Dz)), reason);
             }
             // ADR-0112 item 5: the kernel reads the nine doubles of the turn exactly, as the backend takes them.
             case RotateCommand rotate:
@@ -498,7 +558,7 @@ internal static class KernelProjection
                 if (RotateCommandHandler.Turn(rotate) is not { } r)
                     return (null, $"The Rotate '{rotate.CommandId}' has a quaternion that gives no turn.");
                 var (solid, reason) = Solid(document, graph, rotate.BodyId, state, frameOf);
-                return (solid?.Rotate(Vector3R.FromDoubles(r.Xx, r.Xy, r.Xz), Vector3R.FromDoubles(r.Yx, r.Yy, r.Yz), Vector3R.FromDoubles(r.Zx, r.Zy, r.Zz)), reason);
+                return (Moved(graph, rotate.BodyId, rotate, solid)?.Rotate(Vector3R.FromDoubles(r.Xx, r.Xy, r.Xz), Vector3R.FromDoubles(r.Yx, r.Yy, r.Yz), Vector3R.FromDoubles(r.Zx, r.Zy, r.Zz)), reason);
             }
             // ADR-0181 item 5 (phase K16, TASK-0433): the union and the intersection of the solids of the two bodies. The step
             // is a method of its own: a local of a case is a part of the frame of this recursive method, and a chain of 150
@@ -518,10 +578,11 @@ internal static class KernelProjection
 
     // ADR-0181 item 6: the curves of the two bodies of a Union or an Intersect.
     private static Dictionary<FaceTag, Drawing.SideCurve> PairCurves(
-        FeatureGraph graph, (Guid First, Guid Second) pair, Func<ExtrudeCommand, DatumResolver.ExtrudeState> state, Func<Guid, DatumFrame?> frameOf)
+        FeatureGraph graph, Command step, Func<ExtrudeCommand, DatumResolver.ExtrudeState> state, Func<Guid, DatumFrame?> frameOf)
     {
+        var pair = Pair(step);
         var curves = CurvesOf(graph, pair.First, state, frameOf);
-        foreach (var (tag, curve) in CurvesOf(graph, pair.Second, state, frameOf))
+        foreach (var (tag, curve) in Moved(CurvesOf(graph, pair.Second, state, frameOf), AtStep(graph, pair.Second, step)))
             curves.TryAdd(tag, curve);
         return curves;
     }
@@ -538,9 +599,15 @@ internal static class KernelProjection
         var (second, secondReason) = Solid(document, graph, secondId, state, frameOf);
         if (second is null)
             return (null, secondReason);
+        second = Placements.Apply(AtStep(graph, secondId, command), second);
         var result = Boolean(document, command, first, second);
         return result is null ? (null, $"The {command.Name} '{command.CommandId}' leaves no solid in the owned kernel.") : (result, null);
     }
+
+    // ADR-0191 items 5 and 6: the solid of an operand in its place at the step that consumes it. A method of its own, which the
+    // walk calls after its recursive call, so the frame of the walk does not grow.
+    private static KernelSolid? Moved(FeatureGraph graph, Guid operand, Command step, KernelSolid? solid)
+        => solid is null ? null : Placements.Apply(AtStep(graph, operand, step), solid);
 
     // ADR-0181 item 1: the two operands of a Union or an Intersect. TASK-0454: the minuend and the subtrahend of a Subtract,
     // for PairSolid only.
@@ -607,6 +674,12 @@ internal static class KernelProjection
             if (step is TranslateCommand translate)
             {
                 origin += Vector3R.FromDoubles(translate.Dx, translate.Dy, translate.Dz);
+            }
+            // ADR-0191 item 5: the placement of a body on the chain, as DatumResolver gives it.
+            else if (step is PlaceBodyCommand body)
+            {
+                var where = body.Placement;
+                (origin, u, v, n) = (Placements.Point(where, origin), Placements.Direction(where, u), Placements.Direction(where, v), Placements.Direction(where, n));
             }
             else if (step is RotateCommand rotate && RotateCommandHandler.Turn(rotate) is { } r)
             {

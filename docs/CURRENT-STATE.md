@@ -14522,3 +14522,58 @@ New tests: 4 (`A_Redo_After_A_Failed_Group_Applies_Nothing`, `An_Undo_With_A_Gro
 list holds 3344 (1955 in `Engine.Tests`, 391 in `3DEngine.Tests`, 995 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`).
 Open entries: 13 of 15 (R-0081 closes, R-0082 opens). New diagnostic codes: 1 (`E-API-PROPOSAL-NOT-REVERSED`). Since the review
 of v0.451, 3 product milestones and 6 entries followed it. The failed runs since the entry v0.456, from the API: none.
+
+## v0.458 — A body has a placement, and the command PlaceBody sets it, so a move keeps the identity and the exact shape of a body (P11.0, TASK-0474)
+
+Until this entry a move made a new body: `Rotate` and `Translate` copy the solid, move the copy and consume the source, and the
+exact numbers of the owned kernel grow by one product for each turn. K10a measured a numerator of 2576 digits after 150 turns
+(R-0070). The owner answered Q1 A on 2026-11-25 (a model of placements) and "All A" for Q1 to Q7 of the proposal
+`docs/proposals/2026-11-27-the-model-of-placements-of-p11-0.md` on 2026-11-27. ADR-0191 records the answers.
+
+**The model.** A body has a placement, a turn of a quaternion and an offset: a point p of its shape is at R·p + t in the
+Document. `BodyRecord` has the new optional field `Placement` (the type `BodyPlacement` of seven doubles), and null is the
+identity, so each Document of before has the same geometry. The new command `PlaceBody` sets an absolute placement; the body
+keeps its handle, its key and its shape, and `Undo` and `Redo` move the placement as for a rename. A mesh body of an STL file
+takes a placement too. `Rotate` and `Translate` keep their meaning: each moves the shape of its operand in its place. A
+`Subtract`, a `Union` and an `Intersect` give their result in the frame of the first body, with its placement. No new
+diagnostic code; the format version stays 1.
+
+**The readers.** The owned kernel keeps each shape in its own frame and applies the placement one time at each read, so the
+numbers grow by one product, not by one product for each move. Each reader applies it: the triangles, the box, the export to
+STL and the check of a mesh body in doubles; the faces, a pick, the mass, the distance, the angle, the interference, the
+connectors, the view lines, the sheet, the export to STEP and a datum on a face through the owned kernel; the regeneration;
+the plan of a preview; and the mesh of the window and its section view. The events of a body and the snapshot give the member
+`placement`, null at the identity; `GetBodyInfo` and `GetBodies` give it too. The guide for an agent says how to move a part.
+The probe of the determinism hash places two boxes and cuts the one by the other, and reads each body with its placement, so
+the four platforms compare the bits of the placements.
+
+**The measure (Q7 A).** `One_Hundred_And_Fifty_Placements_Of_A_Module_About_Its_Hinge_Keep_Its_Box_And_Small_Numbers` turns
+module 1 of the bookcase 150 times with one absolute `PlaceBody` for each turn, on the computer of the owner (Windows, x64,
+Debug build):
+
+| Quantity | `Rotate` and `Translate` (v0.413) | `PlaceBody` |
+|---|---|---|
+| Commands of the turns | 450 | 150 |
+| Bodies after the turns | 19 | 19, the module with its first handle |
+| Time of the commands of the turns | 46 ms | 19 ms |
+| First read of the exact solid after the turns | 2067 ms | less than 1 ms |
+| Longest numerator of a coordinate | 2576 digits | 19 digits |
+| Largest difference of a bound of the box from the exact turn | 1.6e-12 mm | 4.5e-13 mm |
+| Largest change of the length of an edge (`GetFaces`) | 9.1e-13 mm | 1.1e-13 mm |
+| Replay of the log | 18 ms (507 commands) | 10 ms (207 commands) |
+
+**Proof.** A clean build gives 0 warnings, and `dotnet test` passes with the image tests. `PlaceBodyTests` holds one test of each
+reader, each against the same scene moved with `Rotate` and `Translate`. Nine injections each remove the placement from one
+reader, and each makes its named tests fail: the triangles (3 tests), the kernel solid (12), the chain of a datum (1), the
+relative placement of a boolean (4), the operand of a move (1), the regeneration (1), the plan of a preview (1), the box (4),
+and the mesh of the window (`A_Placed_Body_Gives_One_New_Mesh_In_Its_Place`). The write-set check and `eng/repo-gates` pass.
+Not verified: continuous integration has not run on this commit; the window was not run by hand, because computer use on it is
+denied.
+
+The roadmap had no line of P0.191 in "Shipped", although v0.457 shipped it; this entry adds it with the line of P11.0.
+
+New tests: 27 (25 in `PlaceBodyTests`, the measure in `BookcaseCaseTests`, and `A_Placed_Body_Gives_One_New_Mesh_In_Its_Place`).
+The test list holds 3371 (1981 in `Engine.Tests`, 391 in `3DEngine.Tests`, 996 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 13 of 15 (R-0070 has a progress line and stays open for the sizes of the lamp). New
+diagnostic codes: 0. Since the review of v0.451, 4 product milestones and 7 entries followed it, so a codebase review is due
+before the next product milestone. The failed runs since the entry v0.457, from the API: none.

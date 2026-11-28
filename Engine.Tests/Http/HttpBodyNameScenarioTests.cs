@@ -83,7 +83,8 @@ public class HttpBodyNameScenarioTests
         Assert.Contains("\"GetBodyInfo\"", queries, StringComparison.Ordinal);
         var changed = events.EnumerateArray().Single(entry => entry.GetProperty("kind").GetString() == "body.changed");
         Assert.Equal(
-            ["bodyId", "fault", "geometry", "name", "visible"],
+            // ADR-0191 item 8 (phase P11.0, TASK-0474): and the placement.
+            ["bodyId", "fault", "geometry", "name", "placement", "visible"],
             changed.GetProperty("payload").EnumerateObject().Select(field => field.Name).Order(StringComparer.Ordinal));
     }
 

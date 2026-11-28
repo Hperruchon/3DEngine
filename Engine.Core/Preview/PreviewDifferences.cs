@@ -183,7 +183,9 @@ internal sealed class PreviewPlan
         };
     }
 
-    private static bool Same(BodyRecord before, BodyRecord after) => before.GeometryKey == after.GeometryKey && Equals(before.Fault, after.Fault);
+    // ADR-0191 item 5 (phase P11.0, TASK-0474): a PlaceBody keeps the geometry key and moves the solid, so the placement counts.
+    private static bool Same(BodyRecord before, BodyRecord after)
+        => before.GeometryKey == after.GeometryKey && Equals(before.Fault, after.Fault) && Equals(before.Placement, after.Placement);
 
     private static (Guid A, Guid B) Order(Guid x, Guid y) => x.CompareTo(y) < 0 ? (x, y) : (y, x);
 }

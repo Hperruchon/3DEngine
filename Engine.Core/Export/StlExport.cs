@@ -30,7 +30,8 @@ public static class StlExport
         {
             meshes = document.Bodies
                 .OrderBy(body => body.Handle.Id)
-                .Select(body => (body.Handle.Id, ops.Tessellate(new BodyHandle(body.GeometryKey))))
+                // ADR-0191 item 7 (phase P11.0, TASK-0474): the triangles in the Document, with the placement of the body.
+                .Select(body => (body.Handle.Id, Placements.Tessellate(ops, body)))
                 .ToList();
         }
         catch (Exception ex) when (ex is not OperationCanceledException)

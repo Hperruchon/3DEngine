@@ -24,6 +24,8 @@ public sealed class FeatureList
     private readonly Dictionary<Guid, Command> _creators = [];
     private readonly Dictionary<Guid, Command> _consumers = [];
     private readonly Dictionary<Guid, List<double>> _distances = [];
+    // ADR-0191 item 3 (phase P11.0, TASK-0474): the PlaceBody steps in effect of each body, in the order of the log.
+    private readonly Dictionary<Guid, List<PlaceBodyCommand>> _placements = [];
 
     private FeatureList()
     {
@@ -96,6 +98,45 @@ public sealed class FeatureList
     // ADR-0049 items 3 and 7: the distance in effect of the Extrude in effect with the identifier, or null.
     public double? DistanceInEffect(Guid extrudeId) => Extrude(extrudeId) is { } extrude ? Distance(extrude) : null;
 
+    // ADR-0191 item 3: the last PlaceBody in effect of the body before the place, or null. The place is the order of a step,
+    // or int.MaxValue for the state after the last step.
+    // ADR-0191 items 3 and 6: the placement of the body before the place: the last PlaceBody in effect of the body, else the
+    // placement that its creator gives it. A Subtract, a Union and an Intersect give the placement of their first body at
+    // their step; each other creator gives the identity.
+    public BodyPlacement BodyPlacement(Guid handle, int place = int.MaxValue)
+    {
+        while (true)
+        {
+            if (Placement(handle, place) is { } step)
+                return step.Placement;
+            var creator = Creator(handle);
+            Guid? first = creator switch
+            {
+                SubtractCommand subtract => subtract.MinuendBodyId,
+                UnionCommand union => union.FirstBodyId,
+                IntersectCommand intersect => intersect.FirstBodyId,
+                _ => null,
+            };
+            if (creator is null || first is not { } next)
+                return Engine.Contracts.BodyPlacement.Identity;
+            place = Order(creator.CommandId);
+            handle = next;
+        }
+    }
+
+    public PlaceBodyCommand? Placement(Guid body, int place)
+    {
+        if (!_placements.TryGetValue(body, out var stack))
+            return null;
+        for (var i = stack.Count - 1; i >= 0; i--)
+        {
+            if (Order(stack[i].CommandId) < place)
+                return stack[i];
+        }
+
+        return null;
+    }
+
     private void Advance(IReadOnlyList<LogEntry> log)
     {
         lock (_gate)
@@ -150,6 +191,13 @@ public sealed class FeatureList
                 _distances[set.ExtrudeId] = stack = [];
             stack.Add(set.Distance);
         }
+
+        if (command is PlaceBodyCommand place)
+        {
+            if (!_placements.TryGetValue(place.BodyId, out var placements))
+                _placements[place.BodyId] = placements = [];
+            placements.Add(place);
+        }
     }
 
     // The reverse of Add for the last step in effect. One handle has at most one consumer in effect (ADR-0021 item 1),
@@ -164,5 +212,7 @@ public sealed class FeatureList
             _consumers.Remove(operand);
         if (command is SetExtrudeDistanceCommand set)
             _distances[set.ExtrudeId].RemoveAt(_distances[set.ExtrudeId].Count - 1);
+        if (command is PlaceBodyCommand place)
+            _placements[place.BodyId].RemoveAt(_placements[place.BodyId].Count - 1);
     }
 }

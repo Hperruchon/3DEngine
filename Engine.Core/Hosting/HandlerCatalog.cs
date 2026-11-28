@@ -73,6 +73,8 @@ public static class HandlerCatalog
         new RemoveSheetViewCommandHandler(),
         new PlaceSheetDimensionCommandHandler(),
         new RemoveSheetDimensionCommandHandler(),
+        // ADR-0191 item 3 (phase P11.0, TASK-0474): the placement of a body.
+        new PlaceBodyCommandHandler(),
     ];
 
     public static IReadOnlyList<IQueryHandler> QueryHandlers() =>

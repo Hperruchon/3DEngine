@@ -107,9 +107,10 @@ public sealed class SubtractCommandHandler : ICommandHandler, ICommandEncoder
         {
             boolean.Subtract(
                 handle,
-                // ADR-0037 item 2: the solids of the bodies, under their geometry keys.
+                // ADR-0037 item 2: the solids of the bodies, under their geometry keys. ADR-0191 item 6 (TASK-0474): the result is
+                // in the frame of the minuend, so the subtrahend goes into that frame.
                 new BodyHandle(minuend.GeometryKey),
-                new BodyHandle(subtrahend.GeometryKey));
+                new BodyHandle(Placements.SecondOperand(backend, handle.Id, minuend, subtrahend)));
         }
         catch (Exception ex)
         {
@@ -131,8 +132,8 @@ public sealed class SubtractCommandHandler : ICommandHandler, ICommandEncoder
         return Task.FromResult(CommandHandlerResult.Success(
             outputs,
             diagnostics: warnings,
-            // The result takes the name and the visibility of the minuend (ADR-0028 item 5).
-            createdBodies: new[] { new BodyRecord(handle, "Solid", minuend.Name, minuend.Visible) },
+            // The result takes the name and the visibility of the minuend (ADR-0028 item 5), and its placement (ADR-0191 item 6).
+            createdBodies: new[] { new BodyRecord(handle, "Solid", minuend.Name, minuend.Visible, Placement: minuend.Placement) },
             consumedBodies: new[] { new BodyHandle(subtract.MinuendBodyId), new BodyHandle(subtract.SubtrahendBodyId) },
             changedDatums: datums));
     }
@@ -145,8 +146,7 @@ public sealed class SubtractCommandHandler : ICommandHandler, ICommandEncoder
     private static (IReadOnlyList<Engine.Contracts.Sketch.DatumRecord> Datums, IReadOnlyList<Diagnostic> Warnings) GoneFaces(
         Document document, SubtractCommand subtract, BodyRecord minuend, BodyRecord subtrahend, Guid body)
     {
-        if (Features.KernelProjection.OfRecord(document, minuend).Solid is not { } a
-            || Features.KernelProjection.OfRecord(document, subtrahend).Solid is not { } b
+        if (Features.KernelProjection.Operands(document, minuend, subtrahend) is not ({ } a, { } b)
             || Features.KernelProjection.Boolean(document.DocumentId, subtract, a, b) is not { } result)
             return ([], []);
 

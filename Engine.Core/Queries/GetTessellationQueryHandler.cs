@@ -67,7 +67,8 @@ public sealed class GetTessellationQueryHandler : IQueryHandler
         // of the backend gives E-GEOM-NATIVE-OP, as for a command.
         try
         {
-            return Task.FromResult(QueryHandlerResult.Success(ops.Tessellate(new BodyHandle(body.GeometryKey))));
+            // ADR-0191 item 7 (phase P11.0, TASK-0474): the triangles in the Document, with the placement of the body.
+            return Task.FromResult(QueryHandlerResult.Success(Placements.Tessellate(ops, body)));
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

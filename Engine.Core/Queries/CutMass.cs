@@ -158,7 +158,39 @@ internal static class CutMass
         }
     }
 
+    // ADR-0191 item 5 (phase P11.0, TASK-0474): the cut of the body in the Document. Each step of the walk reads its operands in
+    // the Document, with their placements, so the result of a step is at the placement that its command gives it: the identity
+    // for a Translate and a Rotate, the placement of the minuend for a Subtract. A PlaceBody of the result moves the cut from that
+    // placement to its own. The first body of the chain reads the solid, the map and the curves with its placement.
     private static Cut? Walk(Document document, FeatureGraph graph, Guid handle)
+    {
+        if (Steps(document, graph, handle) is not { } cut)
+            return null;
+        var given = graph.Creator(handle) switch
+        {
+            TranslateCommand or RotateCommand => BodyPlacement.Identity,
+            SubtractCommand subtract => graph.Placement(subtract.MinuendBodyId, graph.Order(subtract.CommandId)),
+            _ => (BodyPlacement?)null,
+        };
+        var now = graph.Placement(handle);
+        if (given is not { } from || from == now)
+            return cut;
+        var change = Placements.Compose(now, Placements.Inverse(from));
+        return Mapped(cut, point => Placements.Point(change, point), direction => Placements.Direction(change, direction));
+    }
+
+    // The cut with each point and each direction of its groups and tools mapped. A moved group takes no later tool.
+    private static Cut Mapped(Cut cut, Func<Vector3R, Vector3R> point, Func<Vector3R, Vector3R> direction) => cut with
+    {
+        Centre = point(cut.Centre),
+        Groups = [.. cut.Groups.Select(group => group with
+        {
+            Base = point(group.Base), Axis = direction(group.Axis), Centre = point(group.Centre), Solid = null,
+            Tools = [.. group.Tools.Select(tool => tool with { Base = point(tool.Base), Axis = direction(tool.Axis) })],
+        })],
+    };
+
+    private static Cut? Steps(Document document, FeatureGraph graph, Guid handle)
     {
         switch (graph.Creator(handle))
         {

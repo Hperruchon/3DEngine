@@ -7,7 +7,7 @@ date: 2026-11-12
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0157']
+amended-by: ['0157', '0191']
 affects:
   - docs/CHARTER.md
 enforced-by: Engine.Tests/Governance/ObjectiveReferenceGateTests.cs
@@ -79,3 +79,4 @@ adds a body to the log for each move. The reference case may need features that 
 - 2026-11-12 · TASK-0353 · Shipped at v0.338.
 - 2026-11-15 · TASK-0394 · ADR-0157 amends items 4 and 8: a pair whose contact is intended is exempt from the check of a
   travel, and the measures, the pair check and the preview of a proposal come before the joints.
+- 2026-11-28 · TASK-0474 · ADR-0191 amends item 3: a joint moves a body with `PlaceBody`, an absolute placement, and not with `Rotate`.

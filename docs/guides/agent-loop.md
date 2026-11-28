@@ -24,6 +24,10 @@ refused, or an answer does not have its shape, the test fails.
 - **Each length is in millimetres.** An answer gives a number with no unit (register entry R-0053).
 - **A turn is a quaternion, never an angle.** The command `Rotate` takes `qw`, `qx`, `qy` and `qz`. If you think in
   degrees, compute the sine and the cosine yourself, and send the numbers (determinism rule 2 of `CLAUDE.md`).
+- **Move a part with `PlaceBody`.** `PlaceBody` takes `bodyId`, a quaternion `qw`, `qx`, `qy`, `qz` and an offset `dx`, `dy`,
+  `dz`. The placement is absolute, and the body keeps its identifier and its shape. `GetBodyInfo` and `GetBodies` give the
+  placement of a body, null at the identity, so read it before you compute a new one. `Rotate` and `Translate` make a new
+  body with a new identifier (ADR-0191).
 - **Give each command a new identifier.** The identifier `commandId` is a UUID. The body that a command makes has the
   identifier of that command, so a later command of the same proposal can name it. The session keeps the last 1024
   identifiers: a command with a known identifier does not apply again, and gives the earlier answer.

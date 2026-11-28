@@ -234,6 +234,40 @@ public sealed class DesktopFormsTests
         Assert.Equal(15.0, renderer.Bounds!.Value.Max.X);
     }
 
+    // ADR-0191 item 8 (phase P11.0, TASK-0474): a PlaceBody keeps the geometry key of the body and moves it, so the window
+    // takes its triangles again in the new place, and the section view knows the new mesh by its key and its placement. A
+    // rename takes no new mesh.
+    [VulkanImageFact]
+    public async Task A_Placed_Body_Gives_One_New_Mesh_In_Its_Place()
+    {
+        using var host = new EngineHost(new ManifoldGeometryBackend());
+        var box = Output(await host.Session.Apply(new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 }), "bodyId");
+        using var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null);
+        var scene = SessionScene.Create();
+        var meshes = new Dictionary<string, GpuMesh>();
+        using var bodies = new SessionBodies(new HostedSession(host));
+        try
+        {
+            bodies.Apply(scene, meshes, device);
+            var (count, key) = (bodies.Meshes, Assert.Single(bodies.SectionBodies).Geometry);
+            await host.Session.Apply(new RenameBodyCommand { BodyId = box, NewName = "Plate" });
+            bodies.Apply(scene, meshes, device);
+            Assert.Equal(count, bodies.Meshes);
+
+            var placed = await host.Session.Apply(new PlaceBodyCommand { BodyId = box, Qw = 1, Qx = 0, Qy = 0, Qz = 0, Dx = 20, Dy = 0, Dz = 0 });
+            Assert.Equal(CommandStatus.Applied, placed.Status);
+            bodies.Apply(scene, meshes, device);
+            Assert.Equal(count + 1, bodies.Meshes);
+            Assert.Equal((15.0, 25.0), (bodies.Bounds!.Value.Min.X, bodies.Bounds!.Value.Max.X));
+            Assert.NotEqual(key, Assert.Single(bodies.SectionBodies).Geometry);
+        }
+        finally
+        {
+            foreach (var mesh in meshes.Values)
+                mesh.Dispose();
+        }
+    }
+
     private static Guid Output(CommandResult result, string name)
         => result.Outputs.TryGet<Guid>(name, out var id) ? id : throw new InvalidOperationException($"No output {name}.");
 }
