@@ -88,7 +88,8 @@ internal static class SnapshotProjector
         UpdatedAt: doc.UpdatedAt,
         // ADR-0015 item 7, which amends ADR-0010 section 2.
         LengthUnit: doc.LengthUnit,
-        Bodies: doc.Bodies
+        // ADR-0192 (phase K25, TASK-0478): the live bodies in the order of the log, as GetBodies gives them.
+        Bodies: Engine.Core.LogOrder.Bodies(doc)
             .Select(b => new SnapshotBodyEntry(b.Handle.Id, b.Kind, b.Name, b.Visible, b.GeometryKey, b.Fault, b.Placement))
             .ToArray(),
         Sketches: doc.Sketches

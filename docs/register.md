@@ -335,21 +335,6 @@ status line at 640 by 360. At 844 by 390 the target of "Show hidden" of a ring o
 Exit: a task makes `Faults` check each tool of the ring by its target with no skip, and corrects each fault or records it in an
 ADR, or the owner accepts these cases.
 
-### R-0080 · The snapshot of the events and `CheckInterference` give the bodies in the order of a .NET `Dictionary`
-- class: risk
-- opened: 2026-11-26
-- due: 2026-12-26
-- extended: no
-- refs: `docs/adr/0189-the-lists-of-the-sheets-and-of-the-bodies.md` (Context, Next), ADR-0012 section 6, ADR-0182 item 2,
-  TASK-0471
-`Document.Bodies` and `Document.Sheets` are the values of a .NET `Dictionary`. After a command removes a record, the next record
-takes the free place, so the snapshot of `/events` and `CheckInterference` with no `bodyIds` give an order that a person or an
-agent cannot predict from the log. The order is the same on each replay of one log with one runtime; a new version of .NET can
-change it. Nothing of that order goes into the log. `GetSheets` and `GetBodies` (ADR-0189) give the log order.
-Exit: a task gives the snapshot and `CheckInterference` the log order of ADR-0189 item 3, with its own ADR, or the owner
-accepts the order of the collection.
-Progress 2026-11-26: the owner answered "task fixes" (TASK-0472). Row K25 does the exit.
-
 ### R-0082 · A fork still pushes the kept solids of its source out of the cache of 64
 - class: debt
 - opened: 2026-11-28
@@ -500,6 +485,25 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0080 · The snapshot of the events and `CheckInterference` give the bodies in the order of a .NET `Dictionary`
+- class: risk
+- opened: 2026-11-26
+- due: 2026-12-26
+- extended: no
+- refs: `docs/adr/0189-the-lists-of-the-sheets-and-of-the-bodies.md` (Context, Next), ADR-0012 section 6, ADR-0182 item 2,
+  TASK-0471
+`Document.Bodies` and `Document.Sheets` are the values of a .NET `Dictionary`. After a command removes a record, the next record
+takes the free place, so the snapshot of `/events` and `CheckInterference` with no `bodyIds` give an order that a person or an
+agent cannot predict from the log. The order is the same on each replay of one log with one runtime; a new version of .NET can
+change it. Nothing of that order goes into the log. `GetSheets` and `GetBodies` (ADR-0189) give the log order.
+Exit: a task gives the snapshot and `CheckInterference` the log order of ADR-0189 item 3, with its own ADR, or the owner
+accepts the order of the collection.
+Progress 2026-11-26: the owner answered "task fixes" (TASK-0472). Row K25 does the exit.
+Closed 2026-11-28 · resolved · ADR-0192, TASK-0478 (K25). `LogOrder.Bodies` gives the live bodies in the order of the log, and
+the snapshot of `/events`, `CheckInterference` with no `bodyIds` and `GetBodies` take it.
+`A_Body_In_The_Free_Place_Of_A_Consumed_One_Comes_In_The_Order_Of_The_Log` fails when the snapshot or the check takes the order
+of the collection.
 
 ### R-0081 · The mark of the reversal of a failed group in the log gives the field `GroupId` a new meaning on an `Undo`
 - class: question

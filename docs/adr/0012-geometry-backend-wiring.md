@@ -7,7 +7,7 @@ date: 2026-05-27
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: ['0018', '0021', '0028', '0015', '0033', '0037', '0045', '0051', '0071', '0112', '0181']
+amended-by: ['0018', '0021', '0028', '0015', '0033', '0037', '0045', '0051', '0071', '0112', '0181', '0192']
 affects:
   - Engine.Contracts/Geometry/**
   - Engine.Core/Commands/**
@@ -268,3 +268,4 @@ This is *not* the Manifold backend — it is the wiring slice. A follow-on TASK 
   each reference of an assembly with each field of its record.
 - 2026-11-10 · TASK-0335 · ADR-0112 item 4 amends item 1: `ITransformOps` gets `Rotate`, a copy of a body turned about the origin.
 - 2026-11-21 · TASK-0433 · ADR-0181 item 4 amends §1: `IBooleanOps` gets `Union` and `Intersect`, with the contract of `Subtract`.
+- 2026-11-28 · TASK-0478 · ADR-0192 amends section 6: the member `bodies` of the snapshot gives the live bodies in the order of the log.

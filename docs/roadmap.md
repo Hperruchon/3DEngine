@@ -604,6 +604,8 @@ Therefore each approved objective must have a track here.
 - Review — The codebase review of 2026-11-28. v0.459, TASK-0475.
 - P0.192 — The design mass of a cut of a placed body moves the cut one time, also after a `Subtract` by a tool with no curve
   (E246); the standing order answers Q1 A and Q2 A of the review. v0.460, TASK-0476.
+- K25 — The snapshot of the events and `CheckInterference` give the live bodies in the order of the log, as `GetBodies` does,
+  and not in the order of a .NET `Dictionary` (R-0080). v0.461, TASK-0478, ADR-0192.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -1055,7 +1057,7 @@ boundary and each refused rung.
 | K22 | The flat chamfer of one edge between two plane faces (kernel boundary: flat chamfer; no edge chain, anti-objective 11). After R24. | to estimate |
 | K23 | A hole command: a hole of a diameter and a depth, through or blind, on a plane face at a point, as one step of the log. K10b makes each hole by a `Subtract` of a cylinder that `CreateCylinder` centres on the origin, so a blind hole needs a computed move. A new command is a new record of the log (ADR-0016), so its ADR comes in the same commit; the ADR decides if the thread waits for P19. After K10b. | to estimate |
 | K24 | The pair check of bodies with holes: the bound of work of ADR-0182 item 8 refuses 8 of the 21 pairs of the case of the lamp (K10b) with `E-CHECK-WORK-LIMIT`, from 126,968 to 2,801,550 products of pieces for one pair, above the limit of 100,000, and 6,133,070 for the whole case. Three of the refused pairs are intended contacts of the mount. The ADR decides between fewer pieces for a body with a hole and a larger bound with a time limit, and amends ADR-0182 item 8; it also amends ADR-0188 item 8 and decides the bound of one preview with the bound of one pair (the answer Q4 A of the owner of 2026-11-26 to the codebase review of 2026-11-25); `LampSupportCaseTests` then gives the class of each pair. After K10b; before K12, which checks the travel of the pivot of this case. | to estimate |
-| K25 | The order of the log in the snapshot of `/events` and in `CheckInterference` with no `bodyIds`: the bodies in the order of the commands that made them, as `GetBodies` gives them (ADR-0189 item 3), and not in the order of a .NET `Dictionary` (R-0080; the answer of the owner of 2026-11-26, "task fixes"). It changes an existing shape, so its ADR comes in the same commit. | 1 |
+| K25 | The order of the log in the snapshot of `/events` and in `CheckInterference` with no `bodyIds`: the bodies in the order of the commands that made them, as `GetBodies` gives them (ADR-0189 item 3), and not in the order of a .NET `Dictionary` (R-0080; the answer of the owner of 2026-11-26, "task fixes"). It changes an existing shape, so its ADR comes in the same commit. TASK-0478, ADR-0192. | 1 |
 
 ## Track V — Machine vision
 

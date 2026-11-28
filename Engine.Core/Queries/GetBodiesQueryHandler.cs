@@ -30,8 +30,8 @@ public sealed class GetBodiesQueryHandler : IQueryHandler
         // Item 5: each item is the answer of GetBodyInfo, with the distance in effect of an extrude (ADR-0049 item 7). Item 3:
         // the order of the log of the command that made each body.
         var features = FeatureList.Of(document);
-        var live = document.Bodies.ToDictionary(body => body.Handle.Id);
-        var bodies = GetSheetsQueryHandler.InLogOrder(document, live)
+        // ADR-0192 (phase K25, TASK-0478): the order of the log, from the one function that the snapshot and CheckInterference read.
+        var bodies = LogOrder.Bodies(document)
             .Select(body => new BodyInfo(body.Handle.Id, body.Kind, body.Name, body.Visible, features.DistanceInEffect(body.Handle.Id), body.Placement))
             .ToList();
         return Task.FromResult(QueryHandlerResult.Success(new BodiesInfo(bodies)));

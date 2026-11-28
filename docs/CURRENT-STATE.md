@@ -14633,3 +14633,24 @@ run on this commit.
 New tests: 4 (the four cases of the theory). The test list holds 3375 (1985 in `Engine.Tests`, 391 in `3DEngine.Tests`, 996 in
 `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.459,
 0 product milestones and 1 entry followed it. The failed runs since the entry v0.459, from the API: none.
+
+## v0.461 — The snapshot of the events and CheckInterference give the live bodies in the order of the log (K25, TASK-0478)
+
+`Document.Bodies` gives the values of a .NET `Dictionary`. The bus adds the new body of a command before it removes the consumed
+one, so the place of the consumed record is free when the command ends, and the next new record takes it. The snapshot of
+`/events` and `CheckInterference` with no `bodyIds` took that order, which the log does not predict (R-0080). The owner answered
+"task fixes" on 2026-11-26, and the standing order of 2026-11-28 answers Q1 A of the review of 2026-11-28: K25 before R34 and R35.
+
+**The change (ADR-0192).** `Engine.Core/LogOrder.cs` gives the live bodies in the order of the command that made each one (ADR-0189
+item 3). The snapshot, `CheckInterference` with no `bodyIds` and `GetBodies` take it, so the three give one order. ADR-0192 amends
+ADR-0012 section 6, ADR-0182 item 2 and ADR-0189 item 3. No field and no type changes; nothing goes into the log. R-0080 closes.
+
+**Proof.** A clean build gives 0 warnings, and `dotnet test` passes with the image tests.
+`A_Body_In_The_Free_Place_Of_A_Consumed_One_Comes_In_The_Order_Of_The_Log` builds two boxes, a `Translate` of the first and a third
+box: the collection gives the third box first, and the snapshot, the pairs of the check and `GetBodies` give the order of the log.
+An injection that gives the snapshot `doc.Bodies` fails it at line 48, and one that gives the check `document.Bodies` at line 50.
+The write-set check and `eng/repo-gates` pass. Not verified: continuous integration has not run on this commit.
+
+New tests: 2. The test list holds 3377 (1987 in `Engine.Tests`, 391 in `3DEngine.Tests`, 996 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 12 of 15 (R-0080 closes). New diagnostic codes: 0. Since the review of v0.459, 1 product
+milestone and 2 entries followed it. The failed runs since the entry v0.460, from the API: none.
