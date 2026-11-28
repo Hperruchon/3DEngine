@@ -15031,3 +15031,23 @@ commit.
 New tests: 5. The test list holds 3452 (2058 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 11 of 15. New diagnostic codes: 0. Since the review of v0.471, 3 product milestones and 4
 entries followed it. The failed runs since the entry v0.474, from the API: none.
+
+## v0.476 — The roadmap records that K12a and K12b came before K24, and the measures of the pieces of the lamp case (P0.202, TASK-0492)
+
+The order of 2026-11-25 says that K24 comes before K12, because the travel of the pivot of the lamp case needs the pair check of the
+parts with holes. The session did K12a (v0.474) and K12b (v0.475) before K24, and found that sentence only after K12b. The travel
+refuses each pair above the bound of work of ADR-0182 item 8, as `CheckInterference` does, so its answers are right, but the lamp
+case has no travel until K24. The order in `docs/roadmap.md` now says so, and K24 stays the next row of track K.
+
+A probe test that was not committed measured the lamp case in a Debug build: the booleans cut the faces into many pieces (the
+crossbar has 1,966 pieces on 138 planes, the bracket 1,425 on 204, the knob 538 on 196, the arm 236 on 70). `NearestPoints.Nearest`
+of the crossbar and the knob, which are apart, takes 9.2 s for 1,057,708 products, because no pair of pieces ends the search; the
+bracket and the arm touch, and the search ends after 6 ms. Pairs whose boxes share a volume also run the exact intersection. The row
+K24 gives these measures to its ADR, which decides between fewer pieces and a faster search with a larger bound.
+
+**Proof.** `dotnet test`, the write-set check and `eng/repo-gates` pass. Not verified: continuous integration has not run on this
+commit; the times come from one run.
+
+New tests: 0. The test list holds 3452 (2058 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 11 of 15. New diagnostic codes: 0. Since the review of v0.471, 3 product milestones and 5
+entries followed it. The failed runs since the entry v0.475, from the API: none.
