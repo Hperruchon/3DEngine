@@ -14577,3 +14577,34 @@ The test list holds 3371 (1981 in `Engine.Tests`, 391 in `3DEngine.Tests`, 996 i
 `3DEngine.VisionTests`). Open entries: 13 of 15 (R-0070 has a progress line and stays open for the sizes of the lamp). New
 diagnostic codes: 0. Since the review of v0.451, 4 product milestones and 7 entries followed it, so a codebase review is due
 before the next product milestone. The failed runs since the entry v0.457, from the API: none.
+
+## v0.459 — The codebase review of 2026-11-28 (governance, TASK-0475)
+
+Four product milestones (R32b, R33, P21 and P11.0) and seven entries followed v0.451, the review of 2026-11-25, so the next
+product milestone needed a review first. Under the standing order of 2026-11-28, `docs/reviews/2026-11-28-codebase-review.md`
+examines `1a112239`, the merge of P11.0 at v0.458. The review of 2026-11-25 examined `1975089e`, a commit from before the
+rewrite of the history; `docs/history-map-2026-11-26.txt` gives its new identifier `7efe89ce`, so the range is
+`7efe89ce..1a112239`: 33 commits (25 of the tasks and 8 merges) and 123 files.
+
+**The previous findings.** P0.189 and P0.191 fixed ten findings of the last review, and P0.190 fixed V238. V236 is fixed for two
+of its three pipelines, and R-0077 holds the third. E243 is open, and R-0082 holds it.
+
+**The new findings.** One high, E246: the design mass of a cut gives a wrong centre when a body of the chain is a `Subtract` by a
+tool with no curve and has its own `PlaceBody`; a probe gives x = 203.0 mm where the same scene with a `Translate` gives 99.6 mm.
+Two medium: V239, the window keeps the faces and the edges of the selected body by its key only; E247, ADR-0037 item 8 tells a
+client to read a mesh again only when the key changes. Seven low: E248, E249, E250, V240, T203, T204 and T205. Four of the
+findings have a probe that ran as a test in a scratch worktree, which the repository does not hold. New task TASK-0476 (P0.192)
+holds E246 before the next product phase, and new task TASK-0477 (P0.193) holds the others after it.
+
+**The questions.** Q1: K25 before R34 and R35, because R34 and R35 need a check on the phone (A, recommended), or R34 first (B).
+Q2: the correction of E249, a scale of each quaternion by an exact power of two (A, recommended), or a range of the sum of squares
+in `PlaceBody` (B). Under the standing order of 2026-11-28 the recommended option of each question holds, and the first commit
+of TASK-0476 records the answers.
+
+**Proof.** `CodebaseReviewGateTests`, the write-set check and `eng/repo-gates` pass; the review changes no code. Not verified:
+continuous integration has not run on this branch.
+
+Open findings: 0 critical, 2 high, 8 medium and 25 low. New tests: 0. The test list holds 3371 (1981 in `Engine.Tests`, 391 in
+`3DEngine.Tests`, 996 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0.
+This review examined v0.458, so the review counter starts again at 0. The failed runs since the entry v0.458, from the API:
+none; run 46086980144 of P11.0, its close run 46088939869 and the run 46089642654 of `main` at `1a112239` are green.
