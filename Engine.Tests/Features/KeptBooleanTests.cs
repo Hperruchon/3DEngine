@@ -300,6 +300,39 @@ public sealed class KeptBooleanTests : IDisposable
         Assert.Equal(0, KernelProjection.ForksOpen);
     }
 
+    // Finding E243 of the codebase review of 2026-11-25 (register entry R-0082, TASK-0480): a fork reads the kept solids of its
+    // source by their keys and keeps its own solids apart, so a fork of a Document of forty cuts pushes out no kept solid of the
+    // Document. Until TASK-0480 the replay of the fork put the operands of each cut under the identity of the fork, more than the
+    // 64 solids of the store, and the solids of the Document left it.
+    [NativeManifoldFact]
+    public async Task A_Fork_Pushes_Out_No_Kept_Solid_Of_Its_Source()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var session = NewSession(backend);
+        var cuts = new List<Guid>();
+        for (var i = 0; i < 40; i++)
+        {
+            var plate = await Body(session, new TranslateCommand { BodyId = await Body(session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 2 }), Dx = 20 * i, Dy = 0, Dz = 0 });
+            var tool = await Body(session, new TranslateCommand { BodyId = await Body(session, new CreateBoxCommand { SizeX = 2, SizeY = 2, SizeZ = 6 }), Dx = 20 * i, Dy = 0, Dz = 0 });
+            cuts.Add(await Body(session, new SubtractCommand { MinuendBodyId = plate, SubtrahendBodyId = tool }));
+        }
+
+        // A read of the mass reads the solid through the kept store (MeasureTarget.SolidOf).
+        foreach (var cut in cuts.TakeLast(30))
+            Assert.True((await session.Query<MassProperties>(new GetMassPropertiesQuery { BodyId = cut })).Error is null);
+        var keys = await session.Read((document, _) => cuts.TakeLast(30).Select(cut => document.Bodies.Single(body => body.Handle.Id == cut).GeometryKey).ToList());
+        Assert.All(keys, key => Assert.True(KernelProjection.IsKept(session.DocumentId, key)));
+        var kept = KernelProjection.SolidsKept;
+        var source = await session.Read((document, _) => ForkSource.Of(document));
+
+        var renamed = await DocumentFork.Run(source, [new RenameBodyCommand { BodyId = cuts[^1], NewName = "Plate" }], () => new ManifoldGeometryBackend());
+
+        Assert.Null(renamed.FailedIndex);
+        Assert.Equal(kept, KernelProjection.SolidsKept);
+        Assert.All(keys, key => Assert.True(KernelProjection.IsKept(session.DocumentId, key), $"The fork pushed out the kept solid {key}."));
+        Assert.Equal(0, KernelProjection.ForksOpen);
+    }
+
     // TASK-0461 (finding E239): the probe of the review on a host. Eight proposals with a move and sixteen commits run forks and
     // bases on the worker of the queue; the kept result of the cut of the first Document stays, and the next read of its faces
     // makes no boolean.

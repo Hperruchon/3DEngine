@@ -29,40 +29,55 @@ public sealed unsafe class UiRenderer : IDisposable
     private ulong _nextTexture = 1;
 
     public UiRenderer(GraphicsDevice device, VkRenderPass renderPass)
+        : this(device, renderPass, fail: null)
+    {
+    }
+
+    // Register entry R-0077 (TASK-0480): fail is a hook of a test, which throws at the named step of the start, as in
+    // RenderPipeline (TASK-0461). A start that fails frees each object that it made before the step; until TASK-0480 a failure
+    // after the set layout left the objects before it.
+    internal UiRenderer(GraphicsDevice device, VkRenderPass renderPass, Action<string>? fail)
     {
         _device = device;
         var api = device.DeviceApi;
-
-        VkDescriptorSetLayoutBinding binding = new()
-        {
-            binding = 0,
-            descriptorType = VkDescriptorType.CombinedImageSampler,
-            descriptorCount = 1,
-            stageFlags = VkShaderStageFlags.Fragment,
-        };
-        VkDescriptorSetLayoutCreateInfo setLayoutInfo = new() { bindingCount = 1, pBindings = &binding };
-        api.vkCreateDescriptorSetLayout(&setLayoutInfo, null, out _setLayout).CheckResult();
-
-        VkDescriptorPoolSize poolSize = new() { type = VkDescriptorType.CombinedImageSampler, descriptorCount = MaximumTextures };
-        VkDescriptorPoolCreateInfo poolInfo = new() { maxSets = MaximumTextures, poolSizeCount = 1, pPoolSizes = &poolSize };
-        api.vkCreateDescriptorPool(&poolInfo, null, out _pool).CheckResult();
-
-        VkSamplerCreateInfo samplerInfo = new()
-        {
-            magFilter = VkFilter.Linear,
-            minFilter = VkFilter.Linear,
-            mipmapMode = VkSamplerMipmapMode.Linear,
-            addressModeU = VkSamplerAddressMode.ClampToEdge,
-            addressModeV = VkSamplerAddressMode.ClampToEdge,
-            addressModeW = VkSamplerAddressMode.ClampToEdge,
-            maxLod = 1,
-        };
-        api.vkCreateSampler(&samplerInfo, null, out _sampler).CheckResult();
-
-        VkShaderModule vertex = device.CreateShaderModule(ShaderLibrary.Load("ui.vert"));
-        VkShaderModule fragment = device.CreateShaderModule(ShaderLibrary.Load("ui.frag"));
+        VkShaderModule vertex = default;
+        VkShaderModule fragment = default;
+        var made = false;
         try
         {
+            VkDescriptorSetLayoutBinding binding = new()
+            {
+                binding = 0,
+                descriptorType = VkDescriptorType.CombinedImageSampler,
+                descriptorCount = 1,
+                stageFlags = VkShaderStageFlags.Fragment,
+            };
+            VkDescriptorSetLayoutCreateInfo setLayoutInfo = new() { bindingCount = 1, pBindings = &binding };
+            fail?.Invoke("set layout");
+            api.vkCreateDescriptorSetLayout(&setLayoutInfo, null, out _setLayout).CheckResult();
+
+            VkDescriptorPoolSize poolSize = new() { type = VkDescriptorType.CombinedImageSampler, descriptorCount = MaximumTextures };
+            VkDescriptorPoolCreateInfo poolInfo = new() { maxSets = MaximumTextures, poolSizeCount = 1, pPoolSizes = &poolSize };
+            fail?.Invoke("pool");
+            api.vkCreateDescriptorPool(&poolInfo, null, out _pool).CheckResult();
+
+            VkSamplerCreateInfo samplerInfo = new()
+            {
+                magFilter = VkFilter.Linear,
+                minFilter = VkFilter.Linear,
+                mipmapMode = VkSamplerMipmapMode.Linear,
+                addressModeU = VkSamplerAddressMode.ClampToEdge,
+                addressModeV = VkSamplerAddressMode.ClampToEdge,
+                addressModeW = VkSamplerAddressMode.ClampToEdge,
+                maxLod = 1,
+            };
+            fail?.Invoke("sampler");
+            api.vkCreateSampler(&samplerInfo, null, out _sampler).CheckResult();
+
+            fail?.Invoke("vertex");
+            vertex = device.CreateShaderModule(ShaderLibrary.Load("ui.vert"));
+            fail?.Invoke("fragment");
+            fragment = device.CreateShaderModule(ShaderLibrary.Load("ui.frag"));
             var setLayout = _setLayout;
             VkPushConstantRange pushConstant = new() { stageFlags = VkShaderStageFlags.Vertex, offset = 0, size = PushConstantSize };
             VkPipelineLayoutCreateInfo layoutInfo = new()
@@ -72,6 +87,7 @@ public sealed unsafe class UiRenderer : IDisposable
                 pushConstantRangeCount = 1,
                 pPushConstantRanges = &pushConstant,
             };
+            fail?.Invoke("layout");
             api.vkCreatePipelineLayout(&layoutInfo, null, out VkPipelineLayout layout).CheckResult();
             Layout = layout;
 
@@ -136,14 +152,29 @@ public sealed unsafe class UiRenderer : IDisposable
                 };
 
                 VkPipeline pipeline;
+                fail?.Invoke("pipeline");
                 api.vkCreateGraphicsPipelines(VkPipelineCache.Null, 1, &pipelineInfo, &pipeline).CheckResult();
                 Pipeline = pipeline;
+                made = true;
             }
         }
         finally
         {
-            api.vkDestroyShaderModule(vertex);
-            api.vkDestroyShaderModule(fragment);
+            if (vertex.IsNotNull)
+                api.vkDestroyShaderModule(vertex);
+            if (fragment.IsNotNull)
+                api.vkDestroyShaderModule(fragment);
+            if (!made)
+            {
+                if (Layout.IsNotNull)
+                    api.vkDestroyPipelineLayout(Layout);
+                if (_sampler.IsNotNull)
+                    api.vkDestroySampler(_sampler);
+                if (_pool.IsNotNull)
+                    api.vkDestroyDescriptorPool(_pool);
+                if (_setLayout.IsNotNull)
+                    api.vkDestroyDescriptorSetLayout(_setLayout);
+            }
         }
     }
 

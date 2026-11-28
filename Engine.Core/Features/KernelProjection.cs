@@ -94,18 +94,31 @@ internal static class KernelProjection
     // only when the boolean gives that same result; a replay gives the same Document with or without the store.
     private static readonly Dictionary<Guid, (Guid Source, BooleanStore Store)> Forks = [];
 
+    // Finding E243 of the codebase review of 2026-11-25 (register entry R-0082, TASK-0480): the kept solids of each open fork,
+    // under the geometry key and the placement, at most CacheSize, the oldest first. A fork replays the log of its source, and a
+    // committed key names one solid (ADR-0059 item 2), so a fork reads a solid of its source under the same key and puts each
+    // solid that it makes in its own store, which leaves with the fork. Until TASK-0480 a fork put its solids under its own
+    // identity in the store of the Documents, and they pushed out the solids of its source.
+    private static readonly Dictionary<Guid, (Dictionary<(Guid Key, BodyPlacement? Placement), KernelSolid> Solids, Queue<(Guid Key, BodyPlacement? Placement)> Order)> ForkSolids = [];
+
     // A fork Document starts: until EndFork, it reads the kept results of the source Document and keeps its own results apart.
     internal static void BeginFork(Guid fork, Guid source)
     {
         lock (Gate)
+        {
             Forks[fork] = (source, new BooleanStore());
+            ForkSolids[fork] = ([], new Queue<(Guid Key, BodyPlacement? Placement)>());
+        }
     }
 
     // The fork Document ends, and its own kept results leave with it.
     internal static void EndFork(Guid fork)
     {
         lock (Gate)
+        {
             Forks.Remove(fork);
+            ForkSolids.Remove(fork);
+        }
     }
 
     // The count of the fork Documents that have not ended, for a test.
@@ -266,8 +279,18 @@ internal static class KernelProjection
         var key = (document.DocumentId, record.GeometryKey, local ? null : record.Placement);
         lock (Gate)
         {
-            if (Kept.TryGetValue(key, out var kept))
+            // E243: a fork reads its own store, then the store of its source with no change of it.
+            if (Forks.TryGetValue(document.DocumentId, out var fork))
+            {
+                if (ForkSolids[document.DocumentId].Solids.TryGetValue((key.GeometryKey, key.Item3), out var own))
+                    return (own, null);
+                if (Kept.TryGetValue((fork.Source, key.GeometryKey, key.Item3), out var source))
+                    return (source, null);
+            }
+            else if (Kept.TryGetValue(key, out var kept))
+            {
                 return (kept, null);
+            }
         }
 
         var (solid, reason) = local || record.Placement is null ? Local(document, record.Handle.Id) : Of(document, record.Handle.Id);
@@ -275,7 +298,16 @@ internal static class KernelProjection
             return (null, reason);
         lock (Gate)
         {
-            if (Kept.TryAdd(key, solid))
+            if (ForkSolids.TryGetValue(document.DocumentId, out var own))
+            {
+                if (own.Solids.TryAdd((key.GeometryKey, key.Item3), solid))
+                {
+                    own.Order.Enqueue((key.GeometryKey, key.Item3));
+                    if (own.Order.Count > CacheSize)
+                        own.Solids.Remove(own.Order.Dequeue());
+                }
+            }
+            else if (Kept.TryAdd(key, solid))
             {
                 KeptOrder.Enqueue(key);
                 if (KeptOrder.Count > CacheSize)
@@ -297,6 +329,16 @@ internal static class KernelProjection
     }
 
     // True when the projection keeps a solid of the Document under the key, for a test of item 2.
+    // E243: the count of the solids that the store of the Documents keeps, for a test that a fork adds none.
+    internal static int SolidsKept
+    {
+        get
+        {
+            lock (Gate)
+                return Kept.Count;
+        }
+    }
+
     internal static bool IsKept(Guid document, Guid key)
     {
         lock (Gate)
