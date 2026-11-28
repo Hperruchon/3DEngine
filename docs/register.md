@@ -304,23 +304,6 @@ Progress 2026-11-28: ADR-0191 (P11.0, TASK-0474) decides the model of a move: a 
 first read of the exact solid in less than 1 ms. The second point of this entry is done; the entry stays open for the measured
 sizes of the support of the lamp.
 
-### R-0077 · A failed start of the renderer of the images leaks the objects that it made before the failure
-- class: debt
-- opened: 2026-11-24
-- due: 2027-05-23
-- extended: no
-- refs: `3DEngine.Vulkan/ImageRenderer.cs` (the constructor), `docs/reviews/2026-11-23-codebase-review.md` (V234), TASK-0461
-Finding V234 named `GroundPipeline`, `EdgePipeline` and `ImageRenderer`. TASK-0461 corrected the first two, whose start makes two
-modules, a layout and a pipeline. The start of `ImageRenderer` also makes a layout of descriptor sets, a pool, a sampler and a
-vertex buffer before its modules, so one failure leaks several objects; the correction is not the same small form. A start
-fails only when the device fails, at the start of the window, and the process then stops.
-Exit: a task makes each object of the start of `ImageRenderer` free on a failure, with a test that fails the start at each
-object as `PipelineStartTests` does, or the owner accepts the leak at a failed start.
-Progress 2026-11-27: finding V236 of the codebase review of 2026-11-25 named three more starts (TASK-0473). `RenderPipeline`
-and `OverlayRenderer` now have the form of TASK-0461, with `PipelineStartTests`. `UiRenderer` makes a set layout, a pool and a
-sampler before its modules, as `ImageRenderer` does, so this entry also holds it: the exit covers `ImageRenderer` and
-`UiRenderer`.
-
 ### R-0079 · The layout test skips a tool of the ring under a panel as a control that the panel scrolls out of view
 - class: debt
 - opened: 2026-11-26
@@ -334,22 +317,6 @@ status line at 640 by 360. At 844 by 390 the target of "Show hidden" of a ring o
 (483, 326, 828, 374) by about 17 pixels, and its middle does not.
 Exit: a task makes `Faults` check each tool of the ring by its target with no skip, and corrects each fault or records it in an
 ADR, or the owner accepts these cases.
-
-### R-0082 · A fork still pushes the kept solids of its source out of the cache of 64
-- class: debt
-- opened: 2026-11-28
-- due: 2027-05-27
-- extended: no
-- refs: `Engine.Core/Features/KernelProjection.cs` (`Kept`, `KeptOrder`, `OfRecord`, `EndFork`),
-  `docs/reviews/2026-11-25-codebase-review.md` (E243), TASK-0473
-The kept solids of `OfRecord` have the key `(document.DocumentId, record.GeometryKey)` in one queue of `CacheSize` 64. Each fork
-and each base of a preview adds its solids under its own identity, so they push out the solids of the first Document, and
-`EndFork` does not remove them. P0.187 gave the kept booleans a store for each fork (E239); the kept solids keep the old form.
-Only the cost changes: the next read of the first Document builds its solids again. No result changes. The owner chose on
-2026-11-27 to land TASK-0473 with this finding in the register.
-Exit: a task makes a fork read a solid of its source by its key, as `Boolean` does, and keep its own solids in a store that
-`EndFork` removes, with the probe of E243 as a test (`IsKept(main, key)` stays true after one `DocumentFork`), or the owner
-accepts the cost.
 
 ## Accepted compromises
 
@@ -485,6 +452,45 @@ only the render loop writes `Scene` and `Entity` of `3DEngine.Core`. V5, V6 and 
 ---
 
 ## Closed
+
+### R-0077 · A failed start of the renderer of the images leaks the objects that it made before the failure
+- class: debt
+- opened: 2026-11-24
+- due: 2027-05-23
+- extended: no
+- refs: `3DEngine.Vulkan/ImageRenderer.cs` (the constructor), `docs/reviews/2026-11-23-codebase-review.md` (V234), TASK-0461
+Finding V234 named `GroundPipeline`, `EdgePipeline` and `ImageRenderer`. TASK-0461 corrected the first two, whose start makes two
+modules, a layout and a pipeline. The start of `ImageRenderer` also makes a layout of descriptor sets, a pool, a sampler and a
+vertex buffer before its modules, so one failure leaks several objects; the correction is not the same small form. A start
+fails only when the device fails, at the start of the window, and the process then stops.
+Exit: a task makes each object of the start of `ImageRenderer` free on a failure, with a test that fails the start at each
+object as `PipelineStartTests` does, or the owner accepts the leak at a failed start.
+Progress 2026-11-27: finding V236 of the codebase review of 2026-11-25 named three more starts (TASK-0473). `RenderPipeline`
+and `OverlayRenderer` now have the form of TASK-0461, with `PipelineStartTests`. `UiRenderer` makes a set layout, a pool and a
+sampler before its modules, as `ImageRenderer` does, so this entry also holds it: the exit covers `ImageRenderer` and
+`UiRenderer`.
+Closed 2026-11-28 · resolved · TASK-0480 (P0.194). The starts of `ImageRenderer` and `UiRenderer` free each object at a
+failure, in the form of TASK-0461. `A_Failed_Start_Of_A_Renderer_Of_The_Images_Or_Of_The_Interface_Frees_Each_Object_That_It_Made`
+fails each start at each object, and gives 27 and 16 messages of the validation layer when the start frees nothing.
+
+### R-0082 · A fork still pushes the kept solids of its source out of the cache of 64
+- class: debt
+- opened: 2026-11-28
+- due: 2027-05-27
+- extended: no
+- refs: `Engine.Core/Features/KernelProjection.cs` (`Kept`, `KeptOrder`, `OfRecord`, `EndFork`),
+  `docs/reviews/2026-11-25-codebase-review.md` (E243), TASK-0473
+The kept solids of `OfRecord` have the key `(document.DocumentId, record.GeometryKey)` in one queue of `CacheSize` 64. Each fork
+and each base of a preview adds its solids under its own identity, so they push out the solids of the first Document, and
+`EndFork` does not remove them. P0.187 gave the kept booleans a store for each fork (E239); the kept solids keep the old form.
+Only the cost changes: the next read of the first Document builds its solids again. No result changes. The owner chose on
+2026-11-27 to land TASK-0473 with this finding in the register.
+Exit: a task makes a fork read a solid of its source by its key, as `Boolean` does, and keep its own solids in a store that
+`EndFork` removes, with the probe of E243 as a test (`IsKept(main, key)` stays true after one `DocumentFork`), or the owner
+accepts the cost.
+Closed 2026-11-28 · resolved · TASK-0480 (P0.194). A fork reads the kept solids of its source by their keys and keeps its own
+solids in a store that `EndFork` removes. `A_Fork_Pushes_Out_No_Kept_Solid_Of_Its_Source` fails when the fork puts its solids in
+the store of the Documents.
 
 ### R-0080 · The snapshot of the events and `CheckInterference` give the bodies in the order of a .NET `Dictionary`
 - class: risk

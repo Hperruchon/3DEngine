@@ -49,4 +49,33 @@ public sealed class PipelineStartTests
             $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages:\n"
             + string.Join("\n", GraphicsDevice.ValidationMessages.Skip(messagesBefore)));
     }
+
+    // Register entry R-0077 (TASK-0480): the start of the renderer of the images and of the user interface fails at each object
+    // that it makes, and each failure frees the objects before it, so the validation layer gives no message when the device ends.
+    // Until TASK-0480 a failure after the set layout left the set layout, the pool, the sampler and the buffer of the square.
+    [VulkanImageFact]
+    public void A_Failed_Start_Of_A_Renderer_Of_The_Images_Or_Of_The_Interface_Frees_Each_Object_That_It_Made()
+    {
+        var messagesBefore = GraphicsDevice.ValidationMessageCount;
+        string[] steps = ["set layout", "pool", "sampler", "square", "vertex", "fragment", "layout", "pipeline"];
+        foreach (var step in steps)
+        {
+            using var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null);
+            Assert.True(device.ValidationEnabled, "The test counts the messages of the validation layer, which is not installed.");
+            using var target = new OffscreenTarget(device, new VkExtent2D(64, 64));
+            void Fail(string at)
+            {
+                if (at == step)
+                    throw new InvalidOperationException($"The test fails the start at {at}.");
+            }
+
+            Assert.Throws<InvalidOperationException>(() => new ImageRenderer(device, target.RenderPass, Fail));
+            if (step != "square")
+                Assert.Throws<InvalidOperationException>(() => new UiRenderer(device, target.RenderPass, Fail));
+        }
+
+        Assert.True(GraphicsDevice.ValidationMessageCount == messagesBefore,
+            $"The validation layer gave {GraphicsDevice.ValidationMessageCount - messagesBefore} messages:\n"
+            + string.Join("\n", GraphicsDevice.ValidationMessages.Skip(messagesBefore)));
+    }
 }

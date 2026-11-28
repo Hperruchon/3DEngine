@@ -14697,3 +14697,30 @@ New tests: 7 (4 in `Engine.Tests`, 3 in `3DEngine.ImageTests`). The test list ho
 `3DEngine.Tests`, 999 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0.
 Since the review of v0.459, 1 product milestone and 3 entries followed it. The failed runs since the entry v0.461, from the API:
 none.
+
+## v0.463 — A fork pushes out no kept solid of its source, and two starts of a renderer free each object at a failure (P0.194, TASK-0480)
+
+After P0.193 the next rows of the roadmap wait for the owner: R34 and R35 for a check on the phone, and P11a for the answers to
+its proposal (TASK-0479). Under the standing order of 2026-11-28 this task does two debts of the register whose exits need no
+decision.
+
+**R-0082 (finding E243).** A fork of a preview replays the log of its source in a Document with a new identity, and until this
+entry it put each solid that it read under that identity in the store of the kept solids, so the solids of its source left the
+store of 64. `KernelProjection.OfRecord` of a fork now reads its own store, then the store of its source with no change of it,
+and puts its solids in its own store, which `EndFork` removes. A committed key names one solid (ADR-0059 item 2), so the solid of
+the source under the same key and placement is the solid of the fork.
+
+**R-0077.** `ImageRenderer` and `UiRenderer` made a set layout, a pool and a sampler (and a buffer for the images) before their
+modules, with no guard, so a failure of the start left them. Each start now has a hook of a test at each object and frees each
+object at a failure, in the form of TASK-0461.
+
+**Proof.** A clean build gives 0 warnings, and `dotnet test` passes with the image tests.
+`A_Fork_Pushes_Out_No_Kept_Solid_Of_Its_Source` builds forty cuts, reads the mass of thirty, runs a fork, and asks that each solid
+stays kept; it fails when the fork puts its solids in the store of the Documents.
+`A_Failed_Start_Of_A_Renderer_Of_The_Images_Or_Of_The_Interface_Frees_Each_Object_That_It_Made` fails each start at each of its
+eight objects; when a start frees nothing, the validation layer gives 27 messages for `ImageRenderer` and 16 for `UiRenderer`. The
+write-set check and `eng/repo-gates` pass. Not verified: continuous integration has not run on this commit.
+
+New tests: 2. The test list holds 3386 (1992 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 10 of 15 (R-0082 and R-0077 close). New diagnostic codes: 0. Since the review of v0.459,
+1 product milestone and 4 entries followed it. The failed runs since the entry v0.462, from the API: none.
