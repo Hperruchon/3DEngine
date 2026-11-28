@@ -126,13 +126,21 @@ public static class ParameterBinder
                 reason = $"expected a GUID, received '{Describe(supplied)}'.";
                 return false;
 
+            // Finding E6 of the codebase review of 2026-09-23, part (a) (register entry R-0027, TASK-0483): a date and time is UTC.
+            // A value with an offset gives its instant in UTC, and a value with no offset is UTC. Until TASK-0483 the binder read
+            // the text with RoundtripKind, so a value with an offset became the local time of the computer, and a replay on a
+            // computer in another time zone gave another value (anti-objective 16).
             case "datetime":
-                if (supplied is DateTime dt) { coerced = dt; return true; }
+                if (supplied is DateTime dt)
+                {
+                    coerced = dt.Kind == DateTimeKind.Local ? dt.ToUniversalTime() : DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+                    return true;
+                }
                 if (text is not null
                     && DateTime.TryParse(
                         text,
                         CultureInfo.InvariantCulture,
-                        DateTimeStyles.RoundtripKind,
+                        DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal,
                         out var pdt))
                 {
                     coerced = pdt;

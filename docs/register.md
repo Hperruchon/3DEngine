@@ -104,6 +104,8 @@ two empty interfaces in `Engine.Contracts`; P1, the snapshot under the lock of t
 Progress 2026-11-10: the owner answered Q2 B of the codebase reviews of 2026-11-09 (TASK-0331): the five event kinds of E6
 (d) stay in ADR-0005 and in `/schema/events` as planned kinds, so E6 (d) is no longer open. E6 (a), (b), (c) and (e), C1
 and P1 stay.
+Progress 2026-11-28: TASK-0483 (P0.197) fixed E6 (a): a `"datetime"` value binds as UTC, a value with an offset gives its
+instant in UTC and a value with no offset is UTC (ADR-0013, History). E6 (b), (c) and (e), C1 and P1 stay.
 
 ### R-0028 · Nine new findings in the engine and the hosts have no task
 - class: debt

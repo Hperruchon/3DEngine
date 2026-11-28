@@ -164,3 +164,6 @@ holds the rule that a host names no command.
   each handler, `ParameterBinder` and `HandlerCatalog`. ADR-0016 no longer amends this record.
 - 2026-11-05 · TASK-0186 · ADR-0060 amends item 2: `FieldSchema` gets `Unit` and `UnitBy`, and each number
   parameter of a command declares its unit kind.
+- 2026-11-28 · TASK-0483 · A `"datetime"` value binds as UTC: a value with an offset gives its instant in UTC, and a value
+  with no offset is UTC, so a replay gives one value on each computer (finding E6 (a) of the codebase review of 2026-09-23,
+  register entry R-0027, anti-objective 16). No handler declares the type today. Under the standing order of 2026-11-28.

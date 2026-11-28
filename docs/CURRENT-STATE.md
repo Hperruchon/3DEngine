@@ -14791,3 +14791,21 @@ this commit, and the failed run kept no state of the queue, so this window is th
 New tests: 1. The test list holds 3402 (2008 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.459, 1 product milestone and 6
 entries followed it. The failed runs since the entry v0.464, from the API: none.
+
+## v0.466 — A datetime parameter is UTC on each computer (P0.197, TASK-0483)
+
+Register entry R-0027 held part (a) of finding E6 of the codebase review of 2026-09-23. `ParameterBinder` read a
+`"datetime"` value with `DateTimeStyles.RoundtripKind`, so a value with an offset became the local time of the computer, and a
+command that records it would replay to another value in another time zone (anti-objective 16). No handler declares the type,
+so the fault was latent. The binder now reads the text with `AdjustToUniversal` and `AssumeUniversal`: a value with an offset
+gives its instant in UTC, and a value with no offset is UTC. A typed value of the kind Local goes to UTC. ADR-0013 records the
+rule in its History.
+
+**Proof.** A clean build gives 0 warnings, and `dotnet test` passes with the image tests. `A_Datetime_Is_Utc_On_Each_Computer`
+binds four values and checks the instant and the kind UTC; with `RoundtripKind` three of the four fail, on a computer in UTC
+too, because the kind is Local or Unspecified. The write-set check and `eng/repo-gates` pass. Not verified: continuous
+integration has not run on this commit.
+
+New tests: 4. The test list holds 3406 (2012 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.459, 1 product milestone and 7
+entries followed it. The failed runs since the entry v0.465, from the API: none.
