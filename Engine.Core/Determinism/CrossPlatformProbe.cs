@@ -122,6 +122,15 @@ public static class CrossPlatformProbe
             new TranslateCommand { CommandId = Id(117), BodyId = Id(116), Dx = -1.625, Dy = 0.75, Dz = 1.5 },
             new IntersectCommand { CommandId = Id(118), FirstBodyId = Id(115), SecondBodyId = Id(117) },
             new TranslateCommand { CommandId = Id(119), BodyId = Id(118), Dx = 220.25, Dy = 4.5, Dz = 1.25 },
+
+            // ADR-0191 item 6 (phase P11.0, TASK-0474): two boxes placed by general quaternions and a cut of the one by the
+            // other, so the four platforms compare the bits of the relative placement, of the operand that manifold_transform
+            // moves into the frame of the first box, and of the triangles with the placement.
+            new CreateBoxCommand { CommandId = Id(120), SizeX = 9.5, SizeY = 6.75, SizeZ = 4.25 },
+            new CreateBoxCommand { CommandId = Id(121), SizeX = 3.5, SizeY = 3.25, SizeZ = 12 },
+            new PlaceBodyCommand { CommandId = Id(122), BodyId = Id(120), Qw = 0.9, Qx = 0.3, Qy = -0.2, Qz = 0.25, Dx = 240.5, Dy = 3.25, Dz = 2 },
+            new PlaceBodyCommand { CommandId = Id(123), BodyId = Id(121), Qw = 0.7, Qx = -0.1, Qy = 0.4, Qz = 0.2, Dx = 241.25, Dy = 3.5, Dz = 2.5 },
+            new SubtractCommand { CommandId = Id(124), MinuendBodyId = Id(120), SubtrahendBodyId = Id(121) },
         ];
     }
 
@@ -142,9 +151,10 @@ public static class CrossPlatformProbe
         var lines = new List<string>();
         foreach (var body in document.Bodies.OrderBy(body => body.Handle.Id))
         {
-            var box = query.GetBoundingBox(new BodyHandle(body.GeometryKey));
+            // ADR-0191 item 7: the box and the triangles in the Document, with the placement of the body.
+            var box = Placements.Box(backend, query, body);
             var line = $"body {body.Handle.Id} {body.Kind} box {string.Join(" ", new[] { box.MinX, box.MinY, box.MinZ, box.MaxX, box.MaxY, box.MaxZ }.Select(Bits))}";
-            var mesh = tessellation.Tessellate(new BodyHandle(body.GeometryKey));
+            var mesh = Placements.Tessellate(tessellation, body);
             var positions = string.Join(" ", mesh.Positions.Select(Bits));
             var indices = string.Join(" ", mesh.Indices);
             // A short hash of the positions and of the indices, so a difference between two runners names its part.

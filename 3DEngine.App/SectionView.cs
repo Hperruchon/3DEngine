@@ -62,7 +62,14 @@ internal sealed class SectionDatums
 
 // One live body with a mesh, as the section cuts it: its identifier, the geometry key of its mesh, true for a solid of the
 // kernel (false for a mesh body), the centre of its box, which is the origin of its entity, and its triangles.
-internal sealed record SectionBody(Guid Id, Guid Geometry, bool Solid, (double X, double Y, double Z) Centre, double[] Positions, uint[] Indices);
+internal sealed record SectionBody(Guid Id, MeshKey Geometry, bool Solid, (double X, double Y, double Z) Centre, double[] Positions, uint[] Indices);
+
+// ADR-0191 item 8 (phase P11.0, TASK-0474): the mesh of a body is a function of its geometry key and of its placement, so a
+// PlaceBody, which keeps the key, gives another mesh. A key alone is a mesh at the identity.
+internal readonly record struct MeshKey(Guid Key, Engine.Contracts.BodyPlacement? Placement)
+{
+    public static implicit operator MeshKey(Guid key) => new(key, null);
+}
 
 // ADR-0184 items 3 to 6: the meshes of a section view on the GPU. For each visible live body the cut of SectionMesh runs on the
 // thread pool, off the thread of the frame, and a later frame puts its kept part and its cap on the GPU around the centre of
@@ -83,12 +90,12 @@ internal sealed class SectionView
     private sealed class Entry
     {
         // The mesh and the plane that the body wants now.
-        public required Guid Geometry { get; set; }
+        public required MeshKey Geometry { get; set; }
 
         public required SectionCut Cut { get; set; }
 
         // The cut that runs or ran last, with the mesh and the plane that it cuts.
-        public required Guid RunningGeometry { get; set; }
+        public required MeshKey RunningGeometry { get; set; }
 
         public required SectionCut RunningCut { get; set; }
 
@@ -111,7 +118,7 @@ internal sealed class SectionView
     // left the section, with the mesh and the plane that it cuts. A body that comes back while that cut runs waits for it, so a
     // body runs one cut at a time also after "Section" off and on, Escape, or Hide and Show. Until TASK-0461 the body started a
     // second cut at once. A cut that ends leaves this map at the next frame.
-    private readonly Dictionary<Guid, (Guid Geometry, SectionCut Cut, Task<Prepared> Running)> _leftCuts = new();
+    private readonly Dictionary<Guid, (MeshKey Geometry, SectionCut Cut, Task<Prepared> Running)> _leftCuts = new();
     private SectionCut? _cut;
     private double _spacing;
 

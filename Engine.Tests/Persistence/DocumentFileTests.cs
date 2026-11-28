@@ -67,6 +67,8 @@ public sealed class DocumentFileTests : IDisposable
         ["CreateTorus"] = new CreateTorusCommand { Radius = 0.3, TubeRadius = double.Epsilon },
         ["Translate"] = new TranslateCommand { BodyId = Guid.NewGuid(), Dx = -0.0, Dy = -1e-300, Dz = 123456789.125 },
         ["Rotate"] = new RotateCommand { BodyId = Guid.NewGuid(), Qw = -0.0, Qx = 1e-300, Qy = 123456789.125, Qz = double.Epsilon },
+        // ADR-0191 item 3 (phase P11.0, TASK-0474): the seven numbers of a placement, each in its shortest form.
+        ["PlaceBody"] = new PlaceBodyCommand { BodyId = Guid.NewGuid(), Qw = -0.0, Qx = 1e-300, Qy = 0.1, Qz = double.Epsilon, Dx = -123456789.125, Dy = 5e-324, Dz = 1.0 / 3 },
         ["Subtract"] = new SubtractCommand { MinuendBodyId = Guid.NewGuid(), SubtrahendBodyId = Guid.NewGuid() },
         ["Union"] = new UnionCommand { FirstBodyId = Guid.NewGuid(), SecondBodyId = Guid.NewGuid(), ExpectedDocumentVersion = 0 },
         ["Intersect"] = new IntersectCommand { FirstBodyId = Guid.NewGuid(), SecondBodyId = Guid.NewGuid() },

@@ -32,7 +32,7 @@ public sealed class GetBodiesQueryHandler : IQueryHandler
         var features = FeatureList.Of(document);
         var live = document.Bodies.ToDictionary(body => body.Handle.Id);
         var bodies = GetSheetsQueryHandler.InLogOrder(document, live)
-            .Select(body => new BodyInfo(body.Handle.Id, body.Kind, body.Name, body.Visible, features.DistanceInEffect(body.Handle.Id)))
+            .Select(body => new BodyInfo(body.Handle.Id, body.Kind, body.Name, body.Visible, features.DistanceInEffect(body.Handle.Id), body.Placement))
             .ToList();
         return Task.FromResult(QueryHandlerResult.Success(new BodiesInfo(bodies)));
     }

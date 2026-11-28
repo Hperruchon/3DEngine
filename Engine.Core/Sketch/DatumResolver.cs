@@ -551,6 +551,8 @@ public static class DatumResolver
                 (x, y, z) = (x + translate.Dx, y + translate.Dy, z + translate.Dz);
             else if (step is RotateCommand rotate && RotateCommandHandler.Turn(rotate) is { } turn)
                 (x, y, z) = turn.Apply(x, y, z);
+            else if (step is PlaceBodyCommand body)
+                (x, y, z) = Placements.Apply(body.Placement, x, y, z);
         }
 
         return new DatumPoint(x, y, z);
@@ -564,9 +566,17 @@ public static class DatumResolver
         {
             if (step is RotateCommand rotate && RotateCommandHandler.Turn(rotate) is { } turn)
                 (u, v, n) = (Rotated(turn, u), Rotated(turn, v), Rotated(turn, n));
+            else if (step is PlaceBodyCommand body)
+                (u, v, n) = (Directed(body.Placement, u), Directed(body.Placement, v), Directed(body.Placement, n));
         }
 
         return new DatumFrame(Moved(frame.Origin, graph, handle, place), u, v, n);
+    }
+
+    private static DatumAxis Directed(BodyPlacement placement, DatumAxis a)
+    {
+        var (x, y, z) = Placements.Direction(placement, a.X, a.Y, a.Z);
+        return new DatumAxis(x, y, z);
     }
 
     private static DatumAxis Rotated(Rotation turn, DatumAxis a)
@@ -578,17 +588,48 @@ public static class DatumResolver
     // The Translate and Rotate steps in effect before the place, on the chain of consumers of the body of the feature,
     // in the order of the chain. A Subtract passes with no step; another consumer ends the chain. ADR-0181 item 6 (phase
     // K16, TASK-0433): a Union and an Intersect pass with no step too, as a Subtract does.
+    // ADR-0191 items 5 and 6 (phase P11.0, TASK-0474): a placement is a step too, as a PlaceBody of the body with the seven
+    // numbers: before a Translate or a Rotate the placement of its operand; at a boolean, for its second operand, the placement
+    // in the frame of the first body, whose placement the result takes; and at the end, the placement of the last body before
+    // the place. A placement that moves no point gives no step.
     private static IEnumerable<Command> Chain(FeatureGraph graph, Guid handle, int place)
     {
-        while (graph.Consumer(handle) is { } consumer && graph.Order(consumer.CommandId) < place)
+        while (true)
         {
-            if (consumer is TranslateCommand or RotateCommand)
-                yield return consumer;
-            else if (consumer is not (SubtractCommand or UnionCommand or IntersectCommand))
+            if (graph.Consumer(handle) is not { } consumer || graph.Order(consumer.CommandId) >= place)
+            {
+                if (Step(handle, graph.Placement(handle, place)) is { } end)
+                    yield return end;
                 yield break;
+            }
+
+            var at = graph.Order(consumer.CommandId);
+            if (consumer is TranslateCommand or RotateCommand)
+            {
+                if (Step(handle, graph.Placement(handle, at)) is { } operand)
+                    yield return operand;
+                yield return consumer;
+            }
+            else if (consumer is SubtractCommand or UnionCommand or IntersectCommand)
+            {
+                var (first, second) = FeatureGraph.Operands(consumer) is [var a, var b] ? (a, b) : (Guid.Empty, Guid.Empty);
+                if (handle == second && Step(handle, Placements.Relative(graph.Placement(first, at), graph.Placement(handle, at))) is { } relative)
+                    yield return relative;
+            }
+            else
+            {
+                yield break;
+            }
+
             handle = consumer.CommandId;
         }
     }
+
+    // ADR-0191 item 5: a step of the chain that gives the placement to the body, or null when the placement moves no point.
+    private static PlaceBodyCommand? Step(Guid body, BodyPlacement p)
+        => Placements.Moves(p)
+            ? new PlaceBodyCommand { CommandId = Guid.Empty, BodyId = body, Qw = p.Qw, Qx = p.Qx, Qy = p.Qy, Qz = p.Qz, Dx = p.Dx, Dy = p.Dy, Dz = p.Dz }
+            : null;
 
     // ADR-0059 item 4: true when an odd count of the Subtract steps in effect before the place, on the chain of consumers
     // of the body of the feature, takes the body of the chain as the subtrahend. ADR-0181 item 6: a Union and an Intersect

@@ -39,4 +39,10 @@ public sealed class FeatureGraph
 
     // The bodies that a command consumes, in the order of its fields.
     public static IReadOnlyList<Guid> Operands(Command command) => FeatureList.Operands(command);
+
+    // ADR-0191 items 3 and 6 (phase P11.0, TASK-0474): the placement of the body before the place: the last PlaceBody in
+    // effect of the body, else the placement that its creator gives it. A Subtract, a Union and an Intersect give the
+    // placement of their first body at their step; each other creator gives the identity. The place is the order of a step,
+    // or int.MaxValue for the state after the last step.
+    public BodyPlacement Placement(Guid handle, int place = int.MaxValue) => _list.BodyPlacement(handle, place);
 }

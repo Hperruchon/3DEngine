@@ -40,8 +40,10 @@ internal sealed class SessionBodies : IDisposable
     }
 
     // One change of the queue, from an event or from the first read of the session.
+    // ADR-0191 item 8 (phase P11.0, TASK-0474): the placement of the body, null at the identity. GetTessellation gives the
+    // triangles with the placement, so another placement is another mesh, as another key is.
     private readonly record struct Pending(
-        Change Change, Guid BodyId, string Kind, string? Name, bool Visible, Guid Geometry, BodyFault? Fault);
+        Change Change, Guid BodyId, string Kind, string? Name, bool Visible, Guid Geometry, BodyFault? Fault, BodyPlacement? Placement = null);
 
     private readonly ISessionHost _host;
     private readonly ConcurrentQueue<Pending> _changes = new();
@@ -51,8 +53,8 @@ internal sealed class SessionBodies : IDisposable
     // (ADR-0027 item 7). It holds a body also when its mesh failed.
     private readonly List<LiveBody> _live = new();
 
-    // The geometry key of the mesh that the desktop holds for each live body.
-    private readonly Dictionary<Guid, Guid> _geometry = new();
+    // The geometry key and the placement of the mesh that the desktop holds for each live body.
+    private readonly Dictionary<Guid, (Guid Key, BodyPlacement? Placement)> _geometry = new();
 
     // The entity, the box and the triangles of each live body that has a mesh, by the
     // identifier of its mesh. The entity of a hidden body is not in the scene.
@@ -83,7 +85,7 @@ internal sealed class SessionBodies : IDisposable
         _subscription = host.Session.Read((document, _) =>
         {
             foreach (var body in document.Bodies)
-                _changes.Enqueue(new Pending(Change.Created, body.Handle.Id, body.Kind, body.Name, body.Visible, body.GeometryKey, body.Fault));
+                _changes.Enqueue(new Pending(Change.Created, body.Handle.Id, body.Kind, body.Name, body.Visible, body.GeometryKey, body.Fault, body.Placement));
             return host.Subscribe(OnEvent);
         }).GetAwaiter().GetResult();
     }
@@ -102,10 +104,11 @@ internal sealed class SessionBodies : IDisposable
             && fields.GetValueOrDefault("code") is string code
             ? new BodyFault(code, fields.GetValueOrDefault("message") as string ?? string.Empty)
             : null;
+        var placement = Placement(payload.GetValueOrDefault("placement"));
         switch (record.Kind)
         {
             case "body.created":
-                _changes.Enqueue(new Pending(Change.Created, bodyId, payload.GetValueOrDefault("kind") as string ?? string.Empty, name, visible, geometry, fault));
+                _changes.Enqueue(new Pending(Change.Created, bodyId, payload.GetValueOrDefault("kind") as string ?? string.Empty, name, visible, geometry, fault, placement));
                 break;
             // ADR-0031 item 11: a body that an Undo removed leaves the scene as a consumed body does.
             case "body.consumed":
@@ -113,10 +116,19 @@ internal sealed class SessionBodies : IDisposable
                 _changes.Enqueue(new Pending(Change.Consumed, bodyId, string.Empty, null, false, bodyId, null));
                 break;
             case "body.changed":
-                _changes.Enqueue(new Pending(Change.Changed, bodyId, string.Empty, name, visible, geometry, fault));
+                _changes.Enqueue(new Pending(Change.Changed, bodyId, string.Empty, name, visible, geometry, fault, placement));
                 break;
         }
     }
+
+    // ADR-0191 item 8: the seven numbers of the member placement of an event, or null when the event has none.
+    private static BodyPlacement? Placement(object? member)
+        => member is IReadOnlyDictionary<string, object?> p
+            && p.GetValueOrDefault("qw") is double qw && p.GetValueOrDefault("qx") is double qx && p.GetValueOrDefault("qy") is double qy
+            && p.GetValueOrDefault("qz") is double qz && p.GetValueOrDefault("dx") is double dx && p.GetValueOrDefault("dy") is double dy
+            && p.GetValueOrDefault("dz") is double dz
+            ? new BodyPlacement(qw, qx, qy, qz, dx, dy, dz)
+            : null;
 
     // The count of meshes that Apply uploaded, for a test of V48 (TASK-0118).
     public int Meshes { get; private set; }
@@ -136,7 +148,7 @@ internal sealed class SessionBodies : IDisposable
     // codebase review of 2026-11-21): the visible bodies only, because a hidden body is not drawn.
     public IReadOnlyList<SectionBody> SectionBodies
         => [.. _live.Where(body => _triangles.ContainsKey(body.Id) && _entities.ContainsKey(body.Id.ToString()) && IsVisible(body.Id.ToString())).Select(body => new SectionBody(
-            body.Id, _geometry.GetValueOrDefault(body.Id), body.Kind != Engine.Core.Commands.ImportStlCommandHandler.MeshKind,
+            body.Id, new MeshKey(_geometry.GetValueOrDefault(body.Id).Key, _geometry.GetValueOrDefault(body.Id).Placement), body.Kind != Engine.Core.Commands.ImportStlCommandHandler.MeshKind,
             _entities[body.Id.ToString()].Origin, _triangles[body.Id].Positions, _triangles[body.Id].Indices))];
 
     // On the render loop: one entity and one mesh for each live body. The mesh is
@@ -268,11 +280,11 @@ internal sealed class SessionBodies : IDisposable
                 _live[index] = _live[index] with { Name = change.Name, Visible = change.Visible, Fault = change.Fault };
                 _visibility.Set(meshId, change.Visible);
 
-                // ADR-0037 item 8: another key is another solid, so the mesh comes again.
-                if (_geometry.GetValueOrDefault(change.BodyId) != change.Geometry)
+                // ADR-0037 item 8: another key is another solid, so the mesh comes again. ADR-0191 item 8: another placement too.
+                if (_geometry.GetValueOrDefault(change.BodyId) != (change.Geometry, change.Placement))
                 {
                     var removed = RemoveMesh(change.BodyId, scene, meshes, device);
-                    _geometry[change.BodyId] = change.Geometry;
+                    _geometry[change.BodyId] = (change.Geometry, change.Placement);
                     return AddMesh(change, scene, meshes, device) | removed;
                 }
 
@@ -280,7 +292,7 @@ internal sealed class SessionBodies : IDisposable
         }
 
         _live.Add(new LiveBody(change.BodyId, change.Kind, change.Name, change.Visible, change.Fault));
-        _geometry[change.BodyId] = change.Geometry;
+        _geometry[change.BodyId] = (change.Geometry, change.Placement);
         _visibility.Set(meshId, change.Visible);
         return AddMesh(change, scene, meshes, device);
     }
@@ -423,7 +435,7 @@ internal sealed class SessionBodies : IDisposable
 
     // Finding V109 of the codebase review of 2026-11-06 (d) (TASK-0243): the geometry key of the mesh of a live body, which
     // a rebuild changes (ADR-0037 item 2), or null.
-    public Guid? KeyOf(Guid bodyId) => _geometry.TryGetValue(bodyId, out var key) ? key : null;
+    public Guid? KeyOf(Guid bodyId) => _geometry.TryGetValue(bodyId, out var key) ? key.Key : null;
 
     // Finding V87 of the codebase review of 2026-11-05 (b) (TASK-0191): the box of the mesh of a visible live body with
     // no offset of a preview, or null. A preview does not change the engine, so a query of the body keeps this key.

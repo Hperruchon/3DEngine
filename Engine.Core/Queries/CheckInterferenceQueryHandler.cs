@@ -276,7 +276,8 @@ public sealed class CheckInterferenceQueryHandler : IQueryHandler
             return (null, new ErrorDetail(DiagnosticCodes.GeomCapMissing, "Active backend does not implement ITessellationOps; cannot give the triangles of a mesh body."));
         try
         {
-            var mesh = ops.Tessellate(new BodyHandle(record.GeometryKey));
+            // ADR-0191 items 4 and 7 (phase P11.0, TASK-0474): the triangles of a mesh body in the Document, with its placement.
+            var mesh = Placements.Tessellate(ops, record);
             return (new Part(id, record, null, mesh, mesh.Indices.Length / 3), null);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)

@@ -4,8 +4,8 @@ This document uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, s
 
 - Date: 2026-11-27. TASK-0474, phase P11.0. Written under the standing order of 2026-11-26.
 - Answers: on 2026-11-27 the owner answered "All A" for Q1 to Q7 (TASK-0474). The ADR of P11.0 records them.
-- Status: a proposal. Not a rule. It changes no code, no contract and no ADR. The ADR of P11.0 comes after the answers of the
-  owner, in the same commit as the change of `Engine.Contracts`.
+- Status: decided. ADR-0191 (TASK-0474, 2026-11-28) records the answers and is the rule; this document stays as the record of
+  the facts and the questions. Until then it was a proposal that changed no code, no contract and no ADR.
 - Why a proposal first: the model changes the public shape of `Engine.Contracts` (`BodyRecord`, a new command), and
   `CLAUDE.md` ("Stop and ask") asks the owner before such a change. The owner answered the direction on 2026-11-25 (Q1 A); the
   questions in section 5 are the details that the direction does not decide.

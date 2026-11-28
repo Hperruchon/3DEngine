@@ -455,11 +455,13 @@ public sealed class ProposalPreviewWindowTests
         var (renamedBefore, renamedAfter) = (Record(2), Record(2, name: "Shelf"));
         var (cutBefore, cutAfter) = (Record(3), Record(3, geometry: Guid.NewGuid()));
         var (shownBefore, hiddenAfter) = (Record(4), Record(4, visible: false));
+        // ADR-0191 item 5 (phase P11.0, TASK-0474): a PlaceBody keeps the key and moves the solid.
+        var (placedBefore, placedAfter) = (Record(6), Record(6) with { Placement = new BodyPlacement(1, 0, 0, 0, 5, 0, 0) });
         var card = new PreviewCard(Shown, 3, true, null, null, null,
-            new BodyDifferences([Record(5)], [removed], [new BodyChange(renamedBefore, renamedAfter), new BodyChange(cutBefore, cutAfter), new BodyChange(shownBefore, hiddenAfter)]),
+            new BodyDifferences([Record(5)], [removed], [new BodyChange(renamedBefore, renamedAfter), new BodyChange(cutBefore, cutAfter), new BodyChange(shownBefore, hiddenAfter), new BodyChange(placedBefore, placedAfter)]),
             [], [], [], [], 0);
 
-        Assert.Equal(new HashSet<Guid> { removed.Handle.Id, cutAfter.Handle.Id, hiddenAfter.Handle.Id }, card.Replaced);
+        Assert.Equal(new HashSet<Guid> { removed.Handle.Id, cutAfter.Handle.Id, hiddenAfter.Handle.Id, placedAfter.Handle.Id }, card.Replaced);
         Assert.Equal("Shelf", card.BodyName(renamedAfter.Handle.Id));
         Assert.Empty((card with { Bodies = null }).Replaced);
     }

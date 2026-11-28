@@ -22,8 +22,10 @@ public sealed class GetFacesQueryHandler : IQueryHandler
     public const int CacheSize = 64;
 
     private readonly object _gate = new();
-    private readonly Dictionary<Guid, FacesInfo> _cache = [];
-    private readonly Queue<Guid> _order = new();
+    // ADR-0191 item 5 (phase P11.0, TASK-0474): the key holds the placement too, because a PlaceBody keeps the geometry key
+    // and moves each face.
+    private readonly Dictionary<(Guid Key, BodyPlacement? Placement), FacesInfo> _cache = [];
+    private readonly Queue<(Guid Key, BodyPlacement? Placement)> _order = new();
 
     public string QueryName => "GetFaces";
     public int SchemaVersion => 1;
@@ -74,7 +76,7 @@ public sealed class GetFacesQueryHandler : IQueryHandler
 
         lock (_gate)
         {
-            if (_cache.TryGetValue(record.GeometryKey, out var kept))
+            if (_cache.TryGetValue((record.GeometryKey, record.Placement), out var kept))
                 return Task.FromResult(QueryHandlerResult.Success(kept));
         }
 
@@ -87,9 +89,9 @@ public sealed class GetFacesQueryHandler : IQueryHandler
         lock (_gate)
         {
             BrepsMade++;
-            if (_cache.TryAdd(record.GeometryKey, info))
+            if (_cache.TryAdd((record.GeometryKey, record.Placement), info))
             {
-                _order.Enqueue(record.GeometryKey);
+                _order.Enqueue((record.GeometryKey, record.Placement));
                 if (_order.Count > CacheSize)
                     _cache.Remove(_order.Dequeue());
             }

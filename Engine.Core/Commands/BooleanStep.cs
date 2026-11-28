@@ -48,8 +48,8 @@ internal static class BooleanStep
         // of no volume for two bodies that touch on a face, so its own check of an empty result is not enough. A body that
         // the kernel cannot build leaves the check to the backend. TASK-0454 (phase P0.184): the projection keeps the result
         // under the step, so a later read of the solid of the body does not make the boolean again (ADR-0059 item 2).
-        var a = Features.KernelProjection.OfRecord(document, first).Solid;
-        var b = Features.KernelProjection.OfRecord(document, second).Solid;
+        // ADR-0191 item 6 (TASK-0474): the result is in the frame of the first body, so the second goes into that frame.
+        var (a, b) = Features.KernelProjection.Operands(document, first, second);
         var exact = a is not null && b is not null ? Features.KernelProjection.Boolean(document.DocumentId, step, a, b) : null;
         if (a is not null && b is not null && exact is null)
             return Failure(DiagnosticCodes.GeomNativeOp, $"The bodies '{operands.First}' and '{operands.Second}' share no volume, so the owned kernel gives no solid to {verb}.");
@@ -59,7 +59,7 @@ internal static class BooleanStep
         var handle = new BodyHandle(operands.CommandId);
         try
         {
-            backendStep(boolean, handle, new BodyHandle(first.GeometryKey), new BodyHandle(second.GeometryKey));
+            backendStep(boolean, handle, new BodyHandle(first.GeometryKey), new BodyHandle(Placements.SecondOperand(backend, handle.Id, first, second)));
         }
         catch (Exception ex)
         {
@@ -74,7 +74,8 @@ internal static class BooleanStep
             diagnostics: warnings,
             // ADR-0181 item 2: the result takes the name and the visibility of the first body, as a cut takes those of the
             // minuend (ADR-0028 item 5).
-            createdBodies: new[] { new BodyRecord(handle, "Solid", first.Name, first.Visible) },
+            // ADR-0191 item 6: and the placement of the first body.
+            createdBodies: new[] { new BodyRecord(handle, "Solid", first.Name, first.Visible, Placement: first.Placement) },
             consumedBodies: new[] { new BodyHandle(operands.First), new BodyHandle(operands.Second) },
             changedDatums: datums));
     }

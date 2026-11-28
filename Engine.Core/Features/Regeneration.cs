@@ -246,7 +246,9 @@ internal static class Regeneration
                         return (handle, false, null);
                     if (backend.TryGet<ITransformOps>() is not { } ops)
                         return (handle, false, "the active backend does not implement ITransformOps");
-                    return Call(handle, key, () => ops.Translate(new BodyHandle(key), new BodyHandle(source), translate.Dx, translate.Dy, translate.Dz));
+                    // ADR-0191 item 6 (TASK-0474): the shape of the operand in its place at the step, as the command moved it.
+                    var placement = list.BodyPlacement(translate.BodyId, list.Order(translate.CommandId));
+                    return Call(handle, key, () => ops.Translate(new BodyHandle(key), new BodyHandle(Placements.Placed(ops, source, placement, Placements.OperandKey(key, translate.BodyId))), translate.Dx, translate.Dy, translate.Dz));
                 }
 
                 // ADR-0112 item 6 (TASK-0335): a Rotate with a changed operand runs again, as a Translate does.
@@ -261,7 +263,9 @@ internal static class Regeneration
                         return (handle, false, $"the Rotate '{handle}' has a quaternion that gives no turn");
                     if (backend.TryGet<ITransformOps>() is not { } ops)
                         return (handle, false, "the active backend does not implement ITransformOps");
-                    return Call(handle, key, () => ops.Rotate(new BodyHandle(key), new BodyHandle(source), turn));
+                    // ADR-0191 item 6: the shape of the operand in its place at the step.
+                    var placement = list.BodyPlacement(rotate.BodyId, list.Order(rotate.CommandId));
+                    return Call(handle, key, () => ops.Rotate(new BodyHandle(key), new BodyHandle(Placements.Placed(ops, source, placement, Placements.OperandKey(key, rotate.BodyId))), turn));
                 }
 
                 case SubtractCommand subtract:
@@ -274,7 +278,9 @@ internal static class Regeneration
                         return (handle, false, null);
                     if (backend.TryGet<IBooleanOps>() is not { } ops)
                         return (handle, false, "the active backend does not implement IBooleanOps");
-                    return Call(handle, key, () => ops.Subtract(new BodyHandle(key), new BodyHandle(minuend), new BodyHandle(subtrahend)));
+                    if (Second(key, subtract, subtract.SubtrahendBodyId, subtrahend) is not { } second)
+                        return (handle, false, "the active backend does not implement ITransformOps");
+                    return Call(handle, key, () => ops.Subtract(new BodyHandle(key), new BodyHandle(minuend), new BodyHandle(second())));
                 }
 
                 // ADR-0181 item 7 (phase K16, TASK-0433): a Union or an Intersect with a changed operand runs again, as a
@@ -301,9 +307,23 @@ internal static class Regeneration
                 return (handle, false, null);
             if (backend.TryGet<IBooleanOps>() is not { } ops)
                 return (handle, false, "the active backend does not implement IBooleanOps");
+            if (Second(key, command, operands[1], second) is not { } placed)
+                return (handle, false, "the active backend does not implement ITransformOps");
             return command is UnionCommand
-                ? Call(handle, key, () => ops.Union(new BodyHandle(key), new BodyHandle(first), new BodyHandle(second)))
-                : Call(handle, key, () => ops.Intersect(new BodyHandle(key), new BodyHandle(first), new BodyHandle(second)));
+                ? Call(handle, key, () => ops.Union(new BodyHandle(key), new BodyHandle(first), new BodyHandle(placed())))
+                : Call(handle, key, () => ops.Intersect(new BodyHandle(key), new BodyHandle(first), new BodyHandle(placed())));
+        }
+
+        // ADR-0191 item 6 (TASK-0474): the call that gives the key of the second operand of a boolean in the frame of the first,
+        // as the command took it, or null when the placement moves the solid and the backend cannot move it. The call runs inside
+        // Call, so a throw of the backend is the failure of the step.
+        private Func<Guid>? Second(Guid key, Command step, Guid operand, Guid source)
+        {
+            var at = list.Order(step.CommandId);
+            var relative = Placements.Relative(list.BodyPlacement(FeatureList.Operands(step)[0], at), list.BodyPlacement(operand, at));
+            if (!Placements.Moves(relative))
+                return () => source;
+            return backend.TryGet<ITransformOps>() is { } ops ? () => Placements.Placed(ops, source, relative, Placements.OperandKey(key, operand)) : null;
         }
 
         // One call of the backend for one step; an exception is the failure of the step.

@@ -66,7 +66,8 @@ public sealed class GetBoundingBoxQueryHandler : IQueryHandler
         // of the backend gives E-GEOM-NATIVE-OP, as for a command.
         try
         {
-            return Task.FromResult(QueryHandlerResult.Success(geom.GetBoundingBox(new BodyHandle(body.GeometryKey))));
+            // ADR-0191 item 7 (phase P11.0, TASK-0474): the box in the Document, with the placement of the body.
+            return Task.FromResult(QueryHandlerResult.Success(Placements.Box(backend, geom, body)));
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

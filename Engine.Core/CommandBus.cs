@@ -297,6 +297,16 @@ public sealed class CommandBus
     private static IReadOnlyDictionary<string, object?>? Fault(BodyFault? fault)
         => fault is null ? null : new Dictionary<string, object?> { ["code"] = fault.Code, ["message"] = fault.Message };
 
+    // ADR-0191 item 8 (phase P11.0, TASK-0474): the placement of the body as an object of the seven numbers, or null at the
+    // identity, as the fault is null when the last rebuild succeeded.
+    private static Dictionary<string, object?> Placed(Dictionary<string, object?> payload, BodyPlacement? placement)
+    {
+        payload["placement"] = placement is { } p
+            ? new Dictionary<string, object?> { ["qw"] = p.Qw, ["qx"] = p.Qx, ["qy"] = p.Qy, ["qz"] = p.Qz, ["dx"] = p.Dx, ["dy"] = p.Dy, ["dz"] = p.Dz }
+            : null;
+        return payload;
+    }
+
     private BodyRecord LiveRecord(BodyHandle handle)
         => _document.Bodies.First(body => body.Handle.Id == handle.Id);
 
@@ -693,7 +703,7 @@ public sealed class CommandBus
             _document.AddBody(body);
             _createdHandles.Add(body.Handle.Id);
             lastSeq++;
-            events.Add(Event(lastSeq, command, "body.created", new Dictionary<string, object?>
+            events.Add(Event(lastSeq, command, "body.created", Placed(new Dictionary<string, object?>
             {
                 ["bodyId"] = body.Handle.Id,
                 ["kind"] = body.Kind,
@@ -701,7 +711,7 @@ public sealed class CommandBus
                 ["visible"] = body.Visible,
                 ["geometry"] = body.GeometryKey,
                 ["fault"] = Fault(body.Fault),
-            }));
+            }, body.Placement)));
         }
 
         foreach (var handle in consumed)
@@ -729,14 +739,14 @@ public sealed class CommandBus
         {
             _document.ReplaceBody(body);
             lastSeq++;
-            events.Add(Event(lastSeq, command, "body.changed", new Dictionary<string, object?>
+            events.Add(Event(lastSeq, command, "body.changed", Placed(new Dictionary<string, object?>
             {
                 ["bodyId"] = body.Handle.Id,
                 ["name"] = body.Name,
                 ["visible"] = body.Visible,
                 ["geometry"] = body.GeometryKey,
                 ["fault"] = Fault(body.Fault),
-            }));
+            }, body.Placement)));
         }
 
         // ADR-0033 item 9: a client reads the content of a sketch with GetSketch.

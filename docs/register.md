@@ -299,6 +299,10 @@ Progress 2026-11-26: the owner asked what to measure (TASK-0472). The list: the 
 crossbar; the distance of the two fixing points, their hole and its thread, and their place on the crossbar; the diameter,
 the length, the point and the means of attachment and the weight of the lamp head; the size and the place of the housing;
 the diameter and the path of the cable and its smallest bend; the real range of the tilt and the direction of 0 degrees.
+Progress 2026-11-28: ADR-0191 (P11.0, TASK-0474) decides the model of a move: a placement as data, set by the absolute
+`PlaceBody`. The measure of K10a again with `PlaceBody`: a numerator of 19 digits after 150 turns (2576 with `Rotate`), and a
+first read of the exact solid in less than 1 ms. The second point of this entry is done; the entry stays open for the measured
+sizes of the support of the lamp.
 
 ### R-0077 · A failed start of the renderer of the images leaks the objects that it made before the failure
 - class: debt

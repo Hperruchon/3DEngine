@@ -45,6 +45,8 @@ internal static class SchemaEventsEndpoint
         {
             ["geometry"] = new FieldSchema("guid", Required: true),
             ["fault"] = new FieldSchema("object", Required: false),
+            // ADR-0191 item 8 (phase P11.0, TASK-0474): the seven numbers of the placement, null at the identity.
+            ["placement"] = new FieldSchema("object", Required: false),
         };
         return result;
     }

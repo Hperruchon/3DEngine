@@ -10,13 +10,18 @@ namespace Engine.Contracts;
 // ADR-0037 items 1 and 6: Geometry is the key of the solid of the body in the
 // backend, or null when the key is the handle. A rebuild gives a body a new key and
 // keeps its handle. Fault is the reason that the last rebuild failed, or null.
+//
+// ADR-0191 item 1 (phase P11.0, TASK-0474): Placement is the placement of the body in the Document, or null for the
+// identity. The solid under the geometry key is the shape of the body in its own frame; each reader of the geometry applies
+// the placement. A move with PlaceBody changes only the placement, so the key and the shape stay.
 public sealed record BodyRecord(
     BodyHandle Handle,
     string Kind,
     string? Name = null,
     bool Visible = true,
     Guid? Geometry = null,
-    BodyFault? Fault = null)
+    BodyFault? Fault = null,
+    BodyPlacement? Placement = null)
 {
     // The key of the solid in the backend (ADR-0037 item 2): each read of a solid uses it.
     public Guid GeometryKey => Geometry ?? Handle.Id;

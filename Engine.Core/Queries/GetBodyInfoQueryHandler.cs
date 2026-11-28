@@ -28,6 +28,8 @@ public sealed class GetBodyInfoQueryHandler : IQueryHandler
             ["name"] = new("string"),
             ["visible"] = new("boolean"),
             ["distance"] = new("number", Required: false),
+            // ADR-0191 item 8 (TASK-0474): the seven numbers of the placement, null at the identity.
+            ["placement"] = new("object", Required: false),
         };
 
     // Per ADR-0016.
@@ -56,6 +58,6 @@ public sealed class GetBodyInfoQueryHandler : IQueryHandler
 
         // ADR-0049 item 7: a client reads the distance of an extrude here, and does not read the log.
         var distance = SketchRebuild.DistanceInEffect(document, body.Handle.Id);
-        return Task.FromResult(QueryHandlerResult.Success(new BodyInfo(body.Handle.Id, body.Kind, body.Name, body.Visible, distance)));
+        return Task.FromResult(QueryHandlerResult.Success(new BodyInfo(body.Handle.Id, body.Kind, body.Name, body.Visible, distance, body.Placement)));
     }
 }

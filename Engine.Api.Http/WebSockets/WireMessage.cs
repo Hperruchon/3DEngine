@@ -62,7 +62,8 @@ internal sealed record SnapshotReferenceEntry(Guid ReferenceId, string Part, lon
 
 // ADR-0012 §6 and ADR-0028 item 7: each live body with its kind, its name and its visibility.
 // ADR-0037 item 8: the snapshot gives the geometry key and the fault of each body.
-internal sealed record SnapshotBodyEntry(Guid Handle, string Kind, string? Name, bool Visible, Guid Geometry, BodyFault? Fault);
+// ADR-0191 item 8 (phase P11.0, TASK-0474): and the placement of each body, null at the identity.
+internal sealed record SnapshotBodyEntry(Guid Handle, string Kind, string? Name, bool Visible, Guid Geometry, BodyFault? Fault, BodyPlacement? Placement = null);
 
 // ADR-0033 item 9, which amends ADR-0012 §6: each live sketch with its datum and its name.
 internal sealed record SnapshotSketchEntry(Guid SketchId, Guid DatumId, string? Name);
@@ -88,7 +89,7 @@ internal static class SnapshotProjector
         // ADR-0015 item 7, which amends ADR-0010 section 2.
         LengthUnit: doc.LengthUnit,
         Bodies: doc.Bodies
-            .Select(b => new SnapshotBodyEntry(b.Handle.Id, b.Kind, b.Name, b.Visible, b.GeometryKey, b.Fault))
+            .Select(b => new SnapshotBodyEntry(b.Handle.Id, b.Kind, b.Name, b.Visible, b.GeometryKey, b.Fault, b.Placement))
             .ToArray(),
         Sketches: doc.Sketches
             .Select(s => new SnapshotSketchEntry(s.Id, s.DatumId, s.Name))
