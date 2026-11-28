@@ -1,7 +1,7 @@
 ---
 id: 0492
 title: The roadmap records that K12a and K12b came before K24, and the measures of the pieces of the lamp case
-status: Active
+status: Done
 phase: P0.202
 opened: 2026-11-28
 depends-on: [0491]
@@ -41,11 +41,11 @@ The order and the row K24 say that K12a and K12b came first, and the row K24 giv
 ## Acceptance criteria
 
 - [x] The order and the row K24 hold the facts, each read in its file or measured in this session.
-- [ ] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0202-order-of-k12) · v0.476
+Status: Done · commit (the merge of the branch p0202-order-of-k12) · v0.476
 
 ## Method
 
@@ -57,3 +57,4 @@ Weakest:    the times come from one run of a Debug build.
 ## Progress
 
 - 2026-11-28: opened under the standing order of 2026-11-28, after K12b (v0.475). Ledger v0.476.
+- 2026-11-28: run 46163933317 of `319183fd` passed on each job. Closed at v0.476.
