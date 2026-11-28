@@ -194,6 +194,10 @@ public sealed partial class Proposals : IDisposable
                 if (entry.State == ProposalStates.Applying)
                 {
                     entry.FailedIndex = exception.Data[DocumentSession.FailedIndexKey] is int index ? index : entry.Results.Count;
+                    // TASK-0477 (finding E250 of the codebase review of 2026-11-28): the steps before the command stay applied when
+                    // the Undo of the group did not apply, so the code says it, as for a command that does not apply.
+                    if (exception.Data[DocumentSession.ReversedKey] is false)
+                        entry.FailedCode = DiagnosticCodes.ApiProposalNotReversed;
                     CloseLocked(entry, ProposalStates.Failed);
                 }
             }

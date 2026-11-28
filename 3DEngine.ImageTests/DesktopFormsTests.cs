@@ -7,6 +7,7 @@ using Engine.Core.Queries;
 using Engine.Geometry.Manifold;
 using ThreeDEngine.Core.Input;
 using ThreeDEngine.Core.Models;
+using ThreeDEngine.Core.Picking;
 using ThreeDEngine.Core.Sketching;
 using ThreeDEngine.Desktop;
 using ThreeDEngine.Desktop.Ui;
@@ -236,7 +237,8 @@ public sealed class DesktopFormsTests
 
     // ADR-0191 item 8 (phase P11.0, TASK-0474): a PlaceBody keeps the geometry key of the body and moves it, so the window
     // takes its triangles again in the new place, and the section view knows the new mesh by its key and its placement. A
-    // rename takes no new mesh.
+    // rename takes no new mesh. Finding T205 of the codebase review of 2026-11-28 (TASK-0477): the section view runs, with
+    // cuts that end at once, and it starts a new cut after the placement and none after the rename.
     [VulkanImageFact]
     public async Task A_Placed_Body_Gives_One_New_Mesh_In_Its_Place()
     {
@@ -245,21 +247,100 @@ public sealed class DesktopFormsTests
         using var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null);
         var scene = SessionScene.Create();
         var meshes = new Dictionary<string, GpuMesh>();
+        var cuts = new Dictionary<string, GpuMesh>();
         using var bodies = new SessionBodies(new HostedSession(host));
+        var view = new SectionView { RunCut = cut => Task.FromResult(cut()) };
+        var plane = new SectionCut((0, 0, 0), (1, 0, 0));
+        bool Follow() => view.Follow(plane, bodies.SectionBodies, bodies.Bounds, cuts, device);
         try
         {
             bodies.Apply(scene, meshes, device);
             var (count, key) = (bodies.Meshes, Assert.Single(bodies.SectionBodies).Geometry);
+            Follow();
+            Follow();
+            Assert.Equal(1, view.Started);
+            Assert.True(cuts.ContainsKey(SectionView.KeptId(box)));
             await host.Session.Apply(new RenameBodyCommand { BodyId = box, NewName = "Plate" });
             bodies.Apply(scene, meshes, device);
             Assert.Equal(count, bodies.Meshes);
+            Follow();
+            Assert.Equal(1, view.Started);
 
-            var placed = await host.Session.Apply(new PlaceBodyCommand { BodyId = box, Qw = 1, Qx = 0, Qy = 0, Qz = 0, Dx = 20, Dy = 0, Dz = 0 });
+            // A move of 2 mm, so the plane x = 0 cuts the box in its old place and in its new one.
+            var placed = await host.Session.Apply(new PlaceBodyCommand { BodyId = box, Qw = 1, Qx = 0, Qy = 0, Qz = 0, Dx = 2, Dy = 0, Dz = 0 });
             Assert.Equal(CommandStatus.Applied, placed.Status);
             bodies.Apply(scene, meshes, device);
             Assert.Equal(count + 1, bodies.Meshes);
-            Assert.Equal((15.0, 25.0), (bodies.Bounds!.Value.Min.X, bodies.Bounds!.Value.Max.X));
+            Assert.Equal((-3.0, 7.0), (bodies.Bounds!.Value.Min.X, bodies.Bounds!.Value.Max.X));
             Assert.NotEqual(key, Assert.Single(bodies.SectionBodies).Geometry);
+            // The cut of the old place leaves the GPU at once, and the cut of the new place comes at the next frame.
+            Follow();
+            Assert.Equal(2, view.Started);
+            Assert.False(cuts.ContainsKey(SectionView.KeptId(box)));
+            Follow();
+            Assert.True(cuts.ContainsKey(SectionView.KeptId(box)));
+        }
+        finally
+        {
+            foreach (var mesh in meshes.Values.Concat(cuts.Values))
+                mesh.Dispose();
+        }
+    }
+
+    // Finding V239 of the codebase review of 2026-11-28 (TASK-0477): the window keeps the faces and the edges of the selected
+    // body under the key of its mesh, which a PlaceBody changes, so the selected face and its edges come in the new place.
+    // Until TASK-0477 the key was the geometry key alone, and the face stayed at x = 0.
+    [VulkanImageFact]
+    public async Task The_Selected_Face_Of_A_Placed_Body_Is_In_Its_Place()
+    {
+        using var host = new EngineHost(new ManifoldGeometryBackend());
+        var box = Output(await host.Session.Apply(new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 }), "bodyId");
+        using var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null);
+        var scene = SessionScene.Create();
+        var meshes = new Dictionary<string, GpuMesh>();
+        using var bodies = new SessionBodies(new HostedSession(host));
+        var actions = new BodyActions(host.Session);
+        try
+        {
+            bodies.Apply(scene, meshes, device);
+            actions.Select(box);
+            Assert.True(actions.Apply(new SelectIntent(1, 1), (_, _) => new PickHit(box, 1) { Point = (0, 0, 5), Normal = (0, 0, 1) }, bodies.Live));
+            Assert.Equal(0, actions.SelectedFace(bodies.KeyOf(box))!.Point.X, 9);
+
+            Assert.Equal(CommandStatus.Applied, (await host.Session.Apply(new PlaceBodyCommand { BodyId = box, Qw = 1, Qx = 0, Qy = 0, Qz = 0, Dx = 20, Dy = 0, Dz = 0 })).Status);
+            bodies.Apply(scene, meshes, device);
+            var face = actions.SelectedFace(bodies.KeyOf(box));
+            Assert.Equal("+z", face!.Reference.Element);
+            Assert.Equal(20, face.Point.X, 9);
+            var ends = actions.EdgesOfFace(bodies.KeyOf(box)).SelectMany(edge => edge.Segments).SelectMany(segment => new[] { segment.Start.X, segment.End.X }).ToList();
+            Assert.NotEmpty(ends);
+            Assert.All(ends, x => Assert.InRange(x, 15 - 1e-9, 25 + 1e-9));
+        }
+        finally
+        {
+            foreach (var mesh in meshes.Values)
+                mesh.Dispose();
+        }
+    }
+
+    // Finding V240 of the codebase review of 2026-11-28 (TASK-0477): a creation and a PlaceBody of the body in one frame give one
+    // mesh, as the rule of V55 says; until TASK-0477 the creation did not take the placement of the change, and the change
+    // put the mesh up a second time.
+    [VulkanImageFact]
+    public async Task A_Creation_And_A_Placement_In_One_Frame_Give_One_Mesh()
+    {
+        using var host = new EngineHost(new ManifoldGeometryBackend());
+        using var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null);
+        var scene = SessionScene.Create();
+        var meshes = new Dictionary<string, GpuMesh>();
+        using var bodies = new SessionBodies(new HostedSession(host));
+        try
+        {
+            var box = Output(await host.Session.Apply(new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 }), "bodyId");
+            await host.Session.Apply(new PlaceBodyCommand { BodyId = box, Qw = 1, Qx = 0, Qy = 0, Qz = 0, Dx = 20, Dy = 0, Dz = 0 });
+            bodies.Apply(scene, meshes, device);
+            Assert.Equal(1, bodies.Meshes);
+            Assert.Equal((15.0, 25.0), (bodies.Bounds!.Value.Min.X, bodies.Bounds!.Value.Max.X));
         }
         finally
         {

@@ -11,6 +11,16 @@ namespace ThreeDEngine.ImageTests;
 [Collection(DearImGui.Collection)]
 public sealed class PipelineStartTests
 {
+    // Finding T203 of the codebase review of 2026-11-28 (TASK-0477): the device turns the validation on only when the layer is
+    // installed, and each image test that counts the messages of the layer passes with no check when it is absent. This test
+    // fails on a computer with no layer, so a green run of the image tests means that the layer checked them.
+    [VulkanImageFact]
+    public void The_Validation_Layer_Is_On_For_The_Image_Tests()
+    {
+        using var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null);
+        Assert.True(device.ValidationEnabled, "The Vulkan validation layer is not installed, so the image tests that count its messages check nothing.");
+    }
+
     [VulkanImageFact]
     public void A_Failed_Start_Of_A_Pipeline_Frees_Each_Object_That_It_Made()
     {
@@ -18,6 +28,7 @@ public sealed class PipelineStartTests
         foreach (var step in new[] { "vertex", "fragment", "layout", "pipeline" })
         {
             using var device = new GraphicsDevice("3DEngine.ImageTests", enableValidation: true, window: null);
+            Assert.True(device.ValidationEnabled, "The test counts the messages of the validation layer, which is not installed.");
             using var target = new OffscreenTarget(device, new VkExtent2D(64, 64));
             void Fail(string at)
             {

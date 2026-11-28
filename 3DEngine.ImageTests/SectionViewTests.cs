@@ -416,7 +416,7 @@ public sealed class SectionViewTests
     private static async Task<SectionBody> Sectioned(EngineHost host, Guid body, Guid geometry)
     {
         var tessellation = await Tessellation(host, body);
-        return new SectionBody(body, geometry, true, MeshVertex.Centre(tessellation.Positions), tessellation.Positions, tessellation.Indices);
+        return new SectionBody(body, new MeshKey(geometry, null), true, MeshVertex.Centre(tessellation.Positions), tessellation.Positions, tessellation.Indices);
     }
 
     private static void Free(Dictionary<string, GpuMesh> meshes)

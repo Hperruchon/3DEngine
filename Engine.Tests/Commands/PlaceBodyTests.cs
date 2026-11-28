@@ -142,7 +142,9 @@ public sealed class PlaceBodyTests : IDisposable
     }
 
     // Item 7, GetFaces: each face and each edge in the Document. The exact solid is the same in the two scenes, so the
-    // values are equal bit for bit.
+    // values are equal bit for bit. Finding T204 of the codebase review of 2026-11-28 (TASK-0477): the outline of each face and
+    // the segments of each edge, which the window draws, are compared too; until TASK-0477 the test compared the sum of the
+    // lengths of the edges, which a placement does not change.
     [NativeManifoldFact]
     public async Task The_Faces_Of_A_Placed_Body_Are_In_Its_Place()
     {
@@ -155,9 +157,16 @@ public sealed class PlaceBodyTests : IDisposable
             Assert.Equal(face.Area, other.Area);
             Assert.Equal(face.Point, other.Point);
             Assert.Equal(face.Normal, other.Normal);
+            Assert.Equal(face.Outline, other.Outline);
         }
 
-        Assert.Equal(moved.Edges.Sum(edge => edge.Length), placed.Edges.Sum(edge => edge.Length));
+        Assert.Equal(moved.Edges.Count, placed.Edges.Count);
+        foreach (var edge in moved.Edges)
+        {
+            var other = Assert.Single(placed.Edges, e => e.First == edge.First && e.Second == edge.Second);
+            Assert.Equal(edge.Length, other.Length);
+            Assert.Equal(edge.Segments, other.Segments);
+        }
     }
 
     // Item 7, GetFaceAt: a point on the top face of the placed box, with the normal of that face, finds the top face.
@@ -292,13 +301,16 @@ public sealed class PlaceBodyTests : IDisposable
         }
     }
 
-    // Item 7, GetViewLines: the lines of a view of a placed body, which the views of a sheet and its section read too.
+    // Item 7, GetViewLines: the lines of a view of a placed body, which the views of a sheet and its section read too. T204
+    // (TASK-0477): a placed cylinder too, whose curved side gives its lines from the curves of the design.
     [NativeManifoldFact]
     public async Task The_Lines_Of_A_View_Of_A_Placed_Body_Are_In_Its_Place()
     {
         var (moved, placed) = await Both(async (session, move) =>
         {
             await MovedBox(session, move, Where);
+            var cylinder = Output(await Applied(session, new CreateCylinderCommand { CommandId = OtherId, Radius = 3, Height = 8 }));
+            await move(session, cylinder, There);
             return await Read<ViewLinesInfo>(session, new GetViewLinesQuery { RightX = 1, RightY = 0, RightZ = 0, UpX = 0, UpY = 0, UpZ = 1, EyeX = 0, EyeY = -1, EyeZ = 0 });
         });
 
@@ -306,6 +318,34 @@ public sealed class PlaceBodyTests : IDisposable
             .Select(line => FormattableString.Invariant($"{Math.Round(line.FromX, 6)} {Math.Round(line.FromY, 6)} {Math.Round(line.ToX, 6)} {Math.Round(line.ToY, 6)} {line.Visible} {line.Kind}"))
             .Order(StringComparer.Ordinal));
         Assert.NotEmpty(placed.Lines);
+        Assert.Equal(Text(moved), Text(placed));
+    }
+
+    // Item 7 and T204 (TASK-0477): a section of a sheet through a placed cylinder cuts it in its place (ViewEdges.Section and
+    // SectionCut), so the lines of each view of the sheet are the lines of the moved cylinder. One body only: the scene of the
+    // moves gives each new body a new random identifier, and two bodies that overlap gave lines in the order of their identifiers.
+    [NativeManifoldFact]
+    public async Task The_Section_Of_A_Sheet_Cuts_A_Placed_Body_In_Its_Place()
+    {
+        var (moved, placed) = await Both(async (session, move) =>
+        {
+            var cylinder = Output(await Applied(session, new CreateCylinderCommand { CommandId = OtherId, Radius = 3, Height = 8 }));
+            await move(session, cylinder, There);
+            var sheet = Output(await Applied(session, new CreateSheetCommand { SheetName = "Placed", Paper = "A3" }), "sheetId");
+            var top = Output(await Applied(session, new AddSheetViewCommand
+            {
+                SheetId = sheet, RightX = 1, RightY = 0, RightZ = 0, UpX = 0, UpY = 1, UpZ = 0, EyeX = 0, EyeY = 0, EyeZ = 1,
+                ScaleNumerator = 1, ScaleDenominator = 1, X = 200, Y = 200,
+            }), "viewId");
+            await Applied(session, new AddSheetSectionCommand { SheetId = sheet, ViewId = top, Look = "up", PointX = There.Dx, PointY = There.Dy, PointZ = There.Dz, X = 200, Y = 100 });
+            return await Read<SheetInfo>(session, new GetSheetQuery { SheetId = sheet });
+        });
+
+        static string Text(SheetInfo info) => string.Join("\n", info.Views.SelectMany(view => view.Lines)
+            .Select(line => FormattableString.Invariant($"{Math.Round(line.FromX, 6)} {Math.Round(line.FromY, 6)} {Math.Round(line.ToX, 6)} {Math.Round(line.ToY, 6)} {line.Visible} {line.Kind}"))
+            .Order(StringComparer.Ordinal));
+        Assert.Equal(2, placed.Views.Count);
+        Assert.NotEmpty(placed.Views[1].Lines);
         Assert.Equal(Text(moved), Text(placed));
     }
 
@@ -601,6 +641,42 @@ public sealed class PlaceBodyTests : IDisposable
         var renamed = Engine.Core.Preview.PreviewPlan.Of([box, other], [box with { Name = "Shelf" }, other], [], []);
         Assert.Contains(BoxId, renamed.SameSolid);
         Assert.Empty(renamed.Pairs);
+    }
+
+    // Finding E248 of the codebase review of 2026-11-28 (TASK-0477): the JSON of the answer of GetBodyInfo gives the placement as
+    // an object of the seven numbers of ADR-0191 item 8, with no other member; until TASK-0477 it had "isIdentity" too.
+    [Fact]
+    public void The_Json_Of_A_Placement_Has_The_Seven_Numbers_Only()
+    {
+        var info = new BodyInfo(BoxId, "Box", null, true, null, Where);
+        using var json = System.Text.Json.JsonDocument.Parse(System.Text.Json.JsonSerializer.Serialize(info, Engine.Api.Http.Json.ApiJson.Options));
+        Assert.Equal(
+            ["dx", "dy", "dz", "qw", "qx", "qy", "qz"],
+            json.RootElement.GetProperty("placement").EnumerateObject().Select(member => member.Name).Order(StringComparer.Ordinal));
+    }
+
+    // Finding E249 of the codebase review of 2026-11-28 (TASK-0477, the answer Q2 A): two quaternions that PlaceBody accepts, with
+    // parts of 1e80, give a boolean as the same turns with small parts do. Until TASK-0477 their product left the range of a
+    // turn, and the Subtract was refused with E-GEOM-NATIVE-OP.
+    [NativeManifoldFact]
+    public async Task A_Boolean_Of_Two_Bodies_With_Large_Quaternions_Is_The_Boolean_Of_The_Same_Turns()
+    {
+        async Task<(double Volume, Aabb Box)> Scene(double scale)
+        {
+            using var backend = new ManifoldGeometryBackend();
+            var session = NewSession(backend);
+            var a = await Box(session, BoxId, 10, 10, 10);
+            var b = await Box(session, OtherId, 4, 4, 20);
+            await Applied(session, new PlaceBodyCommand { BodyId = a, Qw = scale, Qx = scale, Qy = 0, Qz = 0, Dx = 1, Dy = 0, Dz = 0 });
+            await Applied(session, new PlaceBodyCommand { BodyId = b, Qw = scale, Qx = 0, Qy = scale, Qz = 0, Dx = 0, Dy = 1, Dz = 0 });
+            var cut = Output(await Applied(session, new SubtractCommand { MinuendBodyId = a, SubtrahendBodyId = b }));
+            return ((await Read<MassProperties>(session, new GetMassPropertiesQuery { BodyId = cut })).Volume,
+                await Read<Aabb>(session, new GetBoundingBoxQuery { BodyId = cut }));
+        }
+
+        var (small, large) = (await Scene(1), await Scene(1e80));
+        Assert.Equal(small.Volume, large.Volume);
+        Assert.Equal(small.Box, large.Box);
     }
 
     // A square of the half size at the origin of the datum, extruded by the distance.

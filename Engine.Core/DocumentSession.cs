@@ -171,6 +171,11 @@ public sealed class DocumentSession
     // 0 for each command that threw, because its list of results was still empty.
     public const string FailedIndexKey = "Engine.Core.DocumentSession.FailedIndex";
 
+    // Finding E250 of the codebase review of 2026-11-28 (TASK-0477): the same exception holds under this key false when the Undo of
+    // the steps that applied did not apply, or threw, so a caller says that they stay applied; true when no step stays. Until
+    // TASK-0477 the session dropped the result of that Undo, and the accept said that nothing applied.
+    public const string ReversedKey = "Engine.Core.DocumentSession.Reversed";
+
     public async Task<GroupOutcome> ApplyGroup(IReadOnlyList<Command> commands, long? version, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(commands);
@@ -197,8 +202,19 @@ public sealed class DocumentSession
                 }
                 catch (Exception exception)
                 {
-                    await ReverseGroup(start, group).ConfigureAwait(false);
+                    bool reversed;
+                    try
+                    {
+                        reversed = await ReverseGroup(start, group).ConfigureAwait(false) is null or { Status: CommandStatus.Applied };
+                    }
+                    catch (Exception reversal) when (reversal is not OperationCanceledException)
+                    {
+                        // E250: the exception of the handler goes out, not the exception of the Undo.
+                        reversed = false;
+                    }
+
                     exception.Data[FailedIndexKey] = i;
+                    exception.Data[ReversedKey] = reversed;
                     throw;
                 }
 

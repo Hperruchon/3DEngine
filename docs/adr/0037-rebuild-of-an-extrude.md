@@ -133,3 +133,5 @@ body, and the edit is never refused.
   of the fault of a chain.
 - 2026-11-28 · TASK-0474 · ADR-0191 amends item 8: `body.created` and `body.changed` also give the member `placement`, the seven numbers of the placement of the
   body or null at the identity.
+- 2026-11-28 · TASK-0477 · ADR-0191 item 8 (finding E247 of the codebase review of 2026-11-28): a client reads the mesh again
+  when `geometry` or `placement` differs from what it holds, because a `PlaceBody` keeps the key and moves the triangles.

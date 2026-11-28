@@ -10,6 +10,8 @@ public readonly record struct BodyPlacement(double Qw, double Qx, double Qy, dou
     public static BodyPlacement Identity { get; } = new(1, 0, 0, 0, 0, 0, 0);
 
     // True for the seven numbers of the identity. A quaternion (2, 0, 0, 0) also gives no turn, but its numbers stay as the
-    // command gives them.
+    // command gives them. Finding E248 of the codebase review of 2026-11-28 (TASK-0477): the JSON of a placement holds the seven
+    // numbers only (ADR-0191 item 8), so the answers of GetBodyInfo and GetBodies and the snapshot do not write this value.
+    [System.Text.Json.Serialization.JsonIgnore]
     public bool IsIdentity => Qw == 1 && Qx == 0 && Qy == 0 && Qz == 0 && Dx == 0 && Dy == 0 && Dz == 0;
 }

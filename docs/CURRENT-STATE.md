@@ -14654,3 +14654,46 @@ The write-set check and `eng/repo-gates` pass. Not verified: continuous integrat
 New tests: 2. The test list holds 3377 (1987 in `Engine.Tests`, 391 in `3DEngine.Tests`, 996 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 12 of 15 (R-0080 closes). New diagnostic codes: 0. Since the review of v0.459, 1 product
 milestone and 2 entries followed it. The failed runs since the entry v0.460, from the API: none.
+
+## v0.462 — The medium and low findings of the codebase review of 2026-11-28 (P0.193, TASK-0477)
+
+The codebase review of 2026-11-28 found two medium and seven low findings. By the order of the review they come after the next
+product phase, K25. The standing order of 2026-11-28 answered Q2 A for E249.
+
+**The window.** V239: `SessionBodies.KeyOf` gives a key of the geometry key and the bits of the placement, so `BodyActions`
+reads the faces and the edges of the selected body again after a `PlaceBody`; until this entry it drew the selected face at the
+old place. V240: the merge of V55 takes the placement, so a creation and a `PlaceBody` in one frame give one mesh. T205:
+`MeshKey` has no conversion from a key alone.
+
+**The engine.** E248: `BodyPlacement.IsIdentity` has `[JsonIgnore]`, so the JSON of a placement in `GetBodyInfo`, `GetBodies`
+and the snapshot holds the seven numbers of ADR-0191 item 8; the C# shape of `Engine.Contracts` does not change. E249:
+`Placements.Relative` and `Compose` scale each quaternion by the power of two that puts its largest part in [1, 2), which is
+exact, so each product of two placements that `PlaceBody` accepts gives a turn; a placement that gives no turn now stops a read,
+where a read skipped the turn. E250: when a handler throws in a group, the exception holds `DocumentSession.ReversedKey`, false
+when the `Undo` of the group did not apply or threw, and the accept then gives `E-API-PROPOSAL-NOT-REVERSED`. E247: ADR-0191
+item 8, a History line in ADR-0037 and the guide for an agent say that a client reads the triangles again when `geometry` or
+`placement` differs.
+
+**The tests.** T203: `The_Validation_Layer_Is_On_For_The_Image_Tests` fails on a computer with no layer, so a green run of the
+image tests means that the layer checked them, and `PipelineStartTests` asks for it too. T204: the test of the faces compares the
+outline of each face and the segments of each edge; the test of the view lines has a placed cylinder; a new test cuts a placed
+cylinder with a section of a sheet. T205: the window test runs the section view, and asks that the cut of the old place leaves
+the GPU at once.
+
+**Proof.** A clean build gives 0 warnings, and `dotnet test` passes with the image tests. Six injections, each of which undoes one
+correction, each make a named test fail: `KeyOf` with the key alone (`The_Selected_Face_Of_A_Placed_Body_Is_In_Its_Place`), the
+merge with no placement (`A_Creation_And_A_Placement_In_One_Frame_Give_One_Mesh`), a comparison of the key alone in `Follow`
+(`A_Placed_Body_Gives_One_New_Mesh_In_Its_Place`), no `[JsonIgnore]` (`The_Json_Of_A_Placement_Has_The_Seven_Numbers_Only`), no
+scale (`A_Boolean_Of_Two_Bodies_With_Large_Quaternions_Is_The_Boolean_Of_The_Same_Turns`), and a reversal that always says true
+(`A_Throw_In_A_Group_Whose_Undo_Does_Not_Apply_Says_That_The_Steps_Stay`). The write-set check and `eng/repo-gates` pass. Not
+verified: continuous integration has not run on this commit; the path of `Proposals` for E250 has no test of its own.
+
+An observation, with no finding: the first form of the section test had a placed box and a placed cylinder that overlap, and one
+run in three gave other lines for the scene of `Rotate` and `Translate`, whose new bodies have random identifiers. The lines of
+two overlapping bodies in a section depend on the order of their identifiers. The test now has one body; the next review can
+examine it.
+
+New tests: 7 (4 in `Engine.Tests`, 3 in `3DEngine.ImageTests`). The test list holds 3384 (1991 in `Engine.Tests`, 391 in
+`3DEngine.Tests`, 999 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 12 of 15. New diagnostic codes: 0.
+Since the review of v0.459, 1 product milestone and 3 entries followed it. The failed runs since the entry v0.461, from the API:
+none.

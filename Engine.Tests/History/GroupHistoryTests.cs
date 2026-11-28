@@ -377,6 +377,54 @@ public sealed class GroupHistoryTests
         Assert.Equal(["CreateBox", "Undo"], (await Log(session)).Select(command => command.Name));
     }
 
+    // Finding E250 of the codebase review of 2026-11-28 (TASK-0477): when the file refuses the Undo of the group after a handler
+    // throws, the exception says that the steps before it stay applied (ReversedKey false); when the Undo applies, it says true.
+    [Fact]
+    public async Task A_Throw_In_A_Group_Whose_Undo_Does_Not_Apply_Says_That_The_Steps_Stay()
+    {
+        var (session, _) = NewSession(new ThrowHandler());
+        session.Attach(Engine.Core.Persistence.DocumentJournal.ForTest(
+            Path.Combine(Path.GetTempPath(), $"3de-group-{Guid.NewGuid():N}.3de"), Document.Millimetre, new FailingOnText("\"Undo\"")));
+        var group = Guid.NewGuid();
+
+        var thrown = await Assert.ThrowsAsync<InvalidOperationException>(() => session.ApplyGroup(
+            [new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1, GroupId = group }, new ThrowCommand { GroupId = group }],
+            version: 0));
+
+        Assert.Equal("A fault of the backend.", thrown.Message);
+        Assert.Equal(1, thrown.Data[DocumentSession.FailedIndexKey]);
+        Assert.Equal(false, thrown.Data[DocumentSession.ReversedKey]);
+        Assert.Equal(["CreateBox"], (await Log(session)).Select(command => command.Name));
+
+        var (clean, _) = NewSession(new ThrowHandler());
+        var other = await Assert.ThrowsAsync<InvalidOperationException>(() => clean.ApplyGroup(
+            [new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1, GroupId = group }, new ThrowCommand { GroupId = group }],
+            version: 0));
+        Assert.Equal(true, other.Data[DocumentSession.ReversedKey]);
+    }
+
+    // A stream whose write of a line that holds the text fails, as a full disk does.
+    private sealed class FailingOnText(string text) : MemoryStream
+    {
+        public override void Write(ReadOnlySpan<byte> buffer)
+        {
+            Check(buffer);
+            base.Write(buffer.ToArray(), 0, buffer.Length);
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            Check(buffer.AsSpan(offset, count));
+            base.Write(buffer, offset, count);
+        }
+
+        private void Check(ReadOnlySpan<byte> buffer)
+        {
+            if (System.Text.Encoding.UTF8.GetString(buffer).Contains(text, StringComparison.Ordinal))
+                throw new IOException("The disk is full.");
+        }
+    }
+
     private sealed record ThrowCommand : Command
     {
         public override string Name => "TestThrow";
