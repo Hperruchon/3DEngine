@@ -616,6 +616,7 @@ Therefore each approved objective must have a track here.
   in the place of a name. v0.464, TASK-0481.
 - P0.196 — A copy of the log in flight covers each proposal that waits, so a call in that window does not mark the
   queue of the previews behind. v0.465, TASK-0482.
+- P0.197 — A `datetime` parameter is UTC on each computer. v0.466, TASK-0483.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -828,6 +829,7 @@ This track removes each condition that blocks other work.
 | P0.194 | Two debts of the register: a fork pushes out no kept solid of its source (R-0082, finding E243), and the starts of `ImageRenderer` and `UiRenderer` free each object at a failure (R-0077). After P0.193, while R34, R35 and P11a wait for the owner. TASK-0480. | 1 |
 | P0.195 | Four parts of finding E17 (R-0028): a refused body names no internal type and an unknown charset gets HTTP 415, a lagged client of Kestrel reads its close, a missing subscribe frame gets a close after 10 seconds, and an option in the place of a name is a usage error. After P0.194, while R34, R35 and P11a wait for the owner. TASK-0481. | 1 |
 | P0.196 | A race of the queue of the previews: a call of `Preview` between the copy of the log and its hand-over marked the queue behind, so `Current` was false after the wait (run 46103697245 of the close of TASK-0480). After P0.195. TASK-0482. | 1 |
+| P0.197 | A `datetime` parameter is UTC on each computer (finding E6 (a), R-0027). After P0.196. TASK-0483. | 1 |
 | P0.173 | A run of the pipeline is red only for a fault of the code, after four red runs of 2026-11-21 with no fault of the code (the order of the owner "Start P0.173"): no time decides a test (a count of the work, an order with 60 s against a wait for ever, or no limit), a crash of a test host gives a dump on each system and the report of the runtime as its cause, and a known fault of the artifact service in an upload or a download gets the one automatic re-run of ADR-0173. TASK-0435. | 1 |
 | P0.168 | A run of the pipeline is red only for a fault of the code: one automatic re-run of a job whose macOS runner GitHub did not give, and no time limit that decides the test of a report that blocks (the question of the owner of 2026-11-18 on the failed runs). It can come at any place in the order. TASK-0417. | 1 |
 | P0.169 | The layout of small windows and of each state (the review of the responsive layout of 2026-11-18 and the answers of the owner, Q1 to Q4 A): the rows beside the ring, the pad and the images as fixed parts of the layout, the rows and the ring of a sketch, the history arc and the home screen inside the display, ten states in the layout test, and the desktop window down to 360 by 560 (ADR-0172). TASK-0418. | 1–2 |

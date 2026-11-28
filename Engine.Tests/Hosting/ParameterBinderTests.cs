@@ -110,6 +110,25 @@ public class ParameterBinderTests
         Assert.Equal("text", result.Values["s"]);
     }
 
+    // Finding E6 of the codebase review of 2026-09-23, part (a) (register entry R-0027, TASK-0483): a datetime parameter is UTC on
+    // each computer. A value with an offset gives its instant in UTC, and a value with no offset is UTC. The kind is part of the
+    // check, so the test fails on a runner in UTC too: until TASK-0483 a value with an offset had the kind Local, and a value with
+    // no offset the kind Unspecified.
+    [Theory]
+    [InlineData("2026-11-28T10:00:00+02:00", "2026-11-28T08:00:00")]
+    [InlineData("2026-11-28T10:00:00-05:30", "2026-11-28T15:30:00")]
+    [InlineData("2026-11-28T10:00:00Z", "2026-11-28T10:00:00")]
+    [InlineData("2026-11-28T10:00:00", "2026-11-28T10:00:00")]
+    public void A_Datetime_Is_Utc_On_Each_Computer(string supplied, string utc)
+    {
+        var result = ParameterBinder.Bind(Schema(("t", "datetime", true)), Raw(("t", supplied)));
+
+        Assert.True(result.IsSuccess, result.FirstMessage);
+        var value = Assert.IsType<DateTime>(result.Values!["t"]);
+        Assert.Equal(DateTimeKind.Utc, value.Kind);
+        Assert.Equal(DateTime.Parse(utc, CultureInfo.InvariantCulture), DateTime.SpecifyKind(value, DateTimeKind.Unspecified));
+    }
+
     [Fact]
     public void An_Already_Typed_Value_Passes_Through_Unchanged()
     {
