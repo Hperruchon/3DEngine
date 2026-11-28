@@ -1,7 +1,7 @@
 ---
 id: 0482
 title: A race of the queue of the previews, a call between the copy of the log and its hand-over marks the queue behind
-status: Active
+status: Done
 phase: P0.196
 opened: 2026-11-28
 depends-on: [0481]
@@ -50,11 +50,11 @@ A copy of the log that the worker took and did not yet give to the proposals cov
 ## Acceptance criteria
 
 - [x] The test fails when the call compares its version with the preview, the fork and the pending copy only.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0196-preview-race) · v0.465
+Status: Done · commit (the merge of the branch p0196-preview-race) · v0.465
 
 ## Method
 
@@ -70,3 +70,4 @@ Weakest:    the failed run did not keep the state of the queue, so the window is
   `_copying`, the version of the copy in flight, and the call of `Preview` compares its version with it too. The seam
   `AfterCopy` holds the worker after the copy; `A_Caller_That_Waits_While_The_Copy_Of_Its_Version_Is_Not_Yet_Given_Does_Not_Mark_The_Queue_Behind`
   fails with the old comparison ("the queue is behind"). Ledger v0.465.
+- 2026-11-28: run 46109221955 of `0f55d643` passed on each job. Closed at v0.465.
