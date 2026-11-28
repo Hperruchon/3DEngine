@@ -5,7 +5,8 @@ namespace Engine.Contracts.Joints;
 // ADR-0193 items 1 to 4 (phase P11a, TASK-0479): one joint of the Document, between a parent body and a child body of one part.
 // A record never changes: a change of the value gives a new record with the same identifier, as a sheet does. Id is the
 // identifier of the command AddJoint. Kind is one of Kinds. Parent and Child are the two connectors, each with its frame in
-// the frame of its body. Value is the value of the joint, and Limits is null for a joint with no limits.
+// the frame of its body. Value is the value of the joint, and Limits is null for a joint with no limits. ADR-0194 item 1 (phase
+// P11b, TASK-0489, the answer Q5 A): State is one of States, "tight" by default, so a log of P11a gives the same record.
 public sealed record JointRecord(
     Guid Id,
     string Kind,
@@ -14,8 +15,16 @@ public sealed record JointRecord(
     Guid ChildBodyId,
     JointConnector Child,
     JointValue Value,
-    JointLimits? Limits)
+    JointLimits? Limits,
+    string State = "tight")
 {
+    // ADR-0194 item 1: a tight joint gives the placement of its child; a loose joint keeps its record, its connectors, its value
+    // and its intended pair, and gives no placement.
+    public const string Tight = "tight";
+    public const string Loose = "loose";
+
+    public static readonly IReadOnlyList<string> States = [Tight, Loose];
+
     // ADR-0193 item 1: the three kinds of a joint. A fixed joint has no value, a pivot turns the child about the normal of the
     // parent connector, and a slider moves the child along that normal.
     public const string Fixed = "fixed";

@@ -1012,6 +1012,8 @@ public sealed class CommandBus
         ["child"] = joint.Child,
         ["value"] = joint.Value,
         ["limits"] = joint.Limits,
+        // ADR-0194 item 1 (phase P11b, TASK-0489): "tight" or "loose".
+        ["state"] = joint.State,
     };
 
     private static Dictionary<string, object?> ImageFields(ImageRecord image) => new()

@@ -52,6 +52,14 @@ public sealed class CheckInterferenceQueryHandler : IQueryHandler
         if (intended is null)
             return Failure(pairError!);
 
+        // ADR-0194 item 3 (phase P11b, TASK-0489): each joint of the Document declares its two bodies as an intended pair, tight or
+        // loose, when the check holds the two bodies.
+        foreach (var joint in document.Joints)
+        {
+            if (ids.Contains(joint.ParentBodyId) && ids.Contains(joint.ChildBodyId))
+                intended.Add(Key(joint.ParentBodyId, joint.ChildBodyId));
+        }
+
         var parts = new List<Part>(ids.Count);
         foreach (var id in ids)
         {

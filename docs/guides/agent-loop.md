@@ -35,6 +35,10 @@ refused, or an answer does not have its shape, the test fails.
   takes `cos` and `sin`, a slider takes `distance`, and the limits are optional. `SetJointValue` moves the joint, and the
   child and each body under it follow; a `PlaceBody` of a child is refused, and a `PlaceBody` of a root moves its tree.
   `GetJoints` gives the joints (ADR-0193).
+- **Move the child of a joint away, and snap a part to a part.** `SetJointState` with `state` "loose" keeps the joint and lets
+  you move its child with `PlaceBody`; "tight" puts it back at the value of the joint. `PlaceByConnectors` takes the fields of
+  the bodies and the connectors of `AddJoint`, places the child on the parent one time, and records no joint. `CheckInterference`
+  takes the two bodies of each joint as an intended pair (ADR-0194).
 - **Give each command a new identifier.** The identifier `commandId` is a UUID. The body that a command makes has the
   identifier of that command, so a later command of the same proposal can name it. The session keeps the last 1024
   identifiers: a command with a known identifier does not apply again, and gives the earlier answer.

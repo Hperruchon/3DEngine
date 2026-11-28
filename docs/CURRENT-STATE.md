@@ -14920,3 +14920,27 @@ verified: continuous integration has not run on this commit; the probes of E251 
 New tests: 0. The test list holds 3421 (2027 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 11 of 15. New diagnostic codes: 0. Open findings: 0 critical, 1 high, 8 medium and 19
 low. The failed runs since the entry v0.470, from the API: none.
+
+## v0.472 — A joint is tight or loose, each joint is an intended pair of the check, and PlaceByConnectors places a child one time (P11b, TASK-0489)
+
+ADR-0193 item 10 left three parts of row P11 to P11b, and the owner answered them with P11a (Q5 A and Q6 A). ADR-0194 records
+them, in the same commit as the change of `Engine.Contracts`. `JointRecord` has the field `State`, `tight` by default, so a log
+of P11a gives the same records. `SetJointState` makes a joint loose, which moves nothing, or tight, which places the child and each
+body under it at the value of the joint. A loose joint keeps its record and its intended pair and gives no placement: its child
+takes a `PlaceBody`, and a `PlaceBody` of the root does not move it. A loose joint still counts for the one parent and for a loop.
+Each joint of the Document, tight or loose, is an intended pair of `CheckInterference` (amends ADR-0182 item 2).
+`PlaceByConnectors` gives a child the placement of a fixed joint by two connectors and records no joint; the bodies under the
+child through tight joints follow it. No new diagnostic code.
+
+The standing order of 2026-11-28 answers Q1 of the second review of 2026-11-28 with A: a joint whose parent or child is not live
+does not hold the child. TASK-0488 (P0.201) does it with finding E254.
+
+**Proof.** A clean build gives 0 warnings, and `dotnet test` passes with the image tests. Two injections each made a test of
+`JointStateTests` fail: a walk of the tree that takes a loose joint
+(`A_Loose_Joint_Keeps_Its_Record_And_Gives_No_Placement_Until_It_Is_Tight_Again`), and a check with no pairs of the joints
+(`Each_Joint_Declares_Its_Two_Bodies_As_An_Intended_Pair_Of_The_Check`). The write-set check and `eng/repo-gates` pass. Not
+verified: continuous integration has not run on this commit; the window does not draw a joint.
+
+New tests: 6 in `Engine.Tests/Commands/JointStateTests.cs`. The test list holds 3427 (2033 in `Engine.Tests`, 391 in
+`3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 11 of 15. New diagnostic codes: 0.
+Since the review of v0.471, 1 product milestone and 1 entry followed it. The failed runs since the entry v0.471, from the API: none.

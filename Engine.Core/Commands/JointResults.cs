@@ -138,7 +138,8 @@ internal static class JointResults
     {
         var parent = document.Bodies.FirstOrDefault(body => body.Handle.Id == joint.ParentBodyId);
         var child = document.Bodies.FirstOrDefault(body => body.Handle.Id == joint.ChildBodyId);
-        if (parent is null || child is null)
+        // ADR-0194 item 2 (phase P11b, TASK-0489): a loose joint places nothing.
+        if (parent is null || child is null || joint.State != JointRecord.Tight)
             return [];
         var at = JointTree.Child(Placements.Of(parent), joint);
         var placed = child with { Placement = Placements.Stored(at) };
