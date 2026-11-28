@@ -625,6 +625,9 @@ Therefore each approved objective must have a track here.
 - Review — The second codebase review of 2026-11-28. v0.471, TASK-0487.
 - P11b — A joint is tight or loose, each joint is an intended pair of the check, and `PlaceByConnectors` places a child
   one time. v0.472, TASK-0489, ADR-0194.
+- P0.201 — The medium and low findings of the second review of 2026-11-28: the placements of a step by the place of the
+  entry, the charset of a request, an exact check of the limits, the child of a joint with no live parent, a cancelled
+  reversal and the tests of the joints; T207 stays open. v0.473, TASK-0488.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.

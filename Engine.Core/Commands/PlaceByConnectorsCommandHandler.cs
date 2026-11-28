@@ -85,7 +85,7 @@ public sealed class PlaceByConnectorsCommandHandler : ICommandHandler, ICommandE
 
         // A tight joint gives the placement of its child, and the child of the command moves each body under it through a tight
         // joint, so the parent must not be under the child.
-        if (JointTree.TightParentOf(document.Joints, child.Handle.Id) is { } held)
+        if (JointTree.HolderOf(document, child.Handle.Id) is { } held)
             return JointResults.Refused(DiagnosticCodes.JointPlaced, $"The body '{child.Handle.Id}' is the child of the tight joint '{held.Id}', and the joint gives its placement (ADR-0194 item 4).");
         if (JointTree.IsAncestor([.. document.Joints.Where(joint => joint.State == JointRecord.Tight)], child.Handle.Id, parent.Handle.Id))
             return JointResults.Refused(DiagnosticCodes.JointLoop, $"The body '{parent.Handle.Id}' is under the body '{child.Handle.Id}' through tight joints, so a move of the child moves the parent too (ADR-0194 item 4).");

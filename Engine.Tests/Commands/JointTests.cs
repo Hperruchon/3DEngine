@@ -182,15 +182,14 @@ public sealed class JointTests : IDisposable
         Assert.Null(stored.Parent.Face);
     }
 
-    // Item 2: a connector names one face or one datum of its body, and a face is a plane or the side of a cylinder. A sphere
-    // needs the backend Manifold.
-    [NativeManifoldFact]
-    public async Task A_Connector_Is_One_Plane_Face_Or_One_Datum_Of_Its_Body()
+    // Item 2: a connector names one face or one datum of its body. Finding T206 of the second codebase review of 2026-11-28
+    // (TASK-0488): these refusals need no native backend, so they run on each computer; until TASK-0488 they were in the test of
+    // the sphere below.
+    [Fact]
+    public async Task A_Connector_Is_One_Face_Or_One_Datum_Of_Its_Body()
     {
-        using var backend = new ManifoldGeometryBackend();
-        var (session, _) = NewSession(backend);
+        var (session, _) = NewSession();
         var (parent, child) = await Scene(session);
-        var sphere = Output(await Applied(session, new CreateSphereCommand { Radius = 5 }), "bodyId");
         var datum = Output(await Applied(session, new CreateDatumCommand { FeatureId = parent, Element = "+z", DatumName = "top" }), "datumId");
         var fixedJoint = Joint(JointRecord.Fixed, parent, "+x", child, "-z");
 
@@ -199,6 +198,18 @@ public sealed class JointTests : IDisposable
         Assert.Equal(DiagnosticCodes.JointConnectorInvalid, await Refused(session, fixedJoint with { ParentElement = "+w" }));
         Assert.Equal(DiagnosticCodes.JointConnectorInvalid, await Refused(session, fixedJoint with { ChildFeatureId = null, ChildElement = null, ChildDatumId = datum }));
         Assert.Equal(DiagnosticCodes.JointConnectorInvalid, await Refused(session, fixedJoint with { ChildFeatureId = null, ChildElement = null, ChildDatumId = Guid.NewGuid() }));
+        Assert.Empty(await Joints(session));
+    }
+
+    // Item 2: a face is a plane or the side of a cylinder, so the face of a sphere gives no frame. A sphere needs the backend
+    // Manifold.
+    [NativeManifoldFact]
+    public async Task A_Curved_Face_That_Is_Not_The_Side_Of_A_Cylinder_Is_No_Connector()
+    {
+        using var backend = new ManifoldGeometryBackend();
+        var (session, _) = NewSession(backend);
+        var parent = (await Scene(session)).Parent;
+        var sphere = Output(await Applied(session, new CreateSphereCommand { Radius = 5 }), "bodyId");
         var curved = (await session.Query<ConnectorsInfo>(new GetConnectorsQuery { BodyId = sphere })).Result!.Faces.Single().Reference;
         Assert.Equal(DiagnosticCodes.JointConnectorInvalid, await Refused(session, new AddJointCommand
         {

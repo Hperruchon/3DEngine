@@ -26,14 +26,18 @@ public sealed class FeatureList
     private readonly Dictionary<Guid, List<double>> _distances = [];
     // ADR-0191 item 3 (phase P11.0, TASK-0474): the PlaceBody steps in effect of each body, in the order of the log.
     // ADR-0193 item 9 (phase P11a, TASK-0479): each step in effect that places the body, with the placement that it gives: a
-    // PlaceBody, and each step of a joint that moves the body. _placedBodies gives the bodies of each such step, for an Undo.
-    private readonly Dictionary<Guid, List<(Guid Step, BodyPlacement Placement)>> _placements = [];
-    private readonly Dictionary<Guid, IReadOnlyList<Guid>> _placedBodies = [];
+    // PlaceBody, and each step of a joint that moves the body. Finding E251 (TASK-0488): each entry holds the place of its step in
+    // the list, and _donePlaced and _undonePlaced keep the placements of each step beside it, so an Undo and a Redo move the same
+    // placements and a repeated command identifier names no other step.
+    private readonly Dictionary<Guid, List<(int Order, BodyPlacement Placement)>> _placements = [];
+    private readonly List<IReadOnlyList<(Guid Body, BodyPlacement Placement)>?> _donePlaced = [];
+    private readonly List<IReadOnlyList<(Guid Body, BodyPlacement Placement)>?> _undonePlaced = [];
 
-    // ADR-0193 item 9: the placements that the bus of the Document recorded for a step, or null for a log with no Document.
-    private readonly Func<Guid, IReadOnlyList<(Guid Body, BodyPlacement Placement)>?>? _placedBy;
+    // ADR-0193 item 9: the placements that the bus of the Document recorded for the entry at a place of the log, or null for a
+    // log with no Document.
+    private readonly Func<int, IReadOnlyList<(Guid Body, BodyPlacement Placement)>?>? _placedBy;
 
-    private FeatureList(Func<Guid, IReadOnlyList<(Guid Body, BodyPlacement Placement)>?>? placedBy = null) => _placedBy = placedBy;
+    private FeatureList(Func<int, IReadOnlyList<(Guid Body, BodyPlacement Placement)>?>? placedBy = null) => _placedBy = placedBy;
 
     // The list of the Document, advanced to the end of its log. The log of a Document only grows (ADR-0020).
     public static FeatureList Of(Document document)
@@ -134,7 +138,7 @@ public sealed class FeatureList
             return null;
         for (var i = stack.Count - 1; i >= 0; i--)
         {
-            if (Order(stack[i].Step) < place)
+            if (stack[i].Order < place)
                 return stack[i].Placement;
         }
 
@@ -155,33 +159,46 @@ public sealed class FeatureList
                 switch (command)
                 {
                     case UndoCommand when _done.Count > 0:
-                        var unit = _done[StepHistory.UnitStart(_done, step => step.GroupId)..];
+                        var first = StepHistory.UnitStart(_done, step => step.GroupId);
+                        var unit = _done[first..];
+                        var unitPlaced = _donePlaced[first..];
                         for (var i = unit.Count - 1; i >= 0; i--)
                             Remove(unit[i]);
                         // ADR-0190 item 3 (TASK-0473): the reversal of a failed group puts nothing on the undone list.
                         if (command.GroupId is null)
+                        {
                             _undone.AddRange(unit);
+                            _undonePlaced.AddRange(unitPlaced);
+                        }
+
                         break;
                     case RedoCommand when _undone.Count > 0:
                         var start = StepHistory.UnitStart(_undone, step => step.GroupId);
                         var redone = _undone[start..];
+                        var redonePlaced = _undonePlaced[start..];
                         _undone.RemoveRange(start, redone.Count);
-                        foreach (var step in redone)
-                            Add(step);
+                        _undonePlaced.RemoveRange(start, redone.Count);
+                        for (var i = 0; i < redone.Count; i++)
+                            Add(redone[i], redonePlaced[i]);
                         break;
                     case UndoCommand or RedoCommand:
                         break;
                     default:
-                        Add(command);
+                        // ADR-0193 item 9: the placements that the bus recorded for the entry, else the placement of a PlaceBody of
+                        // a log with no Document.
+                        Add(command, _placedBy?.Invoke(_applied) ?? (command is PlaceBodyCommand place ? [(place.BodyId, place.Placement)] : null));
                         _undone.Clear();
+                        _undonePlaced.Clear();
                         break;
                 }
             }
         }
     }
 
-    private void Add(Command command)
+    private void Add(Command command, IReadOnlyList<(Guid Body, BodyPlacement Placement)>? placed)
     {
+        var order = _done.Count;
+        _donePlaced.Add(placed);
         _order[command.CommandId] = _done.Count;
         _done.Add(command);
         _inEffect.Add(command.CommandId);
@@ -196,20 +213,11 @@ public sealed class FeatureList
             stack.Add(set.Distance);
         }
 
-        // ADR-0193 item 9: the placements that the bus recorded for the step, else the placement of a PlaceBody of a log with
-        // no Document.
-        var placed = _placedBy?.Invoke(command.CommandId)
-            ?? (command is PlaceBodyCommand place ? [(place.BodyId, place.Placement)] : null);
-        if (placed is not null)
+        foreach (var (body, placement) in placed ?? [])
         {
-            foreach (var (body, placement) in placed)
-            {
-                if (!_placements.TryGetValue(body, out var placements))
-                    _placements[body] = placements = [];
-                placements.Add((command.CommandId, placement));
-            }
-
-            _placedBodies[command.CommandId] = [.. placed.Select(item => item.Body)];
+            if (!_placements.TryGetValue(body, out var placements))
+                _placements[body] = placements = [];
+            placements.Add((order, placement));
         }
     }
 
@@ -218,6 +226,8 @@ public sealed class FeatureList
     private void Remove(Command command)
     {
         _done.RemoveAt(_done.Count - 1);
+        var placed = _donePlaced[^1];
+        _donePlaced.RemoveAt(_donePlaced.Count - 1);
         _order.Remove(command.CommandId);
         _inEffect.Remove(command.CommandId);
         _creators.Remove(command.CommandId);
@@ -225,10 +235,7 @@ public sealed class FeatureList
             _consumers.Remove(operand);
         if (command is SetExtrudeDistanceCommand set)
             _distances[set.ExtrudeId].RemoveAt(_distances[set.ExtrudeId].Count - 1);
-        if (_placedBodies.Remove(command.CommandId, out var bodies))
-        {
-            foreach (var body in bodies)
-                _placements[body].RemoveAt(_placements[body].Count - 1);
-        }
+        foreach (var (body, _) in placed ?? [])
+            _placements[body].RemoveAt(_placements[body].Count - 1);
     }
 }

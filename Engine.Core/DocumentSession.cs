@@ -207,9 +207,11 @@ public sealed class DocumentSession
                     {
                         reversed = await ReverseGroup(start, group).ConfigureAwait(false) is null or { Status: CommandStatus.Applied };
                     }
-                    catch (Exception reversal) when (reversal is not OperationCanceledException)
+                    catch (Exception)
                     {
-                        // E250: the exception of the handler goes out, not the exception of the Undo.
+                        // E250: the exception of the handler goes out, not the exception of the Undo. Finding E255 of the second
+                        // codebase review of 2026-11-28 (TASK-0488): a cancellation of the Undo too; the Undo runs with no token of
+                        // the caller, so it is a fault of the journal or of a handler, and until TASK-0488 it went out with no keys.
                         reversed = false;
                     }
 

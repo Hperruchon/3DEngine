@@ -50,7 +50,9 @@ P13 put them in the Document" (ADR-0182 item 2). The state is a new field of `Jo
    already changes nothing, so it is refused with `E-JOINT-INVALID`, as a text that is not a state is. A loose joint still counts
    for the one parent and for a loop (ADR-0193 item 6), because it keeps its record. A `SetJointValue` of a loose joint changes its
    record only. A `PlaceBody` of the child of a loose joint applies, and a `PlaceBody` of a body above a loose joint does not move
-   the child of that joint or the bodies under it (amends ADR-0193 item 6, which refused a `PlaceBody` of each child).
+   the child of that joint or the bodies under it (amends ADR-0193 item 6, which refused a `PlaceBody` of each child). A tight
+   joint whose parent is not live, because a command consumed it, does not hold its child either, so a `PlaceBody` and a
+   `PlaceByConnectors` of that child apply (TASK-0488, the answer Q1 A of the second review of 2026-11-28).
 3. **The intended pairs in the Document (amends ADR-0182 item 2).** Each joint of the Document, tight or loose, declares its two
    bodies as an intended pair of `CheckInterference` when the check holds the two bodies (ADR-0157 item 5). The pairs of the
    parameter `intendedPairs` stay, with their refusals; a pair of a joint that the parameter gives too is one pair. The
@@ -83,10 +85,12 @@ contacts of the joints with no parameter, and a body snaps to another by two fac
   follow sets the state `tight` first.
 - `PlaceByConnectors` reads the frames of the connectors at its place in the log. A later change of a shape does not move the
   child again (R-0083).
-- The child of a joint whose parent a command consumed is still refused by `PlaceBody` when the joint is tight (finding E254 of
-  the second review of 2026-11-28); P0.201 holds it with the answer Q1 A of that review.
+- A tight joint whose parent a command consumed keeps its record and counts for the tree, and its child moves only by a
+  `PlaceBody`; the joint places it again only after an `Undo` makes the parent live (TASK-0488, finding E254).
 
 ## History
 
+- 2026-11-28 · TASK-0488 · Item 2: a tight joint whose parent is not live does not hold its child (the answer Q1 A of the second
+  review of 2026-11-28, finding E254).
 - 2026-11-28 · TASK-0489 · The record, Accepted: the answers Q5 A and Q6 A of the owner of 2026-11-28. Amends ADR-0182 item 2 and
   ADR-0193 item 6.
