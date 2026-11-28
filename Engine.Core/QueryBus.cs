@@ -45,7 +45,8 @@ public sealed class QueryBus
         // Box-to-T cast. Failure here is a programmer error (caller asked for
         // the wrong T); surface as an error rather than throwing through to
         // the transport surface. Default(T) on null Result is intentional
-        // when the handler legitimately returned null.
+        // when the handler legitimately returned null. TASK-0485: the code is E-QRY-RESULT-TYPE, because E-QRY-UNKNOWN
+        // means a query that no handler matches.
         T? typed = default;
         if (handlerResult.IsSuccess && handlerResult.Result is not null)
         {
@@ -58,7 +59,7 @@ public sealed class QueryBus
                     Result: default,
                     Diagnostics: handlerResult.Diagnostics,
                     Error: new ErrorDetail(
-                        DiagnosticCodes.QueryUnknown,
+                        DiagnosticCodes.QueryResultType,
                         $"Query '{query.Name}' returned {handlerResult.Result.GetType().Name}, " +
                         $"but caller requested {typeof(T).Name}."),
                     DurationMs: stopwatch.ElapsedMilliseconds);

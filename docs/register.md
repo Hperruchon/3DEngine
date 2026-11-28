@@ -146,6 +146,10 @@ Progress 2026-11-28: TASK-0481 (P0.195) fixed E17 parts 3, 5, 6 and 9: a refused
 frame before it cancels, so a lagged client of Kestrel reads 1008 and `subscriber.lagged` (a run of the old order gave a broken
 connection); a subscribe frame that does not come in 10 seconds gets 1007 and `E-API-WS-INVALID-SUBSCRIBE` (ADR-0005 section
 5); an option in the place of a name is a usage error. Open: E13 in part, and E17 parts 1 and 2.
+Progress 2026-11-28: TASK-0485 (P0.199) fixed the part of E17 where `QueryBus` gave `E-QRY-UNKNOWN` for a result of another
+type than the caller asks for: the new code `E-QRY-RESULT-TYPE` holds that case. Open: E13 in part, and the part of E17 where
+an exception of a handler, other than a cancellation, leaves the command bus; a rejection in its place changes the commit of
+the bus (ADR-0006), so it needs the owner.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt
