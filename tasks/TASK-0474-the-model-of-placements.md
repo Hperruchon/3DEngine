@@ -1,7 +1,7 @@
 ---
 id: 0474
 title: The model of placements, so that a move changes a stored placement and not the shape of a body
-status: Active
+status: Done
 phase: P11.0
 opened: 2026-11-27
 depends-on: [0468]
@@ -104,7 +104,7 @@ keeps the identity and the exact shape of a body, with an ADR in the same commit
 - [x] The proposal gives each fact with its file, and each question with a recommended option.
 - [x] The owner answers Q1 to Q7, and the first commit after the answers records them.
 - [x] The ADR and the change of `Engine.Contracts` are in one commit, with a test of each reader.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Notes for the implementer
 
@@ -113,7 +113,7 @@ keeps the identity and the exact shape of a body, with an ADR in the same commit
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p110-placements) · v0.458
+Status: Done · commit (the merge of the branch p110-placements) · v0.458
 
 ## Method
 
@@ -137,3 +137,4 @@ Weakest:    The list of the readers of ADR-0191 item 7 comes from a search of ea
   and `PlaceBodyTests` (25 tests): each test of a reader builds one scene with `Rotate` and `Translate` and again with one
   `PlaceBody`, and the answers agree. Nine injections, each of which removes the placement from one reader, each make a named
   test fail. The measure of K10a again (Q7 A): 150 placements give a numerator of 19 digits (2576 with `Rotate`).
+- 2026-11-28: run 46086980144 of `c885ea90` passed on each job. Closed at v0.458.
