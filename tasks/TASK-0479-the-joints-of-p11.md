@@ -45,7 +45,7 @@ ADR in the same commit as the change of `Engine.Contracts`.
 ## Acceptance criteria
 
 - [x] The proposal gives each fact with its file, and each question with a recommended option.
-- [ ] The owner answers Q1 to Q7, and the first commit after the answers records them.
+- [x] The owner answers Q1 to Q7, and the first commit after the answers records them.
 - [ ] The ADR and the change of `Engine.Contracts` are in one commit, with a test of each rule.
 - [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
@@ -64,3 +64,8 @@ Weakest:    the formula of the place of a child (section 3 item 3) is not yet in
 
 - 2026-11-28: opened under the standing order of 2026-11-28; the proposal with the questions Q1 to Q7. Not merged before the
   answers.
+- 2026-11-28: the owner answered "Yes, all A" for Q1 to Q7: a connector is a face or a named datum in the frame of the body;
+  the two normals are opposite; the value of a pivot is a cosine and a sine; each command of a joint sets the placements of the
+  subtree in the same step; a loose joint keeps its record; a command `PlaceByConnectors` records no joint; P11a is the record,
+  the three kinds, the values, the limits, the tree and the refusals, and P11b is the loose state, the intended pairs and
+  `PlaceByConnectors`. This commit records them.

@@ -3,6 +3,7 @@
 This document uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, section "Language".
 
 - Date: 2026-11-28. TASK-0479, phase P11a. Written under the standing order of 2026-11-28.
+- Answers: on 2026-11-28 the owner answered "Yes, all A" for Q1 to Q7 (TASK-0479). The ADR of P11a records them.
 - Status: a proposal. Not a rule. It changes no code, no contract and no ADR. The ADR of P11a comes after the answers of the
   owner, in the same commit as the change of `Engine.Contracts`.
 - Why a proposal first: the joints are a new record of the Document, new commands and new events, so they change the public
