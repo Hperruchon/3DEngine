@@ -27,6 +27,8 @@ internal sealed record SubscriberOptions(
 
     // ADR-0005 section 5 (finding E17 of the codebase review of 2026-09-30, part 6, TASK-0481): the time that the endpoint waits
     // for the subscribe frame after the upgrade. A frame that does not come in it is missing, and the endpoint closes with
-    // 1007 and E-API-WS-INVALID-SUBSCRIBE. A client sends the frame at once after the upgrade, so 10 seconds is a wide margin.
-    public TimeSpan SubscribeTimeout { get; init; } = TimeSpan.FromSeconds(10);
+    // 1007 and E-API-WS-INVALID-SUBSCRIBE. A client sends the frame at once after the upgrade. TASK-0484 (main run 46113600404):
+    // the limit is the interval of the heartbeat, 30 seconds. With 10 seconds a test of the test server that sent its frame at
+    // once got the close on a Windows runner, probably because the threads of the pool were busy for more than 10 seconds.
+    public TimeSpan SubscribeTimeout { get; init; } = TimeSpan.FromSeconds(30);
 }
