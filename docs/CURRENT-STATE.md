@@ -14865,3 +14865,35 @@ judge E57 again; this entry does not change a record of a review.
 New tests: 0. The test list holds 3407 (2013 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.459, 1 product milestone and
 10 entries followed it. The failed runs since the entry v0.468, from the API: none.
+
+## v0.470 — A joint connects two bodies of a part, and its commands place the child and each body under it (P11a, TASK-0479)
+
+On 2026-11-28 the owner answered "Yes, all A" for Q1 to Q7 of `docs/proposals/2026-11-28-the-joints-of-p11.md`. ADR-0193 records
+them, in the same commit as the change of `Engine.Contracts`. The Document of a part holds joints (`JointRecord`): a kind
+(`fixed`, `pivot` or `slider`), a parent and a child body, a connector on each, a value and optional limits. A connector is a
+plane face or the side of a cylinder, as `GetConnectors` names it, or a datum on the body; `AddJoint` reads its frame one time in
+the frame of its body. A joint gives the placement of its child: parent · frame(parent connector) · motion · flip ·
+frame(child connector)⁻¹, so the two faces meet with opposite normals. A pivot holds a cosine and a sine and no angle; a slider
+holds a distance. The limits of a pivot go counterclockwise from the lower to the upper turn.
+
+`AddJoint`, `SetJointValue` and `RemoveJoint` change the joints; the first two place the child and each body under it in the
+same step. A body has one parent joint, a loop is refused, a `PlaceBody` of a child is refused, and a `PlaceBody` of a root
+moves its tree (amends ADR-0191 item 3). `GetJoints` gives the joints in the order of the log. The commit emits `joint.created`,
+`joint.changed` and `joint.removed` after the sheet events. Eight codes `E-JOINT-*` are new.
+
+The walks of the steps (the solid of a body, a regeneration, a boolean, the chain of a datum) read each placement from the
+`PlaceBody` commands of the log, so a first run of the tests read each child of a joint at its first place. The command bus now
+records the placements of each step, and the feature list reads them as steps of placement (ADR-0193 item 9, amends ADR-0191
+item 5). The plane frame of a connector comes from the shape of the body with no placement, so an `AddJoint` at another
+placement of the child gives the same bits; the frame of a datum and of the side of a cylinder has the rounding of the inverse
+placement. Register entry R-0083 holds two limits: a later change of a shape does not move the child, and a joint of a consumed
+body places nothing. P11b adds the loose state, the intended pairs in `CheckInterference` and `PlaceByConnectors`. The probe
+of the determinism hash has a placed root with a pivot and a slider, so the four platforms compare the bits of the joints.
+
+**Proof.** A clean build gives 0 warnings, and `dotnet test` passes with the image tests. The write-set check and
+`eng/repo-gates` pass. Not verified: continuous integration has not run on this commit; the window does not draw a joint.
+
+New tests: 14 in `Engine.Tests/Commands/JointTests.cs`. The test list holds 3421 (2027 in `Engine.Tests`, 391 in
+`3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 11 of 15. New diagnostic codes: 8.
+Since the review of v0.459, 2 product milestones and 11 entries followed it. The failed runs since the entry v0.469, from the
+API: none.

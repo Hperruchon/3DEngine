@@ -29,6 +29,12 @@ refused, or an answer does not have its shape, the test fails.
   placement of a body, null at the identity, so read it before you compute a new one. `Rotate` and `Translate` make a new
   body with a new identifier (ADR-0191). A `PlaceBody` keeps the key `geometry` of the body, so if you keep the triangles of
   `GetTessellation`, read them again when `geometry` or `placement` changes in `body.changed`.
+- **Connect two parts with a joint.** `AddJoint` takes a `kind` (`fixed`, `pivot` or `slider`), a `parentBodyId` and a
+  `childBodyId`, and a connector on each: a face (`parentFeatureId` and `parentElement`, as `GetConnectors` names it) or a
+  datum (`parentDatumId`), and the same for the child. The child face meets the parent face with the normals opposite. A pivot
+  takes `cos` and `sin`, a slider takes `distance`, and the limits are optional. `SetJointValue` moves the joint, and the
+  child and each body under it follow; a `PlaceBody` of a child is refused, and a `PlaceBody` of a root moves its tree.
+  `GetJoints` gives the joints (ADR-0193).
 - **Give each command a new identifier.** The identifier `commandId` is a UUID. The body that a command makes has the
   identifier of that command, so a later command of the same proposal can name it. The session keeps the last 1024
   identifiers: a command with a known identifier does not apply again, and gives the earlier answer.

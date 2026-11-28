@@ -1,13 +1,13 @@
 ---
 id: 0191
 title: A body has a placement, a turn and an offset, and the command PlaceBody sets it, so a move changes no shape
-status: Accepted
+status: Amended
 topic: Contracts, geometry, assembly
 date: 2026-11-28
 supersedes: []
 superseded-by: []
 amends: ['0037', '0112', '0126', '0157']
-amended-by: []
+amended-by: ['0193']
 affects:
   - Engine.Contracts/BodyPlacement.cs
   - Engine.Contracts/BodyRecord.cs
@@ -158,6 +158,8 @@ solids, bit for bit.
 
 - 2026-11-28 · TASK-0474 · The record, Accepted: the answers of the owner of 2026-11-25 (Q1 A) and of 2026-11-27 ("All A"
   for Q1 to Q7 of the proposal). Amends ADR-0037 item 8, ADR-0112 item 1, ADR-0126 item 3 and ADR-0157 item 2.
+- 2026-11-28 · TASK-0479 · Amended by ADR-0193: item 3, a `PlaceBody` of the child of a joint is refused and a `PlaceBody` of
+  another body places each body under it; item 5, the walks of the steps also read the placements that a step of a joint gives.
 - 2026-11-28 · TASK-0477 · Findings E247 and E248 of the codebase review of 2026-11-28: item 8 gives the rule of a client that
   keeps the triangles (read again when `geometry` or `placement` differs), and says that the JSON of a placement holds the
   seven numbers only; `BodyPlacement.IsIdentity` is not written. Finding E249: `Relative` and `Compose` scale each quaternion

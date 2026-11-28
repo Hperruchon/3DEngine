@@ -131,6 +131,24 @@ public static class CrossPlatformProbe
             new PlaceBodyCommand { CommandId = Id(122), BodyId = Id(120), Qw = 0.9, Qx = 0.3, Qy = -0.2, Qz = 0.25, Dx = 240.5, Dy = 3.25, Dz = 2 },
             new PlaceBodyCommand { CommandId = Id(123), BodyId = Id(121), Qw = 0.7, Qx = -0.1, Qy = 0.4, Qz = 0.2, Dx = 241.25, Dy = 3.5, Dz = 2.5 },
             new SubtractCommand { CommandId = Id(124), MinuendBodyId = Id(120), SubtrahendBodyId = Id(121) },
+
+            // ADR-0193 items 3 to 6 (phase P11a, TASK-0479): a placed root, a pivot with a turn of cos < 0 and a slider under it,
+            // so the four platforms compare the bits of the frames, of the turn of a cosine and a sine, and of the tree.
+            new CreateBoxCommand { CommandId = Id(125), SizeX = 6.5, SizeY = 4.25, SizeZ = 3 },
+            new CreateBoxCommand { CommandId = Id(126), SizeX = 2.5, SizeY = 1.75, SizeZ = 5.125 },
+            new CreateBoxCommand { CommandId = Id(127), SizeX = 1.5, SizeY = 1.25, SizeZ = 1.375 },
+            new AddJointCommand
+            {
+                CommandId = Id(128), Kind = "pivot", ParentBodyId = Id(125), ParentFeatureId = Id(125), ParentElement = "+x",
+                ChildBodyId = Id(126), ChildFeatureId = Id(126), ChildElement = "-z", Cos = 0.3, Sin = 0.7,
+            },
+            new AddJointCommand
+            {
+                CommandId = Id(129), Kind = "slider", ParentBodyId = Id(126), ParentFeatureId = Id(126), ParentElement = "+y",
+                ChildBodyId = Id(127), ChildFeatureId = Id(127), ChildElement = "-x", Distance = 0.625,
+            },
+            new PlaceBodyCommand { CommandId = Id(130), BodyId = Id(125), Qw = 0.8, Qx = -0.35, Qy = 0.15, Qz = 0.45, Dx = 260.5, Dy = 2.25, Dz = 1.75 },
+            new SetJointValueCommand { CommandId = Id(131), JointId = Id(128), Cos = -0.45, Sin = 0.2 },
         ];
     }
 

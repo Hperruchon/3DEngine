@@ -49,7 +49,10 @@ public class CrossPlatformHashTests
         // ADR-0089 item 5 (TASK-0299): the cone cut by a cylinder, the torus and the sphere are the sixth to the eighth body.
         // ADR-0112 item 8 (TASK-0335): the turned box is the ninth body.
         // ADR-0181 item 9 (TASK-0433): the moved union and the moved intersection are the tenth and the eleventh body.
-        Assert.Equal(12, one.Document.Bodies.Count);
+        // ADR-0193 (TASK-0479): the root of the joints and its two children are the thirteenth to the fifteenth body.
+        Assert.Equal(15, one.Document.Bodies.Count);
+        Assert.Equal(2, one.Document.Joints.Count);
+        Assert.All(new[] { Id(125), Id(126), Id(127) }, id => Assert.NotNull(one.Document.Bodies.Single(body => body.Handle.Id == id).Placement));
         // ADR-0191 item 6 (TASK-0474): the cut of two placed boxes has the placement of the first box.
         Assert.NotNull(one.Document.Bodies.Single(body => body.Handle.Id == Id(124)).Placement);
         Assert.Equal(2, one.Document.Bodies.Count(body => body.Handle.Id == Id(114) || body.Handle.Id == Id(119)));

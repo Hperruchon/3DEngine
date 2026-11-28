@@ -107,6 +107,14 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.CommandFieldMissing,   "Error",   "CMD"), // finding E163, TASK-0242
         new(DiagnosticCodes.AssemblyReferenceInvalid, "Error", "ASSEMBLY"), // ADR-0071 item 3, TASK-0202
         new(DiagnosticCodes.AssemblyIdInUse,       "Error",   "ASSEMBLY"), // ADR-0071 item 3, TASK-0202
+        new(DiagnosticCodes.JointIdInUse,          "Error",   "JOINT"), // ADR-0193 item 8, TASK-0479
+        new(DiagnosticCodes.JointNotFound,         "Error",   "JOINT"), // ADR-0193 item 8, TASK-0479
+        new(DiagnosticCodes.JointInvalid,          "Error",   "JOINT"), // ADR-0193 item 8, TASK-0479
+        new(DiagnosticCodes.JointConnectorInvalid, "Error",   "JOINT"), // ADR-0193 item 8, TASK-0479
+        new(DiagnosticCodes.JointParentInUse,      "Error",   "JOINT"), // ADR-0193 item 8, TASK-0479
+        new(DiagnosticCodes.JointLoop,             "Error",   "JOINT"), // ADR-0193 item 8, TASK-0479
+        new(DiagnosticCodes.JointLimit,            "Error",   "JOINT"), // ADR-0193 item 8, TASK-0479
+        new(DiagnosticCodes.JointPlaced,           "Error",   "JOINT"), // ADR-0193 item 8, TASK-0479
         new(DiagnosticCodes.SheetNotFound,         "Error",   "SHEET"), // ADR-0153 item 6, TASK-0389
         new(DiagnosticCodes.SheetInvalid,          "Error",   "SHEET"), // ADR-0153 item 6, TASK-0389
         new(DiagnosticCodes.SheetIdInUse,          "Error",   "SHEET"), // ADR-0153 item 6, TASK-0389

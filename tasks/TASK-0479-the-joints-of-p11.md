@@ -5,14 +5,50 @@ status: Active
 phase: P11a
 opened: 2026-11-28
 depends-on: [0477]
-governed-by: []
+governed-by: [0004, 0006, 0008, 0012, 0013, 0015, 0016, 0018, 0019, 0020, 0021, 0028, 0031, 0033, 0037, 0045, 0054, 0060, 0074, 0076, 0083, 0089, 0112, 0114, 0153, 0155, 0158, 0166, 0167, 0168, 0169, 0179, 0181, 0183, 0188, 0190, 0191, 0193]
 writes:
   create:
     - tasks/TASK-0479-the-joints-of-p11.md
     - docs/proposals/2026-11-28-the-joints-of-p11.md
-  modify: []
-  forbid:
-    - Engine.Contracts/**
+    - docs/adr/0193-the-joints-of-a-part.md
+    - Engine.Contracts/Joints/JointRecord.cs
+    - Engine.Core/Commands/AddJointCommand.cs
+    - Engine.Core/Commands/AddJointCommandHandler.cs
+    - Engine.Core/Commands/SetJointValueCommand.cs
+    - Engine.Core/Commands/SetJointValueCommandHandler.cs
+    - Engine.Core/Commands/RemoveJointCommand.cs
+    - Engine.Core/Commands/RemoveJointCommandHandler.cs
+    - Engine.Core/Commands/JointResults.cs
+    - Engine.Core/Commands/JointTree.cs
+    - Engine.Core/Queries/GetJointsQuery.cs
+    - Engine.Core/Queries/GetJointsQueryHandler.cs
+    - Engine.Tests/Commands/JointTests.cs
+  modify:
+    - docs/proposals/2026-11-28-the-joints-of-p11.md
+    - tasks/TASK-0479-the-joints-of-p11.md
+    - Engine.Contracts/Document.cs
+    - Engine.Contracts/Handlers/ICommandHandler.cs
+    - Engine.Core/CommandBus.cs
+    - Engine.Core/StepHistory.cs
+    - Engine.Core/Features/FeatureList.cs
+    - Engine.Core/Commands/PlaceBodyCommandHandler.cs
+    - Engine.Core/Queries/GetConnectorsQueryHandler.cs
+    - Engine.Core/Hosting/HandlerCatalog.cs
+    - Engine.Core/DiagnosticCodes.cs
+    - Engine.Api.Http/Endpoints/SchemaDiagnosticsEndpoint.cs
+    - Engine.Api.Http/Endpoints/SchemaEventsEndpoint.cs
+    - Engine.Tests/Persistence/DocumentFileTests.cs
+    - Engine.Core/Determinism/CrossPlatformProbe.cs
+    - Engine.Tests/ReplayDeterminism/CrossPlatformHashTests.cs
+    - docs/adr/0157-the-foundations-and-the-order-of-the-assembly-track.md
+    - docs/adr/0191-the-placement-of-a-body.md
+    - docs/adr/README.md
+    - docs/diagnostics.md
+    - docs/register.md
+    - docs/guides/agent-loop.md
+    - docs/roadmap.md
+    - docs/CURRENT-STATE.md
+    - eng/test-floor.txt
 ---
 
 # TASK-0479 — The joints of P11, a record of a joint between two bodies in a kinematic tree with no solver
@@ -36,6 +72,8 @@ ADR in the same commit as the change of `Engine.Contracts`.
 
 1. The proposal `docs/proposals/2026-11-28-the-joints-of-p11.md`: the facts, a recommended model and the questions Q1 to Q7.
 2. After the answers: the ADR, the record, the commands and a test of each rule. The write set grows then.
+3. The answer Q7 A: the record, the three kinds, the values, the limits, the tree and the refusals (ADR-0193). The loose state,
+   the intended pairs in `CheckInterference` and `PlaceByConnectors` are P11b.
 
 ## Scope (out)
 
@@ -46,19 +84,20 @@ ADR in the same commit as the change of `Engine.Contracts`.
 
 - [x] The proposal gives each fact with its file, and each question with a recommended option.
 - [x] The owner answers Q1 to Q7, and the first commit after the answers records them.
-- [ ] The ADR and the change of `Engine.Contracts` are in one commit, with a test of each rule.
+- [x] The ADR and the change of `Engine.Contracts` are in one commit, with a test of each rule.
 - [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · no commit on `main` yet
+Status: Active · commit (the merge of the branch p11a-joints) · v0.470
 
 ## Method
 
 Mechanical: the facts of section 2 of the proposal, each read in its file.
 Judgement:  the recommended model; a proposal and not a decision under the standing order, because the change of the public
             shape needs the owner.
-Weakest:    the formula of the place of a child (section 3 item 3) is not yet in code or in a test.
+Weakest:    a joint keeps the connector frames of its AddJoint, so a later change of a shape does not move the child, and a
+            joint of a consumed body places nothing (R-0083).
 
 ## Progress
 
@@ -69,3 +108,7 @@ Weakest:    the formula of the place of a child (section 3 item 3) is not yet in
   subtree in the same step; a loose joint keeps its record; a command `PlaceByConnectors` records no joint; P11a is the record,
   the three kinds, the values, the limits, the tree and the refusals, and P11b is the loose state, the intended pairs and
   `PlaceByConnectors`. This commit records them.
+- 2026-11-28: ADR-0193, the record, the commands `AddJoint`, `SetJointValue` and `RemoveJoint`, the query `GetJoints`,
+  eight codes `E-JOINT-*`, and 14 tests in `Engine.Tests/Commands/JointTests.cs`. The walks of the steps read each placement
+  from the `PlaceBody` commands of the log, so a first run of the tests read each child at its first place; the command bus now
+  records the placements of each step, and the feature list reads them (ADR-0193 item 9). Register entry R-0083. Ledger v0.470.

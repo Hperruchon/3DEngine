@@ -71,6 +71,15 @@ internal static class SchemaEventsEndpoint
         ["titleBlock"] = new FieldSchema("object", Required: false),
     };
 
+    // ADR-0193 item 6 (phase P11a, TASK-0479): joint.created and joint.changed carry the whole record of the joint. A joint with
+    // no limits has null limits.
+    private static readonly IReadOnlyDictionary<string, FieldSchema> JointFields = new Dictionary<string, FieldSchema>(Fields(
+        ("jointId", "guid"), ("kind", "string"), ("parentBodyId", "guid"), ("parent", "object"), ("childBodyId", "guid"),
+        ("child", "object"), ("value", "object")), StringComparer.Ordinal)
+    {
+        ["limits"] = new FieldSchema("object", Required: false),
+    };
+
     // ADR-0051 item 9: a datum can have no name, so the name can be null.
     private static readonly IReadOnlyDictionary<string, FieldSchema> DatumCreatedFields = new Dictionary<string, FieldSchema>(Fields(("datumId", "guid")), StringComparer.Ordinal)
     {
@@ -112,6 +121,9 @@ internal static class SchemaEventsEndpoint
         new("sheet.created", SheetFields), // ADR-0153 item 1, TASK-0389
         new("sheet.changed", SheetFields), // ADR-0153 item 1, TASK-0389
         new("sheet.removed", Fields(("sheetId", "guid"))), // ADR-0153 item 1, TASK-0389
+        new("joint.created", JointFields), // ADR-0193 item 6, TASK-0479
+        new("joint.changed", JointFields), // ADR-0193 item 6, TASK-0479
+        new("joint.removed", Fields(("jointId", "guid"))), // ADR-0193 item 6, TASK-0479
     };
 
     public static IResult Handle() => Results.Json(Kinds, ApiJson.Options);

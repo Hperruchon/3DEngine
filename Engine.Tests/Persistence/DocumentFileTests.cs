@@ -69,6 +69,15 @@ public sealed class DocumentFileTests : IDisposable
         ["Rotate"] = new RotateCommand { BodyId = Guid.NewGuid(), Qw = -0.0, Qx = 1e-300, Qy = 123456789.125, Qz = double.Epsilon },
         // ADR-0191 item 3 (phase P11.0, TASK-0474): the seven numbers of a placement, each in its shortest form.
         ["PlaceBody"] = new PlaceBodyCommand { BodyId = Guid.NewGuid(), Qw = -0.0, Qx = 1e-300, Qy = 0.1, Qz = double.Epsilon, Dx = -123456789.125, Dy = 5e-324, Dz = 1.0 / 3 },
+        // ADR-0193 (phase P11a, TASK-0479): the commands of a joint, with each optional field once.
+        ["AddJoint"] = new AddJointCommand
+        {
+            Kind = "pivot", ParentBodyId = Guid.NewGuid(), ParentFeatureId = Guid.NewGuid(), ParentElement = "+x", ParentItemId = Guid.NewGuid(),
+            ChildBodyId = Guid.NewGuid(), ChildDatumId = Guid.NewGuid(), Cos = 0.6, Sin = -0.8, LowerCos = -0.0, LowerSin = 1e-300,
+            UpperCos = 1.0 / 3, UpperSin = 5e-324, LowerDistance = -2.5, UpperDistance = 7,
+        },
+        ["SetJointValue"] = new SetJointValueCommand { JointId = Guid.NewGuid(), Distance = -123456789.125 },
+        ["RemoveJoint"] = new RemoveJointCommand { JointId = Guid.NewGuid() },
         ["Subtract"] = new SubtractCommand { MinuendBodyId = Guid.NewGuid(), SubtrahendBodyId = Guid.NewGuid() },
         ["Union"] = new UnionCommand { FirstBodyId = Guid.NewGuid(), SecondBodyId = Guid.NewGuid(), ExpectedDocumentVersion = 0 },
         ["Intersect"] = new IntersectCommand { FirstBodyId = Guid.NewGuid(), SecondBodyId = Guid.NewGuid() },

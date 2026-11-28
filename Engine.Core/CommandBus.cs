@@ -7,6 +7,7 @@ using Engine.Contracts.Handlers;
 using Engine.Contracts.Assembly;
 using Engine.Contracts.Drawing;
 using Engine.Contracts.Images;
+using Engine.Contracts.Joints;
 using Engine.Contracts.Sketch;
 using Engine.Core.Geometry;
 
@@ -62,6 +63,20 @@ public sealed class CommandBus
     // ADR-0153 item 1: the identifier of each sheet that this bus created, as for an image.
     private readonly HashSet<Guid> _createdSheets = [];
     private readonly HashSet<Guid> _createdDatums = [];
+
+    // ADR-0193 item 6 (phase P11a, TASK-0479): the identifier of each joint that this bus created, as for a sheet.
+    private readonly HashSet<Guid> _createdJoints = [];
+
+    // ADR-0193 item 9: for each applied step that changes the placement of a body, each such body and its new placement. A joint
+    // places bodies that its command does not name, so the feature list reads the placements of a step here (PlacedBy), and
+    // the walks of the steps give each body the placement that the step gave it. A replay and a fork apply each command through
+    // a bus, so they make the same table.
+    private readonly Dictionary<Guid, IReadOnlyList<(Guid Body, BodyPlacement Placement)>> _placedBy = [];
+
+    // ADR-0193 item 9: the placements that the step of the command gave, or null when the Document has no bus or the step
+    // changed no placement.
+    internal static IReadOnlyList<(Guid Body, BodyPlacement Placement)>? PlacedBy(Document document, Guid command)
+        => BusOfDocument.TryGetValue(document, out var bus) && bus._placedBy.TryGetValue(command, out var placed) ? placed : null;
 
     // ADR-0071 item 5: each reference identifier that a commit of this bus created.
     private readonly HashSet<Guid> _createdReferences = [];
@@ -257,9 +272,18 @@ public sealed class CommandBus
         RefuseWrongDatumLists(command, handlerResult);
         RefuseWrongReferenceLists(command, handlerResult);
         RefuseWrongSheetLists(command, handlerResult);
+        RefuseWrongJointLists(command, handlerResult);
 
         if (Journal is { } journal && Write(journal, command, handler, handlerResult, stopwatch) is { } refused)
             return refused;
+
+        // ADR-0193 item 9: the placements of the step, before the log holds its command.
+        var placed = handlerResult.ChangedBodies
+            .Where(body => LiveRecord(body.Handle).Placement != body.Placement)
+            .Select(body => (body.Handle.Id, Placements.Of(body)))
+            .ToList();
+        if (placed.Count > 0)
+            _placedBy[command.CommandId] = placed;
 
         // ADR-0031 item 3 and ADR-0033 item 10: the records before the commit, so that an
         // Undo can give them back.
@@ -278,7 +302,10 @@ public sealed class CommandBus
             handlerResult.CreatedReferences,
             handlerResult.CreatedSheets,
             handlerResult.ChangedSheets.Select(sheet => (LiveSheet(sheet.Id), sheet)).ToList(),
-            handlerResult.RemovedSheets.Select(LiveSheet).ToList());
+            handlerResult.RemovedSheets.Select(LiveSheet).ToList(),
+            handlerResult.CreatedJoints,
+            handlerResult.ChangedJoints.Select(joint => (LiveJoint(joint.Id), joint)).ToList(),
+            handlerResult.RemovedJoints.Select(LiveJoint).ToList());
         var committed = Commit(
             command,
             [new Effect(
@@ -287,7 +314,8 @@ public sealed class CommandBus
                 handlerResult.CreatedImages, [], handlerResult.ChangedImages,
                 handlerResult.CreatedDatums, [], handlerResult.ChangedDatums,
                 handlerResult.CreatedReferences, [],
-                handlerResult.CreatedSheets, handlerResult.RemovedSheets, handlerResult.ChangedSheets)],
+                handlerResult.CreatedSheets, handlerResult.RemovedSheets, handlerResult.ChangedSheets,
+                handlerResult.CreatedJoints, handlerResult.RemovedJoints, handlerResult.ChangedJoints)],
             handlerResult.Outputs, handlerResult.Diagnostics, stopwatch);
         _history.Record(step);
         return committed;
@@ -322,6 +350,9 @@ public sealed class CommandBus
     private SheetRecord LiveSheet(Guid id)
         => _document.Sheets.First(sheet => sheet.Id == id);
 
+    private JointRecord LiveJoint(Guid id)
+        => _document.Joints.First(joint => joint.Id == id);
+
     // ADR-0031 items 4, 7 and 8: an Undo or a Redo. The bus makes the lists from the
     // step, so RefuseWrongBodyLists does not judge them: a reversal makes a consumed body
     // live again, which ADR-0021 item 1, as amended, permits only here. No call of the
@@ -339,7 +370,8 @@ public sealed class CommandBus
                 + handlerResult.CreatedImages.Count + handlerResult.ChangedImages.Count
                 + handlerResult.CreatedDatums.Count + handlerResult.ChangedDatums.Count
                 + handlerResult.CreatedReferences.Count
-                + handlerResult.CreatedSheets.Count + handlerResult.ChangedSheets.Count + handlerResult.RemovedSheets.Count > 0)
+                + handlerResult.CreatedSheets.Count + handlerResult.ChangedSheets.Count + handlerResult.RemovedSheets.Count
+                + handlerResult.CreatedJoints.Count + handlerResult.ChangedJoints.Count + handlerResult.RemovedJoints.Count > 0)
             throw new InvalidOperationException(
                 $"The handler of '{command.Name}'@{command.SchemaVersion} gives the move {handlerResult.History} and a list of "
                 + "bodies, sketches, images, datums or references, or a move that does not exist. ADR-0031 item 7: the bus computes the changes of a move.");
@@ -405,7 +437,9 @@ public sealed class CommandBus
         step.ChangedDatums.Select(change => change.Before).ToList(),
         [], step.CreatedReferences.Select(reference => reference.Id).ToList(),
         step.RemovedSheets, step.CreatedSheets.Select(sheet => sheet.Id).ToList(),
-        step.ChangedSheets.Select(change => change.Before).ToList());
+        step.ChangedSheets.Select(change => change.Before).ToList(),
+        step.RemovedJoints, step.CreatedJoints.Select(joint => joint.Id).ToList(),
+        step.ChangedJoints.Select(change => change.Before).ToList());
 
     // ADR-0031 item 4: a Redo of one step gives the changes of its first commit.
     private static Effect Repeat(Step step) => new(
@@ -416,7 +450,9 @@ public sealed class CommandBus
         step.CreatedDatums, [], step.ChangedDatums.Select(change => change.After).ToList(),
         step.CreatedReferences, [],
         step.CreatedSheets, step.RemovedSheets.Select(sheet => sheet.Id).ToList(),
-        step.ChangedSheets.Select(change => change.After).ToList());
+        step.ChangedSheets.Select(change => change.After).ToList(),
+        step.CreatedJoints, step.RemovedJoints.Select(joint => joint.Id).ToList(),
+        step.ChangedJoints.Select(change => change.After).ToList());
 
     // ADR-0015 item 4: the entry goes into the file before the commit, so each
     // applied command is in the file before its result. A command that the file
@@ -613,6 +649,27 @@ public sealed class CommandBus
         }
     }
 
+    // ADR-0193 item 6 (phase P11a, TASK-0479): the rule of the sheets, for the joints.
+    private void RefuseWrongJointLists(Command command, CommandHandlerResult result)
+    {
+        var seen = new HashSet<Guid>();
+        foreach (var joint in result.CreatedJoints)
+        {
+            if (_createdJoints.Contains(joint.Id) || !seen.Add(joint.Id))
+                throw new InvalidOperationException(
+                    $"The handler of '{command.Name}'@{command.SchemaVersion} creates joint {joint.Id}, which this bus "
+                    + "created before or which is in a list two times. ADR-0193 item 6: an identifier is given one time.");
+        }
+
+        foreach (var id in result.ChangedJoints.Select(joint => joint.Id).Concat(result.RemovedJoints))
+        {
+            if (!_document.Joints.Any(joint => joint.Id == id) || !seen.Add(id))
+                throw new InvalidOperationException(
+                    $"The handler of '{command.Name}'@{command.SchemaVersion} changes or removes joint {id}, which is not in "
+                    + "the Document or which is in a list two times. ADR-0193 item 6 permits one change or one removal of a joint.");
+        }
+    }
+
     // The changes of one commit to the live bodies, sketches, images, datums and references. Only an
     // Undo removes a body, a sketch, an image, a datum or a reference.
     private sealed record Effect(
@@ -633,7 +690,10 @@ public sealed class CommandBus
         IReadOnlyList<Guid> RemovedReferences,
         IReadOnlyList<SheetRecord> CreatedSheets,
         IReadOnlyList<Guid> RemovedSheets,
-        IReadOnlyList<SheetRecord> ChangedSheets);
+        IReadOnlyList<SheetRecord> ChangedSheets,
+        IReadOnlyList<JointRecord> CreatedJoints,
+        IReadOnlyList<Guid> RemovedJoints,
+        IReadOnlyList<JointRecord> ChangedJoints);
 
     // 4. Commit: compute each Seq, append the log, register the created bodies,
     // remove the consumed and the removed bodies, then the same for the sketches. The
@@ -663,7 +723,8 @@ public sealed class CommandBus
             + effect.CreatedImages.Count + effect.RemovedImages.Count + effect.ChangedImages.Count
             + effect.CreatedSheets.Count + effect.RemovedSheets.Count + effect.ChangedSheets.Count
             + effect.CreatedDatums.Count + effect.RemovedDatums.Count + effect.ChangedDatums.Count
-            + effect.CreatedReferences.Count + effect.RemovedReferences.Count);
+            + effect.CreatedReferences.Count + effect.RemovedReferences.Count
+            + effect.CreatedJoints.Count + effect.RemovedJoints.Count + effect.ChangedJoints.Count);
         var appliedSeq = TakeSeqs(count);
         var events = new List<EventRecord>(count)
         {
@@ -896,6 +957,33 @@ public sealed class CommandBus
             events.Add(Event(lastSeq, command, "sheet.changed", SheetFields(sheet)));
         }
 
+        // ADR-0193 item 6 (phase P11a, TASK-0479): each joint.created, each joint.removed and each joint.changed, after the
+        // sheet events. The body events of the same step come first, so a subscriber has the placement of each child.
+        foreach (var joint in effect.CreatedJoints)
+        {
+            _document.AddJoint(joint);
+            _createdJoints.Add(joint.Id);
+            lastSeq++;
+            events.Add(Event(lastSeq, command, "joint.created", JointFields(joint)));
+        }
+
+        foreach (var id in effect.RemovedJoints)
+        {
+            _document.RemoveJoint(id);
+            lastSeq++;
+            events.Add(Event(lastSeq, command, "joint.removed", new Dictionary<string, object?>
+            {
+                ["jointId"] = id,
+            }));
+        }
+
+        foreach (var joint in effect.ChangedJoints)
+        {
+            _document.ReplaceJoint(joint);
+            lastSeq++;
+            events.Add(Event(lastSeq, command, "joint.changed", JointFields(joint)));
+        }
+
         return lastSeq;
     }
 
@@ -911,6 +999,19 @@ public sealed class CommandBus
         ["dimensions"] = sheet.Dimensions,
         // ADR-0179 item 3 (phase R30i, TASK-0428): the title block, null for a sheet with no SetSheetTitle.
         ["titleBlock"] = sheet.TitleBlock,
+    };
+
+    // ADR-0193 item 6: the record of a joint is small, so its event carries it.
+    private static Dictionary<string, object?> JointFields(JointRecord joint) => new()
+    {
+        ["jointId"] = joint.Id,
+        ["kind"] = joint.Kind,
+        ["parentBodyId"] = joint.ParentBodyId,
+        ["parent"] = joint.Parent,
+        ["childBodyId"] = joint.ChildBodyId,
+        ["child"] = joint.Child,
+        ["value"] = joint.Value,
+        ["limits"] = joint.Limits,
     };
 
     private static Dictionary<string, object?> ImageFields(ImageRecord image) => new()

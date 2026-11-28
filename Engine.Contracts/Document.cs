@@ -74,6 +74,10 @@ public sealed class Document
     private readonly Dictionary<Guid, Drawing.SheetRecord> _sheets = new();
     public IReadOnlyCollection<Drawing.SheetRecord> Sheets => _sheets.Values;
 
+    // ADR-0193 item 1 (phase P11a, TASK-0479): one record for each joint between two bodies of a part, as for a sheet.
+    private readonly Dictionary<Guid, Joints.JointRecord> _joints = new();
+    public IReadOnlyCollection<Joints.JointRecord> Joints => _joints.Values;
+
     public Document(Guid? projectId = null, int schemaVersion = 1, string lengthUnit = Millimetre, string kind = Part)
     {
         if (lengthUnit != Millimetre)
@@ -141,6 +145,18 @@ public sealed class Document
     }
 
     internal void RemoveImage(Guid id) => _images.Remove(id);
+
+    // ADR-0193 item 1: a joint is added, replaced by a new record with the same identifier, or removed.
+    internal void AddJoint(Joints.JointRecord joint) => _joints[joint.Id] = joint;
+
+    internal void RemoveJoint(Guid id) => _joints.Remove(id);
+
+    internal void ReplaceJoint(Joints.JointRecord joint)
+    {
+        if (!_joints.ContainsKey(joint.Id))
+            throw new InvalidOperationException($"No joint {joint.Id} to replace.");
+        _joints[joint.Id] = joint;
+    }
 
     // ADR-0045 item 1: an edit gives a new record with the same identifier.
     internal void ReplaceImage(Images.ImageRecord image)
