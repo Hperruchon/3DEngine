@@ -1,7 +1,7 @@
 ---
 id: 0487
 title: The second codebase review of 2026-11-28 is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-28
 depends-on: [0479]
@@ -53,12 +53,12 @@ section 7.
 
 - [x] Each finding of the review has its place and its evidence, and the session read each finding of the agents in the code.
 - [x] The measures use the method of the last review.
-- [ ] `CodebaseReviewGateTests`, `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on
+- [x] `CodebaseReviewGateTests`, `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on
       the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch review-2026-11-28-b) · v0.471
+Status: Done · commit (the merge of the branch review-2026-11-28-b) · v0.471
 
 ## Method
 
@@ -75,3 +75,4 @@ Weakest:    E255 has no probe that ran, because it needs a journal or a handler 
 
 - 2026-11-28: opened under the standing order of 2026-11-28, after the merge of P11a (v0.470). The review, TASK-0488, the row
   P0.201, and ledger entry v0.471.
+- 2026-11-28: run 46155321032 of `dbc4d0a7` passed on each job. Closed at v0.471.
