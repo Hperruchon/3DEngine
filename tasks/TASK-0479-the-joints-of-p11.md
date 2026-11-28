@@ -1,7 +1,7 @@
 ---
 id: 0479
 title: The joints of P11, a record of a joint between two bodies in a kinematic tree with no solver
-status: Active
+status: Done
 phase: P11a
 opened: 2026-11-28
 depends-on: [0477]
@@ -85,11 +85,11 @@ ADR in the same commit as the change of `Engine.Contracts`.
 - [x] The proposal gives each fact with its file, and each question with a recommended option.
 - [x] The owner answers Q1 to Q7, and the first commit after the answers records them.
 - [x] The ADR and the change of `Engine.Contracts` are in one commit, with a test of each rule.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p11a-joints) · v0.470
+Status: Done · commit (the merge of the branch p11a-joints) · v0.470
 
 ## Method
 
@@ -112,3 +112,4 @@ Weakest:    a joint keeps the connector frames of its AddJoint, so a later chang
   eight codes `E-JOINT-*`, and 14 tests in `Engine.Tests/Commands/JointTests.cs`. The walks of the steps read each placement
   from the `PlaceBody` commands of the log, so a first run of the tests read each child at its first place; the command bus now
   records the placements of each step, and the feature list reads them (ADR-0193 item 9). Register entry R-0083. Ledger v0.470.
+- 2026-11-28: run 46152903247 of `1d17a316` passed on each job. Closed at v0.470.
