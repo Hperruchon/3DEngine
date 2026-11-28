@@ -411,12 +411,12 @@ public sealed class CheckInterferenceQueryHandler : IQueryHandler
         return sum;
     }
 
-    // Item 2: the bodies of the check. With no text, each live body in the order of the Document; else two identifiers or
-    // more, separated by commas, each of a live body and each once.
+    // Item 2: the bodies of the check. With no text, each live body in the order of the log (ADR-0192, phase K25, TASK-0478);
+    // else two identifiers or more, separated by commas, each of a live body and each once.
     private static (List<Guid>? Ids, ErrorDetail? Error) BodyList(Document document, string? text)
     {
         if (text is null)
-            return ([.. document.Bodies.Select(body => body.Handle.Id)], null);
+            return ([.. LogOrder.Bodies(document).Select(body => body.Handle.Id)], null);
 
         var ids = new List<Guid>();
         foreach (var item in text.Split(','))

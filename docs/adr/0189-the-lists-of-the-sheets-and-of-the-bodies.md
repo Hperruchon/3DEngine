@@ -1,13 +1,13 @@
 ---
 id: 0189
 title: The queries GetSheets and GetBodies give the live sheets and the live bodies of the Document in the order of the log
-status: Accepted
+status: Amended
 topic: Surface, agent
 date: 2026-11-26
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0192']
 affects:
   - Engine.Core/Queries/GetSheetsQuery.cs
   - Engine.Core/Queries/GetSheetsQueryHandler.cs
@@ -105,3 +105,4 @@ change of those shapes can take the log order of item 3; it needs its own ADR, b
 ## History
 
 - 2026-11-26 · TASK-0471 · The record: the queries `GetSheets` and `GetBodies`, their fields, and the order of the log.
+- 2026-11-28 · TASK-0478 · ADR-0192 amends item 3: the snapshot of the events and `CheckInterference` take the same order of the log as the two lists.

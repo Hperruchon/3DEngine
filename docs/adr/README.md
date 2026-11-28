@@ -25,7 +25,7 @@ names. Do not read all of them.
 | [0008](0008-command-query-event-triad.md) | Command, query and event triad with structured results | Amended | Contracts | 0006 | 0020 |
 | [0009](0009-3dengine-core-peer-render-kernel.md) | 3DEngine.Core is a peer render kernel | Amended | Boundary, clients | — | 0022, 0025 |
 | [0010](0010-subscription-reset-snapshot-format.md) | subscription.reset snapshot format | Amended | Contracts, observability | — | 0020, 0015 |
-| [0012](0012-geometry-backend-wiring.md) | Geometry backend wiring | Amended | Boundary, geometry, contracts | — | 0018, 0021, 0028, 0015, 0033, 0037, 0045, 0051, 0071, 0112, 0181 |
+| [0012](0012-geometry-backend-wiring.md) | Geometry backend wiring | Amended | Boundary, geometry, contracts | — | 0018, 0021, 0028, 0015, 0033, 0037, 0045, 0051, 0071, 0112, 0181, 0192 |
 | [0013](0013-command-query-schema-declaration.md) | Command and query schema declaration | Amended | Contracts, observability | — | 0060 |
 | [0014](0014-manifold-native-interop.md) | Manifold backend native-interop posture | Accepted | Boundary, geometry, native-interop | — | — |
 | [0015](0015-command-log-persistence.md) | The document file | Amended | Persistence, contracts | 0010, 0012 | 0071, 0188 |
@@ -187,16 +187,17 @@ names. Do not read all of them.
 | [0179](0179-the-title-block-of-a-sheet.md) | A sheet holds the fields of the title block of ISO 7200, SetSheetTitle gives them, and the frame shows the block, the symbol of the projection and the centring marks | Accepted | Contracts, drawing | 0153, 0155, 0159, 0160, 0161 | — |
 | [0180](0180-the-measure-queries-of-plane-faces.md) | The measure queries GetMassProperties, GetDistance and GetAngle read the exact solid of the owned kernel and the curve of the design | Accepted | Kernel, queries | — | — |
 | [0181](0181-the-union-and-the-intersection-of-two-bodies.md) | The union and the intersection of two bodies, in the form of the subtract | Accepted | Kernel, geometry, commands | 0012, 0057, 0058 | — |
-| [0182](0182-the-pair-check-at-one-position.md) | The pair check CheckInterference at one position, from the exact solids of the owned kernel | Amended | Kernel, queries, assembly | 0083 | 0188 |
+| [0182](0182-the-pair-check-at-one-position.md) | The pair check CheckInterference at one position, from the exact solids of the owned kernel | Amended | Kernel, queries, assembly | 0083 | 0188, 0192 |
 | [0183](0183-the-connectors-of-a-body.md) | The query GetConnectors gives the named datums of a body and the implicit frames of its faces | Accepted | Kernel, queries, assembly | — | — |
 | [0184](0184-the-section-view.md) | The section view of the window, a cut of each body by a plane with a cap | Accepted | Clients, rendering | 0174 | — |
 | [0185](0185-the-preview-of-a-proposal-on-a-fork.md) | The preview of a proposal on a fork of the Document, a replay of a copy of its log off the serial lock | Amended | Surface, agent | 0092 | 0187, 0188 |
 | [0186](0186-the-soft-light-of-the-ground.md) | The ground of the scene has the soft light of the render, lighter at the middle and darker at the corners | Accepted | Clients, rendering | 0108 | — |
 | [0187](0187-the-preview-of-a-proposal-in-the-window.md) | The preview of a proposal in the window, the new shapes in dashed amber lines with a switch and a panel of the differences | Amended | Clients, agent | 0092, 0109, 0125, 0185 | 0188 |
 | [0188](0188-the-accept-after-a-preview-and-the-group-in-the-log.md) | The accept after a preview compares the result and applies a proposal as one group of steps, which the log holds and one Undo reverses | Amended | Contracts, surface, agent | 0015, 0031, 0092, 0130, 0182, 0185, 0187 | 0190 |
-| [0189](0189-the-lists-of-the-sheets-and-of-the-bodies.md) | The queries GetSheets and GetBodies give the live sheets and the live bodies of the Document in the order of the log | Accepted | Surface, agent | — | — |
+| [0189](0189-the-lists-of-the-sheets-and-of-the-bodies.md) | The queries GetSheets and GetBodies give the live sheets and the live bodies of the Document in the order of the log | Amended | Surface, agent | — | 0192 |
 | [0190](0190-the-reversal-of-a-failed-group-is-marked-in-the-log.md) | The reversal of a failed group is an Undo with the group of the proposal, and it puts nothing on the redo list | Accepted | History, agent | 0188 | — |
 | [0191](0191-the-placement-of-a-body.md) | A body has a placement, a turn and an offset, and the command PlaceBody sets it, so a move changes no shape | Accepted | Contracts, geometry, assembly | 0037, 0112, 0126, 0157 | — |
+| [0192](0192-the-bodies-of-the-snapshot-and-of-the-check-in-the-order-of-the-log.md) | The snapshot of the events and CheckInterference give the live bodies in the order of the log | Accepted | Contracts, events, assembly | 0012, 0182, 0189 | — |
 
 ## Topics
 

@@ -7,7 +7,7 @@ date: 2026-11-21
 supersedes: []
 superseded-by: []
 amends: ['0083']
-amended-by: ['0188']
+amended-by: ['0188', '0192']
 affects:
   - Engine.Core/Queries/CheckInterferenceQuery.cs
   - Engine.Core/Queries/CheckInterferenceQueryHandler.cs
@@ -175,3 +175,4 @@ check. The two lists are text, which a client must build; a typo gives a refusal
   a void is checked (finding E236), and the products of the pairs come before the solid of a mesh body (finding E237).
 - 2026-11-24 · TASK-0463 · ADR-0188 amends item 8: the fork of a preview gives the check the work that the bound of the preview
   leaves, and reads the work that the check counted.
+- 2026-11-28 · TASK-0478 · ADR-0192 amends item 2: with no `bodyIds` the check takes each live body in the order of the log, not in the order of the Document.
