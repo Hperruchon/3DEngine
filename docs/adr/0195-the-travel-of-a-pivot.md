@@ -1,13 +1,13 @@
 ---
 id: 0195
 title: The query CheckTravel turns a pivot from limit to limit in memory and gives its first contact, with a step that passes no contact
-status: Accepted
+status: Amended
 topic: Kernel, queries, assembly
 date: 2026-11-28
 supersedes: []
 superseded-by: []
 amends: []
-amended-by: []
+amended-by: ['0196']
 affects:
   - Engine.Core/Queries/CheckTravelQuery.cs
   - Engine.Core/Queries/CheckTravelQueryHandler.cs
@@ -83,3 +83,4 @@ no contact comes before it.
 ## History
 
 - 2026-11-28 · TASK-0490 · The record, Accepted under the standing order of the owner of 2026-11-28.
+- 2026-11-28 · TASK-0491 · Amended by ADR-0196: item 1, a slider with limits has a travel, by one exact sweep.

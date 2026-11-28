@@ -15011,3 +15011,23 @@ write-set check and `eng/repo-gates` pass. Not verified: continuous integration 
 New tests: 6. The test list holds 3447 (2053 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 11 of 15. New diagnostic codes: 1 (`E-CHECK-TRAVEL-INVALID`). Since the review of v0.471, 2 product
 milestones and 3 entries followed it. The failed runs since the entry v0.473, from the API: none.
+
+## v0.475 — CheckTravel moves a slider from limit to limit by one exact sweep (K12b, TASK-0491)
+
+ADR-0196 records K12b and amends ADR-0195 item 1. `CheckTravel` also takes a slider with limits. The bodies that move go along the
+normal of the parent connector, with no turn. Two polyhedra that are apart first touch at a vertex of the one on a face of the other,
+or at an edge of the one on an edge of the other, so the first contact is the smallest distance of these events, each the root of one
+linear equation in rational numbers; the tests of a point in a face and of the ends of an edge take the borders. The value at the
+lower limit also finds an overlap. The answer gives the exact distance of the contact and the gap 0; the tolerance is not used. One
+travel tests at most the work of `CheckInterference`. No change of `Engine.Contracts` and no new code.
+
+**Proof.** A clean build gives 0 warnings, and `dotnet test` passes with the image tests. `CheckSlideTests` holds a plate smaller
+than the face of the child (vertices of the plate on the face, d = 9 exactly), a wall (vertices of the child on the wall, also from a
+lower limit of 2), a square bar turned by 45 degrees (an edge on two edges, d = 14 - 2√2), a body off the path, a body beyond the
+upper limit, an overlap, and a slider with no limits. Two injections each made a test fail: no events of two edges, and no events of
+a vertex of the fixed body. The write-set check and `eng/repo-gates` pass. Not verified: continuous integration has not run on this
+commit.
+
+New tests: 5. The test list holds 3452 (2058 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 11 of 15. New diagnostic codes: 0. Since the review of v0.471, 3 product milestones and 4
+entries followed it. The failed runs since the entry v0.474, from the API: none.
