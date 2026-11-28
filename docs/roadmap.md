@@ -602,6 +602,8 @@ Therefore each approved objective must have a track here.
 - P11.0 — A body has a placement, and the command `PlaceBody` sets it, so a move keeps the identity and the exact shape of a
   body; each reader of the geometry applies the placement, with a test of each. v0.458, TASK-0474, ADR-0191.
 - Review — The codebase review of 2026-11-28. v0.459, TASK-0475.
+- P0.192 — The design mass of a cut of a placed body moves the cut one time, also after a `Subtract` by a tool with no curve
+  (E246); the standing order answers Q1 A and Q2 A of the review. v0.460, TASK-0476.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.

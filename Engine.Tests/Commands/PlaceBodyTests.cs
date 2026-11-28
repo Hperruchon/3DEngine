@@ -448,6 +448,44 @@ public sealed class PlaceBodyTests : IDisposable
         Near(moved.Mass.Centre, placed.Mass.Centre, 1e-9, "centre");
     }
 
+    // Finding E246 of the codebase review of 2026-11-28 (TASK-0476): the design mass of a cut by a cylinder (CutMass) of a body
+    // that a step made and that has its own PlaceBody. The step is a Subtract by a box, which gives no curved tool, a Subtract by
+    // a cylinder, a Union or an Intersect. Until TASK-0476 the case of a Subtract by a box moved the cut two times, and the probe
+    // of the review gave the centre x = 203.0 mm in place of 99.6 mm.
+    [NativeManifoldTheory]
+    [InlineData("box")]
+    [InlineData("cylinder")]
+    [InlineData("union")]
+    [InlineData("intersect")]
+    public async Task The_Mass_Of_A_Cut_Of_A_Placed_Result_Of_A_Step_Has_Its_Centre_In_Its_Place(string step)
+    {
+        var (moved, placed) = await Both(async (session, move) =>
+        {
+            var first = await Box(session, BoxId, 20, 20, 10);
+            var tool = step == "cylinder"
+                ? Output(await Applied(session, new CreateCylinderCommand { CommandId = OtherId, Radius = 1.5, Height = 30 }))
+                : await Box(session, OtherId, 5, 5, 20);
+            var second = Output(await Applied(session, new TranslateCommand { BodyId = tool, Dx = 6, Dy = 6, Dz = step == "intersect" ? 2 : 0 }));
+            Command made = step switch
+            {
+                "union" => new UnionCommand { FirstBodyId = first, SecondBodyId = second },
+                "intersect" => new IntersectCommand { FirstBodyId = first, SecondBodyId = second },
+                _ => new SubtractCommand { MinuendBodyId = first, SubtrahendBodyId = second },
+            };
+            var result = await move(session, Output(await Applied(session, made)), new BodyPlacement(1, 0, 0, 0, 100, 0, 0));
+            var hole = Output(await Applied(session, new TranslateCommand
+            {
+                BodyId = Output(await Applied(session, new CreateCylinderCommand { CommandId = FixedId, Radius = 1, Height = 40 })),
+                Dx = step == "intersect" ? 106 : 100, Dy = step == "intersect" ? 6 : -4, Dz = 0,
+            }));
+            var cut = Output(await Applied(session, new SubtractCommand { MinuendBodyId = result, SubtrahendBodyId = hole }));
+            return await Read<MassProperties>(session, new GetMassPropertiesQuery { BodyId = cut });
+        });
+
+        Near(moved.Volume, placed.Volume, 1e-6, "volume");
+        Near(moved.Centre, placed.Centre, 1e-6, "centre");
+    }
+
     // Item 3: the refusals. The bus refuses an unknown body, a quaternion that gives no turn and an offset that is not finite.
     [Fact]
     public async Task A_Place_With_No_Body_Or_With_A_Bad_Value_Is_Refused()

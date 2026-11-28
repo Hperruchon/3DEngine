@@ -14608,3 +14608,28 @@ Open findings: 0 critical, 2 high, 8 medium and 25 low. New tests: 0. The test l
 `3DEngine.Tests`, 996 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0.
 This review examined v0.458, so the review counter starts again at 0. The failed runs since the entry v0.458, from the API:
 none; run 46086980144 of P11.0, its close run 46088939869 and the run 46089642654 of `main` at `1a112239` are green.
+
+## v0.460 — The design mass of a cut of a placed body has its centre in its place (P0.192, TASK-0476)
+
+The codebase review of 2026-11-28 found E246 (high): `CutMass` moved the cut of a body from the placement of its step to its
+own placement, also when the step was a `Subtract` by a tool with no curve. Such a `Subtract` is the first body of the chain,
+whose solid already has the placement now, so a `PlaceBody` of it moved the centre two times. `GetMassProperties` gave the right
+volume and a wrong centre, with no error.
+
+**The answers.** The standing order of 2026-11-28 answers the questions of the review with the recommended option. Q1 A: K25 is
+the next product phase, before R34 and R35, which need a check on the phone. Q2 A: TASK-0477 corrects E249 with a scale of each
+quaternion by an exact power of two. The first commit of TASK-0476 records them in the task and in the order of the roadmap.
+
+**The correction.** `Walk` moves the cut from the placement of the minuend only when the subtrahend is a curved tool, as the case
+of `Steps` does.
+
+**Proof.** A clean build gives 0 warnings, and `dotnet test` passes with the image tests.
+`The_Mass_Of_A_Cut_Of_A_Placed_Result_Of_A_Step_Has_Its_Centre_In_Its_Place` compares the scene with a `PlaceBody` and with a
+`Translate` for four steps before a cut by a cylinder: a `Subtract` by a box, a `Subtract` by a cylinder, a `Union` and an
+`Intersect`. Before the correction the case of the box gave the centre x = 200.44 mm in place of 99.60 mm; that is the injection
+"move the cut for each `Subtract`". The write-set check and `eng/repo-gates` pass. Not verified: continuous integration has not
+run on this commit.
+
+New tests: 4 (the four cases of the theory). The test list holds 3375 (1985 in `Engine.Tests`, 391 in `3DEngine.Tests`, 996 in
+`3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 13 of 15. New diagnostic codes: 0. Since the review of v0.459,
+0 product milestones and 1 entry followed it. The failed runs since the entry v0.459, from the API: none.
