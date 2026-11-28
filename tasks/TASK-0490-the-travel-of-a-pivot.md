@@ -1,7 +1,7 @@
 ---
 id: 0490
 title: The query CheckTravel turns a pivot from limit to limit and gives its first contact
-status: Active
+status: Done
 phase: K12a
 opened: 2026-11-28
 depends-on: [0488]
@@ -56,11 +56,11 @@ A query gives the first contact of the travel of a pivot, or says that the trave
 ## Acceptance criteria
 
 - [x] A test of each item of ADR-0195, and two injections that make a test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch k12a-pivot-travel) · v0.474
+Status: Done · commit (the merge of the branch k12a-pivot-travel) · v0.474
 
 ## Method
 
@@ -73,3 +73,4 @@ Weakest:    the answer is in doubles, and a long arc near a body takes many samp
 - 2026-11-28: opened under the standing order of 2026-11-28, after P0.201 (v0.473). ADR-0195, the query, and 6 tests in
   `Engine.Tests/Queries/CheckTravelTests.cs`. Two injections (no bound of the step; no exempt pair) each made a test fail. Ledger
   v0.474.
+- 2026-11-28: run 46160928191 of `24ef0a00` passed on each job. Closed at v0.474.
