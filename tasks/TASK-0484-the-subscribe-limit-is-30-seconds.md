@@ -1,7 +1,7 @@
 ---
 id: 0484
 title: The time limit of the subscribe frame is 30 seconds, after a red main run with 10 seconds
-status: Active
+status: Done
 phase: P0.198
 opened: 2026-11-28
 depends-on: [0483]
@@ -47,11 +47,11 @@ The limit is 30 seconds, the interval of the heartbeat, so a client of a busy ho
 ## Acceptance criteria
 
 - [x] The test of the default asks for 30 seconds.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0198-subscribe-limit) · v0.467
+Status: Done · commit (the merge of the branch p0198-subscribe-limit) · v0.467
 
 ## Method
 
@@ -63,3 +63,4 @@ Weakest:    the cause is inferred: the annotation of the run gives no time, and 
 
 - 2026-11-28: opened after the red main run 46113600404. Under the standing order of 2026-11-28 a red main run stops the merges,
   so this branch waits for the owner. Ledger v0.467.
+- 2026-11-28: run 46114432623 of `b7caac97` passed on each job. Closed at v0.467.
