@@ -18,6 +18,8 @@ namespace Engine.Api.Http.Endpoints;
 //      with status 1007 + reason "E-API-WS-INVALID-SUBSCRIBE" (docs/diagnostics.md;
 //      finding E24 of the codebase review of 2026-10-04, R-0033, TASK-0321: until
 //      TASK-0321 this comment said 1003, and the code sent 1007 from the start).
+//      A frame that does not come in SubscriberOptions.SubscribeTimeout is missing,
+//      with the same close (ADR-0005 section 5, TASK-0481).
 //   3. In a read of the document session (TASK-0034), AttachAndPrime on the
 //      broadcaster: under the broadcaster's lock, decide
 //      resume vs reset, enqueue initial response + any replay, then add to the
@@ -52,9 +54,17 @@ internal static class EventsEndpoint
         SubscribeRequest? subscribeRequest;
         try
         {
-            subscribeRequest = await ReadSubscribeAsync(webSocket, ending.Token).ConfigureAwait(false);
+            subscribeRequest = await ReadSubscribeAsync(webSocket, options.SubscribeTimeout, ending.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException)
+        {
+            return;
+        }
+        // Finding E17 of the codebase review of 2026-09-30, part 6 (register entry R-0028, TASK-0481): a client that sends no
+        // subscribe frame in the time limit gets the close of a missing frame. The receive stays open, because a cancelled
+        // receive aborts the socket, and then no close frame can go. Until TASK-0481 the read had no time limit, so a client
+        // that sent nothing held the socket and its task until it left or the host stopped.
+        catch (TimeoutException)
         {
             return;
         }
@@ -113,12 +123,38 @@ internal static class EventsEndpoint
 
     private static async Task<SubscribeRequest?> ReadSubscribeAsync(
         WebSocket socket,
+        TimeSpan limit,
         CancellationToken ct)
     {
         const int maxSubscribeBytes = 4096;
         var buffer = new byte[maxSubscribeBytes];
 
-        var result = await socket.ReceiveAsync(buffer, ct).ConfigureAwait(false);
+        var receive = socket.ReceiveAsync(buffer, ct);
+        WebSocketReceiveResult result;
+        try
+        {
+            result = await receive.WaitAsync(limit, ct).ConfigureAwait(false);
+        }
+        catch (TimeoutException)
+        {
+            // The close frame goes while the receive waits, and the receive ends when the client answers the close. The
+            // endpoint waits for that answer, for at most Subscriber.CloseWait: the dispose of the socket aborts it, and on
+            // Windows the abort can discard a close frame that the client did not read yet.
+            await CloseMissingSubscribeAsync(socket).ConfigureAwait(false);
+            try
+            {
+                await receive.WaitAsync(Subscriber.CloseWait, CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is TimeoutException or WebSocketException or OperationCanceledException)
+            {
+            }
+
+            // A receive that ends after the wait fails when the socket is disposed; its failure is expected.
+            _ = receive.ContinueWith(static done => _ = done.Exception, CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+            throw;
+        }
+
         if (result.MessageType != WebSocketMessageType.Text || !result.EndOfMessage)
             return null;
 
@@ -130,6 +166,23 @@ internal static class EventsEndpoint
         catch (JsonException)
         {
             return null;
+        }
+    }
+
+    // The close of a frame that did not come in the time limit: the close frame goes while the receive of the frame waits, so
+    // the close does not receive the answer of the client; the wait of ReadSubscribeAsync does.
+    private static async Task CloseMissingSubscribeAsync(WebSocket socket)
+    {
+        if (socket.State is WebSocketState.Open or WebSocketState.CloseReceived)
+        {
+            try
+            {
+                await socket.CloseOutputAsync(
+                    WebSocketCloseStatus.InvalidPayloadData,
+                    "E-API-WS-INVALID-SUBSCRIBE",
+                    CancellationToken.None).ConfigureAwait(false);
+            }
+            catch { /* best-effort */ }
         }
     }
 

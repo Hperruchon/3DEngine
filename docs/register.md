@@ -139,6 +139,11 @@ envelope with `E-API-BAD-REQUEST`, a negative cursor gets a reset, and the comma
 (`QueryResult<T>` of `Engine.Contracts` gives a struct of zeros on a failure; the hosts ask for `object`), and E17 parts
 1 and 2 (they need new diagnostic codes), 3 (the text of a JSON exception and an unknown charset), 5 (the pump stops before
 the close frame), 6 (no time limit on the subscribe frame) and 9 (a flag read as a command name).
+Progress 2026-11-28: TASK-0481 (P0.195) fixed E17 parts 3, 5, 6 and 9: a refused body of `/commands`, `/queries` and
+`/proposals` gives the place of the fault and no internal type, and an unknown charset gets HTTP 415; the pump sends the close
+frame before it cancels, so a lagged client of Kestrel reads 1008 and `subscriber.lagged` (a run of the old order gave a broken
+connection); a subscribe frame that does not come in 10 seconds gets 1007 and `E-API-WS-INVALID-SUBSCRIBE` (ADR-0005 section
+5); an option in the place of a name is a usage error. Open: E13 in part, and E17 parts 1 and 2.
 
 ### R-0033 · Seven findings of the third codebase review in the engine and the hosts have no task
 - class: debt

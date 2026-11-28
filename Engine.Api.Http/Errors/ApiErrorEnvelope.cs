@@ -30,6 +30,14 @@ internal sealed record ApiErrorEnvelope(ApiErrorBody Error)
             new ApiErrorEnvelope(new ApiErrorBody(DiagnosticCodes.ApiBadRequest, "The request body must be JSON, with the content type application/json.")),
             ApiJson.Options,
             statusCode: StatusCodes.Status415UnsupportedMediaType);
+
+    // Finding E17 of the codebase review of 2026-09-30, part 3 (R-0028, TASK-0481): a JSON body whose charset is not known gets
+    // HTTP 415 with the envelope. Until TASK-0481 the read threw, and the response was HTTP 500.
+    public static IResult UnsupportedCharset(string charset)
+        => Results.Json(
+            new ApiErrorEnvelope(new ApiErrorBody(DiagnosticCodes.ApiBadRequest, $"The charset '{charset}' of the content type is not known. Send UTF-8.")),
+            ApiJson.Options,
+            statusCode: StatusCodes.Status415UnsupportedMediaType);
 }
 
 internal sealed record ApiErrorBody(string Code, string Message);

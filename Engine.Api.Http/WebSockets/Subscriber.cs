@@ -21,6 +21,10 @@ internal sealed class Subscriber : IAsyncDisposable
     public const int DefaultChannelCapacity = 1024;
     public static readonly TimeSpan DefaultHeartbeatInterval = TimeSpan.FromSeconds(30);
 
+    // Finding E17 of the codebase review of 2026-09-30, part 5 (TASK-0481): the longest wait for the answer of a client to a
+    // close frame of the server, before the server aborts the socket.
+    public static readonly TimeSpan CloseWait = TimeSpan.FromSeconds(2);
+
     private readonly WebSocket _socket;
     private readonly Channel<object> _outbound;
     private readonly TimeSpan _heartbeatInterval;
@@ -113,8 +117,16 @@ internal sealed class Subscriber : IAsyncDisposable
         catch (WebSocketException) { /* client gone */ }
         finally
         {
-            _cts.Cancel();
+            // Finding E17 of the codebase review of 2026-09-30, part 5 (register entry R-0028, TASK-0481): the close frame goes
+            // first, and the cancel of the heartbeat and of the receive loop follows. A cancelled receive aborts a socket of
+            // Kestrel, and an aborted socket sends no close frame. Until TASK-0481 the cancel came first, so a lagged client of
+            // the host got a broken connection and not the status 1008 with "subscriber.lagged". The cancel waits for the answer
+            // of the client, which ends the receive loop, for at most CloseWait: on Windows an abort can discard a close frame
+            // that the client did not read yet.
             await CloseSocketAsync().ConfigureAwait(false);
+            if (_receiveTask is { } receive)
+                await Task.WhenAny(receive, Task.Delay(CloseWait)).ConfigureAwait(false);
+            _cts.Cancel();
         }
     }
 

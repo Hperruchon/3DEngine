@@ -350,6 +350,11 @@ public static class Cli
             return InvalidUsage(stderr, "apply requires a command name.");
 
         var name = args[0];
+        // Finding E17 of the codebase review of 2026-09-30, part 9 (register entry R-0028, TASK-0481): the name comes first, and
+        // an option in its place is a usage error. Until TASK-0481 'apply --kind part CreateBox' took '--kind' as the name and gave
+        // E-CMD-UNKNOWN with the exit code 1.
+        if (name.StartsWith("--", StringComparison.Ordinal))
+            return InvalidUsage(stderr, $"apply requires the command name before the options; '{name}' is an option.");
         Dictionary<string, string> parameters;
         string kind;
         string folder;
@@ -408,6 +413,11 @@ public static class Cli
             return InvalidUsage(stderr, "query requires a query name.");
 
         var name = args[0];
+        // Finding E17 of the codebase review of 2026-09-30, part 9 (register entry R-0028, TASK-0481): the name comes first, and
+        // an option in its place is a usage error. Until TASK-0481 'query --kind part GetBodies' took '--kind' as the name and gave
+        // E-QRY-UNKNOWN with the exit code 1.
+        if (name.StartsWith("--", StringComparison.Ordinal))
+            return InvalidUsage(stderr, $"query requires the query name before the options; '{name}' is an option.");
         Dictionary<string, string> parameters;
         string kind;
         string folder;

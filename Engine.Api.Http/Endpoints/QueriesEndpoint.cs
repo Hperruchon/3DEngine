@@ -26,9 +26,10 @@ internal static class QueriesEndpoint
 {
     public static async Task<IResult> Handle(HttpContext context, EngineHost host)
     {
-        // Finding E17 of the codebase review of 2026-09-30 (R-0028, TASK-0321): HTTP 415 has the envelope.
-        if (!context.Request.HasJsonContentType())
-            return ApiErrorEnvelope.UnsupportedMediaType();
+        // Finding E17 of the codebase review of 2026-09-30 (R-0028, TASK-0321): HTTP 415 has the envelope. Part 3 (TASK-0481):
+        // an unknown charset too.
+        if (JsonRequest.Refusal(context.Request) is { } refused)
+            return refused;
 
         QueryRequest? body;
         try
@@ -39,7 +40,7 @@ internal static class QueriesEndpoint
         }
         catch (JsonException ex)
         {
-            return ApiErrorEnvelope.BadRequest($"Malformed JSON: {ex.Message}");
+            return ApiErrorEnvelope.BadRequest(JsonRequest.Malformed("Malformed JSON", ex));
         }
 
         if (body is null)
