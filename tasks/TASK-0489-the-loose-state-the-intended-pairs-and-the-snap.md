@@ -1,7 +1,7 @@
 ---
 id: 0489
 title: A joint is tight or loose, each joint is an intended pair of the check, and PlaceByConnectors places a child one time
-status: Active
+status: Done
 phase: P11b
 opened: 2026-11-28
 depends-on: [0487]
@@ -66,11 +66,11 @@ connectors one time, with ADR-0194 in the same commit as the change of `Engine.C
 ## Acceptance criteria
 
 - [x] A test of each item of ADR-0194, and two injections that make a test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p11b-joints) · v0.472
+Status: Done · commit (the merge of the branch p11b-joints) · v0.472
 
 ## Method
 
@@ -88,3 +88,4 @@ Weakest:    `PlaceByConnectors` reads the frames at its place in the log, so a l
 - 2026-11-28: ADR-0194, the field `State`, `SetJointState`, `PlaceByConnectors`, the pairs of the joints in the check, and 6
   tests in `Engine.Tests/Commands/JointStateTests.cs`. Two injections (a loose joint that places its child; a check with no pairs
   of the joints) each made a test fail. Ledger v0.472.
+- 2026-11-28: run 46156997616 of `e0685019` passed on each job. Closed at v0.472.
