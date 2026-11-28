@@ -1,7 +1,7 @@
 ---
 id: 0483
 title: A datetime parameter is UTC on each computer
-status: Active
+status: Done
 phase: P0.197
 opened: 2026-11-28
 depends-on: [0482]
@@ -49,11 +49,11 @@ A `"datetime"` value binds as UTC: a value with an offset gives its instant in U
 ## Acceptance criteria
 
 - [x] The test fails when the binder reads the text with `RoundtripKind`.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0197-datetime-utc) · v0.466
+Status: Done · commit (the merge of the branch p0197-datetime-utc) · v0.466
 
 ## Method
 
@@ -66,3 +66,4 @@ Weakest:    no handler declares the type, so no command shows the change.
 
 - 2026-11-28: opened under the standing order of 2026-11-28, after P0.196. The binder gives UTC, and
   `A_Datetime_Is_Utc_On_Each_Computer` fails in three of four cases with `RoundtripKind`. Ledger v0.466.
+- 2026-11-28: run 46111499789 of `96bf0218` passed on each job. Closed at v0.466.
