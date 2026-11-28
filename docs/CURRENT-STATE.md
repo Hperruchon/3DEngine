@@ -14845,3 +14845,23 @@ exception of a handler that leaves the command bus, changes the commit of the bu
 New tests: 1. The test list holds 3407 (2013 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 10 of 15. New diagnostic codes: 1 (`E-QRY-RESULT-TYPE`). Since the review of v0.459,
 1 product milestone and 9 entries followed it. The failed runs since the entry v0.467, from the API: none.
+
+## v0.469 — The comment of DatumReference names each feature of a datum (P0.200, TASK-0486)
+
+The codebase review of 2026-11-28 gives finding E160 "fixed in part": the comment of `DatumReference` in
+`Engine.Contracts/Sketch/DatumRecord.cs` named a box, a cylinder and an extrude, but `DatumResolver.Form` also accepts a
+cone (ADR-0089), and it gives a reason for a sphere and a torus. The comment now names the four features and the two
+reasons, and a History line of ADR-0051 records it. A comment does not change the public shape of `Engine.Contracts`.
+
+The same review gives finding E57 "open", because the comment of `Engine.Tests/Http/DesktopSurfaceTests.cs` did not change.
+A read on this commit finds each part of E57 corrected: ADR-0019 says that TASK-0054 mounted the library in the desktop
+(TASK-0062 corrected the paragraph), the comment of the test does not say that TASK-0054 is to come, and register entry R-0039,
+which the review names, closed on 2026-11-09 (`DesktopSessionTests` calls `DesktopSurface.Start`). The next review must
+judge E57 again; this entry does not change a record of a review.
+
+**Proof.** A clean build gives 0 warnings, and `dotnet test` passes with the image tests. The write-set check and
+`eng/repo-gates` pass. Not verified: continuous integration has not run on this commit; no test reads a comment.
+
+New tests: 0. The test list holds 3407 (2013 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.459, 1 product milestone and
+10 entries followed it. The failed runs since the entry v0.468, from the API: none.
