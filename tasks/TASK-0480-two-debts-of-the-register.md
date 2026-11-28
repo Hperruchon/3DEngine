@@ -1,7 +1,7 @@
 ---
 id: 0480
 title: Two debts of the register, the kept solids of a fork and two starts of a renderer that leak
-status: Active
+status: Done
 phase: P0.194
 opened: 2026-11-28
 depends-on: [0477]
@@ -51,11 +51,11 @@ A fork pushes out no kept solid of its source, and the starts of `ImageRenderer`
 ## Acceptance criteria
 
 - [x] Each correction has a test that fails when the correction is undone.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0194-register-debts) · v0.463
+Status: Done · commit (the merge of the branch p0194-register-debts) · v0.463
 
 ## Method
 
@@ -73,3 +73,4 @@ Weakest:    the test of the renderers counts the messages of the validation laye
   of a test at each object and free each object at a failure;
   `A_Failed_Start_Of_A_Renderer_Of_The_Images_Or_Of_The_Interface_Frees_Each_Object_That_It_Made` fails with 27 and 16 messages of
   the layer when the start frees nothing. R-0082 and R-0077 close. Ledger v0.463.
+- 2026-11-28: run 46101344436 of `8fc37dc6` passed on each job. Closed at v0.463.
