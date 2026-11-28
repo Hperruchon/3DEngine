@@ -1,7 +1,7 @@
 ---
 id: 0488
 title: The medium and low findings of the second codebase review of 2026-11-28
-status: Active
+status: Done
 phase: P0.201
 opened: 2026-11-28
 depends-on: [0487]
@@ -64,11 +64,11 @@ The write set grows when the task starts.
 
 - [x] Each finding of the scope has a test that fails with the old code, or a reason in the ledger. T207 stays open (see the
       ledger).
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0201-review-findings) · v0.473
+Status: Done · commit (the merge of the branch p0201-review-findings) · v0.473
 
 ## Method
 
@@ -84,3 +84,4 @@ Weakest:    T206 has no test of a datum with a fault as a connector: no command 
   the old code each made a test fail. T207 stays open: a module initializer that sets no limit for each host of the tests is
   refused by the write-set check (finding T31), and a limit in each host touches the shared test client and each scenario test.
   Ledger v0.473.
+- 2026-11-28: run 46159212009 of `de2eb03c` passed on each job. Closed at v0.473.
