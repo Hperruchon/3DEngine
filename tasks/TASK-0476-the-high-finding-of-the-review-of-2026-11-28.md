@@ -1,7 +1,7 @@
 ---
 id: 0476
 title: The high finding of the codebase review of 2026-11-28, the centre of a placed cut
-status: Active
+status: Done
 phase: P0.192
 opened: 2026-11-28
 depends-on: [0475]
@@ -53,11 +53,11 @@ exact power of two before a product. The owner can change each answer at the fin
 
 - [x] The probe of E246 is a test that fails before the correction and passes after it.
 - [x] An injection that moves the cut for each `Subtract` makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0192-cut-centre) · v0.460
+Status: Done · commit (the merge of the branch p0192-cut-centre) · v0.460
 
 ## Method
 
@@ -76,3 +76,4 @@ Weakest:    the test covers a Subtract by a box, a Subtract by a cylinder, a Uni
   case of `Steps` does. `The_Mass_Of_A_Cut_Of_A_Placed_Result_Of_A_Step_Has_Its_Centre_In_Its_Place` (four steps) compares the
   scene with a `PlaceBody` and with a `Translate`; before the correction the case "box" gave the centre x = 200.44 mm in place of
   99.60 mm, which is the injection "move the cut for each Subtract". Ledger entry v0.460.
+- 2026-11-28: run 46094044169 of `7e299a92` passed on each job. Closed at v0.460.
