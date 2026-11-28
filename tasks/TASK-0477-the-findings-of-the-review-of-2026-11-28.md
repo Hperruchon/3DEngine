@@ -1,7 +1,7 @@
 ---
 id: 0477
 title: The medium and low findings of the codebase review of 2026-11-28
-status: Active
+status: Done
 phase: P0.193
 opened: 2026-11-28
 depends-on: [0476]
@@ -61,11 +61,11 @@ Each finding of this task has a correction and a test, or a register entry with 
 
 - [x] Each finding has a test that fails before its correction, or a register entry.
 - [x] Each injection of a correction makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0193-findings) · v0.462
+Status: Done · commit (the merge of the branch p0193-findings) · v0.462
 
 ## Method
 
@@ -88,3 +88,4 @@ Weakest:    the path of `Proposals` for E250 has no test of its own: it needs a 
   `E-API-PROPOSAL-NOT-REVERSED`; E247: ADR-0191 item 8, ADR-0037 and the guide give the rule of a client; T203: a test asks for
   the validation layer; T204: the faces test compares the outlines and the segments, the view lines have a placed cylinder,
   and a new test cuts a placed cylinder with a section of a sheet. Six injections each make a named test fail. Ledger v0.462.
+- 2026-11-28: run 46099721997 of `a65cdec7` passed on each job. Closed at v0.462.
