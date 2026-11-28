@@ -33,11 +33,13 @@ public static class Placements
 
     // Item 6: the placement of the second body in the frame of the first, so that first · relative is the second. The turn is
     // the product of the conjugate of the first quaternion and the second; the offset is the turn of that conjugate applied to
-    // the difference of the two offsets. When the first placement is the identity, the result is the second, bit for bit.
+    // the difference of the two offsets. When the first placement is the identity, the result has the turn and the offset of
+    // the second, bit for bit. Finding E249 of the codebase review of 2026-11-28 (TASK-0477, the answer Q2 A): each quaternion
+    // goes to the range [1, 2) of its largest part first, so the product of two quaternions that PlaceBody accepts gives a turn.
     public static BodyPlacement Relative(BodyPlacement first, BodyPlacement second)
     {
-        var (w1, x1, y1, z1) = (first.Qw, -first.Qx, -first.Qy, -first.Qz);
-        var (w2, x2, y2, z2) = (second.Qw, second.Qx, second.Qy, second.Qz);
+        var (w1, x1, y1, z1) = Scaled(first.Qw, -first.Qx, -first.Qy, -first.Qz);
+        var (w2, x2, y2, z2) = Scaled(second.Qw, second.Qx, second.Qy, second.Qz);
         var w = (w1 * w2) - (x1 * x2) - (y1 * y2) - (z1 * z2);
         var x = (w1 * x2) + (x1 * w2) + (y1 * z2) - (z1 * y2);
         var y = (w1 * y2) - (x1 * z2) + (y1 * w2) + (z1 * x2);
@@ -62,8 +64,8 @@ public static class Placements
     // placement outer.
     public static BodyPlacement Compose(BodyPlacement outer, BodyPlacement inner)
     {
-        var (w1, x1, y1, z1) = (outer.Qw, outer.Qx, outer.Qy, outer.Qz);
-        var (w2, x2, y2, z2) = (inner.Qw, inner.Qx, inner.Qy, inner.Qz);
+        var (w1, x1, y1, z1) = Scaled(outer.Qw, outer.Qx, outer.Qy, outer.Qz);
+        var (w2, x2, y2, z2) = Scaled(inner.Qw, inner.Qx, inner.Qy, inner.Qz);
         var (dx, dy, dz) = Apply(outer, inner.Dx, inner.Dy, inner.Dz);
         return new BodyPlacement(
             (w1 * w2) - (x1 * x2) - (y1 * y2) - (z1 * z2),
@@ -73,17 +75,33 @@ public static class Placements
             dx, dy, dz);
     }
 
+    // E249: the quaternion times the power of two that puts its largest part in [1, 2). A product by a power of two is exact,
+    // and Rotation.FromQuaternion divides by the sum of the squares, so the turn keeps each bit. A quaternion of zeros stays.
+    private static (double W, double X, double Y, double Z) Scaled(double w, double x, double y, double z)
+    {
+        var largest = Math.Max(Math.Max(Math.Abs(w), Math.Abs(x)), Math.Max(Math.Abs(y), Math.Abs(z)));
+        if (!(largest > 0) || !double.IsFinite(largest))
+            return (w, x, y, z);
+        var power = -Math.ILogB(largest);
+        return (Math.ScaleB(w, power), Math.ScaleB(x, power), Math.ScaleB(y, power), Math.ScaleB(z, power));
+    }
+
+    // E249: the turn of a placement that turns the shape. A placement that PlaceBody accepts, and each product of two of them,
+    // gives a turn, so a null is a fault of the engine, and the read stops; until TASK-0477 the read skipped the turn.
+    private static Rotation TurnOrThrow(BodyPlacement placement)
+        => Turn(placement) ?? throw new InvalidOperationException("The placement has a quaternion that gives no turn.");
+
     // The point (x, y, z) of the shape in the Document, in doubles.
     public static (double X, double Y, double Z) Apply(BodyPlacement placement, double x, double y, double z)
     {
-        if (Turns(placement) && Turn(placement) is { } turn)
-            (x, y, z) = turn.Apply(x, y, z);
+        if (Turns(placement))
+            (x, y, z) = TurnOrThrow(placement).Apply(x, y, z);
         return (x + placement.Dx, y + placement.Dy, z + placement.Dz);
     }
 
     // The direction (x, y, z) of the shape in the Document: the turn only.
     public static (double X, double Y, double Z) Direction(BodyPlacement placement, double x, double y, double z)
-        => Turns(placement) && Turn(placement) is { } turn ? turn.Apply(x, y, z) : (x, y, z);
+        => Turns(placement) ? TurnOrThrow(placement).Apply(x, y, z) : (x, y, z);
 
     // Item 7: the triangles of the shape in the Document. A tessellation is presentation (ADR-0007), so the doubles of the
     // backend take the placement in doubles.
@@ -149,7 +167,7 @@ public static class Placements
     public static KernelSolid Apply(BodyPlacement placement, KernelSolid solid)
     {
         ArgumentNullException.ThrowIfNull(solid);
-        if (Turns(placement) && Turn(placement) is { } r)
+        if (Turns(placement) && TurnOrThrow(placement) is var r)
             solid = solid.Rotate(Vector3R.FromDoubles(r.Xx, r.Xy, r.Xz), Vector3R.FromDoubles(r.Yx, r.Yy, r.Yz), Vector3R.FromDoubles(r.Zx, r.Zy, r.Zz));
         return placement.Dx == 0 && placement.Dy == 0 && placement.Dz == 0
             ? solid
@@ -161,8 +179,9 @@ public static class Placements
 
     public static Vector3R Direction(BodyPlacement placement, Vector3R direction)
     {
-        if (!Turns(placement) || Turn(placement) is not { } r)
+        if (!Turns(placement))
             return direction;
+        var r = TurnOrThrow(placement);
         var (x, y, z) = (Vector3R.FromDoubles(r.Xx, r.Xy, r.Xz), Vector3R.FromDoubles(r.Yx, r.Yy, r.Yz), Vector3R.FromDoubles(r.Zx, r.Zy, r.Zz));
         return (x * direction.X) + (y * direction.Y) + (z * direction.Z);
     }

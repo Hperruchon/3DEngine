@@ -606,6 +606,10 @@ Therefore each approved objective must have a track here.
   (E246); the standing order answers Q1 A and Q2 A of the review. v0.460, TASK-0476.
 - K25 — The snapshot of the events and `CheckInterference` give the live bodies in the order of the log, as `GetBodies` does,
   and not in the order of a .NET `Dictionary` (R-0080). v0.461, TASK-0478, ADR-0192.
+- P0.193 — The medium and low findings of the review of 2026-11-28: the selected face of a placed body in its place, one mesh
+  for a creation and a placement in one frame, the rule of a client that keeps triangles, the seven numbers of the JSON of a
+  placement, the product of two large quaternions, the record of a reversal after a throw, and four tests that check what they
+  say. v0.462, TASK-0477.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.

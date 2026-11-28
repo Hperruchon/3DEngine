@@ -185,7 +185,9 @@ internal sealed class SessionBodies : IDisposable
             // changes of the same body in one frame gave two meshes. The creation takes the state of
             // the last change, so the change that follows it has the key of the mesh already.
             if (change.Change == Change.Created && LastChange(queued, i) is { } last)
-                change = change with { Name = last.Name, Visible = last.Visible, Geometry = last.Geometry, Fault = last.Fault };
+                // Finding V240 of the codebase review of 2026-11-28 (TASK-0477): and its placement, so a creation and a PlaceBody in one
+                // frame give one mesh.
+                change = change with { Name = last.Name, Visible = last.Visible, Geometry = last.Geometry, Fault = last.Fault, Placement = last.Placement };
             try
             {
                 changed |= ApplyOne(change, scene, meshes, device);
@@ -434,8 +436,25 @@ internal sealed class SessionBodies : IDisposable
         => _boxes.ContainsKey(bodyId.ToString()) && IsVisible(bodyId.ToString()) ? Shifted(bodyId.ToString()) : null;
 
     // Finding V109 of the codebase review of 2026-11-06 (d) (TASK-0243): the geometry key of the mesh of a live body, which
-    // a rebuild changes (ADR-0037 item 2), or null.
-    public Guid? KeyOf(Guid bodyId) => _geometry.TryGetValue(bodyId, out var key) ? key.Key : null;
+    // a rebuild changes (ADR-0037 item 2), or null. Finding V239 of the codebase review of 2026-11-28 (TASK-0477): a PlaceBody
+    // keeps the geometry key and moves each face (ADR-0191 item 8), so a placed body gives a key of its geometry key and the
+    // bits of its seven numbers. BodyActions keeps the faces and the edges of the selected body under this key, so it reads them
+    // again after a placement; until TASK-0477 it drew the selected face at the old place.
+    public Guid? KeyOf(Guid bodyId) => _geometry.TryGetValue(bodyId, out var key) ? MeshId(key.Key, key.Placement) : null;
+
+    // The geometry key of a body at the identity, or a name-based key of the geometry key and the placement (ADR-0037 item 3).
+    private static Guid MeshId(Guid key, BodyPlacement? placement)
+    {
+        if (placement is not { } p)
+            return key;
+        double[] values = [p.Qw, p.Qx, p.Qy, p.Qz, p.Dx, p.Dy, p.Dz];
+        Span<byte> bits = stackalloc byte[8 * 7];
+        for (var i = 0; i < values.Length; i++)
+            System.Buffers.Binary.BinaryPrimitives.WriteInt64LittleEndian(bits[(8 * i)..], BitConverter.DoubleToInt64Bits(values[i]));
+        Span<byte> hash = stackalloc byte[32];
+        System.Security.Cryptography.SHA256.HashData(bits, hash);
+        return GeometryKeys.Derive(key, new Guid(hash[..16]));
+    }
 
     // Finding V87 of the codebase review of 2026-11-05 (b) (TASK-0191): the box of the mesh of a visible live body with
     // no offset of a preview, or null. A preview does not change the engine, so a query of the body keeps this key.

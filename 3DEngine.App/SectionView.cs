@@ -65,11 +65,9 @@ internal sealed class SectionDatums
 internal sealed record SectionBody(Guid Id, MeshKey Geometry, bool Solid, (double X, double Y, double Z) Centre, double[] Positions, uint[] Indices);
 
 // ADR-0191 item 8 (phase P11.0, TASK-0474): the mesh of a body is a function of its geometry key and of its placement, so a
-// PlaceBody, which keeps the key, gives another mesh. A key alone is a mesh at the identity.
-internal readonly record struct MeshKey(Guid Key, Engine.Contracts.BodyPlacement? Placement)
-{
-    public static implicit operator MeshKey(Guid key) => new(key, null);
-}
+// PlaceBody, which keeps the key, gives another mesh. Finding T205 of the codebase review of 2026-11-28 (TASK-0477): no
+// conversion from a key alone, so a comparison of the key alone does not compile with no notice.
+internal readonly record struct MeshKey(Guid Key, Engine.Contracts.BodyPlacement? Placement);
 
 // ADR-0184 items 3 to 6: the meshes of a section view on the GPU. For each visible live body the cut of SectionMesh runs on the
 // thread pool, off the thread of the frame, and a later frame puts its kept part and its cap on the GPU around the centre of

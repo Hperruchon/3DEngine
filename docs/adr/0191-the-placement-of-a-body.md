@@ -111,7 +111,9 @@ answered "All A" on 2026-11-27.
 8. **The surface.** `body.created`, `body.changed` and the snapshot of `/events` give the member `placement`, an object of the
    seven numbers, or null at the identity, as `fault` is null (amends ADR-0037 item 8). `GetBodyInfo` and `GetBodies` give
    the placement too, so a client reads where a body is before it sends an absolute placement. `GetTessellation` gives the
-   triangles in the Document, as before, so the window draws them with no change of its pipeline.
+   triangles in the Document, as before, so the window draws them with no change of its pipeline. A client that keeps the
+   triangles of a body reads them again when `geometry` or `placement` differs from what it holds (amends the rule of
+   ADR-0037 item 8, which names `geometry` only). The JSON of a placement holds the seven numbers only.
 9. **The order (Q6 A and Q7 A).** P11.0 is this ADR with the field, the command and the test of each reader, in one commit.
    The joints, P11a and after, follow, and a joint gives a `PlaceBody` of the child (amends ADR-0126 item 3 and ADR-0157
    item 2). The measure of K10a runs again with `PlaceBody`:
@@ -156,3 +158,7 @@ solids, bit for bit.
 
 - 2026-11-28 · TASK-0474 · The record, Accepted: the answers of the owner of 2026-11-25 (Q1 A) and of 2026-11-27 ("All A"
   for Q1 to Q7 of the proposal). Amends ADR-0037 item 8, ADR-0112 item 1, ADR-0126 item 3 and ADR-0157 item 2.
+- 2026-11-28 · TASK-0477 · Findings E247 and E248 of the codebase review of 2026-11-28: item 8 gives the rule of a client that
+  keeps the triangles (read again when `geometry` or `placement` differs), and says that the JSON of a placement holds the
+  seven numbers only; `BodyPlacement.IsIdentity` is not written. Finding E249: `Relative` and `Compose` scale each quaternion
+  by a power of two first (the answer Q2 A), so each product of two accepted placements gives a turn.
