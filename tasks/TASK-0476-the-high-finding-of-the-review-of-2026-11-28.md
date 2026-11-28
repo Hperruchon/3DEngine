@@ -1,15 +1,20 @@
 ---
 id: 0476
 title: The high finding of the codebase review of 2026-11-28, the centre of a placed cut
-status: Ready
+status: Done
 phase: P0.192
 opened: 2026-11-28
 depends-on: [0475]
-governed-by: []
+governed-by: [0004, 0016, 0018, 0028, 0033, 0037, 0060, 0180, 0191]
 writes:
   create:
     - tasks/TASK-0476-the-high-finding-of-the-review-of-2026-11-28.md
-  modify: []
+  modify:
+    - docs/roadmap.md
+    - Engine.Core/Queries/CutMass.cs
+    - Engine.Tests/Commands/PlaceBodyTests.cs
+    - eng/test-floor.txt
+    - docs/CURRENT-STATE.md
   forbid:
     - Engine.Contracts/**
 ---
@@ -23,6 +28,11 @@ This task uses Simplified Technical English (ASD-STE100). See `CLAUDE.md`, secti
 The codebase review of 2026-11-28 (`docs/reviews/2026-11-28-codebase-review.md`, TASK-0475) found one high finding, E246: the
 design mass of a cut gives a wrong centre when a body of the chain is a `Subtract` by a tool with no curve and has its own
 `PlaceBody`. By `docs/templates.md`, section 7, a high finding comes before the next product phase.
+
+The answers to the questions of the review are answered by the standing order of 2026-11-28 ("same as every previous week":
+the recommended option of each question). Q1 A: K25 is the next product phase, before R34 and R35, because R34 and R35 need a
+check on the phone and K25 closes R-0080 before its date. Q2 A: TASK-0477 corrects E249 with a scale of each quaternion by an
+exact power of two before a product. The owner can change each answer at the final report of 2026-11-29.
 
 ## Goal
 
@@ -41,20 +51,29 @@ design mass of a cut gives a wrong centre when a body of the chain is a `Subtrac
 
 ## Acceptance criteria
 
-- [ ] The probe of E246 is a test that fails before the correction and passes after it.
-- [ ] An injection that moves the cut for each `Subtract` makes a named test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] The probe of E246 is a test that fails before the correction and passes after it.
+- [x] An injection that moves the cut for each `Subtract` makes a named test fail.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Ready · no commit on `main` yet
+Status: Done · commit (the merge of the branch p0192-cut-centre) · v0.460
 
 ## Method
 
 Mechanical: the correction that the review names.
-Judgement:  none yet.
-Weakest:    none yet.
+Judgement:  the guard repeats the condition of the case of `Steps`, so the two can drift apart; a `Steps` that gives the
+            placement of its cut would hold them as one, and it changes more lines.
+Weakest:    the test covers a Subtract by a box, a Subtract by a cylinder, a Union and an Intersect before the cut; a chain of
+            two placed steps has no test.
 
 ## Progress
 
 - 2026-11-28: opened by TASK-0475.
+- 2026-11-28: started under the standing order of 2026-11-28; this commit records the answers Q1 A and Q2 A of the review, in
+  this file and in the order of the roadmap.
+- 2026-11-28: E246. `Walk` moves the cut from the placement of the minuend only when the subtrahend is a curved tool, as the
+  case of `Steps` does. `The_Mass_Of_A_Cut_Of_A_Placed_Result_Of_A_Step_Has_Its_Centre_In_Its_Place` (four steps) compares the
+  scene with a `PlaceBody` and with a `Translate`; before the correction the case "box" gave the centre x = 200.44 mm in place of
+  99.60 mm, which is the injection "move the cut for each Subtract". Ledger entry v0.460.
+- 2026-11-28: run 46094044169 of `7e299a92` passed on each job. Closed at v0.460.

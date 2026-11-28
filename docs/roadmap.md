@@ -602,6 +602,8 @@ Therefore each approved objective must have a track here.
 - P11.0 — A body has a placement, and the command `PlaceBody` sets it, so a move keeps the identity and the exact shape of a
   body; each reader of the geometry applies the placement, with a test of each. v0.458, TASK-0474, ADR-0191.
 - Review — The codebase review of 2026-11-28. v0.459, TASK-0475.
+- P0.192 — The design mass of a cut of a placed body moves the cut one time, also after a `Subtract` by a tool with no curve
+  (E246); the standing order answers Q1 A and Q2 A of the review. v0.460, TASK-0476.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -1192,6 +1194,8 @@ The tracks are not strictly sequential, but three rules hold:
    (TASK-0474) the codebase review of 2026-11-28 (TASK-0475) puts P0.192 (TASK-0476), which holds the high finding E246, before
    the next product phase, and P0.193 (TASK-0477), which holds the medium and low findings, after it. Its question Q1 asks the
    owner if K25 comes before R34 and R35, because R34 and R35 need a check on the phone.
+   The standing order of 2026-11-28 answers Q1 A and Q2 A of that review (TASK-0476): after P0.192, K25 is the next product
+   phase, then P0.193, then R34 and R35.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase

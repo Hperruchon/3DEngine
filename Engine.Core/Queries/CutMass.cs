@@ -162,6 +162,9 @@ internal static class CutMass
     // the Document, with their placements, so the result of a step is at the placement that its command gives it: the identity
     // for a Translate and a Rotate, the placement of the minuend for a Subtract. A PlaceBody of the result moves the cut from that
     // placement to its own. The first body of the chain reads the solid, the map and the curves with its placement.
+    // Finding E246 of the codebase review of 2026-11-28 (TASK-0476): a Subtract builds its cut from the step only when its
+    // subtrahend is a curved tool, as the case of Steps says; a Subtract by another body is a first body of the chain, whose solid
+    // has its placement now. Until TASK-0476 such a cut moved a second time.
     private static Cut? Walk(Document document, FeatureGraph graph, Guid handle)
     {
         if (Steps(document, graph, handle) is not { } cut)
@@ -169,7 +172,8 @@ internal static class CutMass
         var given = graph.Creator(handle) switch
         {
             TranslateCommand or RotateCommand => BodyPlacement.Identity,
-            SubtractCommand subtract => graph.Placement(subtract.MinuendBodyId, graph.Order(subtract.CommandId)),
+            SubtractCommand subtract when ToolOf(document, subtract.SubtrahendBodyId) is not null
+                => graph.Placement(subtract.MinuendBodyId, graph.Order(subtract.CommandId)),
             _ => (BodyPlacement?)null,
         };
         var now = graph.Placement(handle);
