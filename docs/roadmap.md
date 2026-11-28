@@ -630,6 +630,7 @@ Therefore each approved objective must have a track here.
   reversal and the tests of the joints; T207 stays open. v0.473, TASK-0488.
 - K12a — The query `CheckTravel` turns a pivot from limit to limit and gives its first contact. v0.474, TASK-0490,
   ADR-0195.
+- K12b — `CheckTravel` moves a slider from limit to limit by one exact sweep. v0.475, TASK-0491, ADR-0196.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -1076,7 +1077,7 @@ boundary and each refused rung.
 | K11 | The pair check at one position: for each pair of bodies a query gives the class (apart, touching or overlapping), the volume and the box of the overlap, the minimum gap, a mark for an intended contact, and a mark when the answer is exact for a mesh only (ADR-0157 items 5 to 7). The intended pairs are a parameter of the query until P11 and P13 put them in the Document. After K15 and K16. TASK-0436, ADR-0182. | 2–3 |
 | K12 | The travel: a query checks a pivot from one limit to the other on a fork of the Document, sampled with a margin so that no contact between two samples is missed, with the intended contacts exempt, and gives the first contact angle to a stated tolerance; a slider gets one exact sweep (ADR-0126 item 4, ADR-0157 items 5 and 8). After K11, P11 and P15. | 2–3 |
 | K12a | The travel of a pivot: the query `CheckTravel` turns the child and the bodies under it in memory from the lower to the upper limit, with a step that passes no contact (the gap above the radius times the chord), the pairs of the joints exempt, and the first contact to a tolerance of 0.01 mm by default. After P0.201. TASK-0490, ADR-0195. | 1 |
-| K12b | The travel of a slider: one exact sweep of the bodies that move, from the lower to the upper distance. After K12a. | 1–2 |
+| K12b | The travel of a slider: one exact sweep of the bodies that move, from the lower to the upper distance, by the first event of a vertex on a face or of an edge on an edge. After K12a. TASK-0491, ADR-0196. | 1–2 |
 | K13 | The envelope: a query gives the extent below a reference face over the travel, and names the bodies that the roles exclude. After K12 and P14. | 1–2 |
 | K14 | The load check of a printed part (ADR-0126 item 1). Its own ADR decides the method. After R24. | to estimate |
 | K15 | Measure queries in the engine, so that the window and an agent measure by one path: `GetMassProperties` gives the exact volume and the centre of a body; `GetDistance` gives the minimum distance between two bodies, faces, edges or vertices, with its two points; `GetAngle` gives the cosine and the sine between two faces (ADR-0157). First the bodies of plane faces, then the curved faces. After K10. | 2–3 |
