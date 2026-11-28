@@ -81,7 +81,7 @@ public class EventsEndpointKestrelTests
         Assert.Equal("E-API-WS-INVALID-SUBSCRIBE", message.CloseStatusDescription);
 
         // The default is the limit of ADR-0005 section 5.
-        Assert.Equal(TimeSpan.FromSeconds(10), SubscriberOptions.Default.SubscribeTimeout);
+        Assert.Equal(TimeSpan.FromSeconds(30), SubscriberOptions.Default.SubscribeTimeout);
     }
 
     private static async Task<ClientWebSocket> Connect(WebApplication app, CancellationToken ct)

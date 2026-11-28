@@ -14809,3 +14809,22 @@ integration has not run on this commit.
 New tests: 4. The test list holds 3406 (2012 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.459, 1 product milestone and 7
 entries followed it. The failed runs since the entry v0.465, from the API: none.
+
+## v0.467 — The time limit of the subscribe frame is 30 seconds (P0.198, TASK-0484)
+
+The entry v0.464 (TASK-0481) gave the subscribe frame of `/events` a time limit of 10 seconds. Main run 46113600404 of the merge
+0f811442 (P0.197) failed on Windows: `EventsEndpointResetTests.Subscribe_With_A_Negative_Cursor_On_An_Empty_Ring_Receives_Reset`
+sent its frame at once after the connect and got the close 1007 with `E-API-WS-INVALID-SUBSCRIBE`. The frame is valid, and the
+path of a malformed frame did not change, so the time limit gave the close. The probable cause is that the threads of the pool
+were busy for more than 10 seconds while the tests ran in parallel on a slow runner; the annotation gives no time, and no local
+run gave the failure. `SubscriberOptions.SubscribeTimeout` is now 30 seconds, the interval of the heartbeat, and ADR-0005
+section 5 step 2 says so. A time limit can always meet a host that is busy for longer; 30 seconds makes it three times less near.
+
+**Proof.** A clean build gives 0 warnings, and `dotnet test` passes with the image tests. The test of the default asks for 30
+seconds. The write-set check and `eng/repo-gates` pass. Not verified: continuous integration has not run on this commit, and no
+test shows the cause of the failed run.
+
+New tests: 0. The test list holds 3406 (2012 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.459, 1 product milestone and 8
+entries followed it. The failed runs since the entry v0.466, from the API: 46113600404, the main run of 0f811442 on Windows, the
+test above.
