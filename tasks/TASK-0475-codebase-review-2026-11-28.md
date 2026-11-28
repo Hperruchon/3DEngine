@@ -1,7 +1,7 @@
 ---
 id: 0475
 title: The codebase review of 2026-11-28 is a record
-status: Active
+status: Done
 phase: governance
 opened: 2026-11-28
 depends-on: [0474]
@@ -56,12 +56,12 @@ section 7.
 
 - [x] Each finding of the review has its place and its evidence, and the session read each finding of the agents in the code.
 - [x] The measures use the method of the last review.
-- [ ] `CodebaseReviewGateTests`, `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on
+- [x] `CodebaseReviewGateTests`, `dotnet test`, the write-set check and `eng/repo-gates` pass; continuous integration passes on
       the branch and on `main` after the merge.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch codebase-review-2026-11-28) · v0.459
+Status: Done · commit (the merge of the branch codebase-review-2026-11-28) · v0.459
 
 ## Method
 
@@ -76,3 +76,4 @@ Weakest:    E250 has no probe that ran, because it needs a journal that fails at
 
 - 2026-11-28: opened under the standing order of 2026-11-28, after the merge of P11.0 (v0.458). The review, TASK-0476 and
   TASK-0477, the rows P0.192 and P0.193, and ledger entry v0.459.
+- 2026-11-28: run 46090558689 of `28c4c3c2` passed on each job. Closed at v0.459.
