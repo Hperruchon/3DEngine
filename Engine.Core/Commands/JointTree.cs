@@ -166,6 +166,13 @@ internal static class JointTree
     // joints of the list. A joint whose child is not live gives no record. The walk takes the children of each body in the order
     // of the log of their joints, so the events of a step have one order on each platform.
     public static List<BodyRecord> Below(Document document, IReadOnlyCollection<JointRecord> joints, Guid root, BodyPlacement at)
+        => [.. Subtree(document, joints, root, at)
+            .Select(item => item.Body with { Placement = Placements.Stored(item.Placement) } is var record && record != item.Body ? record : null)
+            .OfType<BodyRecord>()];
+
+    // ADR-0195 item 2 (phase K12a, TASK-0490): each live body under the body root through tight joints, with the placement that
+    // the tree gives it when root has the placement at, in the order of the walk of Below.
+    public static List<(BodyRecord Body, BodyPlacement Placement)> Subtree(Document document, IReadOnlyCollection<JointRecord> joints, Guid root, BodyPlacement at)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(joints);
@@ -173,7 +180,7 @@ internal static class JointTree
         for (var i = 0; i < document.Log.Count; i++)
             order.TryAdd(document.Log[i].Command.CommandId, i);
         var live = document.Bodies.ToDictionary(body => body.Handle.Id);
-        var changed = new List<BodyRecord>();
+        var below = new List<(BodyRecord Body, BodyPlacement Placement)>();
         var seen = new HashSet<Guid> { root };
         var queue = new Queue<(Guid Body, BodyPlacement Placement)>();
         queue.Enqueue((root, at));
@@ -186,13 +193,11 @@ internal static class JointTree
                 if (!live.TryGetValue(joint.ChildBodyId, out var child) || !seen.Add(child.Handle.Id))
                     continue;
                 var next = Child(placement, joint);
-                var record = child with { Placement = Placements.Stored(next) };
-                if (record != child)
-                    changed.Add(record);
+                below.Add((child, next));
                 queue.Enqueue((child.Handle.Id, next));
             }
         }
 
-        return changed;
+        return below;
     }
 }

@@ -107,6 +107,7 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.CommandFieldMissing,   "Error",   "CMD"), // finding E163, TASK-0242
         new(DiagnosticCodes.AssemblyReferenceInvalid, "Error", "ASSEMBLY"), // ADR-0071 item 3, TASK-0202
         new(DiagnosticCodes.AssemblyIdInUse,       "Error",   "ASSEMBLY"), // ADR-0071 item 3, TASK-0202
+        new(DiagnosticCodes.CheckTravelInvalid,    "Error",   "CHECK"), // ADR-0195 item 5, TASK-0490
         new(DiagnosticCodes.JointIdInUse,          "Error",   "JOINT"), // ADR-0193 item 8, TASK-0479
         new(DiagnosticCodes.JointNotFound,         "Error",   "JOINT"), // ADR-0193 item 8, TASK-0479
         new(DiagnosticCodes.JointInvalid,          "Error",   "JOINT"), // ADR-0193 item 8, TASK-0479

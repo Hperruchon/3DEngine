@@ -14990,3 +14990,24 @@ commit; no test has a datum with a fault as a connector; T207 is not corrected.
 New tests: 14. The test list holds 3441 (2047 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 11 of 15. New diagnostic codes: 0. Since the review of v0.471, 1 product milestone and 2
 entries followed it. The failed runs since the entry v0.472, from the API: none.
+
+## v0.474 — The query CheckTravel turns a pivot from limit to limit and gives its first contact (K12a, TASK-0490)
+
+Row K12 splits into K12a, the travel of a pivot, and K12b, the exact sweep of a slider. ADR-0195 records K12a. The query
+`CheckTravel` takes `jointId` and an optional `tolerance` (0.01 mm by default). It turns the child of the pivot and each body under it
+through tight joints in memory, from the lower to the upper limit, and changes nothing. The pair of each joint is exempt. At each sample
+the gap of the nearest pair bounds the next step: a point at the radius moves at most the radius times the chord of the step, so the
+step, halved by the formula of the half angle with `sqrt` only, passes no contact. The first sample also finds an overlap. The answer is
+`free`, or the first `contact` with its pair and its gap, with the count of the samples, the radius and the tolerance. A new code,
+`E-CHECK-TRAVEL-INVALID`, refuses a joint that is not a pivot with limits and a tolerance that is not a finite length above zero; one
+sample above the work of `CheckInterference` or more than 4096 samples give `E-CHECK-WORK-LIMIT`. No change of `Engine.Contracts`, so the
+standing order of 2026-11-28 answered the choices with the recommended option.
+
+**Proof.** A clean build gives 0 warnings, and `dotnet test` passes with the image tests. The test of the contact needs no angle: the far
+corner of the child is at z = 10 s + 5 c, so the contact sample has 10 s + 5 c within the tolerance below 8. Two injections each made a
+test fail: no bound of the step (`A_Travel_Stops_At_The_First_Contact_Within_The_Tolerance`), and no exempt pair (three tests). The
+write-set check and `eng/repo-gates` pass. Not verified: continuous integration has not run on this commit.
+
+New tests: 6. The test list holds 3447 (2053 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 11 of 15. New diagnostic codes: 1 (`E-CHECK-TRAVEL-INVALID`). Since the review of v0.471, 2 product
+milestones and 3 entries followed it. The failed runs since the entry v0.473, from the API: none.
