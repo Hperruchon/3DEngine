@@ -14,19 +14,21 @@ namespace Engine.Api.Http.Json;
 internal static class JsonRequest
 {
     // The refusal of a body that is not JSON or whose charset is not known, with HTTP 415; null for a body that the read takes.
-    // ReadFromJsonAsync takes each charset that Encoding.GetEncoding knows, and throws for another one.
+    // ReadFromJsonAsync takes each charset that Encoding.GetEncoding knows, and throws for another one. Finding E252 of the second
+    // codebase review of 2026-11-28 (TASK-0488): the check reads the charset as the read takes it, with its quotes, and refuses
+    // each exception of GetEncoding. Until TASK-0488 it removed the quotes, so charset="utf-8" passed and the read gave HTTP 500,
+    // and it caught ArgumentException only, so charset=utf-7, which .NET refuses with NotSupportedException, gave HTTP 500.
     public static IResult? Refusal(HttpRequest request)
     {
         if (!request.HasJsonContentType())
             return ApiErrorEnvelope.UnsupportedMediaType();
-        if (MediaTypeHeaderValue.TryParse(request.ContentType, out var type)
-            && HeaderUtilities.RemoveQuotes(type.Charset) is { Length: > 0 } charset)
+        if (MediaTypeHeaderValue.TryParse(request.ContentType, out var type) && type.Charset is { Length: > 0 } charset)
         {
             try
             {
                 _ = Encoding.GetEncoding(charset.ToString());
             }
-            catch (ArgumentException)
+            catch (Exception exception) when (exception is ArgumentException or NotSupportedException)
             {
                 return ApiErrorEnvelope.UnsupportedCharset(charset.ToString());
             }

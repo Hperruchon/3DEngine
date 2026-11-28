@@ -66,19 +66,27 @@ public class RequestTextTests : IClassFixture<WebApplicationFactory<Program>>
         NamesNoType(message);
     }
 
+    // Finding E252 of the second codebase review of 2026-11-28 (TASK-0488): utf-7, which .NET refuses with NotSupportedException,
+    // and a quoted charset, which the read does not take, get the same answer as an unknown name.
     [Theory]
-    [InlineData("/commands", """{"name":"NoOp","schemaVersion":1,"parameters":{}}""")]
-    [InlineData("/queries", """{"name":"GetBodies","schemaVersion":1,"parameters":{}}""")]
-    [InlineData("/proposals", """{"summary":"s","commands":[]}""")]
-    public async Task A_Body_Whose_Charset_Is_Not_Known_Gets_415_With_The_Envelope(string route, string body)
+    [InlineData("/commands", """{"name":"NoOp","schemaVersion":1,"parameters":{}}""", "wibble")]
+    [InlineData("/queries", """{"name":"GetBodies","schemaVersion":1,"parameters":{}}""", "wibble")]
+    [InlineData("/proposals", """{"summary":"s","commands":[]}""", "wibble")]
+    [InlineData("/commands", """{"name":"NoOp","schemaVersion":1,"parameters":{}}""", "utf-7")]
+    [InlineData("/queries", """{"name":"GetBodies","schemaVersion":1,"parameters":{}}""", "utf-7")]
+    [InlineData("/proposals", """{"summary":"s","commands":[]}""", "utf-7")]
+    [InlineData("/commands", """{"name":"NoOp","schemaVersion":1,"parameters":{}}""", "\"utf-8\"")]
+    [InlineData("/queries", """{"name":"GetBodies","schemaVersion":1,"parameters":{}}""", "\"utf-8\"")]
+    [InlineData("/proposals", """{"summary":"s","commands":[]}""", "\"utf-8\"")]
+    public async Task A_Body_Whose_Charset_Is_Not_Known_Gets_415_With_The_Envelope(string route, string body, string charset)
     {
         using var http = _factory.CreateClient();
 
-        var (status, code, message) = await Post(http, route, body, "application/json; charset=wibble");
+        var (status, code, message) = await Post(http, route, body, $"application/json; charset={charset}");
 
         Assert.Equal(HttpStatusCode.UnsupportedMediaType, status);
         Assert.Equal("E-API-BAD-REQUEST", code);
-        Assert.Equal("The charset 'wibble' of the content type is not known. Send UTF-8.", message);
+        Assert.Equal($"The charset '{charset}' of the content type is not known. Send UTF-8.", message);
     }
 
     // A known charset other than UTF-8 still reads, as ReadFromJsonAsync reads it.

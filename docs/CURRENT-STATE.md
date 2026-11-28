@@ -14944,3 +14944,49 @@ verified: continuous integration has not run on this commit; the window does not
 New tests: 6 in `Engine.Tests/Commands/JointStateTests.cs`. The test list holds 3427 (2033 in `Engine.Tests`, 391 in
 `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in `3DEngine.VisionTests`). Open entries: 11 of 15. New diagnostic codes: 0.
 Since the review of v0.471, 1 product milestone and 1 entry followed it. The failed runs since the entry v0.471, from the API: none.
+
+## v0.473 — The medium and low findings of the second codebase review of 2026-11-28 (P0.201, TASK-0488)
+
+The second codebase review of 2026-11-28 found two medium and five low findings, after the next product phase, P11b.
+
+**E251.** The table of the placements of a step of P11a was keyed by the command identifier, and the bus wrote it only when the
+step changed a placement. A log can hold one identifier two times (E17), so the second entry of a `PlaceBody` that changed nothing
+took the placements of the first, and the solid of a jointed child was not where its record was. The bus now keys the table by the
+place of the entry in the log, and the feature list keeps the placements of each step beside it, with the order of the step in each
+entry, for an `Undo` and a `Redo` (ADR-0193 item 9, History).
+
+**E252.** The check of the charset of `/commands`, `/queries` and `/proposals` removed the quotes and caught `ArgumentException`
+only, so `charset="utf-8"` and `charset=utf-7` gave HTTP 500, or a false text at `/proposals`. It now reads the charset as the read
+takes it and refuses each exception of `GetEncoding` with HTTP 415.
+
+**E253.** The check of the limits of a pivot is exact: the turn back by the lower limit and the order of two turns are in rational
+numbers (ADR-0193 item 5, History). A correction of the review: its example, the value (3, 4) for the limit (0.6, 0.8), is not on
+the limit in exact numbers, because the doubles 0.6 and 0.8 are not in the ratio 3 : 4; the refusal of that example was right. The
+fault is that the answer in doubles near a limit depended on the rounding: a search of random limits found values a little outside
+a limit that the old check took. The test holds one of them.
+
+**E254.** The standing order of 2026-11-28 answered Q1 of the review with A: a tight joint whose parent is not live does not hold its
+child, so a `PlaceBody` and a `PlaceByConnectors` of that child apply; the joint still counts for the one parent and for a loop
+(ADR-0194 item 2, History).
+
+**E255.** A cancellation that the journal or a handler throws at the reversal of a group no longer takes the place of the exception
+of the handler; the session sets `FailedIndexKey` and `ReversedKey` for it too.
+
+**T206.** New tests compare the faces of a tree of joints after an `Undo`, a `Redo` and an open, cut the child of a joint, and take
+the side of a cylinder as a connector; the refusals of a connector that need no sphere run with no native backend.
+
+**T207 stays open.** A module initializer of `Engine.Tests` that sets no limit of the subscribe frame for each host is refused by the
+write-set check, because it can redirect a gate before it runs (finding T31). A limit in each host touches the shared
+`WebSocketTestClient`, the factories and each scenario test on a real Kestrel, so it needs its own task; the next review judges it.
+
+**Proof.** A clean build gives 0 warnings, and `dotnet test` passes with the image tests. Five injections of the old code each made a
+test fail: the table of P11a (`A_Command_Identifier_Two_Times_In_A_Log_Gives_Each_Step_Its_Own_Placements`), the check in doubles
+(`The_Check_Of_The_Limits_Of_A_Pivot_Is_Exact`), each tight joint holds its child
+(`The_Child_Of_A_Joint_Whose_Parent_Is_Consumed_Takes_A_PlaceBody`), the old filter of the reversal
+(`A_Cancellation_Of_The_Reversal_Of_A_Group_Keeps_The_Exception_Of_The_Handler`), and the old charset check (six cases of
+`RequestTextTests`). The write-set check and `eng/repo-gates` pass. Not verified: continuous integration has not run on this
+commit; no test has a datum with a fault as a connector; T207 is not corrected.
+
+New tests: 14. The test list holds 3441 (2047 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 11 of 15. New diagnostic codes: 0. Since the review of v0.471, 1 product milestone and 2
+entries followed it. The failed runs since the entry v0.472, from the API: none.

@@ -88,8 +88,9 @@ gave the facts and the questions Q1 to Q7, and the owner answered "Yes, all A" o
 5. **The limits.** A pivot takes `lowerCos`, `lowerSin`, `upperCos` and `upperSin`, all four or none; the turns of the joint go
    counterclockwise about the normal of the parent connector from the lower to the upper limit. A slider takes `lowerDistance`
    and `upperDistance`, both or none, and the lower is not above the upper. A fixed joint has no limits. A value outside the
-   limits is refused, and nothing moves. The check of a pivot compares the order of the two turns from the lower limit with a
-   function of `+ - /` only that grows with the angle. Row K12 reads the limits.
+   limits is refused, and nothing moves. The check of a pivot turns the value and the upper limit back by the lower limit in exact
+   rational numbers, and orders the two by their half turn and the sign of their cross product, so the answer has no rounding
+   (TASK-0488, finding E253). Row K12 reads the limits.
 6. **The commands and the tree (Q4 A).** `AddJoint` (the kind, the two bodies, the two connectors, the value, the limits),
    `SetJointValue` (the joint and the value) and `RemoveJoint` (the joint). A body has one parent joint at most, and a joint
    whose child is above its parent in the tree closes a loop; each joint of the Document counts, also a joint of a body that a
@@ -110,7 +111,9 @@ gave the facts and the questions Q1 to Q7, and the owner answered "Yes, all A" o
    `PlaceBody` of the child of a joint). An unknown body gives `E-GEOM-BODY-NOT-FOUND`.
 9. **The placements of a step (amends ADR-0191 item 5).** A joint places bodies that its command does not name, so the walks of
    the steps cannot read each placement from the `PlaceBody` commands of the log only. The command bus records, for each step,
-   each body whose placement the step changes and its new placement, before the log holds the command. The feature list reads
+   each body whose placement the step changes and its new placement, before the log holds the command, under the place of the
+   entry in the log, because a log can hold one command identifier two times; the feature list keeps the placements of each step
+   beside the step, for an `Undo` and a `Redo` (TASK-0488, finding E251). The feature list reads
    these placements as steps of placement of the bodies, as it reads a `PlaceBody`, and a log with no Document reads the
    `PlaceBody` commands only. So the solid of a body, a regeneration, a boolean and the chain of a datum take the placement that
    a joint gave. A replay, an open and a fork apply each command through a bus, so they make the same table.
@@ -152,5 +155,7 @@ preview need no change.
 
 - 2026-11-28 · TASK-0479 · The record, Accepted: the answers "Yes, all A" of the owner for Q1 to Q7 of the proposal. Amends
   ADR-0157 items 3 and 4 and ADR-0191 items 3 and 5.
+- 2026-11-28 · TASK-0488 · Items 5 and 9: the check of the limits of a pivot is exact (finding E253), and the table of the
+  placements of a step is keyed by the place of the entry in the log (finding E251). No change of the log or of a record.
 - 2026-11-28 · TASK-0489 · Amended by ADR-0194: item 6, a `PlaceBody` of the child of a loose joint applies, and a loose joint
   places nothing; the state, the intended pairs and `PlaceByConnectors` of item 10.

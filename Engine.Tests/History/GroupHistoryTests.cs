@@ -403,8 +403,28 @@ public sealed class GroupHistoryTests
         Assert.Equal(true, other.Data[DocumentSession.ReversedKey]);
     }
 
+    // Finding E255 of the second codebase review of 2026-11-28 (TASK-0488): a cancellation that the journal throws at the Undo of
+    // the group does not take the place of the exception of the handler, and the keys say that the steps before it stay.
+    [Fact]
+    public async Task A_Cancellation_Of_The_Reversal_Of_A_Group_Keeps_The_Exception_Of_The_Handler()
+    {
+        var (session, _) = NewSession(new ThrowHandler());
+        session.Attach(Engine.Core.Persistence.DocumentJournal.ForTest(
+            Path.Combine(Path.GetTempPath(), $"3de-group-{Guid.NewGuid():N}.3de"), Document.Millimetre,
+            new FailingOnText("\"Undo\"", () => new OperationCanceledException("The write stopped."))));
+        var group = Guid.NewGuid();
+
+        var thrown = await Assert.ThrowsAsync<InvalidOperationException>(() => session.ApplyGroup(
+            [new CreateBoxCommand { SizeX = 1, SizeY = 1, SizeZ = 1, GroupId = group }, new ThrowCommand { GroupId = group }],
+            version: 0));
+
+        Assert.Equal("A fault of the backend.", thrown.Message);
+        Assert.Equal(1, thrown.Data[DocumentSession.FailedIndexKey]);
+        Assert.Equal(false, thrown.Data[DocumentSession.ReversedKey]);
+    }
+
     // A stream whose write of a line that holds the text fails, as a full disk does.
-    private sealed class FailingOnText(string text) : MemoryStream
+    private sealed class FailingOnText(string text, Func<Exception>? fault = null) : MemoryStream
     {
         public override void Write(ReadOnlySpan<byte> buffer)
         {
@@ -421,7 +441,7 @@ public sealed class GroupHistoryTests
         private void Check(ReadOnlySpan<byte> buffer)
         {
             if (System.Text.Encoding.UTF8.GetString(buffer).Contains(text, StringComparison.Ordinal))
-                throw new IOException("The disk is full.");
+                throw fault?.Invoke() ?? new IOException("The disk is full.");
         }
     }
 

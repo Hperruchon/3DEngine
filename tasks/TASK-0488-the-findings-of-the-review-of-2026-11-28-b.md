@@ -1,17 +1,32 @@
 ---
 id: 0488
 title: The medium and low findings of the second codebase review of 2026-11-28
-status: Ready
+status: Done
 phase: P0.201
 opened: 2026-11-28
 depends-on: [0487]
-governed-by: []
+governed-by: [0004, 0006, 0012, 0015, 0016, 0019, 0020, 0021, 0028, 0031, 0033, 0037, 0045, 0054, 0060, 0076, 0083, 0089, 0112, 0153, 0179, 0181, 0188, 0190, 0191, 0193, 0194]
 writes:
   create:
     - tasks/TASK-0488-the-findings-of-the-review-of-2026-11-28-b.md
+    - Engine.Tests/Commands/JointFindingsTests.cs
   modify:
+    - tasks/TASK-0488-the-findings-of-the-review-of-2026-11-28-b.md
+    - Engine.Api.Http/Json/JsonRequest.cs
+    - Engine.Core/CommandBus.cs
+    - Engine.Core/Features/FeatureList.cs
+    - Engine.Core/Commands/JointTree.cs
+    - Engine.Core/Commands/PlaceBodyCommandHandler.cs
+    - Engine.Core/Commands/PlaceByConnectorsCommandHandler.cs
+    - Engine.Core/DocumentSession.cs
+    - Engine.Tests/Commands/JointTests.cs
+    - Engine.Tests/History/GroupHistoryTests.cs
+    - Engine.Tests/Http/RequestTextTests.cs
+    - docs/adr/0193-the-joints-of-a-part.md
+    - docs/adr/0194-the-loose-state-the-intended-pairs-and-the-snap-by-connectors.md
     - docs/roadmap.md
     - docs/CURRENT-STATE.md
+    - eng/test-floor.txt
 ---
 
 # TASK-0488 — The medium and low findings of the second codebase review of 2026-11-28
@@ -47,19 +62,26 @@ The write set grows when the task starts.
 
 ## Acceptance criteria
 
-- [ ] Each finding of the scope has a test that fails with the old code, or a reason in the ledger.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] Each finding of the scope has a test that fails with the old code, or a reason in the ledger. T207 stays open (see the
+      ledger).
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Ready · no commit yet
+Status: Done · commit (the merge of the branch p0201-review-findings) · v0.473
 
 ## Method
 
 Mechanical: the probes of the review.
 Judgement:  the correction of each finding.
-Weakest:    not started.
+Weakest:    T206 has no test of a datum with a fault as a connector: no command of a part gives a named datum a fault while
+            its body stays. The example of E253 in the review was not on the limit in exact numbers (see the ledger).
 
 ## Progress
 
 - 2026-11-28: opened by TASK-0487, the second codebase review of 2026-11-28.
+- 2026-11-28: started after P11b (v0.472). E251, E252, E253, E254 (Q1 A), E255 and T206, each with a test; five injections of
+  the old code each made a test fail. T207 stays open: a module initializer that sets no limit for each host of the tests is
+  refused by the write-set check (finding T31), and a limit in each host touches the shared test client and each scenario test.
+  Ledger v0.473.
+- 2026-11-28: run 46159212009 of `de2eb03c` passed on each job. Closed at v0.473.

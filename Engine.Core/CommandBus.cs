@@ -70,13 +70,15 @@ public sealed class CommandBus
     // ADR-0193 item 9: for each applied step that changes the placement of a body, each such body and its new placement. A joint
     // places bodies that its command does not name, so the feature list reads the placements of a step here (PlacedBy), and
     // the walks of the steps give each body the placement that the step gave it. A replay and a fork apply each command through
-    // a bus, so they make the same table.
-    private readonly Dictionary<Guid, IReadOnlyList<(Guid Body, BodyPlacement Placement)>> _placedBy = [];
+    // a bus, so they make the same table. Finding E251 of the second codebase review of 2026-11-28 (TASK-0488): the key is the
+    // place of the entry in the log, because a log can hold one command identifier two times (E17); until TASK-0488 the key was
+    // the identifier, and the second entry of a PlaceBody that changed nothing read the placements of the first.
+    private readonly Dictionary<int, IReadOnlyList<(Guid Body, BodyPlacement Placement)>> _placedBy = [];
 
-    // ADR-0193 item 9: the placements that the step of the command gave, or null when the Document has no bus or the step
-    // changed no placement.
-    internal static IReadOnlyList<(Guid Body, BodyPlacement Placement)>? PlacedBy(Document document, Guid command)
-        => BusOfDocument.TryGetValue(document, out var bus) && bus._placedBy.TryGetValue(command, out var placed) ? placed : null;
+    // ADR-0193 item 9: the placements that the step at the place of the log gave, or null when the Document has no bus or the
+    // step changed no placement.
+    internal static IReadOnlyList<(Guid Body, BodyPlacement Placement)>? PlacedBy(Document document, int entry)
+        => BusOfDocument.TryGetValue(document, out var bus) && bus._placedBy.TryGetValue(entry, out var placed) ? placed : null;
 
     // ADR-0071 item 5: each reference identifier that a commit of this bus created.
     private readonly HashSet<Guid> _createdReferences = [];
@@ -283,7 +285,7 @@ public sealed class CommandBus
             .Select(body => (body.Handle.Id, Placements.Of(body)))
             .ToList();
         if (placed.Count > 0)
-            _placedBy[command.CommandId] = placed;
+            _placedBy[_document.Log.Count] = placed;
 
         // ADR-0031 item 3 and ADR-0033 item 10: the records before the commit, so that an
         // Undo can give them back.

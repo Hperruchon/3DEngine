@@ -1,6 +1,7 @@
 using Engine.Contracts;
 using Engine.Contracts.Joints;
 using Engine.Contracts.Sketch;
+using Engine.Kernel;
 
 namespace Engine.Core.Commands;
 
@@ -21,6 +22,15 @@ internal static class JointTree
     // of its child, so a PlaceBody and a PlaceByConnectors of that child are refused.
     public static JointRecord? TightParentOf(IEnumerable<JointRecord> joints, Guid body)
         => ParentOf(joints, body) is { State: JointRecord.Tight } joint ? joint : null;
+
+    // Finding E254 of the second codebase review of 2026-11-28 (TASK-0488, the answer Q1 A): the tight joint that holds the body: a
+    // tight parent joint whose parent is live. A joint whose parent a command consumed places nothing, so it does not hold its
+    // child, and a PlaceBody of the child applies; the joint still counts for the one parent and for a loop.
+    public static JointRecord? HolderOf(Document document, Guid body)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        return TightParentOf(document.Joints, body) is { } joint && document.Bodies.Any(live => live.Handle.Id == joint.ParentBodyId) ? joint : null;
+    }
 
     // Item 6: true when the body ancestor is on the chain of parents of the body, or is the body. The walk stops at a body that
     // it has seen, so a tree with a fault of the engine does not stop the session.
@@ -130,17 +140,26 @@ internal static class JointTree
             return value.Distance >= limits.Lower.Distance && value.Distance <= limits.Upper.Distance;
         if (kind != JointRecord.Pivot)
             return true;
-        var (lc, ls) = (limits.Lower.Cos, limits.Lower.Sin);
-        return Order((value.Cos * lc) + (value.Sin * ls), (value.Sin * lc) - (value.Cos * ls))
-            <= Order((limits.Upper.Cos * lc) + (limits.Upper.Sin * ls), (limits.Upper.Sin * lc) - (limits.Upper.Cos * ls));
+        // Finding E253 of the second codebase review of 2026-11-28 (TASK-0488): the turn back by the lower limit and the order of
+        // the two turns are exact. Until TASK-0488 they were doubles, so a value on a limit with another length, as (3, 4) for the
+        // limit (0.6, 0.8), rounded to a small negative sine and to a whole turn, and a large pair could reach infinity.
+        var (lc, ls) = (Rational.FromDouble(limits.Lower.Cos), Rational.FromDouble(limits.Lower.Sin));
+        (Rational C, Rational S) Back(JointValue turn)
+        {
+            var (c, s) = (Rational.FromDouble(turn.Cos), Rational.FromDouble(turn.Sin));
+            return ((c * lc) + (s * ls), (s * lc) - (c * ls));
+        }
+
+        return NotAfter(Back(value), Back(limits.Upper));
     }
 
-    // Item 5: a number from 0 up to 4 that grows with the angle of the direction (c, s) counterclockwise from the axis x, with
-    // + - / only: 0 at 0°, 1 at 90°, 2 at 180° and 3 at 270°. The length of (c, s) does not change it.
-    private static double Order(double c, double s)
+    // Item 5: true when the angle of a counterclockwise from the axis x, in [0°, 360°), is not above the angle of b. Each direction
+    // is in the half [0°, 180°) or [180°, 360°); in one half, the sign of the cross product a × b orders the two.
+    private static bool NotAfter((Rational C, Rational S) a, (Rational C, Rational S) b)
     {
-        var p = c / (Math.Abs(c) + Math.Abs(s));
-        return s >= 0 ? 1 - p : 3 + p;
+        static int Half((Rational C, Rational S) p) => p.S.Sign > 0 || (p.S.Sign == 0 && p.C.Sign > 0) ? 0 : 1;
+        var (ha, hb) = (Half(a), Half(b));
+        return ha != hb ? ha < hb : ((a.C * b.S) - (a.S * b.C)).Sign >= 0;
     }
 
     // Item 6 (the answer Q4 A): the new records of the bodies under the body root when root has the placement at, with the
