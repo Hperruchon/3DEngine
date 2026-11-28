@@ -1,7 +1,7 @@
 ---
 id: 0485
 title: A query result of another type than the caller asks for has its own code
-status: Active
+status: Done
 phase: P0.199
 opened: 2026-11-28
 depends-on: [0484]
@@ -52,11 +52,11 @@ A result of another type gives `E-QRY-RESULT-TYPE`, and `E-QRY-UNKNOWN` keeps on
 ## Acceptance criteria
 
 - [x] The test fails when the bus gives `E-QRY-UNKNOWN` for a result of another type.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch p0199-query-result-type) · v0.468
+Status: Done · commit (the merge of the branch p0199-query-result-type) · v0.468
 
 ## Method
 
@@ -68,3 +68,4 @@ Weakest:    a host asks for `object`, so no client of a host can get the new cod
 
 - 2026-11-28: opened under the standing order of 2026-11-28, after P0.198. `A_Result_Of_Another_Type_Gives_E_QRY_RESULT_TYPE`
   fails with the old code. Ledger v0.468.
+- 2026-11-28: run 46137914794 of `9003cc2c` passed on each job. Closed at v0.468.
