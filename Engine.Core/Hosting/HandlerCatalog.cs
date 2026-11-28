@@ -79,6 +79,9 @@ public static class HandlerCatalog
         new AddJointCommandHandler(),
         new SetJointValueCommandHandler(),
         new RemoveJointCommandHandler(),
+        // ADR-0194 items 2 and 4 (phase P11b, TASK-0489).
+        new SetJointStateCommandHandler(),
+        new PlaceByConnectorsCommandHandler(),
     ];
 
     public static IReadOnlyList<IQueryHandler> QueryHandlers() =>

@@ -1,13 +1,13 @@
 ---
 id: 0193
 title: A joint connects two bodies of a part in a tree with no solver, and its commands place the child and each body under it
-status: Accepted
+status: Amended
 topic: Contracts, geometry, assembly
 date: 2026-11-28
 supersedes: []
 superseded-by: []
 amends: ['0157', '0191']
-amended-by: []
+amended-by: ['0194']
 affects:
   - Engine.Contracts/Joints/JointRecord.cs
   - Engine.Contracts/Document.cs
@@ -152,3 +152,5 @@ preview need no change.
 
 - 2026-11-28 · TASK-0479 · The record, Accepted: the answers "Yes, all A" of the owner for Q1 to Q7 of the proposal. Amends
   ADR-0157 items 3 and 4 and ADR-0191 items 3 and 5.
+- 2026-11-28 · TASK-0489 · Amended by ADR-0194: item 6, a `PlaceBody` of the child of a loose joint applies, and a loose joint
+  places nothing; the state, the intended pairs and `PlaceByConnectors` of item 10.

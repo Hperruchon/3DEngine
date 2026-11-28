@@ -17,6 +17,11 @@ internal static class JointTree
     public static JointRecord? ParentOf(IEnumerable<JointRecord> joints, Guid body)
         => joints.FirstOrDefault(joint => joint.ChildBodyId == body);
 
+    // ADR-0194 item 2 (phase P11b, TASK-0489): the tight joint whose child is the body, or null. A tight joint gives the placement
+    // of its child, so a PlaceBody and a PlaceByConnectors of that child are refused.
+    public static JointRecord? TightParentOf(IEnumerable<JointRecord> joints, Guid body)
+        => ParentOf(joints, body) is { State: JointRecord.Tight } joint ? joint : null;
+
     // Item 6: true when the body ancestor is on the chain of parents of the body, or is the body. The walk stops at a body that
     // it has seen, so a tree with a fault of the engine does not stop the session.
     public static bool IsAncestor(IReadOnlyCollection<JointRecord> joints, Guid ancestor, Guid body)
@@ -156,7 +161,8 @@ internal static class JointTree
         while (queue.Count > 0)
         {
             var (parent, placement) = queue.Dequeue();
-            foreach (var joint in joints.Where(joint => joint.ParentBodyId == parent).OrderBy(joint => order.GetValueOrDefault(joint.Id, int.MaxValue)))
+            // ADR-0194 item 2 (phase P11b, TASK-0489): a loose joint gives no placement, so its child and the bodies under it stay.
+            foreach (var joint in joints.Where(joint => joint.ParentBodyId == parent && joint.State == JointRecord.Tight).OrderBy(joint => order.GetValueOrDefault(joint.Id, int.MaxValue)))
             {
                 if (!live.TryGetValue(joint.ChildBodyId, out var child) || !seen.Add(child.Handle.Id))
                     continue;

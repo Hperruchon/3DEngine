@@ -187,7 +187,7 @@ names. Do not read all of them.
 | [0179](0179-the-title-block-of-a-sheet.md) | A sheet holds the fields of the title block of ISO 7200, SetSheetTitle gives them, and the frame shows the block, the symbol of the projection and the centring marks | Accepted | Contracts, drawing | 0153, 0155, 0159, 0160, 0161 | — |
 | [0180](0180-the-measure-queries-of-plane-faces.md) | The measure queries GetMassProperties, GetDistance and GetAngle read the exact solid of the owned kernel and the curve of the design | Accepted | Kernel, queries | — | — |
 | [0181](0181-the-union-and-the-intersection-of-two-bodies.md) | The union and the intersection of two bodies, in the form of the subtract | Accepted | Kernel, geometry, commands | 0012, 0057, 0058 | — |
-| [0182](0182-the-pair-check-at-one-position.md) | The pair check CheckInterference at one position, from the exact solids of the owned kernel | Amended | Kernel, queries, assembly | 0083 | 0188, 0192 |
+| [0182](0182-the-pair-check-at-one-position.md) | The pair check CheckInterference at one position, from the exact solids of the owned kernel | Amended | Kernel, queries, assembly | 0083 | 0188, 0192, 0194 |
 | [0183](0183-the-connectors-of-a-body.md) | The query GetConnectors gives the named datums of a body and the implicit frames of its faces | Accepted | Kernel, queries, assembly | — | — |
 | [0184](0184-the-section-view.md) | The section view of the window, a cut of each body by a plane with a cap | Accepted | Clients, rendering | 0174 | — |
 | [0185](0185-the-preview-of-a-proposal-on-a-fork.md) | The preview of a proposal on a fork of the Document, a replay of a copy of its log off the serial lock | Amended | Surface, agent | 0092 | 0187, 0188 |
@@ -198,7 +198,8 @@ names. Do not read all of them.
 | [0190](0190-the-reversal-of-a-failed-group-is-marked-in-the-log.md) | The reversal of a failed group is an Undo with the group of the proposal, and it puts nothing on the redo list | Accepted | History, agent | 0188 | — |
 | [0191](0191-the-placement-of-a-body.md) | A body has a placement, a turn and an offset, and the command PlaceBody sets it, so a move changes no shape | Amended | Contracts, geometry, assembly | 0037, 0112, 0126, 0157 | 0193 |
 | [0192](0192-the-bodies-of-the-snapshot-and-of-the-check-in-the-order-of-the-log.md) | The snapshot of the events and CheckInterference give the live bodies in the order of the log | Accepted | Contracts, events, assembly | 0012, 0182, 0189 | — |
-| [0193](0193-the-joints-of-a-part.md) | A joint connects two bodies of a part in a tree with no solver, and its commands place the child and each body under it | Accepted | Contracts, geometry, assembly | 0157, 0191 | — |
+| [0193](0193-the-joints-of-a-part.md) | A joint connects two bodies of a part in a tree with no solver, and its commands place the child and each body under it | Amended | Contracts, geometry, assembly | 0157, 0191 | 0194 |
+| [0194](0194-the-loose-state-the-intended-pairs-and-the-snap-by-connectors.md) | A joint is tight or loose, each joint is an intended pair of the check, and PlaceByConnectors places a child one time | Accepted | Contracts, geometry, assembly | 0182, 0193 | — |
 
 ## Topics
 

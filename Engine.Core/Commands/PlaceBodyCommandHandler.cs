@@ -100,7 +100,8 @@ public sealed class PlaceBodyCommandHandler : ICommandHandler, ICommandEncoder
 
         // ADR-0193 item 6 (phase P11a, TASK-0479, the answer Q4 A): the joint of a child gives its placement, so a PlaceBody of a
         // child is refused, and a PlaceBody of a body with children places each body under it in the same step.
-        if (JointTree.ParentOf(document.Joints, body.Handle.Id) is { } joint)
+        // ADR-0194 item 2 (phase P11b, TASK-0489): the child of a loose joint takes a PlaceBody.
+        if (JointTree.TightParentOf(document.Joints, body.Handle.Id) is { } joint)
             return Failure(
                 DiagnosticCodes.JointPlaced,
                 $"The body '{body.Handle.Id}' is the child of the joint '{joint.Id}', and the joint gives its placement (ADR-0193 item 6).");

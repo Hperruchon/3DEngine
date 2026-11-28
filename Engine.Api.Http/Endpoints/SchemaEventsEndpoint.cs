@@ -75,7 +75,7 @@ internal static class SchemaEventsEndpoint
     // no limits has null limits.
     private static readonly IReadOnlyDictionary<string, FieldSchema> JointFields = new Dictionary<string, FieldSchema>(Fields(
         ("jointId", "guid"), ("kind", "string"), ("parentBodyId", "guid"), ("parent", "object"), ("childBodyId", "guid"),
-        ("child", "object"), ("value", "object")), StringComparer.Ordinal)
+        ("child", "object"), ("value", "object"), ("state", "string")), StringComparer.Ordinal) // ADR-0194 item 1, TASK-0489
     {
         ["limits"] = new FieldSchema("object", Required: false),
     };

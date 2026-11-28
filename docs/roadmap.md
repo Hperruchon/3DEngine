@@ -623,6 +623,8 @@ Therefore each approved objective must have a track here.
 - P11a — A joint connects two bodies of a part in a tree with no solver, and `AddJoint`, `SetJointValue` and `RemoveJoint`
   place the child and each body under it. v0.470, TASK-0479, ADR-0193.
 - Review — The second codebase review of 2026-11-28. v0.471, TASK-0487.
+- P11b — A joint is tight or loose, each joint is an intended pair of the check, and `PlaceByConnectors` places a child
+  one time. v0.472, TASK-0489, ADR-0194.
 - Review — The codebase review of 2026-11-14 (c). v0.351, TASK-0366.
 - P0.143 — The low findings of the codebase review of 2026-11-11: a triangle of zero area adds no edge, and a mesh of
   more than 100 000 triangles finds its edges on the thread pool. v0.332, TASK-0345, ADR-0121.
@@ -878,6 +880,7 @@ This track removes each condition that blocks other work.
 | P11 | Joints in the Document: connectors, a fixed joint, a pivot and a slider between two bodies of one part, in a kinematic tree with no solver; limits as a cosine and a sine; the states tight and loose; a refusal of a joint that closes a loop; a joint declares its two parts as an intended contact; a command places a body by two connectors one time. P11.0 is its ADR: it decides the model of a move from the measure of K10 (ADR-0126 items 2 and 3, ADR-0157 items 2 to 5, R-0070). On 2026-11-25 the owner answered Q1 A: P11.0 decides a model of placements. Each body keeps its shape in its own frame, and a joint or a move changes only a stored placement, a rotation matrix and a translation, so the exact numbers do not grow (K10a measured a numerator of 2576 digits after 150 turns). It changes the public shape of `Engine.Contracts`, so its ADR comes in the same commit. P11.0 is done (row P11.0, ADR-0191, v0.458): 150 turns with `PlaceBody` give a numerator of 19 digits. Commands and queries for the AI. After K10 and K17. | 3–5 |
 | P11.0 | The model of a move: a body has a placement, a turn and an offset, and the absolute command `PlaceBody` sets it, so a move keeps the identity and the exact shape of a body; each reader of the geometry applies the placement, with a test of each; the measure of K10a again with `PlaceBody` (the answers Q1 to Q7 A of the owner of 2026-11-27). TASK-0474, ADR-0191. | 2–3 |
 | P11a | The joints of a part: the record of a joint in the Document, a connector on a face or a datum with its frame in the frame of its body, the kinds fixed, pivot and slider, a value and limits as a cosine and a sine or a distance, a tree with one parent and no loop, the commands `AddJoint`, `SetJointValue` and `RemoveJoint`, which place the child and each body under it, and the query `GetJoints` (the answers "Yes, all A" of the owner of 2026-11-28 to Q1 to Q7). P11b adds the loose state, the intended pairs in `CheckInterference` and `PlaceByConnectors`. TASK-0479, ADR-0193. | 2–3 |
+| P11b | The rest of row P11: a joint is tight or loose, and `SetJointState` sets it; each joint of the Document is an intended pair of `CheckInterference`; `PlaceByConnectors` places a child by two connectors one time and records no joint (the answers Q5 A and Q6 A of the owner of 2026-11-28). After the second review of 2026-11-28. TASK-0489, ADR-0194. | 1–2 |
 | P12 | The parametric loop: the missing edits that K10 found, and the checks that run again after a rebuild, in one window, with no STL and no manual history (capability 3). After K12 and K13. | 1–2 |
 | P13 | Requirements and assumptions in the Document: text, value, unit, references to bodies, faces or joints, and a status: measured, estimated, to verify physically, verified physically with a date and a result; the intended contacts that no joint declares; and the rule of a gap as a requirement with a value of the process (ADR-0126 item 5, ADR-0157 items 5 and 7). After P0.145; it can run with P11. | 2–3 |
 | P14 | The role of a body (to print, context, excluded from an envelope) and the print export: one STL for each chosen part, in millimetres, with a check that its mesh is closed and has no degenerate triangle; 3MF later (ADR-0126 items 6 and 7). After P11. | 1–2 |
@@ -1227,6 +1230,7 @@ The tracks are not strictly sequential, but three rules hold:
    After P11a (TASK-0479) the second codebase review of 2026-11-28 (TASK-0487) finds no critical or high finding, so P0.201
    (TASK-0488), which holds the medium and low findings, comes after the next product phase, P11b. R34 and R35 follow, when
    the owner can check the phone. Its question Q1 asks the owner if a joint whose parent is not live still holds its child.
+   The standing order of 2026-11-28 answers Q1 A (TASK-0489): such a joint does not hold its child; P0.201 does it with E254.
 2. R2 blocks each later phase in track R. No mesh leaves the geometry backend today.
 3. K4 needs K0, K1 and K2. Do not start K4 before the reference model exists.
 4. The path to the milestone "CAD on one part" (the owner, 2026-10-27, KD2): R7b, R8a, R8b, the codebase

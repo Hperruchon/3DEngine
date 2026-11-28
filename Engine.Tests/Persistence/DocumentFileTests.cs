@@ -78,6 +78,13 @@ public sealed class DocumentFileTests : IDisposable
         },
         ["SetJointValue"] = new SetJointValueCommand { JointId = Guid.NewGuid(), Distance = -123456789.125 },
         ["RemoveJoint"] = new RemoveJointCommand { JointId = Guid.NewGuid() },
+        // ADR-0194 (phase P11b, TASK-0489).
+        ["SetJointState"] = new SetJointStateCommand { JointId = Guid.NewGuid(), State = "loose" },
+        ["PlaceByConnectors"] = new PlaceByConnectorsCommand
+        {
+            ParentBodyId = Guid.NewGuid(), ParentDatumId = Guid.NewGuid(),
+            ChildBodyId = Guid.NewGuid(), ChildFeatureId = Guid.NewGuid(), ChildElement = "-z", ChildItemId = Guid.NewGuid(),
+        },
         ["Subtract"] = new SubtractCommand { MinuendBodyId = Guid.NewGuid(), SubtrahendBodyId = Guid.NewGuid() },
         ["Union"] = new UnionCommand { FirstBodyId = Guid.NewGuid(), SecondBodyId = Guid.NewGuid(), ExpectedDocumentVersion = 0 },
         ["Intersect"] = new IntersectCommand { FirstBodyId = Guid.NewGuid(), SecondBodyId = Guid.NewGuid() },
