@@ -39,6 +39,15 @@ public sealed partial class Proposals
     private bool _behind;
     private bool _stopped;
 
+    // TASK-0482 (run 46103697245 of the close of TASK-0480): under _lock, the version of the copy of the log that the worker took
+    // and did not yet give to the proposals, or -1. Until the hand-over the copy covers each proposal that waits, so a caller in
+    // that window does not mark the queue behind.
+    private long _copying = -1;
+
+    // TASK-0482: a seam of the tests, null in production. The worker awaits it after each copy of the log and before the
+    // hand-over, so a test calls Preview in that window with no timing.
+    internal Func<CancellationToken, Task>? AfterCopy { get; set; }
+
     // True when the host gives a backend for each fork.
     public bool MakesPreviews => _forks is not null;
 
@@ -101,7 +110,11 @@ public sealed partial class Proposals
             // version of the call covers it, so the queue is not behind. Until TASK-0461 only the last preview counted: the first
             // preview of a new proposal marked the queue behind while its own fork ran, and Kept gave Current false after that
             // fork until the worker read the log again.
-            if (Waits(entry) && entry.Waiters.Contains(waiter) && Covered(entry) < version)
+            // TASK-0482 (run 46103697245 of the close of TASK-0480): a copy of the log that the worker took and did not yet give
+            // to the proposal covers it too. Until TASK-0482 a call in that window marked the queue behind, so the waiter got
+            // the preview of its version and Kept gave Current false until the worker read the log again; on a Windows runner
+            // ProposalPreviewWindowTests read Kept in that window.
+            if (Waits(entry) && entry.Waiters.Contains(waiter) && Math.Max(Covered(entry), _copying) < version)
                 _behind = true;
             if (_stopped)
                 waiter.Done.TrySetCanceled(CancellationToken.None);
@@ -271,10 +284,16 @@ public sealed partial class Proposals
                         (document, _) =>
                         {
                             lock (_lock)
+                            {
                                 _behind = false;
+                                _copying = document.Version;
+                            }
+
                             return ForkSource.Of(document);
                         },
                         ct).ConfigureAwait(false);
+                    if (AfterCopy is { } afterCopy)
+                        await afterCopy(ct).ConfigureAwait(false);
                 }
 
                 var jobs = new List<(Entry Entry, ForkSource Source)>();
@@ -293,6 +312,8 @@ public sealed partial class Proposals
                             entry.ComputingVersion = source.Version;
                         }
                     }
+
+                    _copying = -1;
 
                     if (jobs.Count == 0 && !_behind)
                     {
@@ -323,6 +344,7 @@ public sealed partial class Proposals
             lock (_lock)
             {
                 _worker = null;
+                _copying = -1;
                 foreach (var entry in _open.Concat(_closed))
                 {
                     entry.Computing = false;

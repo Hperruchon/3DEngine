@@ -14769,3 +14769,25 @@ false after the wait for the preview of a new version. The close commit changed 
 (8fc37dc6) passed. The cause is a race of the queue of the previews, which P0.194 did not change: a call of `Preview` between
 the copy of the log and its hand-over to the proposal marks the queue behind again. A new run of the amended close commit landed
 P0.194; TASK-0482 corrects the race.
+
+## v0.465 — A copy of the log in flight covers each proposal that waits for its preview (P0.196, TASK-0482)
+
+Run 46103697245, the close run of TASK-0480, failed on Windows: `ProposalPreviewWindowTests` read `Current` false after the
+wait for the preview of a new version. The worker of the queue of the previews clears the mark "behind" when it takes the copy of
+the log, and gives the copy to each proposal that waits a moment later. A call of `Preview` in that window found no preview, no
+fork and no pending copy at its version, so it marked the queue behind again; its waiter got the preview of its version, and
+`Kept` gave `Current` false until the worker read the log again. TASK-0461 closed the same window for a fork that runs.
+
+`Engine.Api.Http/Proposals.Preview.cs` now keeps the version of the copy in flight, from the copy to the hand-over, and a call
+does not mark the queue behind for a version that the copy covers. The seam `AfterCopy`, null in production, holds the worker
+in the window for a test.
+
+**Proof.** A clean build gives 0 warnings, and `dotnet test` passes with the image tests.
+`A_Caller_That_Waits_While_The_Copy_Of_Its_Version_Is_Not_Yet_Given_Does_Not_Mark_The_Queue_Behind` holds the worker after the
+copy, calls `Preview`, and asks that the queue is not behind and that the preview is current; with the old comparison it fails
+with "the queue is behind". The write-set check and `eng/repo-gates` pass. Not verified: continuous integration has not run on
+this commit, and the failed run kept no state of the queue, so this window is the cause that the code allows.
+
+New tests: 1. The test list holds 3402 (2008 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.459, 1 product milestone and 6
+entries followed it. The failed runs since the entry v0.464, from the API: none.
