@@ -14828,3 +14828,20 @@ New tests: 0. The test list holds 3406 (2012 in `Engine.Tests`, 391 in `3DEngine
 `3DEngine.VisionTests`). Open entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.459, 1 product milestone and 8
 entries followed it. The failed runs since the entry v0.466, from the API: 46113600404, the main run of 0f811442 on Windows, the
 test above.
+
+## v0.468 — A query result of another type has its own code (P0.199, TASK-0485)
+
+Register entry R-0028 held a part of finding E17 of the codebase review of 2026-09-30: `QueryBus` gave `E-QRY-UNKNOWN` when a
+handler gave a result of another type than the caller asks for, and `docs/diagnostics.md` gives that code the meaning "no
+handler matches the query". The new code `E-QRY-RESULT-TYPE` holds the case, in `DiagnosticCodes`, in `/schema/diagnostics`
+and in `docs/diagnostics.md`. A host asks for `object`, so only a caller in the process can get it. The standing order of
+2026-11-28 answered the choice of a new code with the recommended option. The other part of E17 that needs a new code, an
+exception of a handler that leaves the command bus, changes the commit of the bus and stays with the owner.
+
+**Proof.** A clean build gives 0 warnings, and `dotnet test` passes with the image tests.
+`A_Result_Of_Another_Type_Gives_E_QRY_RESULT_TYPE` fails when the bus gives the old code. The write-set check and
+`eng/repo-gates` pass. Not verified: continuous integration has not run on this commit.
+
+New tests: 1. The test list holds 3407 (2013 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 10 of 15. New diagnostic codes: 1 (`E-QRY-RESULT-TYPE`). Since the review of v0.459,
+1 product milestone and 9 entries followed it. The failed runs since the entry v0.467, from the API: none.

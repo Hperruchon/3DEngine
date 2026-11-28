@@ -15,6 +15,10 @@ public static class DiagnosticCodes
     // ADR-0188 item 4 (phase P16, TASK-0463): an Undo or a Redo with a group; a group holds steps only.
     public const string CommandGroupMove = "E-CMD-GROUP-MOVE";
     public const string QueryUnknown = "E-QRY-UNKNOWN";
+
+    // TASK-0485 (finding E17 of the codebase review of 2026-09-30, R-0028): a handler gave a result of another type than the
+    // type that the caller in the process asked for. Until TASK-0485 the bus gave E-QRY-UNKNOWN, which has another meaning.
+    public const string QueryResultType = "E-QRY-RESULT-TYPE";
     public const string ApiBadRequest = "E-API-BAD-REQUEST";
     public const string ApiWsInvalidSubscribe = "E-API-WS-INVALID-SUBSCRIBE";
     public const string ApiWsLagged = "W-API-WS-LAGGED";

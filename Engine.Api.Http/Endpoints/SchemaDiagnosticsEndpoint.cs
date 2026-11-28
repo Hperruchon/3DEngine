@@ -22,6 +22,7 @@ internal static class SchemaDiagnosticsEndpoint
         new(DiagnosticCodes.CommandNothingToRedo,  "Error",   "CMD"), // ADR-0031 item 8, TASK-0093
         new(DiagnosticCodes.CommandGroupMove,      "Error",   "CMD"), // TASK-0463
         new(DiagnosticCodes.QueryUnknown,          "Error",   "QRY"),
+        new(DiagnosticCodes.QueryResultType,       "Error",   "QRY"), // TASK-0485
         new(DiagnosticCodes.ApiBadRequest,         "Error",   "API"),
         new(DiagnosticCodes.ApiWsInvalidSubscribe, "Error",   "API"),
         new(DiagnosticCodes.ApiWsLagged,           "Warning", "API"),
