@@ -72,7 +72,7 @@ There is no "replay from arbitrary historical Seq beyond the ring." Older state 
 ### 5. Reconnect protocol
 
 1. Client opens transport (WebSocket).
-2. Client sends `subscribe { documentId?, lastSeenSeq? }`.
+2. Client sends `subscribe { documentId?, lastSeenSeq? }`. A frame that does not come in 10 s after the upgrade is missing, and the engine closes the connection with status 1007 and the reason `E-API-WS-INVALID-SUBSCRIBE`, as for a malformed frame.
 3. Engine responds with one of:
    - `subscription.resume { fromSeq }` followed by buffered + live events.
    - `subscription.reset { documentId, snapshot }` followed by live events.
@@ -128,3 +128,9 @@ Anything else introducing a new `Kind` requires a contracts PR with an updated s
 - **Snapshot format for `subscription.reset`.** Provisionally: a serialized Document header + materialized scene summary. Final shape blocked on the persistence ADR (TASK-0002 territory).
 - **Maximum reasonable event rate.** If commands generate >1k events each (e.g. mass import), the ring fills quickly and slow clients reset frequently. Mitigation deferred until a real workload exhibits it.
 - **Multi-Document story.** When V2 introduces multiple Documents per runtime, `DocumentId` filtering on the subscription becomes a feature. Out of scope here.
+
+## History
+
+- 2026-11-28 · TASK-0481 · Section 5 step 2 gives the subscribe frame a time limit of 10 s (finding E17 of the codebase review of
+  2026-09-30, part 6, register entry R-0028), under the standing order of 2026-11-28. A missing frame gets the close of a
+  malformed frame, so no code is new.

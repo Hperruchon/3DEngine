@@ -29,8 +29,9 @@ internal static class ProposalsEndpoint
         if (folder.OpenAccepted)
             return DocumentEndpoint.OpenPending();
 
-        if (!context.Request.HasJsonContentType())
-            return ApiErrorEnvelope.UnsupportedMediaType();
+        // Finding E17 of the codebase review of 2026-09-30, part 3 (R-0028, TASK-0481): an unknown charset gets HTTP 415.
+        if (JsonRequest.Refusal(context.Request) is { } refused)
+            return refused;
 
         ProposalRequest? body;
         try
@@ -41,7 +42,7 @@ internal static class ProposalsEndpoint
         }
         catch (JsonException ex)
         {
-            return ApiErrorEnvelope.BadRequest($"Malformed JSON: {ex.Message}");
+            return ApiErrorEnvelope.BadRequest(JsonRequest.Malformed("Malformed JSON", ex));
         }
         catch (InvalidOperationException)
         {
@@ -168,7 +169,7 @@ internal static class ProposalsEndpoint
         }
         catch (JsonException ex)
         {
-            return (null, $"Malformed envelope: {ex.Message}");
+            return (null, JsonRequest.Malformed("Malformed envelope", ex));
         }
         catch (InvalidOperationException)
         {

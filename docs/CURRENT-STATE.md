@@ -14724,3 +14724,48 @@ write-set check and `eng/repo-gates` pass. Not verified: continuous integration 
 New tests: 2. The test list holds 3386 (1992 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
 `3DEngine.VisionTests`). Open entries: 10 of 15 (R-0082 and R-0077 close). New diagnostic codes: 0. Since the review of v0.459,
 1 product milestone and 4 entries followed it. The failed runs since the entry v0.462, from the API: none.
+
+## v0.464 — Four parts of finding E17: the text of a refused body, two closes of the event stream and an option as a name (P0.195, TASK-0481)
+
+After P0.194 the next rows of the roadmap wait for the owner. Register entry R-0028 holds four open parts of finding E17 of the
+codebase review of 2026-09-30 that need no new diagnostic code and no change of `Engine.Contracts`. The review marked parts 5,
+6 and 9 "reported by a review agent, not checked". Under the standing order of 2026-11-28 this task checks and fixes them.
+
+**Part 3.** The text of a refused body of `/commands`, `/queries` and `/proposals` was the text of the exception of
+System.Text.Json, which names an internal type of the surface, for example `CommandsEndpoint+CommandRequest` for an unknown
+member. `Engine.Api.Http/Json/JsonRequest.cs` now gives the place of the fault (the path, the line and the byte), the reason of
+the reader for a text that is not JSON, and for the other faults their three causes. An unknown charset of the content type gave
+HTTP 500 at `/commands` and `/queries` and "text that is not well-formed UTF-16" at `/proposals`; it now gets HTTP 415 with
+the envelope and `E-API-BAD-REQUEST`, which `docs/diagnostics.md` gives for a wrong content type.
+
+**Part 5.** The pump of a subscriber cancelled the receive loop and then sent the close frame. A cancelled receive aborts a
+socket of Kestrel, and an aborted socket sends no close frame. A run of the old order on Kestrel gave the client "The remote party
+closed the WebSocket connection without completing the close handshake", and not 1008 with `subscriber.lagged` (ADR-0005
+section 6). The pump now sends the close frame first, and it waits for the answer of the client, at most 2 seconds
+(`Subscriber.CloseWait`), before it cancels. A first form with no wait failed the new test in one of two full runs with the same
+broken connection: on Windows an abort can discard a close frame that the client did not read. 25 runs of the test alone passed
+with no wait, so no test fails without the wait; the reason holds it. The lag test of the test server did not see the fault,
+because the socket of the test server does not abort.
+
+**Part 6.** The endpoint waited for the subscribe frame with no time limit. ADR-0005 section 5 step 2 now gives 10 seconds, and a
+missing frame gets the close of a malformed frame, 1007 with `E-API-WS-INVALID-SUBSCRIBE`, whose text already says "missing".
+The endpoint does not cancel the receive at the time limit, for the reason of part 5, and it waits for the answer of the client
+in the same way.
+
+**Part 9.** `engine apply --kind part CreateBox` took `--kind` as the name of the command and gave `E-CMD-UNKNOWN` with the exit
+code 1. An option in the place of the name of a command or of a query is now a usage error with the exit code 2.
+
+**Proof.** A clean build gives 0 warnings, and `dotnet test` passes with the image tests. `RequestTextTests` (10 cases),
+`EventsEndpointKestrelTests` (2 tests on a real Kestrel at 127.0.0.1) and `An_Option_In_The_Place_Of_The_Name_Is_A_Usage_Error`
+(3 cases) are new. Each of five injections of the old behaviour (the old text, no check of the charset, the old close order, no
+time limit, no check of the name) made its tests fail. The write-set check and `eng/repo-gates` pass. Not verified: continuous
+integration has not run on this commit.
+
+New tests: 15. The test list holds 3401 (2007 in `Engine.Tests`, 391 in `3DEngine.Tests`, 1000 in `3DEngine.ImageTests`, 3 in
+`3DEngine.VisionTests`). Open entries: 10 of 15. New diagnostic codes: 0. Since the review of v0.459, 1 product milestone and 5
+entries followed it. The failed runs since the entry v0.463, from the API: 46103697245, the close run of TASK-0480 (bf46ccb8),
+on Windows: `ProposalPreviewWindowTests.The_Host_Gives_The_Window_The_Preview_With_The_Shape_Of_Each_New_Solid` read `Current`
+false after the wait for the preview of a new version. The close commit changed only the task file, and the run of the same code
+(8fc37dc6) passed. The cause is a race of the queue of the previews, which P0.194 did not change: a call of `Preview` between
+the copy of the log and its hand-over to the proposal marks the queue behind again. A new run of the amended close commit landed
+P0.194; TASK-0482 corrects the race.
