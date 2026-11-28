@@ -329,6 +329,19 @@ status line at 640 by 360. At 844 by 390 the target of "Show hidden" of a ring o
 Exit: a task makes `Faults` check each tool of the ring by its target with no skip, and corrects each fault or records it in an
 ADR, or the owner accepts these cases.
 
+### R-0083 · A joint keeps the connector frames of its AddJoint, and a joint of a consumed body places nothing
+- class: debt
+- opened: 2026-11-28
+- due: 2027-05-27
+- extended: no
+- refs: `Engine.Core/Commands/JointResults.cs` (`Connector`), `Engine.Core/Commands/JointTree.cs` (`Below`), ADR-0193 items 2 and 6, TASK-0479
+`AddJoint` reads the frame of each connector one time. A later change of the shape of the parent or of the child, for example a
+new distance of an extrude, does not move the child, and the next command of the joint uses the old frame. A `Rotate`, a
+`Translate` or a boolean consumes its body and makes a new body with no joint, so the joint of the consumed body stays in the
+Document and places nothing, and the new body has no joint.
+Exit: an ADR decides how a joint follows a change of the shape of its bodies and a body that a command consumes, and a task
+implements it with a test, or the owner accepts the two cases.
+
 ## Accepted compromises
 
 These are conditions that the project keeps permanently and by decision. They do not age.

@@ -98,14 +98,21 @@ public sealed class PlaceBodyCommandHandler : ICommandHandler, ICommandEncoder
         if (!(double.IsFinite(place.Dx) && double.IsFinite(place.Dy) && double.IsFinite(place.Dz)))
             return Failure(DiagnosticCodes.GeomInvalidParam, "PlaceBody requires dx, dy and dz finite (ADR-0191 item 3).");
 
+        // ADR-0193 item 6 (phase P11a, TASK-0479, the answer Q4 A): the joint of a child gives its placement, so a PlaceBody of a
+        // child is refused, and a PlaceBody of a body with children places each body under it in the same step.
+        if (JointTree.ParentOf(document.Joints, body.Handle.Id) is { } joint)
+            return Failure(
+                DiagnosticCodes.JointPlaced,
+                $"The body '{body.Handle.Id}' is the child of the joint '{joint.Id}', and the joint gives its placement (ADR-0193 item 6).");
+
         var outputs = new Outputs(new Dictionary<string, object?>
         {
             ["bodyId"] = place.BodyId,
         });
 
-        return Task.FromResult(CommandHandlerResult.Success(
-            outputs,
-            changedBodies: new[] { body with { Placement = Placements.Stored(place.Placement) } }));
+        List<BodyRecord> changed = [body with { Placement = Placements.Stored(place.Placement) }];
+        changed.AddRange(JointTree.Below(document, document.Joints, body.Handle.Id, place.Placement));
+        return Task.FromResult(CommandHandlerResult.Success(outputs, changedBodies: changed));
     }
 
     private static Task<CommandHandlerResult> Failure(string code, string message)

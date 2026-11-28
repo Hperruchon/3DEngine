@@ -7,7 +7,7 @@ date: 2026-11-15
 supersedes: []
 superseded-by: []
 amends: ['0126']
-amended-by: ['0162', '0191']
+amended-by: ['0162', '0191', '0193']
 affects:
   - docs/proposals/2026-11-15-assembly-and-agent-design.md
 enforced-by: Engine.Tests/Governance/TaskGovernanceGateTests.cs
@@ -125,3 +125,4 @@ record and is not in that field. So the code of a later phase cites the ADR of i
 - 2026-11-15 · TASK-0394 · Shipped at v0.379.
 - 2026-11-18 · TASK-0403 · Amended by ADR-0162: P0.162 and the slices R30a to R30i of the 2D views come after P10c and before K10 (the answer of the owner of 2026-11-18 to Q19).
 - 2026-11-28 · TASK-0474 · ADR-0191 amends item 2: the measure of K10a decided the model of a move: a placement as data, set by `PlaceBody`.
+- 2026-11-28 · TASK-0479 · ADR-0193 amends items 3 and 4: the joints of P11a, a pivot for the revolute kind, a connector on a face or a datum with its frame in the frame of its body, and the place of each child from the tree.

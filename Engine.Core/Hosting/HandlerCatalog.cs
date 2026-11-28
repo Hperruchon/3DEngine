@@ -75,6 +75,10 @@ public static class HandlerCatalog
         new RemoveSheetDimensionCommandHandler(),
         // ADR-0191 item 3 (phase P11.0, TASK-0474): the placement of a body.
         new PlaceBodyCommandHandler(),
+        // ADR-0193 item 6 (phase P11a, TASK-0479): the commands of a joint.
+        new AddJointCommandHandler(),
+        new SetJointValueCommandHandler(),
+        new RemoveJointCommandHandler(),
     ];
 
     public static IReadOnlyList<IQueryHandler> QueryHandlers() =>
@@ -96,6 +100,7 @@ public static class HandlerCatalog
         new CheckInterferenceQueryHandler(),
         new GetConnectorsQueryHandler(),
         new GetSheetsQueryHandler(),
+        new GetJointsQueryHandler(), // ADR-0193 item 7, TASK-0479
         new GetBodiesQueryHandler(),
     ];
 

@@ -162,7 +162,7 @@ names. Do not read all of them.
 | [0154](0154-the-fixed-lengths-from-one-elimination.md) | The status and the fixed lengths of a sketch come from one elimination, and the product J·Jᵀ takes the columns with a value | Amended | Kernel | 0149 | 0156, 0164, 0173 |
 | [0155](0155-the-views-of-a-sheet.md) | A view of a sheet has an exact frame, a scale and a place on the paper, and GetSheet gives its lines on the paper | Amended | Drawing | 0153 | 0164, 0165, 0167, 0168, 0169, 0171, 0179 |
 | [0156](0156-the-rank-of-a-sketch-at-each-size.md) | The rank of a sketch comes from the rows of its Jacobian at unit length, so the freedom and the fixed lengths do not depend on its size | Amended | Sketch | 0035, 0154 | 0164 |
-| [0157](0157-the-foundations-and-the-order-of-the-assembly-track.md) | The assembly track has shared foundations, the checks and the preview of a proposal come before the joints, and the model of a move waits for a measure | Amended | Assembly, agent | 0126 | 0162, 0191 |
+| [0157](0157-the-foundations-and-the-order-of-the-assembly-track.md) | The assembly track has shared foundations, the checks and the preview of a proposal come before the joints, and the model of a move waits for a measure | Amended | Assembly, agent | 0126 | 0162, 0191, 0193 |
 | [0158](0158-the-dimensions-of-a-sheet.md) | A dimension of a sheet shows a length or a radius of a sketch or the distance of an extrude, and a read gives its value from the design or "lost" | Amended | Drawing | 0153 | 0165 |
 | [0159](0159-the-svg-export-of-a-sheet.md) | A sheet exports as one SVG file in millimetres of the paper, from the read GetSheet, with exact arcs and the value of each dimension | Amended | Drawing, export | — | 0164, 0165, 0169, 0179 |
 | [0160](0160-the-dxf-export-of-a-sheet.md) | A sheet exports as one DXF file of release 12, from the read GetSheet, with arcs as bulges and ellipses as arcs within 0.001 mm | Amended | Drawing, export | — | 0164, 0165, 0169, 0179 |
@@ -196,8 +196,9 @@ names. Do not read all of them.
 | [0188](0188-the-accept-after-a-preview-and-the-group-in-the-log.md) | The accept after a preview compares the result and applies a proposal as one group of steps, which the log holds and one Undo reverses | Amended | Contracts, surface, agent | 0015, 0031, 0092, 0130, 0182, 0185, 0187 | 0190 |
 | [0189](0189-the-lists-of-the-sheets-and-of-the-bodies.md) | The queries GetSheets and GetBodies give the live sheets and the live bodies of the Document in the order of the log | Amended | Surface, agent | — | 0192 |
 | [0190](0190-the-reversal-of-a-failed-group-is-marked-in-the-log.md) | The reversal of a failed group is an Undo with the group of the proposal, and it puts nothing on the redo list | Accepted | History, agent | 0188 | — |
-| [0191](0191-the-placement-of-a-body.md) | A body has a placement, a turn and an offset, and the command PlaceBody sets it, so a move changes no shape | Accepted | Contracts, geometry, assembly | 0037, 0112, 0126, 0157 | — |
+| [0191](0191-the-placement-of-a-body.md) | A body has a placement, a turn and an offset, and the command PlaceBody sets it, so a move changes no shape | Amended | Contracts, geometry, assembly | 0037, 0112, 0126, 0157 | 0193 |
 | [0192](0192-the-bodies-of-the-snapshot-and-of-the-check-in-the-order-of-the-log.md) | The snapshot of the events and CheckInterference give the live bodies in the order of the log | Accepted | Contracts, events, assembly | 0012, 0182, 0189 | — |
+| [0193](0193-the-joints-of-a-part.md) | A joint connects two bodies of a part in a tree with no solver, and its commands place the child and each body under it | Accepted | Contracts, geometry, assembly | 0157, 0191 | — |
 
 ## Topics
 

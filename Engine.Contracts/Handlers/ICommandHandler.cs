@@ -111,6 +111,15 @@ public sealed record CommandHandlerResult(
 
     public IReadOnlyList<Guid> RemovedSheets { get; init; } = Array.Empty<Guid>();
 
+    // ADR-0193 item 6 (phase P11a, TASK-0479): the record of each joint that the command creates, the new record of each joint
+    // that it changes, and the identifier of each joint that it removes, with the rule of the sheets. The commit emits
+    // joint.created, joint.changed and joint.removed after the sheet events. Empty by default.
+    public IReadOnlyList<Joints.JointRecord> CreatedJoints { get; init; } = Array.Empty<Joints.JointRecord>();
+
+    public IReadOnlyList<Joints.JointRecord> ChangedJoints { get; init; } = Array.Empty<Joints.JointRecord>();
+
+    public IReadOnlyList<Guid> RemovedJoints { get; init; } = Array.Empty<Guid>();
+
     public static CommandHandlerResult Success(
         Outputs outputs,
         IReadOnlyList<Diagnostic>? diagnostics = null,
@@ -126,7 +135,10 @@ public sealed record CommandHandlerResult(
         IReadOnlyList<Assembly.PartReference>? createdReferences = null,
         IReadOnlyList<Drawing.SheetRecord>? createdSheets = null,
         IReadOnlyList<Drawing.SheetRecord>? changedSheets = null,
-        IReadOnlyList<Guid>? removedSheets = null)
+        IReadOnlyList<Guid>? removedSheets = null,
+        IReadOnlyList<Joints.JointRecord>? createdJoints = null,
+        IReadOnlyList<Joints.JointRecord>? changedJoints = null,
+        IReadOnlyList<Guid>? removedJoints = null)
         => new(
             outputs,
             diagnostics ?? Array.Empty<Diagnostic>(),
@@ -145,6 +157,9 @@ public sealed record CommandHandlerResult(
             CreatedSheets = createdSheets ?? Array.Empty<Drawing.SheetRecord>(),
             ChangedSheets = changedSheets ?? Array.Empty<Drawing.SheetRecord>(),
             RemovedSheets = removedSheets ?? Array.Empty<Guid>(),
+            CreatedJoints = createdJoints ?? Array.Empty<Joints.JointRecord>(),
+            ChangedJoints = changedJoints ?? Array.Empty<Joints.JointRecord>(),
+            RemovedJoints = removedJoints ?? Array.Empty<Guid>(),
         };
 
     public static CommandHandlerResult Failure(

@@ -65,7 +65,8 @@ public sealed class GetConnectorsQueryHandler : IQueryHandler
     // Items 4 and 5: each face name of the solid in the order of GetFaces, the order of the first face of each name in the
     // B-Rep. A name of one plane gives its centre and its outward normal; a whole side of a cylinder of the design gives its
     // axis and its radius; each other curved name gives no frame.
-    private static List<FaceConnector> Faces(Document document, Guid body, KernelSolid solid)
+    // ADR-0193 item 2 (phase P11a, TASK-0479): AddJoint reads the same faces for a connector of a joint.
+    internal static List<FaceConnector> Faces(Document document, Guid body, KernelSolid solid)
     {
         var faces = new List<FaceConnector>();
         foreach (var tag in Brep.Of(solid).Faces.Select(face => face.Tag).Distinct())

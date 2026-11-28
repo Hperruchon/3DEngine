@@ -207,4 +207,14 @@ public static class DiagnosticCodes
     // Phase P0.174 (TASK-0438, finding E233): a pair check whose work, the sum of the products of the pieces of its pairs,
     // is above its limit, so that it does not hold the session for minutes.
     public const string CheckWorkLimit = "E-CHECK-WORK-LIMIT";
+
+    // ADR-0193 item 8 (phase P11a, TASK-0479): the commands of a joint.
+    public const string JointIdInUse = "E-JOINT-ID-IN-USE";
+    public const string JointNotFound = "E-JOINT-NOT-FOUND";
+    public const string JointInvalid = "E-JOINT-INVALID";
+    public const string JointConnectorInvalid = "E-JOINT-CONNECTOR-INVALID";
+    public const string JointParentInUse = "E-JOINT-PARENT-IN-USE";
+    public const string JointLoop = "E-JOINT-LOOP";
+    public const string JointLimit = "E-JOINT-LIMIT";
+    public const string JointPlaced = "E-JOINT-PLACED";
 }

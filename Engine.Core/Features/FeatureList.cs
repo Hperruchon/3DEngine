@@ -25,16 +25,20 @@ public sealed class FeatureList
     private readonly Dictionary<Guid, Command> _consumers = [];
     private readonly Dictionary<Guid, List<double>> _distances = [];
     // ADR-0191 item 3 (phase P11.0, TASK-0474): the PlaceBody steps in effect of each body, in the order of the log.
-    private readonly Dictionary<Guid, List<PlaceBodyCommand>> _placements = [];
+    // ADR-0193 item 9 (phase P11a, TASK-0479): each step in effect that places the body, with the placement that it gives: a
+    // PlaceBody, and each step of a joint that moves the body. _placedBodies gives the bodies of each such step, for an Undo.
+    private readonly Dictionary<Guid, List<(Guid Step, BodyPlacement Placement)>> _placements = [];
+    private readonly Dictionary<Guid, IReadOnlyList<Guid>> _placedBodies = [];
 
-    private FeatureList()
-    {
-    }
+    // ADR-0193 item 9: the placements that the bus of the Document recorded for a step, or null for a log with no Document.
+    private readonly Func<Guid, IReadOnlyList<(Guid Body, BodyPlacement Placement)>?>? _placedBy;
+
+    private FeatureList(Func<Guid, IReadOnlyList<(Guid Body, BodyPlacement Placement)>?>? placedBy = null) => _placedBy = placedBy;
 
     // The list of the Document, advanced to the end of its log. The log of a Document only grows (ADR-0020).
     public static FeatureList Of(Document document)
     {
-        var list = Lists.GetValue(document, _ => new FeatureList());
+        var list = Lists.GetValue(document, owner => new FeatureList(step => CommandBus.PlacedBy(owner, step)));
         list.Advance(document.Log);
         return list;
     }
@@ -108,7 +112,7 @@ public sealed class FeatureList
         while (true)
         {
             if (Placement(handle, place) is { } step)
-                return step.Placement;
+                return step;
             var creator = Creator(handle);
             Guid? first = creator switch
             {
@@ -124,14 +128,14 @@ public sealed class FeatureList
         }
     }
 
-    public PlaceBodyCommand? Placement(Guid body, int place)
+    private BodyPlacement? Placement(Guid body, int place)
     {
         if (!_placements.TryGetValue(body, out var stack))
             return null;
         for (var i = stack.Count - 1; i >= 0; i--)
         {
-            if (Order(stack[i].CommandId) < place)
-                return stack[i];
+            if (Order(stack[i].Step) < place)
+                return stack[i].Placement;
         }
 
         return null;
@@ -192,11 +196,20 @@ public sealed class FeatureList
             stack.Add(set.Distance);
         }
 
-        if (command is PlaceBodyCommand place)
+        // ADR-0193 item 9: the placements that the bus recorded for the step, else the placement of a PlaceBody of a log with
+        // no Document.
+        var placed = _placedBy?.Invoke(command.CommandId)
+            ?? (command is PlaceBodyCommand place ? [(place.BodyId, place.Placement)] : null);
+        if (placed is not null)
         {
-            if (!_placements.TryGetValue(place.BodyId, out var placements))
-                _placements[place.BodyId] = placements = [];
-            placements.Add(place);
+            foreach (var (body, placement) in placed)
+            {
+                if (!_placements.TryGetValue(body, out var placements))
+                    _placements[body] = placements = [];
+                placements.Add((command.CommandId, placement));
+            }
+
+            _placedBodies[command.CommandId] = [.. placed.Select(item => item.Body)];
         }
     }
 
@@ -212,7 +225,10 @@ public sealed class FeatureList
             _consumers.Remove(operand);
         if (command is SetExtrudeDistanceCommand set)
             _distances[set.ExtrudeId].RemoveAt(_distances[set.ExtrudeId].Count - 1);
-        if (command is PlaceBodyCommand place)
-            _placements[place.BodyId].RemoveAt(_placements[place.BodyId].Count - 1);
+        if (_placedBodies.Remove(command.CommandId, out var bodies))
+        {
+            foreach (var body in bodies)
+                _placements[body].RemoveAt(_placements[body].Count - 1);
+        }
     }
 }
