@@ -1,7 +1,7 @@
 ---
 id: 0491
 title: CheckTravel moves a slider from limit to limit by one exact sweep
-status: Active
+status: Done
 phase: K12b
 opened: 2026-11-28
 depends-on: [0490]
@@ -48,11 +48,11 @@ Row K12b: one exact sweep of a slider. ADR-0195 (K12a) gave the travel of a pivo
 ## Acceptance criteria
 
 - [x] A test of each item of ADR-0196, and two injections that make a test fail.
-- [ ] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
+- [x] A clean build, `dotnet test`, the write-set check and `eng/repo-gates` pass, and continuous integration passes.
 
 ## Outcome
 
-Status: Active · commit (the merge of the branch k12b-slider-sweep) · v0.475
+Status: Done · commit (the merge of the branch k12b-slider-sweep) · v0.475
 
 ## Method
 
@@ -65,3 +65,4 @@ Weakest:    the direction of the slider comes from the doubles of the placed fra
 - 2026-11-28: opened under the standing order of 2026-11-28, after K12a (v0.474). ADR-0196, the sweep, and 5 tests in
   `Engine.Tests/Queries/CheckSlideTests.cs`. Two injections (no events of two edges; no events of a vertex of the fixed body) each
   made a test fail. Ledger v0.475.
+- 2026-11-28: run 46162452639 of `04bb1161` passed on each job. Closed at v0.475.
