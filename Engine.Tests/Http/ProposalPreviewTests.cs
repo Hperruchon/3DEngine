@@ -1066,6 +1066,50 @@ public sealed class ProposalPreviewTests
         Assert.True(served.Host.Proposals.Kept(id)!.Current, "The preview of the version of the call is not current.");
     }
 
+    // TASK-0482 (run 46103697245 of the close of TASK-0480): a caller that waits for the preview of a new version after the worker
+    // took the copy of the log at that version, and before the worker gave the copy to the proposal, does not mark the queue
+    // behind, so the preview of that copy is current as soon as the caller gets it. Until TASK-0482 the call marked the queue
+    // behind in that window, and Kept gave Current false until the worker read the log again (ProposalPreviewWindowTests on
+    // Windows). The seam AfterCopy holds the worker in the window. The limit of 60 s only ends a test that would wait for ever.
+    [Fact]
+    public async Task A_Caller_That_Waits_While_The_Copy_Of_Its_Version_Is_Not_Yet_Given_Does_Not_Mark_The_Queue_Behind()
+    {
+        await using var served = await Served.Start(() => new InProcessMeshBackend());
+        var box = BookcaseCase.Output(await BookcaseCase.Applied(served.Host.Session, new CreateBoxCommand { SizeX = 10, SizeY = 10, SizeZ = 10 }));
+        var id = await Post(served, "Rename the box", Rename(Guid.NewGuid(), box, "Box"));
+        Assert.Equal(1, (await Preview(served, id)).DocumentVersion);
+
+        var copied = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var open = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        served.Host.Proposals.AfterCopy = async ct =>
+        {
+            copied.TrySetResult();
+            await open.Task.WaitAsync(ct);
+        };
+        try
+        {
+            await BookcaseCase.Applied(served.Host.Session, new RenameBodyCommand { BodyId = box, NewName = "Person" });
+            await copied.Task.WaitAsync(TimeSpan.FromSeconds(60));
+
+            var waiting = served.Host.Proposals.Preview(id);
+            var started = System.Diagnostics.Stopwatch.StartNew();
+            while (served.Host.Proposals.WaitersOf(id) == 0 && !waiting.IsCompleted && started.Elapsed < TimeSpan.FromSeconds(60))
+                await Task.Delay(10);
+            Assert.Equal(1, served.Host.Proposals.WaitersOf(id));
+            Assert.False(served.Host.Proposals.Behind, "The copy of the version of the call is in flight, but the queue is behind.");
+
+            open.SetResult();
+            var preview = await Within(waiting, "The wait of the caller");
+            Assert.Equal(2, preview!.DocumentVersion);
+            Assert.True(served.Host.Proposals.Kept(id)!.Current, "The preview of the version of the call is not current.");
+        }
+        finally
+        {
+            open.TrySetResult();
+            served.Host.Proposals.AfterCopy = null;
+        }
+    }
+
     // TASK-0461 (finding T192, item 10): a body that gets a fault from the commands gives a measure with no mass and the refusal
     // in its error, and its pair with a box has the state refused and the refusal in its error. The second corner of the sketch
     // moves above the third, so two lines cross and the rebuild gives the extrude a fault.
